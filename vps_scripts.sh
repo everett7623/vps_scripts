@@ -1,37 +1,31 @@
 #!/bin/bash
 
-# 定义当前版本号
-CURRENT_VERSION="1.0"
+# 定义脚本URL和版本URL
+SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
 
-# 检查最新版本
-check_update() {
+# 自动更新函数
+auto_update() {
     echo "正在检查更新..."
-    LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt)
+    LATEST_VERSION=$(curl -s -H "Cache-Control: no-cache" "$VERSION_URL")
     if [ -z "$LATEST_VERSION" ]; then
-        echo "无法检查更新，请检查您的网络连接。"
+        echo "无法检查更新，继续使用当前版本。"
         return
     fi
-    if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
-        echo "发现新版本：$LATEST_VERSION"
-        read -p "是否更新？(y/n): " choice
-        case "$choice" in 
-            y|Y ) 
-                echo "正在更新..."
-                wget -O /root/vps_scripts.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh
-                echo "更新完成，请重新运行脚本。"
-                exit 0
-                ;;
-            * ) 
-                echo "继续使用当前版本。"
-                ;;
-        esac
+    
+    echo "正在更新到最新版本..."
+    if wget -O "$0.tmp" "$SCRIPT_URL" && mv "$0.tmp" "$0"; then
+        echo "更新完成，正在重新启动脚本..."
+        exec bash "$0"
+        exit
     else
-        echo "已经是最新版本。"
+        echo "更新失败，继续使用当前版本。"
+        rm -f "$0.tmp"
     fi
 }
 
-# 在脚本开始处调用检查更新函数
-check_update
+# 执行自动更新
+auto_update
 
 # 统计运行次数
 COUNT_FILE="/root/.vps_script_count"
