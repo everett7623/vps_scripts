@@ -167,7 +167,7 @@ else
 fi
 
 echo "依赖项安装完成。"
-
+echo ""
 while true; do
   echo "请选择要执行的脚本："
   echo ""
