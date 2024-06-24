@@ -95,10 +95,15 @@ echo ""
 # 设置快捷键
 if ! grep -qxF "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
     echo "alias v='bash /root/vps_scripts.sh'" >> /root/.bashrc
+    # 立即加载 .bashrc 以使快捷键生效
+    source /root/.bashrc
+    echo "快捷键'v'已设置并激活。"
+else
+    echo "快捷键'v'已存在。"
 fi
 
-# 立即加载 .bashrc 以使快捷键生效
-source /root/.bashrc
+# 提示用户重新登录或重新加载 .bashrc
+echo "请执行 'source ~/.bashrc' 或重新登录以确保快捷键生效。"
 
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
