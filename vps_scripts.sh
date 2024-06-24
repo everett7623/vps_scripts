@@ -178,19 +178,20 @@ while true; do
   echo -e "${YELLOW}5) 流媒体解锁${NC}"
   echo -e "${YELLOW}6) 响应测试${NC}"
   echo -e "${YELLOW}7) 三网测速（多/单线程）${NC}"
-  echo -e "${YELLOW}8) AutoTrace三网回程路由${NC}"
-  echo -e "${YELLOW}9) 超售测试${NC}"
-  echo -e "${YELLOW}10) VPS一键脚本工具箱${NC}"
-  echo -e "${YELLOW}11) jcnf 常用脚本工具包${NC}"
-  echo -e "${YELLOW}12) 科技lion脚本${NC}"
-  echo -e "${YELLOW}13) BlueSkyXN脚本${NC}"
-  echo -e "${YELLOW}14) 勇哥Singbox${NC}"
-  echo -e "${YELLOW}15) 勇哥x-ui${NC}"
-  echo -e "${YELLOW}16) Sing-box全家桶${NC}"
-  echo -e "${YELLOW}17) Mack-a八合一${NC}"
-  echo -e "${YELLOW}18) 安装docker${NC}"
-  echo -e "${YELLOW}19) 卸载测试脚本${NC}"
-  echo -e "${YELLOW}20) 卸载全部脚本${NC}"
+  echo -e "${YELLOW}8) 安装并启动iperf3服务端 ${NC}"
+  echo -e "${YELLOW}9) AutoTrace三网回程路由${NC}"
+  echo -e "${YELLOW}10) 超售测试${NC}"
+  echo -e "${YELLOW}11) VPS一键脚本工具箱${NC}"
+  echo -e "${YELLOW}12) jcnf 常用脚本工具包${NC}"
+  echo -e "${YELLOW}13) 科技lion脚本${NC}"
+  echo -e "${YELLOW}14) BlueSkyXN脚本${NC}"
+  echo -e "${YELLOW}15) 勇哥Singbox${NC}"
+  echo -e "${YELLOW}16) 勇哥x-ui${NC}"
+  echo -e "${YELLOW}17) Sing-box全家桶${NC}"
+  echo -e "${YELLOW}18) Mack-a八合一${NC}"
+  echo -e "${YELLOW}19) 安装docker${NC}"
+  echo -e "${YELLOW}20) 卸载测试脚本${NC}"
+  echo -e "${YELLOW}21) 卸载全部脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   
   read -p "输入数字选择对应的脚本: " choice
@@ -239,59 +240,113 @@ while true; do
       ;;
     8)
       clear
+      echo "执行 安装并启动iperf3服务端 脚本..."
+      apt-get install -y iperf3
+      iperf3 -s
+      echo ""
+      echo "不加任何参数，则默认监听TCP端口5201"
+      echo "后续步骤去客户端操作，比如Windows："
+      echo "iperf3客户端下载地址（https://iperf.fr/iperf-download.php）"
+      echo "在Windows电脑上，下载iperf3 Windows版本，解压到任意目录，例如D:\iperf3"
+      echo "打开命令提示符窗口，切换到iperf3目录:"
+      echo "cd D:\iperf3"
+      
+      echo ""
+      echo "执行客户端命令，连接到VPS的IP:"
+      echo "iperf3.exe -c vps_ip"
+      echo "它会进行10秒的默认TCP下载测试。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111"
+
+      echo ""
+      echo "单线程上传测试:"
+      echo "iperf3.exe -c vps_ip -R"
+      echo "该命令会测试从客户端到服务端(VPS)的上传带宽。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -R"
+
+      echo ""
+      echo "多线程下载测试:"
+      echo "iperf3.exe -c vps_ip -P 4"
+      echo "这会运行一个4个流并行下载测试。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -P 4"
+
+      echo ""
+      echo "多线程上传测试:"
+      echo "iperf3.exe -c vps_ip -R -P 4"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -R -P 4"
+
+      echo ""
+      echo "长时间下载测试:"
+      echo "iperf3.exe -c vps_ip -t 300"
+      echo "该命令会测试5分钟(300秒)的长时间下载，观察带宽变化。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -t 300"
+
+      echo ""
+      echo "UDP模拟视频流测试:"
+      echo "iperf3.exe -c vps_ip -u -b 200m"
+      echo "以200mbps的码率，测试UDP下载(模拟视频流)"
+      echo "您也可以根据实际需求调整目标带宽-b值。"
+      echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
+
+      echo ""
+      echo "其他参数示例:"
+      echo ".\iperf3.exe -c vps_ip -i 1       # 每1秒输出带宽报告"
+      echo ".\iperf3.exe -c vps_ip -p 5201    # 指定服务端端口为5201"
+      ;;
+    9)
+      clear
       echo "执行 AutoTrace三网回程路由 脚本..."
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
-    9)
+    10)
       clear
       echo "执行 超售测试脚本 脚本..."
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       ;;
-    10)
+    11)
       clear
       echo "执行 VPS一键脚本工具箱 脚本..."
       bash <(curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh)
       ;;
-    11)
+    12)
       clear
       echo "执行 jcnf 常用脚本工具包 脚本..."
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       ;;
-    12)
+    13)
       clear
       echo "执行 科技lion脚本 脚本..."
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
-    13)
+    14)
       clear
       echo "执行 BlueSkyXN脚本 脚本..."
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
-    14)
+    15)
       clear
       echo "执行 勇哥Singbox 脚本..."
       curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb.sh
       ;;
-    15)
+    16)
       echo "执行 勇哥x-ui 脚本..."
       curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-setup/main/x-ui.sh
       ;;
-    16)
+    17)
       clear
       echo "执行 Sing-box全家桶 脚本..."
       curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb-full.sh
       ;;
-    17)
+    18)
       clear
       echo "执行 Mack-a八合一 脚本..."
       curl -Ls https://raw.githubusercontent.com/mack-a/v2ray-agent/main/install.sh
       ;;
-    18)
+    19)
       clear
       echo "执行 安装docker 脚本..."
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
-    19)
+    20)
       clear
       echo "执行 卸载测试脚本..."
       # 删除所有相关测试脚本文件
@@ -305,7 +360,7 @@ while true; do
       [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
       echo "所有测试脚本文件已被删除。"
       ;;
-    20)
+    21)
       clear
       echo "执行 卸载全部脚本..."
       # 删除之前可能运行过的脚本
