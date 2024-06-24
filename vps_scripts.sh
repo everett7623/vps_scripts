@@ -329,21 +329,21 @@ while true; do
     15)
       clear
       echo -e "${YELLOW}执行 勇哥Singbox 脚本...${NC}"
-      curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb.sh
+      bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
       ;;
     16)
       echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
-      curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-setup/main/x-ui.sh
+      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh
       ;;
     17)
       clear
       echo -e "${YELLOW}执行 Sing-box全家桶 脚本...${NC}"
-      curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb-full.sh
+      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
       ;;
     18)
       clear
       echo -e "${YELLOW}执行 Mack-a八合一 脚本...${NC}"
-      curl -Ls https://raw.githubusercontent.com/mack-a/v2ray-agent/main/install.sh
+      wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
       ;;
     19)
       clear
