@@ -45,12 +45,13 @@ TODAY=$(date +%Y-%m-%d)
 {
     flock -x 200
     if [ -f "$COUNT_FILE" ]; then
-        TOTAL_COUNT=$(($(cat "$COUNT_FILE") + 1))
+        TOTAL_COUNT=$(cat "$COUNT_FILE")
+        TOTAL_COUNT=$((TOTAL_COUNT + 1))
     else
         TOTAL_COUNT=1
     fi
     echo $TOTAL_COUNT > "$COUNT_FILE"
-} 200<"$COUNT_FILE"
+} 200>"$COUNT_FILE.lock"
 
 # 使用锁机制更新当日运行次数
 {
@@ -58,7 +59,8 @@ TODAY=$(date +%Y-%m-%d)
     if [ -f "$DAILY_COUNT_FILE" ]; then
         LAST_DATE=$(head -n 1 "$DAILY_COUNT_FILE")
         if [ "$LAST_DATE" = "$TODAY" ]; then
-            DAILY_COUNT=$(($(tail -n 1 "$DAILY_COUNT_FILE") + 1))
+            DAILY_COUNT=$(tail -n 1 "$DAILY_COUNT_FILE")
+            DAILY_COUNT=$((DAILY_COUNT + 1))
         else
             DAILY_COUNT=1
         fi
@@ -67,12 +69,11 @@ TODAY=$(date +%Y-%m-%d)
     fi
     echo "$TODAY" > "$DAILY_COUNT_FILE"
     echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
-} 200<"$DAILY_COUNT_FILE"
+} 200>"$DAILY_COUNT_FILE.lock"
 
 # 输出统计信息和脚本信息
 clear
 echo "当日运行：$DAILY_COUNT 次   累计运行：$TOTAL_COUNT 次"
-echo ""
 echo ""
 echo "-----------------By'Jensfrank-----------------"
 echo ""
