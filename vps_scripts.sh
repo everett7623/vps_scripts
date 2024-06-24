@@ -415,5 +415,5 @@ while true; do
   esac
 
   # 等待用户按回车返回主菜单
-  read -p "${YELLOW}按回车键返回主菜单...${NC}"
+  read -p "按回车键返回主菜单..."
 done
