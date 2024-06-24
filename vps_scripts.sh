@@ -96,6 +96,7 @@ while true; do
   echo "11) Kejilion脚本"
   echo "12) BlueSkyXN脚本(开启Swap等)"
   echo "13) 安装docker"
+  echo "14) 完全卸载删除脚本"
   echo "0) 退出"
 
   read -p "输入数字选择对应的脚本: " choice
@@ -152,6 +153,19 @@ while true; do
     13)
       echo "执行 安装docker 脚本..."
       curl -fsSL https://get.docker.com | bash -s docker
+      ;;
+    14)
+      echo "执行完全卸载删除脚本..."
+      # 删除脚本文件
+      rm -f /root/vps_scripts.sh
+      # 删除统计文件
+      rm -f /root/.vps_script_count /root/.vps_script_daily_count
+      # 删除快捷键设置
+      sed -i '/alias v='"'"'bash \/root\/vps_scripts.sh'"'"'/d' /root/.bashrc
+      source /root/.bashrc
+      echo "脚本已完全卸载并删除。"
+      echo "请手动关闭当前终端会话以使更改生效。"
+      exit 0
       ;;
     0)
       echo "退出"
