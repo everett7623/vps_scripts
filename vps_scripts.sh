@@ -170,6 +170,7 @@ echo "依赖项安装完成。"
 
 while true; do
   echo "请选择要执行的脚本："
+  echo ""
   echo -e "${YELLOW}1) 更新系统${NC}"
   echo -e "${YELLOW}2) Yabs${NC}"
   echo -e "${YELLOW}3) 融合怪${NC}"
@@ -191,7 +192,7 @@ while true; do
   echo -e "${YELLOW}19) 卸载测试脚本${NC}"
   echo -e "${YELLOW}20) 卸载全部脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
-
+  echo ""
   read -p "输入数字选择对应的脚本: " choice
 
   case $choice in
