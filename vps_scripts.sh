@@ -14,13 +14,15 @@ auto_update() {
     fi
     
     echo "正在更新到最新版本..."
-    if wget -O "$0.tmp" "$SCRIPT_URL" && mv "$0.tmp" "$0"; then
+    TEMP_FILE=$(mktemp)
+    if wget -O "$TEMP_FILE" "$SCRIPT_URL"; then
+        mv "$TEMP_FILE" "$0"
         echo "更新完成，正在重新启动脚本..."
         exec bash "$0"
         exit
     else
         echo "更新失败，继续使用当前版本。"
-        rm -f "$0.tmp"
+        rm -f "$TEMP_FILE"
     fi
 }
 
@@ -32,27 +34,33 @@ COUNT_FILE="/root/.vps_script_count"
 DAILY_COUNT_FILE="/root/.vps_script_daily_count"
 TODAY=$(date +%Y-%m-%d)
 
-# 更新累计运行次数
-if [ -f "$COUNT_FILE" ]; then
-    TOTAL_COUNT=$(($(cat "$COUNT_FILE") + 1))
-else
-    TOTAL_COUNT=1
-fi
-echo $TOTAL_COUNT > "$COUNT_FILE"
+# 使用锁机制更新累计运行次数
+{
+    flock -x 200
+    if [ -f "$COUNT_FILE" ]; then
+        TOTAL_COUNT=$(($(cat "$COUNT_FILE") + 1))
+    else
+        TOTAL_COUNT=1
+    fi
+    echo $TOTAL_COUNT > "$COUNT_FILE"
+} 200<"$COUNT_FILE"
 
-# 更新当日运行次数
-if [ -f "$DAILY_COUNT_FILE" ]; then
-    LAST_DATE=$(head -n 1 "$DAILY_COUNT_FILE")
-    if [ "$LAST_DATE" = "$TODAY" ]; then
-        DAILY_COUNT=$(($(tail -n 1 "$DAILY_COUNT_FILE") + 1))
+# 使用锁机制更新当日运行次数
+{
+    flock -x 200
+    if [ -f "$DAILY_COUNT_FILE" ]; then
+        LAST_DATE=$(head -n 1 "$DAILY_COUNT_FILE")
+        if [ "$LAST_DATE" = "$TODAY" ]; then
+            DAILY_COUNT=$(($(tail -n 1 "$DAILY_COUNT_FILE") + 1))
+        else
+            DAILY_COUNT=1
+        fi
     else
         DAILY_COUNT=1
     fi
-else
-    DAILY_COUNT=1
-fi
-echo "$TODAY" > "$DAILY_COUNT_FILE"
-echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
+    echo "$TODAY" > "$DAILY_COUNT_FILE"
+    echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
+} 200<"$DAILY_COUNT_FILE"
 
 # 输出统计信息和脚本信息
 clear
@@ -77,7 +85,7 @@ echo "快捷键已设置为v,下次运行输入v可快速启动此脚本"
 echo ""
 
 # 设置快捷键
-if ! grep -q "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
+if ! grep -qxF "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
     echo "alias v='bash /root/vps_scripts.sh'" >> /root/.bashrc
     source /root/.bashrc
 fi
