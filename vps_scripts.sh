@@ -111,7 +111,7 @@ echo -e "${colors[3]}  # #   #      #     #     #     # #     # #    #  #  #    
 echo -e "${colors[2]}   #    #       #####       #####   #####  #     # ### #         #    #####  ${NC}"
 echo ""
 echo "支持Ubuntu/Debian"
-echo "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
+echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
