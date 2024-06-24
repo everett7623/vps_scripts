@@ -18,7 +18,7 @@ auto_update() {
     if [ -z "$LATEST_VERSION" ]; then
         echo "无法检查更新，继续使用当前版本。"
         return
-    }
+    fi
     
     echo "正在更新到最新版本..."
     TEMP_FILE=$(mktemp)
