@@ -114,6 +114,16 @@ fi
 # 提示用户重新登录或重新加载 .bashrc
 echo "请执行 'source ~/.bashrc' 或重新登录以确保快捷键生效。"
 
+# 检查当前用户是否具有 sudo 权限
+if [ "$(id -u)" != "0" ]; then
+    echo "此脚本需要 root 权限运行。"
+    echo "请使用具有 sudo 权限的用户运行此脚本。"
+    exit 1
+fi
+
+# 在需要时获取 sudo 权限
+sudo -v >/dev/null 2>&1 || { echo "无法获取 sudo 权限，退出脚本。"; exit 1; }
+
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
 
