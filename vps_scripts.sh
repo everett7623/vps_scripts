@@ -199,7 +199,7 @@ while true; do
   case $choice in
     1)
       clear
-      echo "执行系统更新..."
+      echo -e "${YELLOW}执行系统更新...${NC}"
       (sudo apt update && sudo apt upgrade -y) &
       pid=$!
       while kill -0 $pid 2>/dev/null; do
