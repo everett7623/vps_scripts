@@ -152,10 +152,16 @@ while true; do
   echo "8) 三网回程路由"
   echo "9) 超售测试"
   echo "10) VPS一键脚本工具箱"
-  echo "11) 科技lion脚本"
-  echo "12) BlueSkyXN脚本"
-  echo "13) 安装docker"
-  echo "14) 完全卸载删除脚本"
+  echo "11) jcnf 常用脚本工具包"
+  echo "12) 科技lion脚本"
+  echo "13) BlueSkyXN脚本"
+  echo "14) 勇哥Singbox"
+  echo "15) 勇哥x-ui"
+  echo "16) Sing-box全家桶"
+  echo "17) Mack-a八合一"
+  echo "18) 安装docker"
+  echo "19) 完全卸载删除测试脚本"  
+  echo "20) 完全卸载删除全部脚本"
   echo "0) 退出"
 
   read -p "输入数字选择对应的脚本: " choice
@@ -181,11 +187,11 @@ while true; do
       ;;
     4)
       echo "执行 IP质量 脚本..."
-      bash <(curl -Ls IP.Check.Place)
+      bash <(curl -Ls https://www.ipcheck.tools/check)
       ;;
     5)
       echo "执行 流媒体解锁 脚本..."
-      bash <(curl -L -s media.ispvps.com)
+      bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
       ;;
     6)
       echo "执行 响应测试 脚本..."
@@ -208,20 +214,52 @@ while true; do
       curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
       ;;
     11)
+      echo "执行 jcnf 常用脚本工具包 脚本..."
+      wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
+      ;;
+    12)
       echo "执行 科技lion脚本 脚本..."
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
-    12)
+    13)
       echo "执行 BlueSkyXN脚本 脚本..."
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
-    13)
+    14)
+      echo "执行 勇哥Singbox 脚本..."
+      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb.sh)
+      ;;
+    15)
+      echo "执行 勇哥x-ui 脚本..."
+      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-setup/main/x-ui.sh)
+      ;;
+    16)
+      echo "执行 Sing-box全家桶 脚本..."
+      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb-full.sh)
+      ;;
+    17)
+      echo "执行 Mack-a八合一 脚本..."
+      bash <(curl -Ls https://raw.githubusercontent.com/mack-a/v2ray-agent/main/install.sh)
+      ;;
+    18)
       echo "执行 安装docker 脚本..."
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
-    14)
-      echo "执行完全卸载删除脚本..."
-  
+    19)
+      echo "完全卸载删除测试脚本..."
+      # 删除所有相关测试脚本文件
+      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
+      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
+      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
+      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
+      [ -f /root/jcnfbox.sh ] && rm -f /root/jcnfbox.sh
+      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
+      [ -f /root/box.sh ] && rm -f /root/box.sh
+      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
+      echo "所有测试脚本文件已被删除。"
+      ;;
+    20)
+      echo "完全卸载删除全部脚本..."
       # 删除之前可能运行过的脚本(2-13选项)
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
