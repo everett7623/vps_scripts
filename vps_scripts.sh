@@ -241,8 +241,6 @@ while true; do
     8)
       clear
       echo "执行 安装并启动iperf3服务端 脚本..."
-      apt-get install -y iperf3
-      iperf3 -s
       echo ""
       echo "不加任何参数，则默认监听TCP端口5201"
       echo "后续步骤去客户端操作，比如Windows："
@@ -291,6 +289,10 @@ while true; do
       echo "其他参数示例:"
       echo ".\iperf3.exe -c vps_ip -i 1       # 每1秒输出带宽报告"
       echo ".\iperf3.exe -c vps_ip -p 5201    # 指定服务端端口为5201"
+
+      echo "上面的操作是客户端参考，下面启动服务端iperf3服务端"
+      apt-get install -y iperf3
+      iperf3 -s
       ;;
     9)
       clear
