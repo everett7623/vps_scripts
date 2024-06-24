@@ -204,7 +204,7 @@ while true; do
     4)
       clear
       echo "执行 IP质量 脚本..."
-      bash <(curl -Ls https://www.ipcheck.tools/check)
+      bash <(curl -Ls IP.Check.Place)
       ;;
     5)
       clear
