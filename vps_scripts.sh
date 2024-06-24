@@ -160,8 +160,8 @@ while true; do
   echo "16) Sing-box全家桶"
   echo "17) Mack-a八合一"
   echo "18) 安装docker"
-  echo "19) 完全卸载删除测试脚本"  
-  echo "20) 完全卸载删除全部脚本"
+  echo "19) 卸载测试脚本"  
+  echo "20) 卸载全部脚本"
   echo "0) 退出"
 
   read -p "输入数字选择对应的脚本: " choice
@@ -246,7 +246,7 @@ while true; do
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
     19)
-      echo "完全卸载删除测试脚本..."
+      echo "执行 卸载测试脚本..."
       # 删除所有相关测试脚本文件
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
@@ -259,7 +259,7 @@ while true; do
       echo "所有测试脚本文件已被删除。"
       ;;
     20)
-      echo "完全卸载删除全部脚本..."
+      echo "执行 卸载全部脚本..."
       # 删除之前可能运行过的脚本
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
