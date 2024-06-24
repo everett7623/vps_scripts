@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# 检查 root 权限
+if [ "$(id -u)" != "0" ]; then
+    echo "此脚本需要 root 权限运行。"
+    exit 1
+fi
+
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
@@ -12,7 +18,7 @@ auto_update() {
     if [ -z "$LATEST_VERSION" ]; then
         echo "无法检查更新，继续使用当前版本。"
         return
-    fi
+    }
     
     echo "正在更新到最新版本..."
     TEMP_FILE=$(mktemp)
@@ -137,17 +143,17 @@ echo "依赖项安装完成。"
 while true; do
   echo "请选择要执行的脚本："
   echo "1) 更新系统"
-  echo "2) yabs"
+  echo "2) Yabs"
   echo "3) 融合怪"
-  echo "4) IP质量体检"
+  echo "4) IP质量"
   echo "5) 流媒体解锁"
-  echo "6) AutoTrace 三网回程路由"
-  echo "7) 响应测试"
-  echo "8) 三网测速（含多/单线程）"
-  echo "9) 超售测试脚本"
+  echo "6) 响应测试"
+  echo "7) 三网测速（多/单线程）"
+  echo "8) 三网回程路由"
+  echo "9) 超售测试"
   echo "10) VPS一键脚本工具箱"
-  echo "11) Kejilion脚本"
-  echo "12) BlueSkyXN脚本(开启Swap等)"
+  echo "11) 科技lion脚本"
+  echo "12) BlueSkyXN脚本"
   echo "13) 安装docker"
   echo "14) 完全卸载删除脚本"
   echo "0) 退出"
@@ -157,10 +163,16 @@ while true; do
   case $choice in
     1)
       echo "执行系统更新..."
-      sudo apt update && sudo apt upgrade -y
+      (sudo apt update && sudo apt upgrade -y) &
+      pid=$!
+      while kill -0 $pid 2>/dev/null; do
+          echo -n "."
+          sleep 1
+      done
+      echo "更新完成"
       ;;
     2)
-      echo "执行 yabs 脚本..."
+      echo "执行 Yabs 脚本..."
       wget -qO- yabs.sh | bash
       ;;
     3)
@@ -168,7 +180,7 @@ while true; do
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       ;;
     4)
-      echo "执行 IP质量体检 脚本..."
+      echo "执行 IP质量 脚本..."
       bash <(curl -Ls IP.Check.Place)
       ;;
     5)
@@ -176,16 +188,16 @@ while true; do
       bash <(curl -L -s media.ispvps.com)
       ;;
     6)
-      echo "执行 AutoTrace 三网回程路由 脚本..."
-      wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
-      ;;
-    7)
       echo "执行 响应测试 脚本..."
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
       ;;
-    8)
-      echo "执行 三网测速（含多/单线程） 脚本..."
+    7)
+      echo "执行 三网测速（多/单线程） 脚本..."
       bash <(curl -sL bash.icu/speedtest)
+      ;;
+    8)
+      echo "执行 三网回程路由 脚本..."
+      wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
     9)
       echo "执行 超售测试脚本 脚本..."
@@ -196,11 +208,11 @@ while true; do
       curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
       ;;
     11)
-      echo "执行 Kejilion脚本 脚本..."
+      echo "执行 科技lion脚本 脚本..."
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
     12)
-      echo "执行 BlueSkyXN脚本(开启Swap等) 脚本..."
+      echo "执行 BlueSkyXN脚本 脚本..."
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
     13)
@@ -209,15 +221,44 @@ while true; do
       ;;
     14)
       echo "执行完全卸载删除脚本..."
-      # 删除脚本文件
-      rm -f /root/vps_scripts.sh
-      # 删除统计文件
-      rm -f /root/.vps_script_count /root/.vps_script_daily_count
+  
+      # 删除之前可能运行过的脚本(2-13选项)
+      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
+      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
+      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
+      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
+      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
+      [ -f /root/box.sh ] && rm -f /root/box.sh
+      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
+
+      # 清理可能的残留文件和目录
+      [ -d /tmp/yabs* ] && rm -rf /tmp/yabs*
+      [ -f /tmp/bench.sh* ] && rm -rf /tmp/bench.sh*
+      [ -f /root/.ssh_tool_cache ] && rm -f /root/.ssh_tool_cache
+      [ -f /root/.ssh_tool_backup ] && rm -f /root/.ssh_tool_backup
+
+      # 尝试卸载Docker(如果是通过脚本安装的)
+      if command -v docker &> /dev/null; then
+        echo "正在卸载Docker..."
+        sudo apt-get remove docker docker-engine docker.io containerd runc -y
+        sudo apt-get purge docker-ce docker-ce-cli containerd.io -y
+        sudo rm -rf /var/lib/docker /etc/docker
+        sudo groupdel docker 2>/dev/null
+        sudo rm -rf /var/run/docker.sock
+      fi
+
+      # 删除主脚本及其相关文件
+      [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
+      [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
+      [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
+      [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
+
       # 删除快捷键设置
       sed -i '/alias v='"'"'bash \/root\/vps_scripts.sh'"'"'/d' /root/.bashrc
-      source /root/.bashrc
-      echo "脚本已完全卸载并删除。"
-      echo "请手动关闭当前终端会话以使更改生效。"
+  
+      echo "所有相关脚本和文件已被删除。"
+      echo "注意: 系统更新和某些全局更改无法撤销。"
+      echo "请执行 'source ~/.bashrc' 或重新登录以使快捷键更改生效。"
       exit 0
       ;;
     0)
