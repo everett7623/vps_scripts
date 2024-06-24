@@ -79,7 +79,7 @@ echo " #   #        #       #   #             # #   #   #  #         #          
 echo "  # #   #     # #     #   #     # #     # #    #  #  #         #    #     # "
 echo "   #     #####   #####     #####   #####  #     # ### #         #    #####  "
 echo ""
-echo "                            VPS脚本集合 v1.0.0"
+echo "                            VPS脚本集合 v2024.06.24"
 echo "支持Ubuntu/Debian"
 echo "快捷键已设置为v,下次运行输入v可快速启动此脚本"
 echo ""
@@ -182,7 +182,7 @@ while true; do
       ;;
     11)
       echo "执行 Kejilion脚本 脚本..."
-      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
+      curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
     12)
       echo "执行 BlueSkyXN脚本(开启Swap等) 脚本..."
