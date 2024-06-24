@@ -3,7 +3,6 @@
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-UPDATE_FLAG="/tmp/vps_scripts_updated.flag"
 
 # 自动更新函数
 auto_update() {
@@ -18,8 +17,7 @@ auto_update() {
     TEMP_FILE=$(mktemp)
     if wget -O "$TEMP_FILE" "$SCRIPT_URL"; then
         mv "$TEMP_FILE" "$0"
-        echo "更新完成，设置更新标志并重新启动脚本..."
-        touch "$UPDATE_FLAG"
+        echo "更新完成，正在重新启动脚本..."
         exec bash "$0"
         exit
     else
@@ -28,13 +26,8 @@ auto_update() {
     fi
 }
 
-# 检查是否存在更新标志
-if [ ! -f "$UPDATE_FLAG" ]; then
-    auto_update
-else
-    echo "检测到更新标志，跳过更新检查。"
-    rm -f "$UPDATE_FLAG"
-fi
+# 执行自动更新
+auto_update
 
 # 统计运行次数
 COUNT_FILE="/root/.vps_script_count"
@@ -45,13 +38,12 @@ TODAY=$(date +%Y-%m-%d)
 {
     flock -x 200
     if [ -f "$COUNT_FILE" ]; then
-        TOTAL_COUNT=$(cat "$COUNT_FILE")
-        TOTAL_COUNT=$((TOTAL_COUNT + 1))
+        TOTAL_COUNT=$(($(cat "$COUNT_FILE") + 1))
     else
         TOTAL_COUNT=1
     fi
     echo $TOTAL_COUNT > "$COUNT_FILE"
-} 200>"$COUNT_FILE.lock"
+} 200<"$COUNT_FILE"
 
 # 使用锁机制更新当日运行次数
 {
@@ -59,8 +51,7 @@ TODAY=$(date +%Y-%m-%d)
     if [ -f "$DAILY_COUNT_FILE" ]; then
         LAST_DATE=$(head -n 1 "$DAILY_COUNT_FILE")
         if [ "$LAST_DATE" = "$TODAY" ]; then
-            DAILY_COUNT=$(tail -n 1 "$DAILY_COUNT_FILE")
-            DAILY_COUNT=$((DAILY_COUNT + 1))
+            DAILY_COUNT=$(($(tail -n 1 "$DAILY_COUNT_FILE") + 1))
         else
             DAILY_COUNT=1
         fi
@@ -69,11 +60,12 @@ TODAY=$(date +%Y-%m-%d)
     fi
     echo "$TODAY" > "$DAILY_COUNT_FILE"
     echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
-} 200>"$DAILY_COUNT_FILE.lock"
+} 200<"$DAILY_COUNT_FILE"
 
 # 输出统计信息和脚本信息
 clear
 echo "当日运行：$DAILY_COUNT 次   累计运行：$TOTAL_COUNT 次"
+echo ""
 echo ""
 echo "-----------------By'Jensfrank-----------------"
 echo ""
@@ -87,7 +79,7 @@ echo " #   #        #       #   #             # #   #   #  #         #          
 echo "  # #   #     # #     #   #     # #     # #    #  #  #         #    #     # "
 echo "   #     #####   #####     #####   #####  #     # ### #         #    #####  "
 echo ""
-echo "                            VPS脚本集合 v2024.06.24"
+echo "                            VPS脚本集合 v1.0.0"
 echo "支持Ubuntu/Debian"
 echo "快捷键已设置为v,下次运行输入v可快速启动此脚本"
 echo ""
@@ -95,15 +87,8 @@ echo ""
 # 设置快捷键
 if ! grep -qxF "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
     echo "alias v='bash /root/vps_scripts.sh'" >> /root/.bashrc
-    # 立即加载 .bashrc 以使快捷键生效
     source /root/.bashrc
-    echo "快捷键'v'已设置并激活。"
-else
-    echo "快捷键'v'已存在。"
 fi
-
-# 提示用户重新登录或重新加载 .bashrc
-echo "请执行 'source ~/.bashrc' 或重新登录以确保快捷键生效。"
 
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
@@ -197,7 +182,7 @@ while true; do
       ;;
     11)
       echo "执行 Kejilion脚本 脚本..."
-      curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
+      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
       ;;
     12)
       echo "执行 BlueSkyXN脚本(开启Swap等) 脚本..."
