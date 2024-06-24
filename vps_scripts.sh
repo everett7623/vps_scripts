@@ -287,7 +287,7 @@ while true; do
       echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
 
       echo ""
-      echo -e "${BLUE}其他参数示例:"
+      echo -e "${BLUE}其他参数示例:${NC}"
       echo ".\iperf3.exe -c vps_ip -i 1       # 每1秒输出带宽报告"
       echo ".\iperf3.exe -c vps_ip -p 5201    # 指定服务端端口为5201"
 
