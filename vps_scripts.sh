@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # 定义颜色
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
@@ -101,16 +102,16 @@ echo "VPS脚本集合 v2024.06.24"
 echo "GitHub地址: https://github.com/everett7623/vps_scripts"
 echo "VPS选购: https://www.nodeloc.com/vps"
 echo ""
-echo -e "${colors[0]}#     # #####   #####    #####   #####  #####  ### #####  #######  #####  ${NC}"
-echo -e "${colors[1]}#     # #    # #     #  #     # #     # #    #  #  #    #    #    #     # ${NC}"
-echo -e "${colors[2]}#     # #    # #        #       #       #    #  #  #    #    #    #       ${NC}"
-echo -e "${colors[3]}#     # #####   #####   #        #####  #####   #  #####     #     #####  ${NC}"
-echo -e "${colors[4]} #   #  #             #  #             # #   #   #  #         #          # ${NC}"
-echo -e "${colors[3]}  # #   #       #     #  #     # #     # #    #  #  #         #    #     # ${NC}"
-echo -e "${colors[2]}   #    #        #####    #####   #####  #     # ### #         #    #####  ${NC}"
+echo -e "${colors[0]}#     # #####   #####       #####   #####  #####  ### #####  #######  #####  ${NC}"
+echo -e "${colors[1]}#     # #    # #     #     #     # #     # #    #  #  #    #    #    #     # ${NC}"
+echo -e "${colors[2]}#     # #    # #           #       #       #    #  #  #    #    #    #       ${NC}"
+echo -e "${colors[3]}#     # #####   #####      #        #####  #####   #  #####     #     #####  ${NC}"
+echo -e "${colors[4]} #   #  #             #     #             # #   #   #  #         #          # ${NC}"
+echo -e "${colors[3]}  # #   #       #     #     #     # #     # #    #  #  #         #    #     # ${NC}"
+echo -e "${colors[2]}   #    #        #####       #####   #####  #     # ### #         #    #####  ${NC}"
 echo ""
 echo "支持Ubuntu/Debian"
-echo "快捷键已设置为-e "${YELLOW}v${NC},下次运行输入-e "${YELLOW}v${NC}可快速启动此脚本"
+echo "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
