@@ -168,7 +168,7 @@ fi
 echo "依赖项安装完成。"
 
 while true; do
-  echo -e "${YELLOW}请选择要执行的脚本：${NC}"
+  echo "请选择要执行的脚本："
   echo -e "${YELLOW}1) 更新系统${NC}"
   echo -e "${YELLOW}2) Yabs${NC}"
   echo -e "${YELLOW}3) 融合怪${NC}"
