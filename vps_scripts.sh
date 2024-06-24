@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 定义颜色
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
 # 检查 root 权限
 if [ "$(id -u)" != "0" ]; then
     echo "此脚本需要 root 权限运行。"
@@ -81,7 +85,7 @@ TODAY=$(date +%Y-%m-%d)
 clear
 echo "当日运行：$DAILY_COUNT 次   累计运行：$TOTAL_COUNT 次"
 echo ""
-echo "-----------------By'Jensfrank-----------------"
+echo -e "${YELLOW}-----------------By'Jensfrank-----------------${NC}"
 echo ""
 echo "VPS脚本集合 v2024.06.24"
 echo "GitHub地址: https://github.com/everett7623/vps_scripts"
@@ -98,7 +102,7 @@ echo ""
 echo "支持Ubuntu/Debian"
 echo "快捷键已设置为v,下次运行输入v可快速启动此脚本"
 echo ""
-echo "-----------------By'Jensfrank-----------------"
+echo -e "${YELLOW}-----------------By'Jensfrank-----------------${NC}"
 echo ""
 
 # 设置快捷键
