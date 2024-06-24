@@ -1,5 +1,38 @@
 #!/bin/bash
 
+# 定义当前版本号
+CURRENT_VERSION="1.0"
+
+# 检查最新版本
+check_update() {
+    echo "正在检查更新..."
+    LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt)
+    if [ -z "$LATEST_VERSION" ]; then
+        echo "无法检查更新，请检查您的网络连接。"
+        return
+    fi
+    if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
+        echo "发现新版本：$LATEST_VERSION"
+        read -p "是否更新？(y/n): " choice
+        case "$choice" in 
+            y|Y ) 
+                echo "正在更新..."
+                wget -O /root/vps_scripts.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh
+                echo "更新完成，请重新运行脚本。"
+                exit 0
+                ;;
+            * ) 
+                echo "继续使用当前版本。"
+                ;;
+        esac
+    else
+        echo "已经是最新版本。"
+    fi
+}
+
+# 在脚本开始处调用检查更新函数
+check_update
+
 # 统计运行次数
 COUNT_FILE="/root/.vps_script_count"
 DAILY_COUNT_FILE="/root/.vps_script_daily_count"
