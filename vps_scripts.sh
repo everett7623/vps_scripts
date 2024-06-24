@@ -259,7 +259,7 @@ while true; do
       echo ""
       echo -e "${BLUE}单线程上传测试:${NC}"
       echo "iperf3.exe -c vps_ip -R"
-      echo "该命令会测试从客户端到服务端(VPS)的上传带宽。"
+      echo "该命令会测试从客户端到服务端VPS的上传带宽。"
       echo "案例：.\iperf3.exe -c 104.234.111.111 -R"
 
       echo ""
@@ -276,13 +276,13 @@ while true; do
       echo ""
       echo -e "${BLUE}长时间下载测试:${NC}"
       echo "iperf3.exe -c vps_ip -t 60"
-      echo "该命令会测试1分钟(60秒)的长时间下载，观察带宽变化。"
+      echo "该命令会测试60秒的长时间下载，观察带宽变化。"
       echo "案例：.\iperf3.exe -c 104.234.111.111 -t 60"
 
       echo ""
       echo -e "${BLUE}UDP模拟视频流测试:${NC}"
       echo "iperf3.exe -c vps_ip -u -b 200m"
-      echo "以200mbps的码率，测试UDP下载(模拟视频流)"
+      echo "以200mbps的码率，测试UDP下载/模拟视频流。"
       echo "您也可以根据实际需求调整目标带宽-b值。"
       echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
 
