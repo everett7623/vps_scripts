@@ -168,6 +168,7 @@ while true; do
 
   case $choice in
     1)
+      clear
       echo "执行系统更新..."
       (sudo apt update && sudo apt upgrade -y) &
       pid=$!
@@ -178,54 +179,67 @@ while true; do
       echo "更新完成"
       ;;
     2)
+      clear
       echo "执行 Yabs 脚本..."
       wget -qO- yabs.sh | bash
       ;;
     3)
+      clear
       echo "执行 融合怪 脚本..."
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       ;;
     4)
+      clear
       echo "执行 IP质量 脚本..."
       bash <(curl -Ls https://www.ipcheck.tools/check)
       ;;
     5)
+      clear
       echo "执行 流媒体解锁 脚本..."
       bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
       ;;
     6)
+      clear
       echo "执行 响应测试 脚本..."
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
       ;;
     7)
+      clear
       echo "执行 三网测速（多/单线程） 脚本..."
       bash <(curl -sL bash.icu/speedtest)
       ;;
     8)
+      clear
       echo "执行 三网回程路由 脚本..."
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
     9)
+      clear
       echo "执行 超售测试脚本 脚本..."
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       ;;
     10)
+      clear
       echo "执行 VPS一键脚本工具箱 脚本..."
       curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
       ;;
     11)
+      clear
       echo "执行 jcnf 常用脚本工具包 脚本..."
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       ;;
     12)
+      clear
       echo "执行 科技lion脚本 脚本..."
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
     13)
+      clear
       echo "执行 BlueSkyXN脚本 脚本..."
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
     14)
+      clear
       echo "执行 勇哥Singbox 脚本..."
       bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb.sh)
       ;;
@@ -234,18 +248,22 @@ while true; do
       bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-setup/main/x-ui.sh)
       ;;
     16)
+      clear
       echo "执行 Sing-box全家桶 脚本..."
       bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb-full.sh)
       ;;
     17)
+      clear
       echo "执行 Mack-a八合一 脚本..."
       bash <(curl -Ls https://raw.githubusercontent.com/mack-a/v2ray-agent/main/install.sh)
       ;;
     18)
+      clear
       echo "执行 安装docker 脚本..."
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
     19)
+      clear
       echo "执行 卸载测试脚本..."
       # 删除所有相关测试脚本文件
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
@@ -259,6 +277,7 @@ while true; do
       echo "所有测试脚本文件已被删除。"
       ;;
     20)
+      clear
       echo "执行 卸载全部脚本..."
       # 删除之前可能运行过的脚本
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
