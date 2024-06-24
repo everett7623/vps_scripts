@@ -199,7 +199,7 @@ while true; do
     3)
       clear
       echo "执行 融合怪 脚本..."
-      curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
+      bash <(curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh)
       ;;
     4)
       clear
@@ -209,7 +209,7 @@ while true; do
     5)
       clear
       echo "执行 流媒体解锁 脚本..."
-      bash <(curl -L -s https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/check.sh)
+      bash <(curl -L -s media.ispvps.com)
       ;;
     6)
       clear
@@ -234,7 +234,7 @@ while true; do
     10)
       clear
       echo "执行 VPS一键脚本工具箱 脚本..."
-      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
+      bash <(curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh)
       ;;
     11)
       clear
@@ -244,7 +244,7 @@ while true; do
     12)
       clear
       echo "执行 科技lion脚本 脚本..."
-      curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
+      bash <(curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh)
       ;;
     13)
       clear
@@ -273,7 +273,7 @@ while true; do
     18)
       clear
       echo "执行 安装docker 脚本..."
-      curl -fsSL https://get.docker.com | bash -s docker
+      bash <(curl -fsSL https://get.docker.com | bash -s docker)
       ;;
     19)
       clear
