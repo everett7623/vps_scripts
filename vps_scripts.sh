@@ -178,7 +178,7 @@ while true; do
   echo -e "${YELLOW}5) 流媒体解锁${NC}"
   echo -e "${YELLOW}6) 响应测试${NC}"
   echo -e "${YELLOW}7) 三网测速（多/单线程）${NC}"
-  echo -e "${YELLOW}8) 三网回程路由${NC}"
+  echo -e "${YELLOW}8) AutoTrace三网回程路由${NC}"
   echo -e "${YELLOW}9) 超售测试${NC}"
   echo -e "${YELLOW}10) VPS一键脚本工具箱${NC}"
   echo -e "${YELLOW}11) jcnf 常用脚本工具包${NC}"
@@ -215,7 +215,7 @@ while true; do
     3)
       clear
       echo "执行 融合怪 脚本..."
-      bash <(curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh)
+      curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       ;;
     4)
       clear
@@ -239,7 +239,7 @@ while true; do
       ;;
     8)
       clear
-      echo "执行 三网回程路由 脚本..."
+      echo "执行 AutoTrace三网回程路由 脚本..."
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
     9)
@@ -260,7 +260,7 @@ while true; do
     12)
       clear
       echo "执行 科技lion脚本 脚本..."
-      bash <(curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh)
+      curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
     13)
       clear
@@ -270,26 +270,26 @@ while true; do
     14)
       clear
       echo "执行 勇哥Singbox 脚本..."
-      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb.sh)
+      curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb.sh
       ;;
     15)
       echo "执行 勇哥x-ui 脚本..."
-      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-setup/main/x-ui.sh)
+      curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-setup/main/x-ui.sh
       ;;
     16)
       clear
       echo "执行 Sing-box全家桶 脚本..."
-      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb-full.sh)
+      curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-setup/main/sb-full.sh
       ;;
     17)
       clear
       echo "执行 Mack-a八合一 脚本..."
-      bash <(curl -Ls https://raw.githubusercontent.com/mack-a/v2ray-agent/main/install.sh)
+      curl -Ls https://raw.githubusercontent.com/mack-a/v2ray-agent/main/install.sh
       ;;
     18)
       clear
       echo "执行 安装docker 脚本..."
-      bash <(curl -fsSL https://get.docker.com | bash -s docker)
+      curl -fsSL https://get.docker.com | bash -s docker
       ;;
     19)
       clear
