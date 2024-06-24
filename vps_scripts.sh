@@ -252,7 +252,7 @@ while true; do
       
       echo ""
       echo -e "${BLUE}执行客户端命令，连接到VPS的IP:${NC}"
-      echo "iperf3.exe -c vps_ip"
+      echo -e ""iperf3.exe -c ${RED}vps_ip${NC}"
       echo "它会进行10秒的默认TCP下载测试。"
       echo "案例：.\iperf3.exe -c 104.234.111.111"
 
@@ -291,7 +291,7 @@ while true; do
       echo ".\iperf3.exe -c vps_ip -i 1       # 每1秒输出带宽报告"
       echo ".\iperf3.exe -c vps_ip -p 5201    # 指定服务端端口为5201"
 
-      echo -e "${BLUE}上面的操作是客户端参考，下面启动服务端iperf3服务端:"
+      echo -e "${BLUE}上面的操作是客户端参考，下面启动服务端iperf3服务端:${NC}"
       apt-get install -y iperf3
       iperf3 -s
       ;;
