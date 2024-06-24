@@ -260,7 +260,7 @@ while true; do
       ;;
     20)
       echo "完全卸载删除全部脚本..."
-      # 删除之前可能运行过的脚本(2-13选项)
+      # 删除之前可能运行过的脚本
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
       [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
