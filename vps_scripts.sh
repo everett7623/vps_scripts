@@ -107,7 +107,7 @@ echo -e "${colors[1]}#     # #    # #     #     #     # #     # #    #  #  #    
 echo -e "${colors[2]}#     # #    # #           #       #       #    #  #  #    #    #    #       ${NC}"
 echo -e "${colors[3]}#     # #####   #####      #        #####  #####   #  #####     #     #####  ${NC}"
 echo -e "${colors[4]} #   #  #            #     #             # #   #   #  #         #          # ${NC}"
-echo -e "${colors[3]}  # #   #      #    #      #     # #     # #    #  #  #         #    #     # ${NC}"
+echo -e "${colors[3]}  # #   #      #     #     #     # #     # #    #  #  #         #    #     # ${NC}"
 echo -e "${colors[2]}   #    #       #####       #####   #####  #     # ### #         #    #####  ${NC}"
 echo ""
 echo "支持Ubuntu/Debian"
