@@ -117,7 +117,7 @@ echo "请执行 'source ~/.bashrc' 或重新登录以确保快捷键生效。"
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
 
-# 检查是否安装curl
+# 检查和安装 curl
 if ! command -v curl &> /dev/null; then
     echo "curl 未安装，正在安装..."
     sudo apt-get update && sudo apt-get install -y curl
@@ -125,7 +125,7 @@ else
     echo "curl 已安装"
 fi
 
-# 检查是否安装wget
+# 检查和安装 wget
 if ! command -v wget &> /dev/null; then
     echo "wget 未安装，正在安装..."
     sudo apt-get update && sudo apt-get install -y wget
@@ -133,7 +133,7 @@ else
     echo "wget 已安装"
 fi
 
-# 检查是否安装bash
+# 检查 bash（一般来说不需要安装，因为通常是系统默认的 shell）
 if ! command -v bash &> /dev/null; then
     echo "bash 未安装，正在安装..."
     sudo apt-get update && sudo apt-get install -y bash
