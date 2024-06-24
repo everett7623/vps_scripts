@@ -3,6 +3,7 @@
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
+UPDATE_FLAG="/tmp/vps_scripts_updated.flag"
 
 # 自动更新函数
 auto_update() {
@@ -17,7 +18,8 @@ auto_update() {
     TEMP_FILE=$(mktemp)
     if wget -O "$TEMP_FILE" "$SCRIPT_URL"; then
         mv "$TEMP_FILE" "$0"
-        echo "更新完成，正在重新启动脚本..."
+        echo "更新完成，设置更新标志并重新启动脚本..."
+        touch "$UPDATE_FLAG"
         exec bash "$0"
         exit
     else
@@ -26,8 +28,13 @@ auto_update() {
     fi
 }
 
-# 执行自动更新
-auto_update
+# 检查是否存在更新标志
+if [ ! -f "$UPDATE_FLAG" ]; then
+    auto_update
+else
+    echo "检测到更新标志，跳过更新检查。"
+    rm -f "$UPDATE_FLAG"
+fi
 
 # 统计运行次数
 COUNT_FILE="/root/.vps_script_count"
