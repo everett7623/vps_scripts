@@ -61,7 +61,7 @@ TODAY=$(date +%Y-%m-%d)
 
 # 使用锁机制更新当日运行次数
 {
-    flock -x 200
+    flock -x 201
     if [ -f "$DAILY_COUNT_FILE" ]; then
         LAST_DATE=$(head -n 1 "$DAILY_COUNT_FILE")
         if [ "$LAST_DATE" = "$TODAY" ]; then
@@ -75,7 +75,7 @@ TODAY=$(date +%Y-%m-%d)
     fi
     echo "$TODAY" > "$DAILY_COUNT_FILE"
     echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
-} 200>"$DAILY_COUNT_FILE.lock"
+} 201>"$DAILY_COUNT_FILE.lock"
 
 # 输出统计信息和脚本信息
 clear
