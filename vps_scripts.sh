@@ -57,7 +57,10 @@ echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
 # 输出统计信息和脚本信息
 clear
 echo "当日运行：$DAILY_COUNT 次   累计运行：$TOTAL_COUNT 次"
+echo ""
+echo ""
 echo "-----------------By'Jensfrank-----------------"
+echo ""
 echo "脚本地址: https://github.com/everett7623/vps_scripts"
 echo ""
 echo "#     #  #####   #####     #####   #####  #####  ### #####  #######  #####  "
