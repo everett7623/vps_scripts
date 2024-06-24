@@ -243,8 +243,7 @@ while true; do
       clear
       echo -e "${YELLOW}执行 安装并启动iperf3服务端 脚本...${NC}"
       echo ""
-      echo "不加任何参数，则默认监听TCP端口5201"
-      echo "后续步骤去客户端操作，比如Windows："
+      echo "客户端操作，比如Windows："
       echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
       echo "在Windows电脑上，下载iperf3 Windows版本，解压到任意目录，例如D:\iperf3"
       echo "打开命令提示符窗口，切换到iperf3目录:"
@@ -291,7 +290,9 @@ while true; do
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -i 1       # 每1秒输出带宽报告"
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -p 5201    # 指定服务端端口为5201"
 
-      echo -e "${BLUE}上面的操作是客户端参考，下面启动服务端iperf3服务端:${NC}"
+      echo -e "${BLUE}上面的操作是客户端操作案例，下面启动服务端iperf3服务端:${NC}"
+      echo "不加任何参数，则默认监听TCP端口5201"
+      echo -e "${BLUE}等待看到服务端监听端口5201后 回到客户端按照案例操作即可:${NC}"
       apt-get install -y iperf3
       iperf3 -s
       ;;
