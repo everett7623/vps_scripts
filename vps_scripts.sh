@@ -95,8 +95,10 @@ echo ""
 # 设置快捷键
 if ! grep -qxF "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
     echo "alias v='bash /root/vps_scripts.sh'" >> /root/.bashrc
-    source /root/.bashrc
 fi
+
+# 立即加载 .bashrc 以使快捷键生效
+source /root/.bashrc
 
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
