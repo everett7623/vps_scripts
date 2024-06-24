@@ -27,7 +27,30 @@ fi
 echo "$TODAY" > "$DAILY_COUNT_FILE"
 echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
 
+# 输出统计信息和脚本信息
+clear
 echo "当日运行：$DAILY_COUNT 次   累计运行：$TOTAL_COUNT 次"
+echo "-----------------By'Jensfrank-----------------"
+echo "脚本地址: https://github.com/everett7623/vps_scripts"
+echo ""
+echo "#     #  #####   #####     #####   #####  #####  ### #####  #######  #####  "
+echo "#     # #     # #     #   #     # #     # #    #  #  #    #    #    #     # "
+echo "#     # #       #         #       #       #    #  #  #    #    #    #       "
+echo "#     #  #####   #####    #        #####  #####   #  #####     #     #####  "
+echo " #   #        #       #   #             # #   #   #  #         #          # "
+echo "  # #   #     # #     #   #     # #     # #    #  #  #         #    #     # "
+echo "   #     #####   #####     #####   #####  #     # ### #         #    #####  "
+echo ""
+echo "                            VPS脚本集合 v1.0"
+echo "支持Ubuntu/Debian"
+echo "快捷键已设置为v,下次运行输入v可快速启动此脚本"
+echo ""
+
+# 设置快捷键
+if ! grep -q "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
+    echo "alias v='bash /root/vps_scripts.sh'" >> /root/.bashrc
+    source /root/.bashrc
+fi
 
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
