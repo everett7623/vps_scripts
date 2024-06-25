@@ -132,7 +132,8 @@ echo "依赖项安装完成。"
 while true; do
   echo ""
   echo "请选择要执行的脚本："
-  echo -e "${YELLOW}1) 更新系统${NC}"
+  echo -e "${YELLOW}0) 更新系统${NC}"
+  echo -e "${YELLOW}1) 清理系统${NC}"
   echo -e "${YELLOW}2) Yabs${NC}"
   echo -e "${YELLOW}3) 融合怪${NC}"
   echo -e "${YELLOW}4) IP质量${NC}"
@@ -153,14 +154,14 @@ while true; do
   echo -e "${YELLOW}19) Warp集合${NC}"
   echo -e "${YELLOW}20) 安装docker${NC}"
   echo -e "${YELLOW}21) 卸载脚本${NC}"
-  echo -e "${YELLOW}0) 退出${NC}"
+  echo -e "${YELLOW}99) 退出${NC}"
   
   read -p "输入数字选择对应的脚本: " choice
 
   case $choice in
-    1)
+    0)
       clear
-      echo -e "${YELLOW}执行系统更新...${NC}"
+      echo -e "${YELLOW}执行更新系统...${NC}"
       (sudo apt update && sudo apt upgrade -y) &
       pid=$!
       while kill -0 $pid 2>/dev/null; do
@@ -168,6 +169,41 @@ while true; do
           sleep 1
       done
       echo "更新完成"
+      ;;
+    1)
+      clear
+      echo -e "${YELLOW}执行清理系统...${NC}"
+      clean_system() {
+        if command -v apt &>/dev/null; then
+          apt autoremove --purge -y && apt clean -y && apt autoclean -y
+          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
+        elif command -v yum &>/dev/null; then
+          yum autoremove -y && yum clean all
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+        elif command -v dnf &>/dev/null; then
+          dnf autoremove -y && dnf clean all
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
+        elif command -v apk &>/dev/null; then
+          apk autoremove -y
+          apk clean
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
+        else
+          echo -e "${RED}暂不支持你的系统！${NC}"
+          exit 1
+        fi
+      }
+      clean_system
+      done
+      echo "清理完成"
       ;;
     2)
       clear
@@ -357,7 +393,7 @@ while true; do
       
       echo "卸载完成"
       ;;
-    0)
+    99)
       break
       ;;
     *)
