@@ -62,7 +62,6 @@ sum_run_times() {
 sum_run_times
 
 while true; do
-
 clear
 # 输出欢迎信息
 echo -e "今日运行次数: ${RED}$daily_count${NC} 次，累计运行次数: ${RED}$total_count${NC} 次"
@@ -114,14 +113,6 @@ if ! command -v wget &> /dev/null; then
     sudo apt-get update && sudo apt-get install -y wget
 else
     echo "wget 已安装"
-fi
-
-# 检查 bash（一般来说不需要安装，因为通常是系统默认的 shell）
-if ! command -v bash &> /dev/null; then
-    echo "bash 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y bash
-else
-    echo "bash 已安装"
 fi
 
 echo "依赖项安装完成。"
@@ -525,13 +516,12 @@ while true; do
       echo "卸载完成"
       ;;
     0)
-      break
+      echo -e "${YELLOW}退出...${NC}"
+      exit 0
       ;;
     *)
-      echo "无效选择，请重新输入..."
+      echo -e "${RED}无效选择，请重试。${NC}"
       ;;
   esac
-
-  # 等待用户按回车返回主菜单
-  read -p "按回车键返回主菜单..."
+  read -p "按任意键返回主菜单..."
 done
