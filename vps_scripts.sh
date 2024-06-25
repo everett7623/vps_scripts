@@ -159,7 +159,7 @@ while true; do
   echo -e "${YELLOW}14) BlueSkyXN脚本${NC}"
   echo -e "${YELLOW}15) 勇哥Singbox${NC}"
   echo -e "${YELLOW}16) 勇哥x-ui${NC}"
-  echo -e "${YELLOW}17) Fscarmen-Singbox${NC}"
+  echo -e "${YELLOW}17) Fscarmen Singbox${NC}"
   echo -e "${YELLOW}18) Mack-a八合一${NC}"
   echo -e "${YELLOW}19) Warp集合${NC}"
   echo -e "${YELLOW}20) 安装docker${NC}"
@@ -305,11 +305,11 @@ while true; do
     16)
       clear
       echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
-      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh
+      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
       ;;
     17)
       clear
-      echo -e "${YELLOW}执行 Fscarmen-Singbox 脚本...${NC}"
+      echo -e "${YELLOW}执行 Fscarmen Singbox 脚本...${NC}"
       bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sba/main/sba.sh)
       ;;
     18)
