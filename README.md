@@ -62,3 +62,12 @@
 ## 许可协议
 
 本项目采用 [MIT License](LICENSE) 许可。
+
+## 鸣谢
+* [Eooce](https://github.com/eooce/ssh_tool)
+* [Netflixxp](https://github.com/Netflixxp/jcnf-box)
+* [科技lion]
+* [BlueSkyXN](https://github.com/BlueSkyXN/SKY-BOX)
+* [yonggekkk](https://github.com/yonggekkk/sing-box_hysteria2_tuic_argo_reality)
+* [Fscarmen](https://github.com/fscarmen/sba)
+* [mack-a](https://github.com/mack-a/v2ray-agent)
