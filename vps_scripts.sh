@@ -26,7 +26,7 @@ update_scripts() {
     # 定义脚本URL和版本URL
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-    CURRENT_VERSION="v2024.06.24" 
+    CURRENT_VERSION="v2024.06.25" 
     
     # 获取远程版本
     REMOTE_VERSION=$(curl -s $VERSION_URL)
