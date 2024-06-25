@@ -55,9 +55,9 @@ fi
 
 # 统计使用次数
 sum_run_times() {
-  local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+") &&
-  daily_count=$(cut -d " " -f1 <<< "$COUNT") &&
-  total_count=$(cut -d " " -f3 <<< "$COUNT")
+    local COUNT=$(curl -s "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" | grep -oP '(?<=<title>).*(?=</title>)' | cut -d'/' -f1)
+    daily_count=$(echo $COUNT | cut -d' ' -f1)
+    total_count=$(echo $COUNT | cut -d' ' -f2)
 }
 sum_run_times
 
@@ -65,6 +65,7 @@ while true; do
 clear
 # 输出欢迎信息
 echo -e "今日运行次数: ${RED}$daily_count${NC} 次，累计运行次数: ${RED}$total_count${NC} 次"
+sleep 10  # Wait for 10 seconds before clearing the screen and displaying stats again
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
