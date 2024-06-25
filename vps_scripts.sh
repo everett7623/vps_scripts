@@ -103,32 +103,19 @@ echo "VPS脚本集合 v2024.06.24"
 echo "GitHub地址: https://github.com/everett7623/vps_scripts"
 echo "VPS选购: https://www.nodeloc.com/vps"
 echo ""
-echo -e "${colors[0]}#     # #####   #####       #####   #####  #####  ### #####  #######  #####  ${NC}"
-echo -e "${colors[1]}#     # #    # #     #     #     # #     # #    #  #  #    #    #    #     # ${NC}"
-echo -e "${colors[2]}#     # #    # #           #       #       #    #  #  #    #    #    #       ${NC}"
-echo -e "${colors[3]}#     # #####   #####      #        #####  #####   #  #####     #     #####  ${NC}"
-echo -e "${colors[4]} #   #  #            #     #             # #   #   #  #         #          # ${NC}"
-echo -e "${colors[3]}  # #   #      #     #     #     # #     # #    #  #  #         #    #     # ${NC}"
-echo -e "${colors[2]}   #    #       #####       #####   #####  #     # ### #         #    #####  ${NC}"
+echo -e "${colors[0]}#     # #####   #####       #####   #####   #####  #####  ### #####  #######  #####  ${NC}"
+echo -e "${colors[1]}#     # #    # #     #     #     # #     # #     # #    #  #  #    #    #    #     # ${NC}"
+echo -e "${colors[2]}#     # #    # #           #       #       #       #    #  #  #    #    #    #       ${NC}"
+echo -e "${colors[3]}#     # #####   #####       #####  #        #####  #####   #  #####     #     #####  ${NC}"
+echo -e "${colors[4]} #   #  #            #           # #             # #   #   #  #         #          # ${NC}"
+echo -e "${colors[3]}  # #   #      #     #     #     # #     # #     # #    #  #  #         #    #     # ${NC}"
+echo -e "${colors[2]}   #    #       #####       #####   #####   #####  #     #### #         #     #####  ${NC}"
 echo ""
 echo "支持Ubuntu/Debian"
 echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
-
-# 设置快捷键
-if ! grep -qxF "alias v='bash /root/vps_scripts.sh'" /root/.bashrc; then
-    echo "alias v='bash /root/vps_scripts.sh'" >> /root/.bashrc
-    # 立即加载 .bashrc 以使快捷键生效
-    source /root/.bashrc
-    echo "快捷键'v'已设置并激活。"
-else
-    echo "快捷键'v'已存在。"
-fi
-
-# 提示用户重新登录或重新加载 .bashrc
-echo "请执行 'source ~/.bashrc' 或重新登录以确保快捷键生效。"
 
 # 检查当前用户是否具有 sudo 权限
 if [ "$(id -u)" != "0" ]; then
@@ -188,11 +175,11 @@ while true; do
   echo -e "${YELLOW}14) BlueSkyXN脚本${NC}"
   echo -e "${YELLOW}15) 勇哥Singbox${NC}"
   echo -e "${YELLOW}16) 勇哥x-ui${NC}"
-  echo -e "${YELLOW}17) Sing-box全家桶${NC}"
+  echo -e "${YELLOW}17) Fscarmen-Singbox${NC}"
   echo -e "${YELLOW}18) Mack-a八合一${NC}"
-  echo -e "${YELLOW}19) 安装docker${NC}"
-  echo -e "${YELLOW}20) 卸载测试脚本${NC}"
-  echo -e "${YELLOW}21) 卸载全部脚本${NC}"
+  echo -e "${YELLOW}19) Warp集合${NC}"
+  echo -e "${YELLOW}20) 安装docker${NC}"
+  echo -e "${YELLOW}21) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   
   read -p "输入数字选择对应的脚本: " choice
@@ -337,7 +324,7 @@ while true; do
       ;;
     17)
       clear
-      echo -e "${YELLOW}执行 Sing-box全家桶 脚本...${NC}"
+      echo -e "${YELLOW}执行 Fscarmen-Singbox 脚本...${NC}"
       bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
       ;;
     18)
@@ -347,26 +334,17 @@ while true; do
       ;;
     19)
       clear
-      echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
-      curl -fsSL https://get.docker.com | bash -s docker
+      echo -e "${YELLOW}执行 Warp集合 脚本...${NC}"
+      bash <(curl -sSL https://gitlab.com/fscarmen/warp_unlock/-/raw/main/unlock.sh)
       ;;
     20)
       clear
-      echo -e "${YELLOW}执行 卸载测试脚本...${NC}"
-      # 删除所有相关测试脚本文件
-      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
-      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
-      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
-      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
-      [ -f /root/jcnfbox.sh ] && rm -f /root/jcnfbox.sh
-      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
-      [ -f /root/box.sh ] && rm -f /root/box.sh
-      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
-      echo "所有测试脚本文件已被删除。"
+      echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
+      curl -fsSL https://get.docker.com | bash -s docker
       ;;
     21)
       clear
-      echo -e "${YELLOW}执行 卸载全部脚本...${NC}"
+      echo -e "${YELLOW}执行 卸载脚本...${NC}"
       # 删除之前可能运行过的脚本
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
@@ -398,14 +376,6 @@ while true; do
       [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
       [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
 
-      # 删除快捷键设置
-      sed -i '/alias v='"'"'bash \/root\/vps_scripts.sh'"'"'/d' /root/.bashrc
-  
-      echo "所有相关脚本和文件已被删除。"
-      echo "注意: 系统更新和某些全局更改无法撤销。"
-      echo "请执行 'source ~/.bashrc' 或重新登录以使快捷键更改生效。"
-      exit 0
-      ;;
     0)
       echo -e "${YELLOW}退出${NC}"
       break
