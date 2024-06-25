@@ -479,13 +479,13 @@ while true; do
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
     0)
-      echo -e "${YELLOW}退出...${NC}"
+      echo "退出..."
       clear
       exit
       ;;
     *)
-      echo -e "${purple}无效的输入!${NC}"
+      echo "无效的输入..."
       ;;
-esac
+      esac
       break_end
-done
+    done
