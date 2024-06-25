@@ -378,7 +378,7 @@ while true; do
       echo -e "${YELLOW}执行 安装并启动iperf3服务端 脚本...${NC}"
       echo ""
       echo "客户端操作，比如Windows："
-      echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
+      echo -e "${RED}iperf3客户端下载地址 (https://iperf.fr/iperf-download.php)${NC}"
       echo "在Windows电脑上，下载iperf3 Windows版本，解压到任意目录，例如D:\iperf3"
       echo "打开命令提示符窗口，切换到iperf3目录:"
       echo "cd D:\iperf3"
