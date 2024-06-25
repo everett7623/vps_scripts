@@ -71,12 +71,6 @@ for config_file in "${config_files[@]}"; do
     add_alias "$config_file"
 done
 
-# 获取当前服务器ipv4和ipv6
-ip_address() {
-    ipv4_address=$(curl -s ipv4.ip.sb)
-    ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
-}
-
 # 统计使用次数
 sum_run_times() {
     local COUNT
@@ -243,6 +237,12 @@ while true; do
       clear
       echo -e "${YELLOW}执行本机信息...${NC}"
 
+      # 获取当前服务器ipv4和ipv6
+      ip_address() {
+      ipv4_address=$(curl -s ipv4.ip.sb)
+      ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
+      }
+      
       ip_address()
 
       if [ "$(uname -m)" == "x86_64" ]; then
