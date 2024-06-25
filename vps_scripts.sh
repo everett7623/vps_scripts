@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) [2024] [everett7623]
+ *
+ * This software is licensed under the MIT License.
+ * See the LICENSE file for more details.
+ */
+
 #!/bin/bash
 VERSION="2024-06-25 v1.0.4"  # 最新版本号
 
