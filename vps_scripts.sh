@@ -528,7 +528,7 @@ while true; do
       break
       ;;
     *)
-      echo -e "${RED}无效选择，请重新输入。${NC}"
+      echo "无效选择，请重新输入..."
       ;;
   esac
 
