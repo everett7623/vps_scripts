@@ -263,7 +263,7 @@ while true; do
       echo "------------------------"
       echo -e "${WHITE}系统运行时长: ${PURPLE}${runtime}${NC}"
       echo
-      ;;
+    ;;
     2)
       clear
       echo -e "${YELLOW}执行 更新系统...${NC}"
@@ -472,7 +472,7 @@ while true; do
     *)
       echo -e "${RED}无效选择，请重试。${NC}"
       ;;
-  esac
-  read -p "按任意键返回主菜单..."
-done
+    esac
+      read -p "按任意键返回主菜单..."
+      ;;
 done
