@@ -143,7 +143,6 @@ while true; do
   echo -e "${YELLOW}33) Mack-a八合一${NC}"
   echo -e "${YELLOW}34) Warp集合${NC}"
   echo -e "${YELLOW}40) 安装docker${NC}"
-  echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   
   read -p "输入数字选择对应的脚本: " choice
@@ -465,50 +464,10 @@ while true; do
       echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
-    99)
-      clear
-      echo -e "${YELLOW}执行 卸载脚本...${NC}"
-      
-      # 删除之前可能运行过的脚本
-      echo -e "${BLUE}删除之前可能运行过的脚本...${NC}"
-      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
-      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
-      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
-      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
-      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
-      [ -f /root/box.sh ] && rm -f /root/box.sh
-      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
-
-      # 清理可能的残留文件和目录
-      echo -e "${BLUE}清理可能的残留文件和目录...${NC}"
-      [ -d /tmp/yabs* ] && rm -rf /tmp/yabs*
-      [ -f /tmp/bench.sh* ] && rm -rf /tmp/bench.sh*
-      [ -f /root/.ssh_tool_cache ] && rm -f /root/.ssh_tool_cache
-      [ -f /root/.ssh_tool_backup ] && rm -f /root/.ssh_tool_backup
-
-      # 尝试卸载Docker(如果是通过脚本安装的)
-      echo -e "${BLUE}尝试卸载Docker...${NC}"
-      if command -v docker &> /dev/null; then
-        echo "正在卸载Docker..."
-        sudo apt-get remove docker docker-engine docker.io containerd runc -y
-        sudo apt-get purge docker-ce docker-ce-cli containerd.io -y
-        sudo rm -rf /var/lib/docker /etc/docker
-        sudo groupdel docker 2>/dev/null
-        sudo rm -rf /var/run/docker.sock
-      fi
-
-      # 删除主脚本及其相关文件
-      echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
-      [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
-      [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
-      [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
-      [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
-      
-      echo "卸载完成"
-      ;;
     0)
       echo -e "${YELLOW}退出...${NC}"
-      exit 0
+      clear
+      exit
       ;;
     *)
       echo -e "${RED}无效选择，请重试。${NC}"
@@ -516,4 +475,3 @@ while true; do
   esac
   read -p "按任意键返回主菜单..."
 done
-done 
