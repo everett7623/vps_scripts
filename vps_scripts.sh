@@ -1,12 +1,10 @@
 #!/bin/bash
-
 # 定义颜色
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
 NC='\033[0m' # No Color
-
 # 定义渐变颜色数组
 colors=(
     '\033[38;2;0;255;0m'    # 绿色
@@ -58,44 +56,16 @@ else
     rm -f "$UPDATE_FLAG"
 fi
 
-# 统计运行次数
-COUNT_FILE="/root/.vps_script_count"
-DAILY_COUNT_FILE="/root/.vps_script_daily_count"
-TODAY=$(date +%Y-%m-%d)
+# 记录运行日志
+log_run() {
+    echo "$(date +"%Y-%m-%d %H:%M:%S") - Script executed" >> /tmp/vps_script_run.log
+}
 
-# 使用锁机制更新累计运行次数
-{
-    flock -x 200
-    if [ -f "$COUNT_FILE" ]; then
-        TOTAL_COUNT=$(cat "$COUNT_FILE")
-        TOTAL_COUNT=$((TOTAL_COUNT + 1))
-    else
-        TOTAL_COUNT=1
-    fi
-    echo $TOTAL_COUNT > "$COUNT_FILE"
-} 200>"$COUNT_FILE.lock"
+# 记录本次运行
+log_run
 
-# 使用锁机制更新当日运行次数
-{
-    flock -x 201
-    if [ -f "$DAILY_COUNT_FILE" ]; then
-        LAST_DATE=$(head -n 1 "$DAILY_COUNT_FILE")
-        if [ "$LAST_DATE" = "$TODAY" ]; then
-            DAILY_COUNT=$(tail -n 1 "$DAILY_COUNT_FILE")
-            DAILY_COUNT=$((DAILY_COUNT + 1))
-        else
-            DAILY_COUNT=1
-        fi
-    else
-        DAILY_COUNT=1
-    fi
-    echo "$TODAY" > "$DAILY_COUNT_FILE"
-    echo "$DAILY_COUNT" >> "$DAILY_COUNT_FILE"
-} 201>"$DAILY_COUNT_FILE.lock"
-
-# 输出统计信息和脚本信息
+# 输出欢迎信息
 clear
-echo "当日运行：$DAILY_COUNT 次   累计运行：$TOTAL_COUNT 次"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
@@ -156,6 +126,7 @@ fi
 
 echo "依赖项安装完成。"
 
+# 主菜单
 while true; do
   echo ""
   echo "请选择要执行的脚本："
@@ -345,7 +316,9 @@ while true; do
     21)
       clear
       echo -e "${YELLOW}执行 卸载脚本...${NC}"
+      
       # 删除之前可能运行过的脚本
+      echo -e "${BLUE}删除之前可能运行过的脚本...${NC}"
       [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
       [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
       [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
@@ -355,12 +328,14 @@ while true; do
       [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
 
       # 清理可能的残留文件和目录
+      echo -e "${BLUE}清理可能的残留文件和目录...${NC}"
       [ -d /tmp/yabs* ] && rm -rf /tmp/yabs*
       [ -f /tmp/bench.sh* ] && rm -rf /tmp/bench.sh*
       [ -f /root/.ssh_tool_cache ] && rm -f /root/.ssh_tool_cache
       [ -f /root/.ssh_tool_backup ] && rm -f /root/.ssh_tool_backup
 
       # 尝试卸载Docker(如果是通过脚本安装的)
+      echo -e "${BLUE}尝试卸载Docker...${NC}"
       if command -v docker &> /dev/null; then
         echo "正在卸载Docker..."
         sudo apt-get remove docker docker-engine docker.io containerd runc -y
@@ -371,17 +346,19 @@ while true; do
       fi
 
       # 删除主脚本及其相关文件
+      echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
       [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
       [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
       [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
       [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
-
+      
+      echo "卸载完成"
+      ;;
     0)
-      echo -e "${YELLOW}退出${NC}"
       break
       ;;
     *)
-      echo -e "${YELLOW}无效的选择，请重新输入${NC}"
+      echo -e "${RED}无效选择，请重新输入。${NC}"
       ;;
   esac
 
