@@ -35,8 +35,8 @@ ip_address() {
 
 # 等待用户返回
 break_end() {
-    echo -e "${green}执行完成${NC}"
-    echo -e "${yellow}按任意键返回...${NC}"
+    echo -e "${GREEN}执行完成${NC}"
+    echo -e "${YELLOW}按任意键返回...${NC}"
     read -n 1 -s -r -p ""
     echo ""
     clear
