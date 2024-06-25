@@ -523,7 +523,7 @@ while true; do
     88)
       clear
       echo -e "${YELLOW}执行更新脚本...${NC}"
-      update_sripts
+      update_scripts
       echo "脚本更新完成"
       ;;
     99)
