@@ -312,7 +312,7 @@ while true; do
     17)
       clear
       echo -e "${YELLOW}执行 Fscarmen-Singbox 脚本...${NC}"
-      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
+      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sba/main/sba.sh)
       ;;
     18)
       clear
