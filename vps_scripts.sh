@@ -270,63 +270,53 @@ while true; do
       clear
       echo -e "${YELLOW}执行 更新系统...${NC}"
       update_system() {
-        if command -v apt &>/dev/null; then
-          apt-get update && apt-get upgrade -y
-        elif command -v dnf &>/dev/null; then
-          dnf check-update && dnf upgrade -y
-        elif command -v yum &>/dev/null; then
-          yum check-update && yum upgrade -y
-        elif command -v apk &>/dev/null; then
-          apk update && apk upgrade
-        else
-          echo -e "${RED}不支持的Linux发行版${NC}"
-          return 1
-        fi
-        return 0
-      }
-      update_system
-      ;;
+      if command -v apt &>/dev/null; then
+      apt-get update && apt-get upgrade -y
+      elif command -v dnf &>/dev/null; then
+      dnf check-update && dnf upgrade -y
+      elif command -v yum &>/dev/null; then
+      yum check-update && yum upgrade -y
+      elif command -v apk &>/dev/null; then
+      apk update && apk upgrade
+      else
+      echo -e "${RED}不支持的Linux发行版${NC}"
+      return 1
+     fi
+    return 0
+    }
+    ;;
     3)
       clear
       echo -e "${YELLOW}执行 清理系统...${NC}"
       clean_system() {
-        if command -v apt &>/dev/null; then
-          apt autoremove --purge -y && apt clean -y && apt autoclean -y
-          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-          # 清理日志
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          # 移除不再需要的内核
-          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//') | xargs) -y
-        elif command -v yum &>/dev/null; then
-          yum autoremove -y && yum clean all
-          # 清理日志
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          # 移除不再需要的内核
-          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v dnf &>/dev/null; then
-          dnf autoremove -y && dnf clean all
-          # 清理日志
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          # 移除不再需要的内核
-          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v apk &>/dev/null; then
-          apk autoremove -y
-          apk clean
-          # 清理日志文件
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          # 移除不再需要的内核
-          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-        else
-          echo -e "${RED}暂不支持你的系统！${NC}"
-          exit 1
-        fi
-      }
-      clean_system
-      ;;
+   if command -v apt &>/dev/null; then
+    apt autoremove --purge -y && apt clean -y && apt autoclean -y
+    apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+    journalctl --vacuum-time=1s
+    journalctl --vacuum-size=50M
+    apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//') | xargs) -y
+   elif command -v yum &>/dev/null; then
+    yum autoremove -y && yum clean all
+    journalctl --vacuum-time=1s
+    journalctl --vacuum-size=50M
+    yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+   elif command -v dnf &>/dev/null; then
+    dnf autoremove -y && dnf clean all
+    journalctl --vacuum-time=1s
+    journalctl --vacuum-size=50M
+    dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
+   elif command -v apk &>/dev/null; then
+    apk autoremove -y
+    apk clean
+    journalctl --vacuum-time=1s
+    journalctl --vacuum-size=50M
+    apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
+   else
+    echo -e "${RED}暂不支持你的系统！${NC}"
+    exit 1
+   fi
+   }
+   ;;
     4)
       clear
       echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
