@@ -266,7 +266,7 @@ while true; do
       echo -e "${WHITE}系统运行时长: ${PURPLE}${runtime}${NC}"
       echo
       ;;
-    2)
+   2)
       clear
       echo -e "${YELLOW}执行 更新系统...${NC}"
       update_system() {
@@ -285,7 +285,7 @@ while true; do
     return 0
     }
     ;;
-    3)
+   3)
       clear
       echo -e "${YELLOW}执行 清理系统...${NC}"
       clean_system() {
@@ -317,12 +317,12 @@ while true; do
    fi
    }
    ;;
-    4)
+   4)
       clear
       echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
       wget -qO- yabs.sh | bash
       ;;
-    5)
+   5)
       clear
       echo -e "${YELLOW}执行 融合怪 脚本...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
