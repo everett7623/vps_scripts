@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-06-25 v1.0.3"  # 最新版本号
+VERSION="2024-06-25 v1.0.4"  # 最新版本号
 
 # 定义颜色
 RED='\033[0;31m'
@@ -25,42 +25,29 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-# 检查当前用户是否具有 sudo 权限
-if [ "$(id -u)" != "0" ]; then
-    echo "此脚本需要 root 权限运行。"
-    echo "请使用具有 sudo 权限的用户运行此脚本。"
-    exit 1
-fi
-
 # 在需要时获取 sudo 权限
 sudo -v >/dev/null 2>&1 || { echo "无法获取 sudo 权限，退出脚本。"; exit 1; }
 
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
 
-# 检查和安装 curl
-if ! command -v curl &> /dev/null; then
-    echo "curl 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y curl
-else
-    echo "curl 已安装"
-fi
+# 函数：检查并安装依赖
+install_if_missing() {
+    local cmd="$1"
+    local pkg="$2"
 
-# 检查和安装 wget
-if ! command -v wget &> /dev/null; then
-    echo "wget 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y wget
-else
-    echo "wget 已安装"
-fi
+    if ! command -v $cmd &> /dev/null; then
+        echo "$cmd 未安装，正在安装..."
+        sudo apt-get update && sudo apt-get install -y $pkg
+    else
+        echo "$cmd 已安装"
+    fi
+}
 
-# 检查 bash（一般来说不需要安装，因为通常是系统默认的 shell）
-if ! command -v bash &> /dev/null; then
-    echo "bash 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y bash
-else
-    echo "bash 已安装"
-fi
+# 检查和安装 curl, wget, bash
+install_if_missing "curl" "curl"
+install_if_missing "wget" "wget"
+install_if_missing "bash" "bash"
 
 echo "依赖项安装完成。"
 
@@ -79,7 +66,7 @@ ip_address() {
 
 # 更新脚本
 update_scripts() {
-    VERSION="2024-06-25 v1.0.3"  # 最新版本号
+    VERSION="2024-06-25 v1.0.4"  # 最新版本号
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
