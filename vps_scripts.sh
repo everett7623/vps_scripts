@@ -33,6 +33,15 @@ ip_address() {
     ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
 }
 
+# 等待用户返回
+break_end() {
+    echo -e "${green}执行完成${NC}"
+    echo -e "${yellow}按任意键返回...${NC}"
+    read -n 1 -s -r -p ""
+    echo ""
+    clear
+}
+
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
@@ -79,13 +88,13 @@ echo "VPS脚本集合 v2024.06.24"
 echo "GitHub地址: https://github.com/everett7623/vps_scripts"
 echo "VPS选购: https://www.nodeloc.com/vps"
 echo ""
-echo -e "${colors[0]}#     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
-echo -e "${colors[1]}#     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
-echo -e "${colors[2]}#     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
-echo -e "${colors[3]}#     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
-echo -e "${colors[4]} #   #  #            #           # #       #   #    #  #        #         # ${NC}"
-echo -e "${colors[3]}  # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
-echo -e "${colors[2]}   #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
+echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
+echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
+echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
+echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
+echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
+echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
+echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
 echo ""
 echo "支持Ubuntu/Debian"
 echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
@@ -486,10 +495,9 @@ while true; do
       clear
       exit
       ;;
-
     *)
-      echo -e "${RED}无效选择，请重试。${NC}"
+      echo -e "${purple}无效的输入!${NC}"
       ;;
 esac
-      read -p "按任意键返回主菜单..."
+      break_end
 done
