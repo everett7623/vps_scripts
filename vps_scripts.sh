@@ -47,34 +47,15 @@ else
 fi
 
 # 统计使用次数
-COUNT_FILE="/root/.vps_script_count"
-DAILY_COUNT_FILE="/root/.vps_script_daily_count"
-
-increment_count() {
-    if [ ! -f "$COUNT_FILE" ]; then
-        echo 0 > "$COUNT_FILE"
-    fi
-    count=$(($(cat "$COUNT_FILE") + 1))
-    echo $count > "$COUNT_FILE"
+# 统计使用次数
+sum_run_times() {
+  local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+") &&
+  daily_count=$(cut -d " " -f1 <<< "$COUNT") &&
+  total_count=$(cut -d " " -f3 <<< "$COUNT")
 }
+sum_run_times
 
-increment_daily_count() {
-    today=$(date +"%Y-%m-%d")
-    if [ ! -f "$DAILY_COUNT_FILE" ] || [ "$(head -n 1 "$DAILY_COUNT_FILE")" != "$today" ]; then
-        echo "$today" > "$DAILY_COUNT_FILE"
-        echo "1" >> "$DAILY_COUNT_FILE"
-    else
-        count=$(($(tail -n 1 "$DAILY_COUNT_FILE") + 1))
-        sed -i '$d' "$DAILY_COUNT_FILE"
-        echo "$count" >> "$DAILY_COUNT_FILE"
-    fi
-}
-
-increment_count
-increment_daily_count
-
-daily_count=$(tail -n 1 "$DAILY_COUNT_FILE")
-total_count=$(cat "$COUNT_FILE")
+while true; do
 
 clear
 # 输出欢迎信息
