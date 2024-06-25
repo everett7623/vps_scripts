@@ -7,16 +7,17 @@
 5) 流媒体解锁
 6) 响应测试
 7) 三网测速（多/单线程）
-8) 三网回程路由
-9) 超售测试
-10) VPS一键脚本工具箱
-11) jcnf 常用脚本工具包
-12) 科技lion脚本
-13) BlueSkyXN脚本
-14) 勇哥Singbox
-15) 勇哥x-ui
-16) Sing-box全家桶
-17) Mack-a八合一
-18) 安装docker
-19) 卸载测试脚本
-20) 卸载全部脚本
+8) 安装并启动iperf3服务端 
+9) AutoTrace三网回程路由
+10) 超售测试
+11) VPS一键脚本工具箱
+12) jcnf 常用脚本工具包
+13) 科技lion脚本
+14) BlueSkyXN脚本
+15) 勇哥Singbox
+16) 勇哥x-ui
+17) Fscarmen-Singbox
+18) Mack-a八合一
+19) Warp集合
+20) 安装docker
+21) 卸载脚本
