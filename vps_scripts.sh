@@ -120,7 +120,7 @@ echo "依赖项安装完成。"
 # 主菜单
 while true; do
   echo ""
-  echo "请选择要执行的脚本："
+  echo -e "${GREEN}VPS管理脚本${NC}"
   echo -e "${YELLOW}1) 本机信息${NC}"
   echo -e "${YELLOW}2) 更新系统${NC}"
   echo -e "${YELLOW}3) 清理系统${NC}"
@@ -149,13 +149,13 @@ while true; do
   read -p "输入数字选择对应的脚本: " choice
 
   case $choice in
-   1)
+    1)
       clear
       echo -e "${YELLOW}执行本机信息...${NC}"
 
       ipv4_address=$(curl -s http://ipinfo.io/ip)
       ipv6_address=$(curl -s http://ip6.me/ | awk -F "[<,>]" '/ip_address/{print $3}')
-    
+
       if [ "$(uname -m)" == "x86_64" ]; then
         cpu_info=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
       else
@@ -184,7 +184,7 @@ while true; do
 
       congestion_algorithm=$(sysctl -n net.ipv4.tcp_congestion_control)
       queue_algorithm=$(sysctl -n net.core.default_qdisc)
- 
+
       # 尝试使用 lsb_release 获取系统信息
       os_info=$(lsb_release -ds 2>/dev/null)
 
@@ -218,7 +218,6 @@ while true; do
 
             printf("总接收: %.2f %s\n总发送: %.2f %s\n", rx_total, rx_units, tx_total, tx_units);
         }' /proc/net/dev)
-
 
       current_time=$(date "+%Y-%m-%d %I:%M %p")
 
@@ -266,63 +265,65 @@ while true; do
       echo -e "${WHITE}系统运行时长: ${PURPLE}${runtime}${NC}"
       echo
       ;;
-   2)
+    2)
       clear
       echo -e "${YELLOW}执行 更新系统...${NC}"
       update_system() {
-      if command -v apt &>/dev/null; then
-      apt-get update && apt-get upgrade -y
-      elif command -v dnf &>/dev/null; then
-      dnf check-update && dnf upgrade -y
-      elif command -v yum &>/dev/null; then
-      yum check-update && yum upgrade -y
-      elif command -v apk &>/dev/null; then
-      apk update && apk upgrade
-      else
-      echo -e "${RED}不支持的Linux发行版${NC}"
-      return 1
-     fi
-    return 0
-    }
-    ;;
-   3)
+        if command -v apt &>/dev/null; then
+          apt-get update && apt-get upgrade -y
+        elif command -v dnf &>/dev/null; then
+          dnf check-update && dnf upgrade -y
+        elif command -v yum &>/dev/null; then
+          yum check-update && yum upgrade -y
+        elif command -v apk &>/dev/null; then
+          apk update && apk upgrade
+        else
+          echo -e "${RED}不支持的Linux发行版${NC}"
+          return 1
+        fi
+        return 0
+      }
+      update_system
+      ;;
+    3)
       clear
       echo -e "${YELLOW}执行 清理系统...${NC}"
       clean_system() {
-   if command -v apt &>/dev/null; then
-    apt autoremove --purge -y && apt clean -y && apt autoclean -y
-    apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-    journalctl --vacuum-time=1s
-    journalctl --vacuum-size=50M
-    apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//') | xargs) -y
-   elif command -v yum &>/dev/null; then
-    yum autoremove -y && yum clean all
-    journalctl --vacuum-time=1s
-    journalctl --vacuum-size=50M
-    yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-   elif command -v dnf &>/dev/null; then
-    dnf autoremove -y && dnf clean all
-    journalctl --vacuum-time=1s
-    journalctl --vacuum-size=50M
-    dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-   elif command -v apk &>/dev/null; then
-    apk autoremove -y
-    apk clean
-    journalctl --vacuum-time=1s
-    journalctl --vacuum-size=50M
-    apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-   else
-    echo -e "${RED}暂不支持你的系统！${NC}"
-    exit 1
-   fi
-   }
-   ;;
-   4)
+        if command -v apt &>/dev/null; then
+          apt autoremove --purge -y && apt clean -y && apt autoclean -y
+          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
+        elif command -v yum &>/dev/null; then
+          yum autoremove -y && yum clean all
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+        elif command -v dnf &>/dev/null; then
+          dnf autoremove -y && dnf clean all
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
+        elif command -v apk &>/dev/null; then
+          apk autoremove -y
+          apk clean
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
+        else
+          echo -e "${RED}暂不支持你的系统！${NC}"
+          exit 1
+        fi
+      }
+      clean_system
+      ;;
+    4)
       clear
       echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
       wget -qO- yabs.sh | bash
       ;;
-   5)
+    5)
       clear
       echo -e "${YELLOW}执行 融合怪 脚本...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
@@ -391,7 +392,7 @@ while true; do
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -u -b 200m"
       echo "以200mbps的码率，测试UDP下载/模拟视频流。"
       echo "您也可以根据实际需求调整目标带宽-b值。"
-      echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -u -b 200m"
 
       echo ""
       echo -e "${BLUE}其他参数示例:${NC}"
@@ -411,7 +412,7 @@ while true; do
       ;;
     12)
       clear
-      echo -e "${YELLOW}执行 超售测试脚本 脚本...${NC}"
+      echo -e "${YELLOW}执行 超售测试脚本...${NC}"
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       ;;
     20)
@@ -426,12 +427,12 @@ while true; do
       ;;
     22)
       clear
-      echo -e "${YELLOW}执行 科技lion脚本 脚本...${NC}"
+      echo -e "${YELLOW}执行 科技lion脚本...${NC}"
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
     23)
       clear
-      echo -e "${YELLOW}执行 BlueSkyXN脚本 脚本...${NC}"
+      echo -e "${YELLOW}执行 BlueSkyXN脚本...${NC}"
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
     30)
