@@ -216,9 +216,11 @@ echo "依赖项安装完成。"
 while true; do
   echo ""
   echo "请选择要执行的脚本："
+  echo "-----------------------------------------------"
   echo -e "${YELLOW}1) 本机信息${NC}"
   echo -e "${YELLOW}2) 更新系统${NC}"
   echo -e "${YELLOW}3) 清理系统${NC}"
+  echo "-----------------------------------------------"
   echo -e "${YELLOW}4) Yabs${NC}"
   echo -e "${YELLOW}5) 融合怪${NC}"
   echo -e "${YELLOW}6) IP质量${NC}"
@@ -228,6 +230,7 @@ while true; do
   echo -e "${YELLOW}10) 安装并启动iperf3服务端 ${NC}"
   echo -e "${YELLOW}11) AutoTrace三网回程路由${NC}"
   echo -e "${YELLOW}12) 超售测试${NC}"
+  echo "-----------------------------------------------"
   echo -e "${YELLOW}13) VPS一键脚本工具箱${NC}"
   echo -e "${YELLOW}14) jcnf 常用脚本工具包${NC}"
   echo -e "${YELLOW}15) 科技lion脚本${NC}"
@@ -359,6 +362,7 @@ while true; do
       echo -e "${WHITE}系统时间: ${PURPLE}${current_time}${NC}"
       echo "------------------------"
       echo -e "${WHITE}系统运行时长: ${PURPLE}${runtime}${NC}"
+      echo ""
       ;;
     2)
       clear
