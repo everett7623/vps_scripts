@@ -3,9 +3,9 @@
 这是一个多功能 VPS 脚本工具集，包含系统更新、测速、IP 质量检测、流媒体解锁测试等多种实用功能。
 （此脚本是各大作者脚本的集合，未作任何修改，请放心食用。）
 
-VPS脚本集合 v2024.06.24
-GitHub地址: https://github.com/everett7623/vps_scripts
-VPS选购: https://www.nodeloc.com/vps
+**版本:** v2024.06.24  
+**GitHub 地址:** [https://github.com/everett7623/vps_scripts](https://github.com/everett7623/vps_scripts)  
+**VPS 选购:** [NodeLoc VPS](https://www.nodeloc.com/vps)
 
 ## 功能列表
 
