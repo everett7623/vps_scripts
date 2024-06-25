@@ -4,9 +4,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
-PURPLE='\033[0;35m'  # 紫色
-WHITE='\033[1;37m'   # 白色
-NC='\033[0m' # No Color
+PURPLE='\033[0;35m'
+WHITE='\033[1;37m'
+NC='\033[0m'  # No Color
 
 # 定义渐变颜色数组
 colors=(
@@ -53,7 +53,6 @@ else
     echo -e "${GREEN}脚本已是最新版本。${NC}"
 fi
 
-# 统计使用次数
 # 统计使用次数
 sum_run_times() {
   local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+") &&
