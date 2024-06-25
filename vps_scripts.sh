@@ -202,7 +202,6 @@ while true; do
         fi
       }
       clean_system
-      done
       echo "清理完成"
       ;;
     2)
