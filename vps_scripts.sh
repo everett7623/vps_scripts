@@ -28,8 +28,8 @@ UPDATE_FLAG="/tmp/vps_scripts_updated.flag"
 # 检查脚本更新
 check_update() {
     local current_version=$(grep "VPS脚本集合 v" "$0" | cut -d'v' -f2)
-    local version_url="https://raw.githubusercontent.com/your_username/your_repo/main/version.txt"
-    local script_url="https://raw.githubusercontent.com/your_username/your_repo/main/vps_scripts.sh"
+    local version_url="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
+    local script_url="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 
     echo "检查更新..."
     local latest_version=$(curl -s "$version_url")
