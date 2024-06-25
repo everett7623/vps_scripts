@@ -255,7 +255,7 @@ handle_choice() {
     case $choice in
     1)
       clear
-      echo -e "${YELLOW}执行本机信息...${NC}"
+      echo -e "${PURPLE}执行本机信息...${NC}"
 
       ip_address
 
@@ -370,49 +370,49 @@ handle_choice() {
       ;;
     2)
       clear
-      echo -e "${YELLOW}执行更新系统...${NC}"
+      echo -e "${PURPLE}执行更新系统...${NC}"
       update_system
       echo "系统更新完成"
       ;;
     3)
       clear
-      echo -e "${YELLOW}执行 清理系统...${NC}"
+      echo -e "${PURPLE}执行 清理系统...${NC}"
       clean_system
       echo "系统清理完成"
       ;;
     4)
       clear
-      echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
+      echo -e "${PURPLE}执行 Yabs 脚本...${NC}"
       wget -qO- yabs.sh | bash
       ;;
     5)
       clear
-      echo -e "${YELLOW}执行 融合怪 脚本...${NC}"
+      echo -e "${PURPLE}执行 融合怪 脚本...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       ;;
     6)
       clear
-      echo -e "${YELLOW}执行 IP质量 脚本...${NC}"
+      echo -e "${PURPLE}执行 IP质量 脚本...${NC}"
       bash <(curl -Ls IP.Check.Place)
       ;;
     7)
       clear
-      echo -e "${YELLOW}执行 流媒体解锁 脚本...${NC}"
+      echo -e "${PURPLE}执行 流媒体解锁 脚本...${NC}"
       bash <(curl -L -s media.ispvps.com)
       ;;
     8)
       clear
-      echo -e "${YELLOW}执行 响应测试 脚本...${NC}"
+      echo -e "${PURPLE}执行 响应测试 脚本...${NC}"
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
       ;;
     9)
       clear
-      echo -e "${YELLOW}执行 三网测速（多/单线程） 脚本...${NC}"
+      echo -e "${PURPLE}执行 三网测速（多/单线程） 脚本...${NC}"
       bash <(curl -sL bash.icu/speedtest)
       ;;
     10)
       clear
-      echo -e "${YELLOW}执行 安装并启动iperf3服务端 脚本...${NC}"
+      echo -e "${PURPLE}执行 安装并启动iperf3服务端 脚本...${NC}"
       echo ""
       echo "客户端操作，比如Windows："
       echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
@@ -469,73 +469,73 @@ handle_choice() {
       ;;
     11)
       clear
-      echo -e "${YELLOW}执行 AutoTrace三网回程路由 脚本...${NC}"
+      echo -e "${PURPLE}执行 AutoTrace三网回程路由 脚本...${NC}"
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
     12)
       clear
-      echo -e "${YELLOW}执行 超售测试脚本 脚本...${NC}"
+      echo -e "${PURPLE}执行 超售测试脚本 脚本...${NC}"
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       ;;
     13)
       clear
-      echo -e "${YELLOW}执行 VPS一键脚本工具箱 脚本...${NC}"
+      echo -e "${PURPLE}执行 VPS一键脚本工具箱 脚本...${NC}"
       bash <(curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh)
       ;;
     14)
       clear
-      echo -e "${YELLOW}执行 jcnf 常用脚本工具包 脚本...${NC}"
+      echo -e "${PURPLE}执行 jcnf 常用脚本工具包 脚本...${NC}"
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       ;;
     15)
       clear
-      echo -e "${YELLOW}执行 科技lion脚本 脚本...${NC}"
+      echo -e "${PURPLE}执行 科技lion脚本 脚本...${NC}"
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
     16)
       clear
-      echo -e "${YELLOW}执行 BlueSkyXN脚本 脚本...${NC}"
+      echo -e "${PURPLE}执行 BlueSkyXN脚本 脚本...${NC}"
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
     17)
       clear
-      echo -e "${YELLOW}执行 勇哥Singbox 脚本...${NC}"
+      echo -e "${PURPLE}执行 勇哥Singbox 脚本...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
       ;;
     18)
       clear
-      echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
+      echo -e "${PURPLE}执行 勇哥x-ui 脚本...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
       ;;
     19)
       clear
-      echo -e "${YELLOW}执行 Fscarmen-Singbox 脚本...${NC}"
+      echo -e "${PURPLE}执行 Fscarmen-Singbox 脚本...${NC}"
       bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
       ;;
     20)
       clear
-      echo -e "${YELLOW}执行 Mack-a八合一 脚本...${NC}"
+      echo -e "${PURPLE}执行 Mack-a八合一 脚本...${NC}"
       wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
       ;;
     21)
       clear
-      echo -e "${YELLOW}执行 Warp集合 脚本...${NC}"
+      echo -e "${PURPLE}执行 Warp集合 脚本...${NC}"
       bash <(curl -sSL https://gitlab.com/fscarmen/warp_unlock/-/raw/main/unlock.sh)
       ;;
     22)
       clear
-      echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
+      echo -e "${PURPLE}执行 安装docker 脚本...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
     88)
       clear
-      echo -e "${YELLOW}执行更新脚本...${NC}"
+      echo -e "${PURPLE}执行更新脚本...${NC}"
       update_scripts
       echo "脚本更新完成"
       ;;
     99)
       clear
-      echo -e "${YELLOW}执行 卸载脚本...${NC}"
+      echo -e "${PURPLE}执行 卸载脚本...${NC}"
       
       # 删除之前可能运行过的脚本
       echo -e "${BLUE}删除之前可能运行过的脚本...${NC}"
@@ -579,7 +579,7 @@ handle_choice() {
     exit
       ;;
     *)
-      echo -e "${RED}无效选择，请重新输入。${NC}"
+      echo -e "${PURPLE}无效选择，请重新输入。${NC}"
       ;;
     esac
 
