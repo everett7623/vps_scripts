@@ -78,7 +78,7 @@ total_count=$(cat "$COUNT_FILE")
 
 clear
 # 输出欢迎信息
-echo -e "今日运行次数: ${RED}$daily_count${NC}，累计运行次数: ${RED}$total_count${NC}"
+echo -e "今日运行次数: ${RED}$daily_count${NC} 次，累计运行次数: ${RED}$total_count${NC} 次"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
