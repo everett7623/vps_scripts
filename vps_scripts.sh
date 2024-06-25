@@ -184,33 +184,8 @@ clean_system() {
         fi
 }
 
-clear
-# 输出欢迎信息
-echo ""
-echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-echo ""
-echo "VPS脚本集合 2024-06-25 v1.0.0"
-echo "GitHub地址: https://github.com/everett7623/vps_scripts"
-echo "VPS选购: https://www.nodeloc.com/vps"
-echo ""
-echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
-echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
-echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
-echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
-echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
-echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
-echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
-echo ""
-echo "支持Ubuntu/Debian"
-echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
-echo ""
-echo "今日运行次数: $daily_count，累计运行次数: $total_count"
-echo ""
-echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-echo ""
-
-# 主菜单
-while true; do
+# 显示菜单
+show_menu() {
   echo ""
   echo "请选择要执行的脚本："
   echo "-----------------------------------------------"
@@ -242,11 +217,13 @@ while true; do
   echo -e "${YELLOW}88) 更新脚本${NC}"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
-  
-  read -p "输入数字选择对应的脚本: " choice
+}
 
-  case $choice in
-   1)
+# 处理用户选择
+handle_choice() {
+    local choice=$1
+    case $choice in
+    1)
       clear
       echo -e "${YELLOW}执行本机信息...${NC}"
 
@@ -573,8 +550,40 @@ while true; do
     *)
       echo -e "${RED}无效选择，请重新输入。${NC}"
       ;;
-  esac
+    esac
 
-  # 等待用户按回车返回主菜单
-  read -p "按回车键返回主菜单..."
+      # 等待用户按回车返回主菜单
+      read -p "按回车键返回主菜单..."
+}
+
+clear
+# 输出欢迎信息
+echo ""
+echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
+echo ""
+echo "VPS脚本集合 2024-06-25 v1.0.0"
+echo "GitHub地址: https://github.com/everett7623/vps_scripts"
+echo "VPS选购: https://www.nodeloc.com/vps"
+echo ""
+echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
+echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
+echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
+echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
+echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
+echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
+echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
+echo ""
+echo "支持Ubuntu/Debian"
+echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
+echo ""
+echo "今日运行次数: $daily_count，累计运行次数: $total_count"
+echo ""
+echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
+echo ""
+
+# 主循坏
+while true; do
+    show_menu
+    read -p "输入数字选择对应的脚本: " choice
+    handle_choice "$choice"
 done
