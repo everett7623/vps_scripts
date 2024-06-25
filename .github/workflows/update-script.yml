@@ -1,0 +1,27 @@
+name: Update Script
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'  # 每天运行
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Update version
+      run: |
+        version=$(date +"%Y.%m.%d")
+        echo $version > version.txt
+        sed -i "s/VPS脚本集合 v.*/VPS脚本集合 v$version/" vps_scripts.sh
+    
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        git add -A
+        git commit -m "Automated update" || exit 0
+        git push
