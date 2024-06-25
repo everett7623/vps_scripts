@@ -27,6 +27,12 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+# 获取当前服务器ipv4和ipv6
+ip_address() {
+    ipv4_address=$(curl -s ipv4.ip.sb)
+    ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
+}
+
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
@@ -149,61 +155,58 @@ while true; do
   read -p "输入数字选择对应的脚本: " choice
 
   case $choice in
-    1)
-      clear
-      echo -e "${YELLOW}执行本机信息...${NC}"
+1)
+    clear
+    ip_address
+    
+    if [ "$(uname -m)" == "x86_64" ]; then
+      cpu_info=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
+    else
+      cpu_info=$(lscpu | grep 'Model name' | sed -e 's/Model name[[:space:]]*: //')
+    fi
 
-      ipv4_address=$(curl -s http://ipinfo.io/ip)
-      ipv6_address=$(curl -s http://ip6.me/ | awk -F "[<,>]" '/ip_address/{print $3}')
+    cpu_usage=$(top -bn1 | grep 'Cpu(s)' | awk '{print $2 + $4}')
+    cpu_usage_percent=$(printf "%.2f" "$cpu_usage")%
 
-      if [ "$(uname -m)" == "x86_64" ]; then
-        cpu_info=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
+    cpu_cores=$(nproc)
+
+    mem_info=$(free -b | awk 'NR==2{printf "%.2f/%.2f MB (%.2f%%)", $3/1024/1024, $2/1024/1024, $3*100/$2}')
+
+    disk_info=$(df -h | awk '$NF=="/"{printf "%d/%dGB (%s)", $3,$2,$5}')
+
+    country=$(curl -s ipinfo.io/country)
+    city=$(curl -s ipinfo.io/city)
+
+    isp_info=$(curl -s ipinfo.io/org)
+
+    cpu_arch=$(uname -m)
+
+    hostname=$(hostname)
+
+    kernel_version=$(uname -r)
+
+    congestion_algorithm=$(sysctl -n net.ipv4.tcp_congestion_control)
+    queue_algorithm=$(sysctl -n net.core.default_qdisc)
+
+    # 尝试使用 lsb_release 获取系统信息
+    os_info=$(lsb_release -ds 2>/dev/null)
+
+    # 如果 lsb_release 命令失败，则尝试其他方法
+    if [ -z "$os_info" ]; then
+      # 检查常见的发行文件
+      if [ -f "/etc/os-release" ]; then
+        os_info=$(source /etc/os-release && echo "$PRETTY_NAME")
+      elif [ -f "/etc/debian_version" ]; then
+        os_info="Debian $(cat /etc/debian_version)"
+      elif [ -f "/etc/redhat-release" ]; then
+        os_info=$(cat /etc/redhat-release)
       else
-        cpu_info=$(lscpu | grep 'Model name' | sed -e 's/Model name[[:space:]]*: //')
+        os_info="Unknown"
       fi
+    fi
 
-      cpu_usage=$(top -bn1 | grep 'Cpu(s)' | awk '{print $2 + $4}')
-      cpu_usage_percent=$(printf "%.2f" "$cpu_usage")%
-
-      cpu_cores=$(nproc)
-
-      mem_info=$(free -b | awk 'NR==2{printf "%.2f/%.2f MB (%.2f%%)", $3/1024/1024, $2/1024/1024, $3*100/$2}')
-
-      disk_info=$(df -h | awk '$NF=="/"{printf "%d/%dGB (%s)", $3,$2,$5}')
-
-      country=$(curl -s ipinfo.io/country)
-      city=$(curl -s ipinfo.io/city)
-
-      isp_info=$(curl -s ipinfo.io/org)
-
-      cpu_arch=$(uname -m)
-
-      hostname=$(hostname)
-
-      kernel_version=$(uname -r)
-
-      congestion_algorithm=$(sysctl -n net.ipv4.tcp_congestion_control)
-      queue_algorithm=$(sysctl -n net.core.default_qdisc)
-
-      # 尝试使用 lsb_release 获取系统信息
-      os_info=$(lsb_release -ds 2>/dev/null)
-
-      # 如果 lsb_release 命令失败，则尝试其他方法
-      if [ -z "$os_info" ]; then
-        # 检查常见的发行文件
-        if [ -f "/etc/os-release" ]; then
-          os_info=$(source /etc/os-release && echo "$PRETTY_NAME")
-        elif [ -f "/etc/debian_version" ]; then
-          os_info="Debian $(cat /etc/debian_version)"
-        elif [ -f "/etc/redhat-release" ]; then
-          os_info=$(cat /etc/redhat-release)
-        else
-          os_info="Unknown"
-        fi
-      fi
-
-      clear
-      output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
+    clear
+    output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
         NR > 2 { rx_total += $2; tx_total += $10 }
         END {
             rx_units = "Bytes";
@@ -219,105 +222,118 @@ while true; do
             printf("总接收: %.2f %s\n总发送: %.2f %s\n", rx_total, rx_units, tx_total, tx_units);
         }' /proc/net/dev)
 
-      current_time=$(date "+%Y-%m-%d %I:%M %p")
 
-      swap_used=$(free -m | awk 'NR==3{print $3}')
-      swap_total=$(free -m | awk 'NR==3{print $2}')
+    current_time=$(date "+%Y-%m-%d %I:%M %p")
 
-      if [ "$swap_total" -eq 0 ]; then
+
+    swap_used=$(free -m | awk 'NR==3{print $3}')
+    swap_total=$(free -m | awk 'NR==3{print $2}')
+
+    if [ "$swap_total" -eq 0 ]; then
         swap_percentage=0
-      else
+    else
         swap_percentage=$((swap_used * 100 / swap_total))
-      fi
+    fi
 
-      swap_info="${swap_used}MB/${swap_total}MB (${swap_percentage}%)"
+    swap_info="${swap_used}MB/${swap_total}MB (${swap_percentage}%)"
 
-      runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1 % 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d时 ", run_hours); printf("%d分\n", run_minutes)}')
+    runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1 % 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d时 ", run_hours); printf("%d分\n", run_minutes)}')
 
-      echo ""
-      echo -e "${WHITE}系统信息详情${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}主机名: ${PURPLE}${hostname}${NC}"
-      echo -e "${WHITE}运营商: ${PURPLE}${isp_info}${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}系统版本: ${PURPLE}${os_info}${NC}"
-      echo -e "${WHITE}Linux版本: ${PURPLE}${kernel_version}${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}CPU架构: ${PURPLE}${cpu_arch}${NC}"
-      echo -e "${WHITE}CPU型号: ${PURPLE}${cpu_info}${NC}"
-      echo -e "${WHITE}CPU核心数: ${PURPLE}${cpu_cores}${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}CPU占用: ${PURPLE}${cpu_usage_percent}${NC}"
-      echo -e "${WHITE}物理内存: ${PURPLE}${mem_info}${NC}"
-      echo -e "${WHITE}虚拟内存: ${PURPLE}${swap_info}${NC}"
-      echo -e "${WHITE}硬盘占用: ${PURPLE}${disk_info}${NC}"
-      echo "------------------------"
-      echo -e "${PURPLE}$output${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}网络拥堵算法: ${PURPLE}${congestion_algorithm} ${queue_algorithm}${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}公网IPv4地址: ${PURPLE}${ipv4_address}${NC}"
-      echo -e "${WHITE}公网IPv6地址: ${PURPLE}${ipv6_address}${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}地理位置: ${PURPLE}${country} ${city}${NC}"
-      echo -e "${WHITE}系统时间: ${PURPLE}${current_time}${NC}"
-      echo "------------------------"
-      echo -e "${WHITE}系统运行时长: ${PURPLE}${runtime}${NC}"
-      echo
+    echo ""
+    echo -e "${white}系统信息详情${NC}"
+    echo "------------------------"
+    echo -e "${white}主机名: ${purple}${hostname}${NC}"
+    echo -e "${white}运营商: ${purple}${isp_info}${NC}"
+    echo "------------------------"
+    echo -e "${white}系统版本: ${purple}${os_info}${NC}"
+    echo -e "${white}Linux版本: ${purple}${kernel_version}${NC}"
+    echo "------------------------"
+    echo -e "${white}CPU架构: ${purple}${cpu_arch}${NC}"
+    echo -e "${white}CPU型号: ${purple}${cpu_info}${NC}"
+    echo -e "${white}CPU核心数: ${purple}${cpu_cores}${NC}"
+    echo "------------------------"
+    echo -e "${white}CPU占用: ${purple}${cpu_usage_percent}${NC}"
+    echo -e "${white}物理内存: ${purple}${mem_info}${NC}"
+    echo -e "${white}虚拟内存: ${purple}${swap_info}${NC}"
+    echo -e "${white}硬盘占用: ${purple}${disk_info}${NC}"
+    echo "------------------------"
+    echo -e "${purple}$output${NC}"
+    echo "------------------------"
+    echo -e "${white}网络拥堵算法: ${purple}${congestion_algorithm} ${queue_algorithm}${NC}"
+    echo "------------------------"
+    echo -e "${white}公网IPv4地址: ${purple}${ipv4_address}${NC}"
+    echo -e "${white}公网IPv6地址: ${purple}${ipv6_address}${NC}""
+    echo "------------------------"
+    echo -e "${white}地理位置: ${purple}${country} $city${NC}"
+    echo -e "${white}系统时间: ${purple}${current_time}${NC}"
+    echo "------------------------"
+    echo -e "${white}系统运行时长: ${purple}${runtime}${NC}"
+    echo
     ;;
-    2)
-      clear
-      echo -e "${YELLOW}执行 更新系统...${NC}"
-      update_system() {
+  2)
+    clear
+    update_system() {
         if command -v apt &>/dev/null; then
-          apt-get update && apt-get upgrade -y
+            apt-get update && apt-get upgrade -y
         elif command -v dnf &>/dev/null; then
-          dnf check-update && dnf upgrade -y
+            dnf check-update && dnf upgrade -y
         elif command -v yum &>/dev/null; then
-          yum check-update && yum upgrade -y
+            yum check-update && yum upgrade -y
         elif command -v apk &>/dev/null; then
-          apk update && apk upgrade -y
+            apk update && apk upgrade
         else
-          echo -e "${RED}不支持的Linux发行版${NC}"
-          return 1
+            echo -e "${red}不支持的Linux发行版${re}"
+            return 1
         fi
         return 0
-      }
-      update_system
-      ;;
-    3)
-      clear
-      echo -e "${YELLOW}执行 清理系统...${NC}"
-      clean_system() {
-        if command -v apt &>/dev/null; then
-          apt autoremove --purge -y && apt clean -y && apt autoclean -y
-          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
-        elif command -v yum &>/dev/null; then
-          yum autoremove -y && yum clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v dnf &>/dev/null; then
-          dnf autoremove -y && dnf clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v apk &>/dev/null; then
-          apk autoremove -y
-          apk clean
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-        else
-          echo -e "${RED}暂不支持你的系统！${NC}"
-          exit 1
-        fi
-      }
-      clean_system
-      ;;
+    }
+    
+    update_system
+
+    ;;
+  3)
+    clear
+        clean_system() {
+
+            if command -v apt &>/dev/null; then
+                apt autoremove --purge -y && apt clean -y && apt autoclean -y
+                apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+                # 清理包配置文件
+                journalctl --vacuum-time=1s
+                journalctl --vacuum-size=50M
+                # 移除不再需要的内核
+                apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//') | xargs) -y
+            elif command -v yum &>/dev/null; then
+                yum autoremove -y && yum clean all
+                # 清理日志
+                journalctl --vacuum-time=1s
+                journalctl --vacuum-size=50M
+                # 移除不再需要的内核
+                yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+            elif command -v dnf &>/dev/null; then
+                dnf autoremove -y && dnf clean all
+                # 清理日志
+                journalctl --vacuum-time=1s
+                journalctl --vacuum-size=50M
+                # 移除不再需要的内核
+                dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
+            elif command -v apk &>/dev/null; then
+                apk autoremove -y
+                apk clean
+                # 清理包配置文件
+                apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
+                # 清理日志文件
+                journalctl --vacuum-time=1s
+                journalctl --vacuum-size=50M
+                # 移除不再需要的内核
+                apk del $(apk info -vv | grep -E 'linux-[0-9]' | grep -v $(uname -r) | awk '{print $1}') -y
+            else
+                echo -e "${red}暂不支持你的系统！${re}"
+                exit 1
+            fi
+        }
+        clean_system
+    ;;
     4)
       clear
       echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
