@@ -280,7 +280,7 @@ while true; do
     11)
       clear
       echo -e "${YELLOW}执行 VPS一键脚本工具箱 脚本...${NC}"
-      bash <(curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh)
+      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
       ;;
     12)
       clear
