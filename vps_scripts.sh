@@ -131,20 +131,35 @@ update_scripts() {
 # 创建快捷指令
 add_alias() {
     config_file=$1
-    alias_names=("v" "v")
-    [ ! -f "$config_file" ] || touch "$config_file"
+    alias_names=("v" "vps")  # 使用两个不同的别名
+    [ -f "$config_file" ] || touch "$config_file"  # 如果文件不存在，创建它
+    alias_added=false
     for alias_name in "${alias_names[@]}"; do
         if ! grep -q "alias $alias_name=" "$config_file"; then 
             echo "Adding alias $alias_name to $config_file"
             echo "alias $alias_name='cd ~ && ./vps_scripts.sh'" >> "$config_file"
+            alias_added=true
         fi
     done
-    . "$config_file"
+    if $alias_added; then
+        # 如果添加了新的别名，立即在当前会话中生效
+        . "$config_file"
+    fi
 }
+
 config_files=("/root/.bashrc" "/root/.profile" "/root/.bash_profile")
 for config_file in "${config_files[@]}"; do
     add_alias "$config_file"
 done
+
+# 确保别名在当前会话中生效
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+elif [ -f ~/.profile ]; then
+    . ~/.profile
+elif [ -f ~/.bash_profile ]; then
+    . ~/.bash_profile
+fi
 
 # 统计使用次数
 sum_run_times() {
@@ -592,7 +607,7 @@ echo "支持Ubuntu/Debian"
 echo ""
 echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
 echo ""
-echo -e "今日运行次数: ${RED}$daily_count${NC}次，累计运行次数: ${RED}$total_count${NC}次"
+echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
