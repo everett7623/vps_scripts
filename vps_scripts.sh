@@ -4,10 +4,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
-PURPLE='\033[0;35m'
-WHITE='\033[1;37m'
-NC='\033[0m'  # No Color
-
+NC='\033[0m' # No Color
 # 定义渐变颜色数组
 colors=(
     '\033[38;2;0;255;0m'    # 绿色
@@ -15,58 +12,41 @@ colors=(
     '\033[38;2;128;255;0m'
     '\033[38;2;192;255;0m'
     '\033[38;2;255;255;0m'  # 黄色
-    '\033[38;2;255;192;0m'
-    '\033[38;2;255;128;0m'
-    '\033[38;2;255;64;0m'
-    '\033[38;2;255;0;0m'    # 红色
 )
 
 # 检查 root 权限
 if [ "$(id -u)" != "0" ]; then
-    echo -e "${RED}此脚本需要 root 权限运行。${NC}"
+    echo "此脚本需要 root 权限运行。"
     exit 1
 fi
-
-# 获取当前服务器ipv4和ipv6
-ip_address() {
-    ipv4_address=$(curl -s ipv4.ip.sb)
-    ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
-}
-
-# 等待用户返回
-break_end() {
-    echo -e "${GREEN}执行完成${NC}"
-    echo -e "${YELLOW}按任意键返回...${NC}"
-    read -n 1 -s -r -p ""
-    echo ""
-    clear
-}
 
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-CURRENT_VERSION="v2024.06.24" # 假设当前版本是 v2024.06.24
+UPDATE_FLAG="/tmp/vps_scripts_updated.flag"
 
-# 获取远程版本
-REMOTE_VERSION=$(curl -s $VERSION_URL)
+# 检查脚本更新
+check_update() {
+    local current_version=$(grep "VPS脚本集合 v" "$0" | cut -d'v' -f2)
+    local version_url="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
+    local script_url="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 
-# 比较版本号
-if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
-    echo -e "${BLUE}发现新版本，正在更新...${NC}"
-    # 下载并替换脚本
-    curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL
-    if [ $? -eq 0 ]; then
-        mv /tmp/vps_scripts.sh $0
-        echo -e "${GREEN}脚本更新成功！${NC}"
-        # 重新运行脚本
-        exec bash $0
+    echo "检查更新..."
+    local latest_version=$(curl -s "$version_url")
+    
+    if [[ "$latest_version" != "$current_version" ]]; then
+        echo "发现新版本: $latest_version"
+        echo "正在更新..."
+        if curl -o "$0" "$script_url"; then
+            echo "更新成功，请重新运行脚本"
+            exit 0
+        else
+            echo "更新失败，继续使用当前版本"
+        fi
     else
-        echo -e "${RED}脚本更新失败！${NC}"
-        exit 1
+        echo "已是最新版本"
     fi
-else
-    echo -e "${GREEN}脚本已是最新版本。${NC}"
-fi
+}
 
 # 统计使用次数
 sum_run_times() {
@@ -85,10 +65,9 @@ sum_run_times() {
 # 调用函数获取统计数据
 sum_run_times
 
-while true; do
 clear
 # 输出欢迎信息
-echo -e "今日运行次数: ${RED}$daily_count${NC} 次，累计运行次数: ${RED}$total_count${NC} 次"
+echo "今日运行次数: $daily_count，累计运行次数: $total_count"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
@@ -110,6 +89,16 @@ echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
 
+# 检查当前用户是否具有 sudo 权限
+if [ "$(id -u)" != "0" ]; then
+    echo "此脚本需要 root 权限运行。"
+    echo "请使用具有 sudo 权限的用户运行此脚本。"
+    exit 1
+fi
+
+# 在需要时获取 sudo 权限
+sudo -v >/dev/null 2>&1 || { echo "无法获取 sudo 权限，退出脚本。"; exit 1; }
+
 # 检查并安装依赖
 echo "检查并安装必要的依赖项..."
 
@@ -129,128 +118,93 @@ else
     echo "wget 已安装"
 fi
 
+# 检查 bash（一般来说不需要安装，因为通常是系统默认的 shell）
+if ! command -v bash &> /dev/null; then
+    echo "bash 未安装，正在安装..."
+    sudo apt-get update && sudo apt-get install -y bash
+else
+    echo "bash 已安装"
+fi
+
 echo "依赖项安装完成。"
 
 # 主菜单
 while true; do
   echo ""
-  echo -e "${GREEN}VPS管理脚本${NC}"
-#  echo -e "${YELLOW}1) 本机信息${NC}"
-  echo -e "${YELLOW}2) 更新系统${NC}"
-  echo -e "${YELLOW}3) 清理系统${NC}"
-  echo -e "${YELLOW}4) Yabs${NC}"
-  echo -e "${YELLOW}5) 融合怪${NC}"
-  echo -e "${YELLOW}6) IP质量${NC}"
-  echo -e "${YELLOW}7) 流媒体解锁${NC}"
-  echo -e "${YELLOW}8) 响应测试${NC}"
-  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}"
-  echo -e "${YELLOW}10) 安装并启动iperf3服务端 ${NC}"
-  echo -e "${YELLOW}11) AutoTrace三网回程路由${NC}"
-  echo -e "${YELLOW}12) 超售测试${NC}"
-  echo -e "${YELLOW}20) VPS一键脚本工具箱${NC}"
-  echo -e "${YELLOW}21) jcnf 常用脚本工具包${NC}"
-  echo -e "${YELLOW}22) 科技lion脚本${NC}"
-  echo -e "${YELLOW}23) BlueSkyXN脚本${NC}"
-  echo -e "${YELLOW}30) 勇哥Singbox${NC}"
-  echo -e "${YELLOW}31) 勇哥x-ui${NC}"
-  echo -e "${YELLOW}32) Fscarmen-Singbox${NC}"
-  echo -e "${YELLOW}33) Mack-a八合一${NC}"
-  echo -e "${YELLOW}34) Warp集合${NC}"
-  echo -e "${YELLOW}40) 安装docker${NC}"
+  echo "请选择要执行的脚本："
+  echo -e "${YELLOW}1) 更新系统${NC}"
+  echo -e "${YELLOW}2) Yabs${NC}"
+  echo -e "${YELLOW}3) 融合怪${NC}"
+  echo -e "${YELLOW}4) IP质量${NC}"
+  echo -e "${YELLOW}5) 流媒体解锁${NC}"
+  echo -e "${YELLOW}6) 响应测试${NC}"
+  echo -e "${YELLOW}7) 三网测速（多/单线程）${NC}"
+  echo -e "${YELLOW}8) 安装并启动iperf3服务端 ${NC}"
+  echo -e "${YELLOW}9) AutoTrace三网回程路由${NC}"
+  echo -e "${YELLOW}10) 超售测试${NC}"
+  echo -e "${YELLOW}11) VPS一键脚本工具箱${NC}"
+  echo -e "${YELLOW}12) jcnf 常用脚本工具包${NC}"
+  echo -e "${YELLOW}13) 科技lion脚本${NC}"
+  echo -e "${YELLOW}14) BlueSkyXN脚本${NC}"
+  echo -e "${YELLOW}15) 勇哥Singbox${NC}"
+  echo -e "${YELLOW}16) 勇哥x-ui${NC}"
+  echo -e "${YELLOW}17) Fscarmen-Singbox${NC}"
+  echo -e "${YELLOW}18) Mack-a八合一${NC}"
+  echo -e "${YELLOW}19) Warp集合${NC}"
+  echo -e "${YELLOW}20) 安装docker${NC}"
+  echo -e "${YELLOW}21) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   
   read -p "输入数字选择对应的脚本: " choice
 
   case $choice in
+    1)
+      clear
+      echo -e "${YELLOW}执行系统更新...${NC}"
+      (sudo apt update && sudo apt upgrade -y) &
+      pid=$!
+      while kill -0 $pid 2>/dev/null; do
+          echo -n "."
+          sleep 1
+      done
+      echo "更新完成"
+      ;;
     2)
-      clear
-      echo -e "${YELLOW}执行 更新系统...${NC}"
-      update_system() {
-        if command -v apt &>/dev/null; then
-          apt-get update && apt-get upgrade -y
-        elif command -v dnf &>/dev/null; then
-          dnf check-update && dnf upgrade -y
-        elif command -v yum &>/dev/null; then
-          yum check-update && yum upgrade -y
-        elif command -v apk &>/dev/null; then
-          apk update && apk upgrade
-        else
-          echo -e "${RED}不支持的Linux发行版${NC}"
-          return 1
-        fi
-        return 0
-      }
-      update_system
-      ;;
-    3)
-      clear
-      echo -e "${YELLOW}执行 清理系统...${NC}"
-      clean_system() {
-        if command -v apt &>/dev/null; then
-          apt autoremove --purge -y && apt clean -y && apt autoclean -y
-          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
-        elif command -v yum &>/dev/null; then
-          yum autoremove -y && yum clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v dnf &>/dev/null; then
-          dnf autoremove -y && dnf clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v apk &>/dev/null; then
-          apk autoremove -y
-          apk clean
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-        else
-          echo -e "${RED}暂不支持你的系统！${NC}"
-          exit 1
-        fi
-      }
-      clean_system
-      ;;
-    4)
       clear
       echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
       wget -qO- yabs.sh | bash
       ;;
-    5)
+    3)
       clear
       echo -e "${YELLOW}执行 融合怪 脚本...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       ;;
-    6)
+    4)
       clear
       echo -e "${YELLOW}执行 IP质量 脚本...${NC}"
       bash <(curl -Ls IP.Check.Place)
       ;;
-    7)
+    5)
       clear
       echo -e "${YELLOW}执行 流媒体解锁 脚本...${NC}"
       bash <(curl -L -s media.ispvps.com)
       ;;
-    8)
+    6)
       clear
       echo -e "${YELLOW}执行 响应测试 脚本...${NC}"
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
       ;;
-    9)
+    7)
       clear
       echo -e "${YELLOW}执行 三网测速（多/单线程） 脚本...${NC}"
       bash <(curl -sL bash.icu/speedtest)
       ;;
-    10)
+    8)
       clear
       echo -e "${YELLOW}执行 安装并启动iperf3服务端 脚本...${NC}"
       echo ""
       echo "客户端操作，比如Windows："
-      echo -e "${RED}iperf3客户端下载地址 (https://iperf.fr/iperf-download.php)${NC}"
+      echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
       echo "在Windows电脑上，下载iperf3 Windows版本，解压到任意目录，例如D:\iperf3"
       echo "打开命令提示符窗口，切换到iperf3目录:"
       echo "cd D:\iperf3"
@@ -289,7 +243,7 @@ while true; do
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -u -b 200m"
       echo "以200mbps的码率，测试UDP下载/模拟视频流。"
       echo "您也可以根据实际需求调整目标带宽-b值。"
-      echo "案例：.\iperf3.exe -c 104.234.111.111 -u -b 200m"
+      echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
 
       echo ""
       echo -e "${BLUE}其他参数示例:${NC}"
@@ -302,74 +256,115 @@ while true; do
       apt-get install -y iperf3
       iperf3 -s
       ;;
-    11)
+    9)
       clear
       echo -e "${YELLOW}执行 AutoTrace三网回程路由 脚本...${NC}"
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
-    12)
+    10)
       clear
-      echo -e "${YELLOW}执行 超售测试脚本...${NC}"
+      echo -e "${YELLOW}执行 超售测试脚本 脚本...${NC}"
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       ;;
-    20)
+    11)
       clear
       echo -e "${YELLOW}执行 VPS一键脚本工具箱 脚本...${NC}"
-      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
+      bash <(curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh)
       ;;
-    21)
+    12)
       clear
       echo -e "${YELLOW}执行 jcnf 常用脚本工具包 脚本...${NC}"
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       ;;
-    22)
+    13)
       clear
-      echo -e "${YELLOW}执行 科技lion脚本...${NC}"
+      echo -e "${YELLOW}执行 科技lion脚本 脚本...${NC}"
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
-    23)
+    14)
       clear
-      echo -e "${YELLOW}执行 BlueSkyXN脚本...${NC}"
+      echo -e "${YELLOW}执行 BlueSkyXN脚本 脚本...${NC}"
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
-    30)
+    15)
       clear
       echo -e "${YELLOW}执行 勇哥Singbox 脚本...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
       ;;
-    31)
+    16)
       clear
       echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
-      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
+      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh
       ;;
-    32)
+    17)
       clear
       echo -e "${YELLOW}执行 Fscarmen-Singbox 脚本...${NC}"
-      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sba/main/sba.sh)
+      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
       ;;
-    33)
+    18)
       clear
       echo -e "${YELLOW}执行 Mack-a八合一 脚本...${NC}"
       wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
       ;;
-    34)
+    19)
       clear
       echo -e "${YELLOW}执行 Warp集合 脚本...${NC}"
       bash <(curl -sSL https://gitlab.com/fscarmen/warp_unlock/-/raw/main/unlock.sh)
       ;;
-    40)
+    20)
       clear
       echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
-    0)
-      echo "退出..."
+    21)
       clear
-      exit
+      echo -e "${YELLOW}执行 卸载脚本...${NC}"
+      
+      # 删除之前可能运行过的脚本
+      echo -e "${BLUE}删除之前可能运行过的脚本...${NC}"
+      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
+      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
+      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
+      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
+      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
+      [ -f /root/box.sh ] && rm -f /root/box.sh
+      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
+
+      # 清理可能的残留文件和目录
+      echo -e "${BLUE}清理可能的残留文件和目录...${NC}"
+      [ -d /tmp/yabs* ] && rm -rf /tmp/yabs*
+      [ -f /tmp/bench.sh* ] && rm -rf /tmp/bench.sh*
+      [ -f /root/.ssh_tool_cache ] && rm -f /root/.ssh_tool_cache
+      [ -f /root/.ssh_tool_backup ] && rm -f /root/.ssh_tool_backup
+
+      # 尝试卸载Docker(如果是通过脚本安装的)
+      echo -e "${BLUE}尝试卸载Docker...${NC}"
+      if command -v docker &> /dev/null; then
+        echo "正在卸载Docker..."
+        sudo apt-get remove docker docker-engine docker.io containerd runc -y
+        sudo apt-get purge docker-ce docker-ce-cli containerd.io -y
+        sudo rm -rf /var/lib/docker /etc/docker
+        sudo groupdel docker 2>/dev/null
+        sudo rm -rf /var/run/docker.sock
+      fi
+
+      # 删除主脚本及其相关文件
+      echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
+      [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
+      [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
+      [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
+      [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
+      
+      echo "卸载完成"
+      ;;
+    0)
+      break
       ;;
     *)
-      echo "无效的输入..."
+      echo -e "${RED}无效选择，请重新输入。${NC}"
       ;;
-      esac
-      break_end
-    donecurl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
+  esac
+
+  # 等待用户按回车返回主菜单
+  read -p "按回车键返回主菜单..."
+done
