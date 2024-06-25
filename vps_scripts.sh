@@ -275,7 +275,7 @@ while true; do
         elif command -v yum &>/dev/null; then
           yum check-update && yum upgrade -y
         elif command -v apk &>/dev/null; then
-          apk update && apk upgrade
+          apk update && apk upgrade -y
         else
           echo -e "${RED}不支持的Linux发行版${NC}"
           return 1
