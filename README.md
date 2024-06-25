@@ -9,27 +9,32 @@
 
 ## 功能列表
 
-1. 更新系统
-2. Yabs
-3. 融合怪
-4. IP质量
-5. 流媒体解锁
-6. 响应测试
-7. 三网测速（多/单线程）
-8. 安装并启动 iperf3 服务端
-9. AutoTrace 三网回程路由
-10. 超售测试
-11. VPS 一键脚本工具箱
-12. jcnf 常用脚本工具包
-13. 科技 lion 脚本
-14. BlueSkyXN 脚本
-15. 勇哥 Singbox
-16. 勇哥 x-ui
-17. Fscarmen-Singbox
-18. Mack-a 八合一
-19. Warp 集合
-20. 安装 docker
-21. 卸载脚本
+1) 本机信息
+2) 更新系统
+3) 清理系统
+4) Yabs
+5) 融合怪
+6) IP质量
+7) 流媒体解锁
+8) 响应测试
+9) 三网测速（多/单线程）
+10) 安装并启动iperf3服务端
+11) AutoTrace三网回程路由
+12) 超售测试
+13) VPS一键脚本工具箱
+14) jcnf 常用脚本工具包
+15) 科技lion脚本
+16) BlueSkyXN脚本
+17) 勇哥Singbox
+18) 勇哥x-ui
+19) Fscarmen-Singbox
+20) Mack-a八合一
+21) Warp集合
+22) 安装docker
+------------------------------------------------------------------------------
+88) 更新脚本
+99) 卸载脚本
+0) 退出
 
 ## 使用方法
 
@@ -39,6 +44,8 @@
     curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh -o vps_scripts.sh&& chmod +x vps_scripts.sh && ./vps_scripts.sh
     ```
 3. 根据提示输入对应的数字选择要执行的功能。
+
+![vps_scripts.png](https://img.y8o.de/i/2024/06/25/667ae40793519.png)
 
 ## 运行要求
 
