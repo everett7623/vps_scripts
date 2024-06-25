@@ -26,28 +26,7 @@ fi
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-CURRENT_VERSION="v2024.06.24" # 假设当前版本是 v2024.06.24
-
-# 获取远程版本
-REMOTE_VERSION=$(curl -s $VERSION_URL)
-
-# 比较版本号
-if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
-    echo -e "${BLUE}发现新版本，正在更新...${NC}"
-    # 下载并替换脚本
-    curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL
-    if [ $? -eq 0 ]; then
-        mv /tmp/vps_scripts.sh $0
-        echo -e "${GREEN}脚本更新成功！${NC}"
-        # 重新运行脚本
-        exec bash $0
-    else
-        echo -e "${RED}脚本更新失败！${NC}"
-        exit 1
-    fi
-else
-    echo -e "${GREEN}脚本已是最新版本。${NC}"
-fi
+CURRENT_VERSION="v2024.06.24"
 
 # 创建快捷指令
 add_alias() {
