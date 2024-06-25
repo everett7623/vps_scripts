@@ -79,13 +79,14 @@ ip_address() {
 
 # 更新脚本
 update_scripts() {
-    VERSION="2024-06-25 v1.0.0"  # 当前版本，应与脚本开头定义的版本相同
+    VERSION="2024-06-25 v1.0.1"  # 当前版本
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
     REMOTE_VERSION=$(curl -s $VERSION_URL)
     if [ -z "$REMOTE_VERSION" ]; then
         echo -e "${RED}无法获取远程版本信息。请检查您的网络连接。${NC}"
+        sleep 2
         return 1
     fi
 
@@ -93,29 +94,37 @@ update_scripts() {
         echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
         echo -e "${BLUE}正在更新...${NC}"
         
-        # 下载并替换脚本
         if curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL; then
-            # 从新下载的脚本中提取版本信息
             NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
-            
-            # 更新当前脚本中的版本信息
             sed -i "s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$0"
             
             if mv /tmp/vps_scripts.sh "$0"; then
-                chmod +x "$0"  # 确保脚本保持可执行权限
+                chmod +x "$0"
                 echo -e "${GREEN}脚本更新成功！新版本: $NEW_VERSION${NC}"
-                echo -e "${YELLOW}重新启动脚本以应用更新...${NC}"
-                exec bash "$0"
+                echo -e "${YELLOW}请等待 3 秒...${NC}"
+                sleep 3
+                echo -e "${YELLOW}是否重新启动脚本以应用更新？(Y/n)${NC}"
+                read -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+                    exec bash "$0"
+                else
+                    echo -e "${YELLOW}请手动重启脚本以应用更新。${NC}"
+                    sleep 2
+                fi
             else
                 echo -e "${RED}无法替换脚本文件。请检查权限。${NC}"
+                sleep 2
                 return 1
             fi
         else
             echo -e "${RED}下载新版本失败。请稍后重试。${NC}"
+            sleep 2
             return 1
         fi
     else
         echo -e "${GREEN}脚本已是最新版本 $VERSION。${NC}"
+        sleep 2
     fi
 }
 
