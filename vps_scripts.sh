@@ -505,7 +505,7 @@ handle_choice() {
     18)
       clear
       echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
-      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh
+      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
       ;;
     19)
       clear
