@@ -25,47 +25,62 @@ SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_s
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
 UPDATE_FLAG="/tmp/vps_scripts_updated.flag"
 
-# 自动更新函数
-auto_update() {
-    echo "正在检查更新..."
-    LATEST_VERSION=$(curl -s -H "Cache-Control: no-cache" "$VERSION_URL")
-    if [ -z "$LATEST_VERSION" ]; then
-        echo "无法检查更新，继续使用当前版本。"
-        return
-    fi
+# 检查脚本更新
+check_update() {
+    local current_version=$(grep "VPS脚本集合 v" "$0" | cut -d'v' -f2)
+    local version_url="https://raw.githubusercontent.com/your_username/your_repo/main/version.txt"
+    local script_url="https://raw.githubusercontent.com/your_username/your_repo/main/vps_scripts.sh"
+
+    echo "检查更新..."
+    local latest_version=$(curl -s "$version_url")
     
-    echo "正在更新到最新版本..."
-    TEMP_FILE=$(mktemp)
-    if wget -O "$TEMP_FILE" "$SCRIPT_URL"; then
-        mv "$TEMP_FILE" "$0"
-        echo "更新完成，设置更新标志并重新启动脚本..."
-        touch "$UPDATE_FLAG"
-        exec bash "$0"
-        exit
+    if [[ "$latest_version" != "$current_version" ]]; then
+        echo "发现新版本: $latest_version"
+        echo "正在更新..."
+        if curl -o "$0" "$script_url"; then
+            echo "更新成功，请重新运行脚本"
+            exit 0
+        else
+            echo "更新失败，继续使用当前版本"
+        fi
     else
-        echo "更新失败，继续使用当前版本。"
-        rm -f "$TEMP_FILE"
+        echo "已是最新版本"
     fi
 }
 
-# 检查是否存在更新标志
-if [ ! -f "$UPDATE_FLAG" ]; then
-    auto_update
-else
-    echo "检测到更新标志，跳过更新检查。"
-    rm -f "$UPDATE_FLAG"
-fi
+# 统计使用次数
+COUNT_FILE="/root/.vps_script_count"
+DAILY_COUNT_FILE="/root/.vps_script_daily_count"
 
-# 记录运行日志
-log_run() {
-    echo "$(date +"%Y-%m-%d %H:%M:%S") - Script executed" >> /tmp/vps_script_run.log
+increment_count() {
+    if [ ! -f "$COUNT_FILE" ]; then
+        echo 0 > "$COUNT_FILE"
+    fi
+    count=$(($(cat "$COUNT_FILE") + 1))
+    echo $count > "$COUNT_FILE"
 }
 
-# 记录本次运行
-log_run
+increment_daily_count() {
+    today=$(date +"%Y-%m-%d")
+    if [ ! -f "$DAILY_COUNT_FILE" ] || [ "$(head -n 1 "$DAILY_COUNT_FILE")" != "$today" ]; then
+        echo "$today" > "$DAILY_COUNT_FILE"
+        echo "1" >> "$DAILY_COUNT_FILE"
+    else
+        count=$(($(tail -n 1 "$DAILY_COUNT_FILE") + 1))
+        sed -i '$d' "$DAILY_COUNT_FILE"
+        echo "$count" >> "$DAILY_COUNT_FILE"
+    fi
+}
 
-# 输出欢迎信息
+increment_count
+increment_daily_count
+
+total_count=$(cat "$COUNT_FILE")
+daily_count=$(tail -n 1 "$DAILY_COUNT_FILE")
+
 clear
+# 输出欢迎信息
+echo "今日运行次数: $daily_count，今日运行次数: $daily_count"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
