@@ -28,24 +28,6 @@ SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_s
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
 CURRENT_VERSION="v2024.06.24"
 
-# 创建快捷指令
-add_alias() {
-    config_file=$1
-    alias_names=("v" "v")
-    [ ! -f "$config_file" ] || touch "$config_file"
-    for alias_name in "${alias_names[@]}"; do
-        if ! grep -q "alias $alias_name=" "$config_file"; then 
-            echo "Adding alias $alias_name to $config_file"
-            echo "alias $alias_name='cd ~ && ./vps_scripts.sh'" >> "$config_file"
-        fi
-    done
-    . "$config_file"
-}
-config_files=("/root/.bashrc" "/root/.profile" "/root/.bash_profile")
-for config_file in "${config_files[@]}"; do
-    add_alias "$config_file"
-done
-
 # 获取当前服务器ipv4和ipv6
 ip_address() {
     ipv4_address=$(curl -s ipv4.ip.sb)
@@ -71,49 +53,49 @@ sum_run_times
 
 #更新系统
 update_system() {
-        if command -v apt &>/dev/null; then
-          apt-get update && apt-get upgrade -y
-        elif command -v dnf &>/dev/null; then
-          dnf check-update && dnf upgrade -y
-        elif command -v yum &>/dev/null; then
-          yum check-update && yum upgrade -y
-        elif command -v apk &>/dev/null; then
-          apk update && apk upgrade
-        else
-          echo -e "${RED}不支持的Linux发行版${NC}"
-          return 1
-        fi
-        return 0
+    if command -v apt &>/dev/null; then
+    apt-get update && apt-get upgrade -y
+    elif command -v dnf &>/dev/null; then
+    dnf check-update && dnf upgrade -y
+    elif command -v yum &>/dev/null; then
+    yum check-update && yum upgrade -y
+    elif command -v apk &>/dev/null; then
+    apk update && apk upgrade
+    else
+    echo -e "${RED}不支持的Linux发行版${NC}"
+    return 1
+    fi
+    return 0
 }
       
 #清理系统
 clean_system() {
-        if command -v apt &>/dev/null; then
-          apt autoremove --purge -y && apt clean -y && apt autoclean -y
-          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
-        elif command -v yum &>/dev/null; then
-          yum autoremove -y && yum clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v dnf &>/dev/null; then
-          dnf autoremove -y && dnf clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v apk &>/dev/null; then
-          apk autoremove -y
-          apk clean
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-        else
-          echo -e "${RED}暂不支持你的系统！${NC}"
-          exit 1
-        fi
+    if command -v apt &>/dev/null; then
+        apt autoremove --purge -y && apt clean -y && apt autoclean -y
+        apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+        journalctl --vacuum-time=1s
+        journalctl --vacuum-size=50M
+        apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
+    elif command -v yum &>/dev/null; then
+        yum autoremove -y && yum clean all
+        journalctl --vacuum-time=1s
+        journalctl --vacuum-size=50M
+        yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+    elif command -v dnf &>/dev/null; then
+        dnf autoremove -y && dnf clean all
+        journalctl --vacuum-time=1s
+        journalctl --vacuum-size=50M
+        dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
+    elif command -v apk &>/dev/null; then
+        apk autoremove -y
+        apk clean
+        journalctl --vacuum-time=1s
+        journalctl --vacuum-size=50M
+        apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
+    else
+        echo -e "${RED}暂不支持你的系统！${NC}"
+        exit 1
+    fi
 }
 
 clear
@@ -136,7 +118,7 @@ echo ""
 echo "支持Ubuntu/Debian"
 echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
 echo ""
-echo -e "今日运行次数:${PURPLE}$daily_count${NC}次，累计运行次数: ${PURPLE}$total_count${NC}次"
+echo -e "今日运行次数:$daily_count次，累计运行次数: $total_count次"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
