@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-06-25 v1.0.1"  # 最新版本号
+VERSION="2024-06-25 v1.0.2"  # 最新版本号
 
 # 定义颜色
 RED='\033[0;31m'
@@ -79,7 +79,7 @@ ip_address() {
 
 # 更新脚本
 update_scripts() {
-    VERSION="2024-06-25 v1.0.1"  # 最新版本号
+    VERSION="2024-06-25 v1.0.2"  # 最新版本号
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
