@@ -4,8 +4,11 @@
 （此脚本是各大作者脚本的集合，未作任何修改，请放心食用。）
 
 **版本:** 2024-06-25  v1.0.4
+
 **GitHub 地址:** [https://github.com/everett7623/vps_scripts](https://github.com/everett7623/vps_scripts)
+
 **VPS 选购:** [NodeLoc VPS](https://www.nodeloc.com/vps)
+
 
 ## 功能列表
 
