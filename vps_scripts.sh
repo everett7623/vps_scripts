@@ -75,12 +75,12 @@ increment_daily_count() {
 increment_count
 increment_daily_count
 
-total_count=$(cat "$COUNT_FILE")
 daily_count=$(tail -n 1 "$DAILY_COUNT_FILE")
+total_count=$(cat "$COUNT_FILE")
 
 clear
 # 输出欢迎信息
-echo "今日运行次数: $daily_count，今日运行次数: $daily_count"
+echo "今日运行次数: $daily_count，累计运行次数: $total_count"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
