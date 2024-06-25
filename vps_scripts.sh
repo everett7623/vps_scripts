@@ -24,6 +24,45 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+# 检查当前用户是否具有 sudo 权限
+if [ "$(id -u)" != "0" ]; then
+    echo "此脚本需要 root 权限运行。"
+    echo "请使用具有 sudo 权限的用户运行此脚本。"
+    exit 1
+fi
+
+# 在需要时获取 sudo 权限
+sudo -v >/dev/null 2>&1 || { echo "无法获取 sudo 权限，退出脚本。"; exit 1; }
+
+# 检查并安装依赖
+echo "检查并安装必要的依赖项..."
+
+# 检查和安装 curl
+if ! command -v curl &> /dev/null; then
+    echo "curl 未安装，正在安装..."
+    sudo apt-get update && sudo apt-get install -y curl
+else
+    echo "curl 已安装"
+fi
+
+# 检查和安装 wget
+if ! command -v wget &> /dev/null; then
+    echo "wget 未安装，正在安装..."
+    sudo apt-get update && sudo apt-get install -y wget
+else
+    echo "wget 已安装"
+fi
+
+# 检查 bash（一般来说不需要安装，因为通常是系统默认的 shell）
+if ! command -v bash &> /dev/null; then
+    echo "bash 未安装，正在安装..."
+    sudo apt-get update && sudo apt-get install -y bash
+else
+    echo "bash 已安装"
+fi
+
+echo "依赖项安装完成。"
+
 # 获取IP地址
 ip_address() {
     ipv4_address=$(curl -s --max-time 5 ipv4.ip.sb)
@@ -169,45 +208,6 @@ echo "今日运行次数: $daily_count，累计运行次数: $total_count"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
-
-# 检查当前用户是否具有 sudo 权限
-if [ "$(id -u)" != "0" ]; then
-    echo "此脚本需要 root 权限运行。"
-    echo "请使用具有 sudo 权限的用户运行此脚本。"
-    exit 1
-fi
-
-# 在需要时获取 sudo 权限
-sudo -v >/dev/null 2>&1 || { echo "无法获取 sudo 权限，退出脚本。"; exit 1; }
-
-# 检查并安装依赖
-echo "检查并安装必要的依赖项..."
-
-# 检查和安装 curl
-if ! command -v curl &> /dev/null; then
-    echo "curl 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y curl
-else
-    echo "curl 已安装"
-fi
-
-# 检查和安装 wget
-if ! command -v wget &> /dev/null; then
-    echo "wget 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y wget
-else
-    echo "wget 已安装"
-fi
-
-# 检查 bash（一般来说不需要安装，因为通常是系统默认的 shell）
-if ! command -v bash &> /dev/null; then
-    echo "bash 未安装，正在安装..."
-    sudo apt-get update && sudo apt-get install -y bash
-else
-    echo "bash 已安装"
-fi
-
-echo "依赖项安装完成。"
 
 # 主菜单
 while true; do
