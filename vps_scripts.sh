@@ -1,4 +1,5 @@
 #!/bin/bash
+VERSION="2024-06-25 v1.0.1" 
 
 # 定义颜色
 RED='\033[0;31m'
@@ -78,27 +79,43 @@ ip_address() {
 
 # 更新脚本
 update_scripts() {
+    VERSION="2024-06-25 v1.0.0"  # 当前版本，应与脚本开头定义的版本相同
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
-    CURRENT_VERSION="2024-06-25 v1.0.0"
-
+    
     REMOTE_VERSION=$(curl -s $VERSION_URL)
+    if [ -z "$REMOTE_VERSION" ]; then
+        echo -e "${RED}无法获取远程版本信息。请检查您的网络连接。${NC}"
+        return 1
+    fi
 
-    if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
-        echo -e "${BLUE}发现新版本，正在更新...${NC}"
+    if [ "$REMOTE_VERSION" != "$VERSION" ]; then
+        echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
+        echo -e "${BLUE}正在更新...${NC}"
         
-        TEMP_FILE=$(mktemp)
-        curl -s -o $TEMP_FILE $SCRIPT_URL
-        if [ $? -eq 0 ]; then
-            mv $TEMP_FILE $0
-            echo -e "${GREEN}脚本更新成功！${NC}"
-            exec bash $0
+        # 下载并替换脚本
+        if curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL; then
+            # 从新下载的脚本中提取版本信息
+            NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
+            
+            # 更新当前脚本中的版本信息
+            sed -i "s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$0"
+            
+            if mv /tmp/vps_scripts.sh "$0"; then
+                chmod +x "$0"  # 确保脚本保持可执行权限
+                echo -e "${GREEN}脚本更新成功！新版本: $NEW_VERSION${NC}"
+                echo -e "${YELLOW}重新启动脚本以应用更新...${NC}"
+                exec bash "$0"
+            else
+                echo -e "${RED}无法替换脚本文件。请检查权限。${NC}"
+                return 1
+            fi
         else
-            echo -e "${RED}脚本更新失败！${NC}"
+            echo -e "${RED}下载新版本失败。请稍后重试。${NC}"
             return 1
         fi
     else
-        echo -e "${GREEN}脚本已是最新版本。${NC}"
+        echo -e "${GREEN}脚本已是最新版本 $VERSION。${NC}"
     fi
 }
 
@@ -561,7 +578,7 @@ clear
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
-echo "VPS脚本集合 2024-06-25 v1.0.0"
+echo "VPS脚本集合 $VERSION"
 echo "GitHub地址: https://github.com/everett7623/vps_scripts"
 echo "VPS选购: https://www.nodeloc.com/vps"
 echo ""
