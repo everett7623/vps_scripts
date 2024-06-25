@@ -24,7 +24,7 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-#获取IP地址
+# 获取IP地址
 ip_address() {
     ipv4_address=$(curl -s --max-time 5 ipv4.ip.sb)
     if [ -z "$ipv4_address" ]; then
@@ -37,25 +37,22 @@ ip_address() {
     fi
 }
 
-#更新脚本
+# 更新脚本
 update_scripts() {
-    # 定义脚本URL和版本URL
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
-    VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-    CURRENT_VERSION="v2024.06.25" 
-    
-    # 获取远程版本
+    VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
+    CURRENT_VERSION="2024-06-25 v1.0.0"
+
     REMOTE_VERSION=$(curl -s $VERSION_URL)
-    
-    # 比较版本号
+
     if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
         echo -e "${BLUE}发现新版本，正在更新...${NC}"
-        # 下载并替换脚本
-        curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL
+        
+        TEMP_FILE=$(mktemp)
+        curl -s -o $TEMP_FILE $SCRIPT_URL
         if [ $? -eq 0 ]; then
-            mv /tmp/vps_scripts.sh $0
+            mv $TEMP_FILE $0
             echo -e "${GREEN}脚本更新成功！${NC}"
-            # 重新运行脚本
             exec bash $0
         else
             echo -e "${RED}脚本更新失败！${NC}"
@@ -153,7 +150,7 @@ clear
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
-echo "VPS脚本集合 v2024.06.24"
+echo "VPS脚本集合 2024-06-25 v1.0.0"
 echo "GitHub地址: https://github.com/everett7623/vps_scripts"
 echo "VPS选购: https://www.nodeloc.com/vps"
 echo ""
@@ -526,7 +523,7 @@ while true; do
     88)
       clear
       echo -e "${YELLOW}执行更新脚本...${NC}"
-      update_system
+      update_sripts
       echo "脚本更新完成"
       ;;
     99)
