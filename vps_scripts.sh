@@ -24,6 +24,19 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+#获取IP地址
+ip_address() {
+    ipv4_address=$(curl -s --max-time 5 ipv4.ip.sb)
+    if [ -z "$ipv4_address" ]; then
+        ipv4_address=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
+    fi
+
+    ipv6_address=$(curl -s --max-time 5 ipv6.ip.sb)
+    if [ -z "$ipv6_address" ]; then
+        ipv6_address=$(ip -6 addr show | grep -oP '(?<=inet6\s)[\da-f:]+' | grep -v '^::1' | grep -v '^fe80' | head -n1)
+    fi
+}
+
 #更新脚本
 update_scripts() {
     # 定义脚本URL和版本URL
@@ -237,13 +250,7 @@ while true; do
       clear
       echo -e "${YELLOW}执行本机信息...${NC}"
 
-      # 获取当前服务器ipv4和ipv6
-      ip_address() {
-      ipv4_address=$(curl -s ipv4.ip.sb)
-      ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
-      }
-      
-      ip_address()
+      ip_address
 
       if [ "$(uname -m)" == "x86_64" ]; then
         cpu_info=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
