@@ -65,6 +65,36 @@ sum_run_times() {
 # 调用函数获取统计数据
 sum_run_times
 
+#清理系统
+clean_system() {
+        if command -v apt &>/dev/null; then
+          apt autoremove --purge -y && apt clean -y && apt autoclean -y
+          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
+        elif command -v yum &>/dev/null; then
+          yum autoremove -y && yum clean all
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+        elif command -v dnf &>/dev/null; then
+          dnf autoremove -y && dnf clean all
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
+        elif command -v apk &>/dev/null; then
+          apk autoremove -y
+          apk clean
+          journalctl --vacuum-time=1s
+          journalctl --vacuum-size=50M
+          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
+        else
+          echo -e "${RED}暂不支持你的系统！${NC}"
+          exit 1
+        fi
+}
+
 clear
 # 输出欢迎信息
 echo "今日运行次数: $daily_count，累计运行次数: $total_count"
@@ -152,6 +182,7 @@ while true; do
   echo -e "${YELLOW}18) Mack-a八合一${NC}"
   echo -e "${YELLOW}19) Warp集合${NC}"
   echo -e "${YELLOW}20) 安装docker${NC}"
+  echo -e "${YELLOW}98) 清理系统${NC}"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   
@@ -315,6 +346,12 @@ while true; do
       clear
       echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
+      ;;
+    98)
+      clear
+      echo -e "${YELLOW}执行 清理系统...${NC}"
+      clean_system
+      echo "清理完成"
       ;;
     99)
       clear
