@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-06-25 v1.0.2"  # 最新版本号
+VERSION="2024-06-25 v1.0.3"  # 最新版本号
 
 # 定义颜色
 RED='\033[0;31m'
@@ -79,7 +79,7 @@ ip_address() {
 
 # 更新脚本
 update_scripts() {
-    VERSION="2024-06-25 v1.0.2"  # 最新版本号
+    VERSION="2024-06-25 v1.0.3"  # 最新版本号
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
@@ -606,7 +606,7 @@ echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #  
 echo ""
 echo "支持Ubuntu/Debian"
 echo ""
-echo -e "快捷键已设置为${RED}v${NC},下次运行输入${RED}v${NC}可快速启动此脚本"
+echo -e "快捷键已设置为${RED}v${NC}或${RED}vps${NC},下次运行输入${RED}v${NC}或${RED}vps${NC}可快速启动此脚本"
 echo ""
 echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
 echo ""
