@@ -305,6 +305,7 @@ while true; do
       bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
       ;;
     16)
+      clear
       echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh
       ;;
