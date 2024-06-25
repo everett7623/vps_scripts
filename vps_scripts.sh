@@ -469,9 +469,10 @@ while true; do
       clear
       exit
       ;;
+
     *)
       echo -e "${RED}无效选择，请重试。${NC}"
       ;;
-      esac
+esac
       read -p "按任意键返回主菜单..."
 done
