@@ -203,27 +203,28 @@ echo "依赖项安装完成。"
 while true; do
   echo ""
   echo "请选择要执行的脚本："
-  echo -e "${YELLOW}1) 更新系统${NC}"
-  echo -e "${YELLOW}2) Yabs${NC}"
-  echo -e "${YELLOW}3) 融合怪${NC}"
-  echo -e "${YELLOW}4) IP质量${NC}"
-  echo -e "${YELLOW}5) 流媒体解锁${NC}"
-  echo -e "${YELLOW}6) 响应测试${NC}"
-  echo -e "${YELLOW}7) 三网测速（多/单线程）${NC}"
-  echo -e "${YELLOW}8) 安装并启动iperf3服务端 ${NC}"
-  echo -e "${YELLOW}9) AutoTrace三网回程路由${NC}"
-  echo -e "${YELLOW}10) 超售测试${NC}"
-  echo -e "${YELLOW}11) VPS一键脚本工具箱${NC}"
-  echo -e "${YELLOW}12) jcnf 常用脚本工具包${NC}"
-  echo -e "${YELLOW}13) 科技lion脚本${NC}"
-  echo -e "${YELLOW}14) BlueSkyXN脚本${NC}"
-  echo -e "${YELLOW}15) 勇哥Singbox${NC}"
-  echo -e "${YELLOW}16) 勇哥x-ui${NC}"
-  echo -e "${YELLOW}17) Fscarmen-Singbox${NC}"
-  echo -e "${YELLOW}18) Mack-a八合一${NC}"
-  echo -e "${YELLOW}19) Warp集合${NC}"
-  echo -e "${YELLOW}20) 安装docker${NC}"
-  echo -e "${YELLOW}98) 清理系统${NC}"
+  echo -e "${YELLOW}1) 本机信息${NC}"
+  echo -e "${YELLOW}2) 更新系统${NC}"
+  echo -e "${YELLOW}3) 清理系统${NC}"
+  echo -e "${YELLOW}4) Yabs${NC}"
+  echo -e "${YELLOW}5) 融合怪${NC}"
+  echo -e "${YELLOW}6) IP质量${NC}"
+  echo -e "${YELLOW}7) 流媒体解锁${NC}"
+  echo -e "${YELLOW}8) 响应测试${NC}"
+  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}"
+  echo -e "${YELLOW}10) 安装并启动iperf3服务端 ${NC}"
+  echo -e "${YELLOW}11) AutoTrace三网回程路由${NC}"
+  echo -e "${YELLOW}12) 超售测试${NC}"
+  echo -e "${YELLOW}13) VPS一键脚本工具箱${NC}"
+  echo -e "${YELLOW}14) jcnf 常用脚本工具包${NC}"
+  echo -e "${YELLOW}15) 科技lion脚本${NC}"
+  echo -e "${YELLOW}16) BlueSkyXN脚本${NC}"
+  echo -e "${YELLOW}17) 勇哥Singbox${NC}"
+  echo -e "${YELLOW}18) 勇哥x-ui${NC}"
+  echo -e "${YELLOW}19) Fscarmen-Singbox${NC}"
+  echo -e "${YELLOW}20) Mack-a八合一${NC}"
+  echo -e "${YELLOW}21) Warp集合${NC}"
+  echo -e "${YELLOW}22) 安装docker${NC}"
   echo "-----------------------------------------------"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
@@ -231,43 +232,49 @@ while true; do
   read -p "输入数字选择对应的脚本: " choice
 
   case $choice in
-    1)
+    2)
       clear
       echo -e "${YELLOW}执行更新系统...${NC}"
       update_system
       echo "更新完成"
       ;;
-    2)
+    3)
+      clear
+      echo -e "${YELLOW}执行 清理系统...${NC}"
+      clean_system
+      echo "清理完成"
+      ;;
+    4)
       clear
       echo -e "${YELLOW}执行 Yabs 脚本...${NC}"
       wget -qO- yabs.sh | bash
       ;;
-    3)
+    5)
       clear
       echo -e "${YELLOW}执行 融合怪 脚本...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       ;;
-    4)
+    6)
       clear
       echo -e "${YELLOW}执行 IP质量 脚本...${NC}"
       bash <(curl -Ls IP.Check.Place)
       ;;
-    5)
+    7)
       clear
       echo -e "${YELLOW}执行 流媒体解锁 脚本...${NC}"
       bash <(curl -L -s media.ispvps.com)
       ;;
-    6)
+    8)
       clear
       echo -e "${YELLOW}执行 响应测试 脚本...${NC}"
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
       ;;
-    7)
+    9)
       clear
       echo -e "${YELLOW}执行 三网测速（多/单线程） 脚本...${NC}"
       bash <(curl -sL bash.icu/speedtest)
       ;;
-    8)
+    10)
       clear
       echo -e "${YELLOW}执行 安装并启动iperf3服务端 脚本...${NC}"
       echo ""
@@ -324,71 +331,65 @@ while true; do
       apt-get install -y iperf3
       iperf3 -s
       ;;
-    9)
+    11)
       clear
       echo -e "${YELLOW}执行 AutoTrace三网回程路由 脚本...${NC}"
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
-    10)
+    12)
       clear
       echo -e "${YELLOW}执行 超售测试脚本 脚本...${NC}"
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       ;;
-    11)
+    13)
       clear
       echo -e "${YELLOW}执行 VPS一键脚本工具箱 脚本...${NC}"
       bash <(curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh)
       ;;
-    12)
+    14)
       clear
       echo -e "${YELLOW}执行 jcnf 常用脚本工具包 脚本...${NC}"
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       ;;
-    13)
+    15)
       clear
       echo -e "${YELLOW}执行 科技lion脚本 脚本...${NC}"
       curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
       ;;
-    14)
+    16)
       clear
       echo -e "${YELLOW}执行 BlueSkyXN脚本 脚本...${NC}"
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       ;;
-    15)
+    17)
       clear
       echo -e "${YELLOW}执行 勇哥Singbox 脚本...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
       ;;
-    16)
+    18)
       clear
       echo -e "${YELLOW}执行 勇哥x-ui 脚本...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh
       ;;
-    17)
+    19)
       clear
       echo -e "${YELLOW}执行 Fscarmen-Singbox 脚本...${NC}"
       bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
       ;;
-    18)
+    20)
       clear
       echo -e "${YELLOW}执行 Mack-a八合一 脚本...${NC}"
       wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
       ;;
-    19)
+    21)
       clear
       echo -e "${YELLOW}执行 Warp集合 脚本...${NC}"
       bash <(curl -sSL https://gitlab.com/fscarmen/warp_unlock/-/raw/main/unlock.sh)
       ;;
-    20)
+    22)
       clear
       echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
-      ;;
-    98)
-      clear
-      echo -e "${YELLOW}执行 清理系统...${NC}"
-      clean_system
-      echo "清理完成"
       ;;
     99)
       clear
