@@ -21,31 +21,34 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-# 定义脚本URL和版本URL
-SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
-VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-CURRENT_VERSION="v2024.06.24" # 假设当前版本是 v2024.06.24
-
-# 获取远程版本
-REMOTE_VERSION=$(curl -s $VERSION_URL)
-
-# 比较版本号
-if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
-    echo -e "${BLUE}发现新版本，正在更新...${NC}"
-    # 下载并替换脚本
-    curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL
-    if [ $? -eq 0 ]; then
-        mv /tmp/vps_scripts.sh $0
-        echo -e "${GREEN}脚本更新成功！${NC}"
-        # 重新运行脚本
-        exec bash $0
+#更新脚本
+update_scripts() {
+    # 定义脚本URL和版本URL
+    SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+    VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
+    CURRENT_VERSION="v2024.06.24" 
+    
+    # 获取远程版本
+    REMOTE_VERSION=$(curl -s $VERSION_URL)
+    
+    # 比较版本号
+    if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
+        echo -e "${BLUE}发现新版本，正在更新...${NC}"
+        # 下载并替换脚本
+        curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL
+        if [ $? -eq 0 ]; then
+            mv /tmp/vps_scripts.sh $0
+            echo -e "${GREEN}脚本更新成功！${NC}"
+            # 重新运行脚本
+            exec bash $0
+        else
+            echo -e "${RED}脚本更新失败！${NC}"
+            return 1
+        fi
     else
-        echo -e "${RED}脚本更新失败！${NC}"
-        exit 1
+        echo -e "${GREEN}脚本已是最新版本。${NC}"
     fi
-else
-    echo -e "${GREEN}脚本已是最新版本。${NC}"
-fi
+}
 
 # 创建快捷指令
 add_alias() {
@@ -226,6 +229,7 @@ while true; do
   echo -e "${YELLOW}21) Warp集合${NC}"
   echo -e "${YELLOW}22) 安装docker${NC}"
   echo "-----------------------------------------------"
+  echo -e "${YELLOW}88) 更新脚本${NC}"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   
@@ -236,13 +240,13 @@ while true; do
       clear
       echo -e "${YELLOW}执行更新系统...${NC}"
       update_system
-      echo "更新完成"
+      echo "系统更新完成"
       ;;
     3)
       clear
       echo -e "${YELLOW}执行 清理系统...${NC}"
       clean_system
-      echo "清理完成"
+      echo "系统清理完成"
       ;;
     4)
       clear
@@ -391,6 +395,12 @@ while true; do
       echo -e "${YELLOW}执行 安装docker 脚本...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
+    88)
+      clear
+      echo -e "${YELLOW}执行更新脚本...${NC}"
+      update_system
+      echo "脚本更新完成"
+      ;;
     99)
       clear
       echo -e "${YELLOW}执行 卸载脚本...${NC}"
@@ -430,7 +440,7 @@ while true; do
       [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
       [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
       
-      echo "卸载完成"
+      echo "脚本卸载完成"
       ;;
     0)
       break
