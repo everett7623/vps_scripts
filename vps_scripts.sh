@@ -16,37 +16,35 @@ colors=(
 
 # 检查 root 权限
 if [ "$(id -u)" != "0" ]; then
-    echo "此脚本需要 root 权限运行。"
+    echo -e "${RED}此脚本需要 root 权限运行。${NC}"
     exit 1
 fi
 
 # 定义脚本URL和版本URL
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-UPDATE_FLAG="/tmp/vps_scripts_updated.flag"
+CURRENT_VERSION="v2024.06.24" # 假设当前版本是 v2024.06.24
 
-# 检查脚本更新
-check_update() {
-    local current_version=$(grep "VPS脚本集合 v" "$0" | cut -d'v' -f2)
-    local version_url="https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.txt"
-    local script_url="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+# 获取远程版本
+REMOTE_VERSION=$(curl -s $VERSION_URL)
 
-    echo "检查更新..."
-    local latest_version=$(curl -s "$version_url")
-    
-    if [[ "$latest_version" != "$current_version" ]]; then
-        echo "发现新版本: $latest_version"
-        echo "正在更新..."
-        if curl -o "$0" "$script_url"; then
-            echo "更新成功，请重新运行脚本"
-            exit 0
-        else
-            echo "更新失败，继续使用当前版本"
-        fi
+# 比较版本号
+if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
+    echo -e "${BLUE}发现新版本，正在更新...${NC}"
+    # 下载并替换脚本
+    curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL
+    if [ $? -eq 0 ]; then
+        mv /tmp/vps_scripts.sh $0
+        echo -e "${GREEN}脚本更新成功！${NC}"
+        # 重新运行脚本
+        exec bash $0
     else
-        echo "已是最新版本"
+        echo -e "${RED}脚本更新失败！${NC}"
+        exit 1
     fi
-}
+else
+    echo -e "${GREEN}脚本已是最新版本。${NC}"
+fi
 
 # 统计使用次数
 COUNT_FILE="/root/.vps_script_count"
@@ -80,7 +78,7 @@ total_count=$(cat "$COUNT_FILE")
 
 clear
 # 输出欢迎信息
-echo "今日运行次数: $daily_count，累计运行次数: $total_count"
+echo -e "${GREEN}今日运行次数: $daily_count，累计运行次数: $total_count${NC}"
 echo ""
 echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 echo ""
