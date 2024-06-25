@@ -575,7 +575,8 @@ handle_choice() {
       echo "脚本卸载完成"
       ;;
     0)
-      break
+    clear
+    exit
       ;;
     *)
       echo -e "${RED}无效选择，请重新输入。${NC}"
