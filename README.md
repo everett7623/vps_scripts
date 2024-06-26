@@ -83,7 +83,7 @@
 
 ## 许可协议
 
-本项目采用 [MIT License](LICENSE) 许可。
+本项目采用 [AGPL-3.0 license](LICENSE) 许可。
 
 ## 鸣谢
 * [Eooce](https://github.com/eooce/ssh_tool)
