@@ -44,6 +44,10 @@
 1. 确保您以 `root` 用户身份运行脚本。
 2. 下载并运行脚本：
     ```bash
+    bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
+    ```
+    或
+   ```bash
     curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh -o vps_scripts.sh&& chmod +x vps_scripts.sh && ./vps_scripts.sh
     ```
     或
@@ -51,7 +55,7 @@
     wget -O vps_scripts.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh && chmod +x vps_scripts.sh && clear && ./vps_scripts.sh
     ```
 
-3. 根据提示输入对应的数字选择要执行的功能。
+4. 根据提示输入对应的数字选择要执行的功能。
 
 ![vps_scripts.png](https://img.y8o.de/i/2024/06/25/667ae40793519.png)
 
