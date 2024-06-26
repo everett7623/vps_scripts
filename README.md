@@ -1,4 +1,4 @@
-# VPS 脚本集合
+# VPS 脚本集合 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
 这是一个多功能 VPS 脚本工具集，包含系统更新、测速、IP 质量检测、流媒体解锁测试等多种实用功能。
 （此脚本是各大作者脚本的集合，未作任何修改，请放心食用。）
