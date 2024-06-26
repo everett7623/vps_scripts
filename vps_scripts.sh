@@ -19,37 +19,45 @@ colors=(
     '\033[38;2;255;255;0m'  # 黄色
 )
 
-# 检查 root 权限
+# 检查 root 权限并获取 sudo 权限
 if [ "$(id -u)" != "0" ]; then
     echo "此脚本需要 root 权限运行。"
-    exit 1
+    if ! sudo -v; then
+        echo "无法获取 sudo 权限，退出脚本。"
+        exit 1
+    fi
+    echo "已获取 sudo 权限。"
 fi
 
-# 在需要时获取 sudo 权限
-sudo -v >/dev/null 2>&1 || { echo "无法获取 sudo 权限，退出脚本。"; exit 1; }
+# 定义依赖项
+dependencies=("curl" "wget" "bash")
 
 # 检查并安装依赖
-echo "检查并安装必要的依赖项..."
+install_dependencies() {
+    local missing_deps=()
+    for dep in "${dependencies[@]}"; do
+        if ! command -v $dep &> /dev/null; then
+            missing_deps+=($dep)
+        fi
+    done
 
-# 函数：检查并安装依赖
-install_if_missing() {
-    local cmd="$1"
-    local pkg="$2"
-
-    if ! command -v $cmd &> /dev/null; then
-        echo "$cmd 未安装，正在安装..."
-        sudo apt-get update && sudo apt-get install -y $pkg
+    if [ ${#missing_deps[@]} -ne 0 ]; then
+        echo "正在安装缺少的依赖项: ${missing_deps[*]}"
+        if ! sudo apt-get update; then
+            echo "更新包列表失败，请检查您的网络连接。"
+            exit 1
+        fi
+        for dep in "${missing_deps[@]}"; do
+            if ! sudo apt-get install -y $dep; then
+                echo "安装 $dep 失败。"
+                exit 1
+            fi
+        done
+        echo "所有依赖项已成功安装。"
     else
-        echo "$cmd 已安装"
+        echo "所有必要的依赖项已安装。"
     fi
 }
-
-# 检查和安装 curl, wget, bash
-install_if_missing "curl" "curl"
-install_if_missing "wget" "wget"
-install_if_missing "bash" "bash"
-
-echo "依赖项安装完成。"
 
 # 获取IP地址
 ip_address() {
@@ -156,9 +164,6 @@ add_alias() {
         echo "已创建 /etc/profile.d/vps_aliases.sh 以确保重启后别名仍然可用。"
     fi
 }
-
-# 调用函数创建别名
-add_alias
 
 # 统计使用次数
 sum_run_times() {
@@ -585,6 +590,14 @@ handle_choice() {
       # 等待用户按回车返回主菜单
       read -p "按回车键返回主菜单..."
 }
+
+# 调用函数创建别名
+add_alias
+
+# 检查并安装依赖
+echo "检查并安装必要的依赖项..."
+install_dependencies
+echo "依赖项检查和安装完成。"
 
 clear
 # 输出欢迎信息
