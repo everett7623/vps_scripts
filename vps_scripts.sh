@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-06-25 v1.0.4"  # 最新版本号
+VERSION="2024-06-25 v1.0.5"  # 最新版本号
 
 # 定义颜色
 RED='\033[0;31m'
@@ -66,7 +66,7 @@ ip_address() {
 
 # 更新脚本
 update_scripts() {
-    VERSION="2024-06-25 v1.0.4"  # 最新版本号
+    VERSION="2024-06-25 v1.0.5"  # 最新版本号
     SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
@@ -117,36 +117,48 @@ update_scripts() {
 
 # 创建快捷指令
 add_alias() {
-    config_file=$1
-    alias_names=("v" "vps")  # 使用两个不同的别名
-    [ -f "$config_file" ] || touch "$config_file"  # 如果文件不存在，创建它
-    alias_added=false
-    for alias_name in "${alias_names[@]}"; do
-        if ! grep -q "alias $alias_name=" "$config_file"; then 
-            echo "Adding alias $alias_name to $config_file"
-            echo "alias $alias_name='cd ~ && ./vps_scripts.sh'" >> "$config_file"
-            alias_added=true
+    local alias_file="/root/.vps_aliases"
+    echo "# VPS script aliases" > "$alias_file"
+    echo "alias v='bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)'" >> "$alias_file"
+    echo "alias vps='bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)'" >> "$alias_file"
+
+    # 在shell配置文件中添加对别名文件的引用
+    local config_files=("/root/.bashrc" "/root/.profile" "/root/.bash_profile")
+    local updated=false
+
+    for config_file in "${config_files[@]}"; do
+        if [ -f "$config_file" ]; then
+            if ! grep -q "source $alias_file" "$config_file"; then
+                echo "source $alias_file" >> "$config_file"
+                updated=true
+            fi
         fi
     done
-    if $alias_added; then
-        # 如果添加了新的别名，立即在当前会话中生效
-        . "$config_file"
+
+    if $updated; then
+        echo "别名已添加到配置文件。"
+        # 自动执行source命令
+        for config_file in "${config_files[@]}"; do
+            if [ -f "$config_file" ]; then
+                source "$config_file"
+                echo "已执行 source $config_file"
+                break  # 只需执行一次
+            fi
+        done
+        echo "别名现在应该可以使用了。"
+    else
+        echo "别名已经存在，无需更新。"
+    fi
+
+    # 确保在重启后别名仍然可用
+    if [ ! -f "/etc/profile.d/vps_aliases.sh" ]; then
+        echo "source $alias_file" | sudo tee /etc/profile.d/vps_aliases.sh > /dev/null
+        echo "已创建 /etc/profile.d/vps_aliases.sh 以确保重启后别名仍然可用。"
     fi
 }
 
-config_files=("/root/.bashrc" "/root/.profile" "/root/.bash_profile")
-for config_file in "${config_files[@]}"; do
-    add_alias "$config_file"
-done
-
-# 确保别名在当前会话中生效
-if [ -f ~/.bashrc ]; then
-    . ~/.bashrc
-elif [ -f ~/.profile ]; then
-    . ~/.profile
-elif [ -f ~/.bash_profile ]; then
-    . ~/.bash_profile
-fi
+# 调用函数创建别名
+add_alias
 
 # 统计使用次数
 sum_run_times() {
