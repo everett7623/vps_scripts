@@ -72,6 +72,15 @@ ip_address() {
     fi
 }
 
+# 检查是否是通过 curl 直接执行的
+if [ -z "$BASH_SOURCE" ] || [ "$BASH_SOURCE" = "$0" ]; then
+    SCRIPT_PATH=$(mktemp)
+    curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh > "$SCRIPT_PATH"
+    chmod +x "$SCRIPT_PATH"
+    exec "$SCRIPT_PATH" "$@"
+    exit 0
+fi
+
 # 更新脚本
 update_scripts() {
     VERSION="2024-06-25 v1.0.5"  # 最新版本号
@@ -631,3 +640,6 @@ while true; do
     read -p "输入数字选择对应的脚本: " choice
     handle_choice "$choice"
 done
+
+# 在脚本结束时添加：
+trap 'rm -f "$SCRIPT_PATH"' EXIT
