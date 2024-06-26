@@ -95,4 +95,4 @@
 * [mack-a](https://github.com/mack-a/v2ray-agent)
 
 ## 广告
-VPS，梯子等小工具推荐
+[VPS，梯子等小工具推荐](https://github.com/everett7623/tool)
