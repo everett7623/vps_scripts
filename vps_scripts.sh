@@ -243,8 +243,8 @@ show_menu() {
   echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
   echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) Mack-a八合一${NC}"
   echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) Warp集合${NC}"
-  echo -e "${YELLOW}10) 安装并启动iperf3服务端${NC}         ${YELLOW}22) 安装docker${NC}"
-  echo -e "${YELLOW}11) AutoTrace三网回程路由${NC}"
+  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}         ${YELLOW}22) 安装docker${NC}"
+  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
   echo -e "${YELLOW}12) 超售测试${NC}"
   echo "------------------------------------------------------------------------------"
   echo -e "${YELLOW}88) 更新脚本${NC}"
@@ -416,6 +416,11 @@ handle_choice() {
       ;;
     10)
       clear
+      echo -e "${PURPLE}执行 AutoTrace三网回程路由 脚本...${NC}"
+      wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
+      ;;
+    11)
+      clear
       echo -e "${PURPLE}执行 安装并启动iperf3服务端 脚本...${NC}"
       echo ""
       echo "客户端操作，比如Windows："
@@ -470,11 +475,6 @@ handle_choice() {
       echo -e "${BLUE}等待看到服务端监听端口5201后 回到客户端按照案例操作即可:${NC}"
       apt-get install -y iperf3
       iperf3 -s
-      ;;
-    11)
-      clear
-      echo -e "${PURPLE}执行 AutoTrace三网回程路由 脚本...${NC}"
-      wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       ;;
     12)
       clear
