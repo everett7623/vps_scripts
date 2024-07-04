@@ -534,7 +534,7 @@ handle_choice() {
       ;;
     66)
       clear
-      echo -e "${PURPLE}执行 Nodeloc一键vps脚本...${NC}"
+      echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
       wget -O Nlbench.sh https://raw.githubusercontent.com/everett7623/nodeloc_vps_test/main/Nlbench.sh && chmod +x Nlbench.sh && ./Nlbench.sh
       ;;
     88)
