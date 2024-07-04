@@ -35,6 +35,7 @@
 21) Warp集合
 22) 安装docker
 ------------------------------------------------------------------------------
+66）Nodeloc一键vps测试脚本
 88) 更新脚本
 99) 卸载脚本
 0) 退出
@@ -43,10 +44,6 @@
 
 1. 确保您以 `root` 用户身份运行脚本。
 2. 下载并运行脚本：
-    ```bash
-    bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
-    ```
-    或
     ```bash
     wget -O vps_scripts.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh && chmod +x vps_scripts.sh && clear && ./vps_scripts.sh
     ```
@@ -75,6 +72,10 @@
 - 修复快捷键BUG
 ### 2024-06-25 v1.0.4
 - 优化依赖代码及逻辑
+### 2024-06-25 v1.0.5
+- 修复若干bug
+### 2024-06-25 v1.0.6
+- 增加Nodeloc一键vps测试脚本
 
 ## 注意事项
 
