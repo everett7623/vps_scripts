@@ -29,51 +29,59 @@ if [ "$(id -u)" != "0" ]; then
     echo "已获取 sudo 权限。"
 fi
 
-#更新系统
-update_system() {
-        if command -v apt &>/dev/null; then
-          apt-get update && apt-get upgrade -y
-        elif command -v dnf &>/dev/null; then
-          dnf check-update && dnf upgrade -y
-        elif command -v yum &>/dev/null; then
-          yum check-update && yum upgrade -y
-        elif command -v apk &>/dev/null; then
-          apk update && apk upgrade
-        else
-          echo -e "${RED}不支持的Linux发行版${NC}"
-          return 1
-        fi
-        return 0
-}
-
-# 定义依赖项
-dependencies=("curl" "wget" "bash")
-
-# 检查并安装依赖
+# 更新系统并安装依赖
 install_dependencies() {
-    local missing_deps=()
+    echo -e "${YELLOW}正在更新系统并安装必要的依赖项...${NC}"
+    
+    local package_manager
+    local update_cmd
+    local install_cmd
+    
+    if command -v apt &>/dev/null; then
+        package_manager="apt-get"
+        update_cmd="update"
+        install_cmd="install -y"
+    elif command -v dnf &>/dev/null; then
+        package_manager="dnf"
+        update_cmd="check-update"
+        install_cmd="install -y"
+    elif command -v yum &>/dev/null; then
+        package_manager="yum"
+        update_cmd="check-update"
+        install_cmd="install -y"
+    elif command -v apk &>/dev/null; then
+        package_manager="apk"
+        update_cmd="update"
+        install_cmd="add"
+    else
+        echo -e "${RED}不支持的Linux发行版${NC}"
+        return 1
+    fi
+    
+    # 更新系统
+    if sudo $package_manager $update_cmd; then
+        echo -e "${GREEN}系统更新完成。${NC}"
+        [ "$package_manager" != "apk" ] && sudo $package_manager upgrade -y
+    else
+        echo -e "${RED}系统更新失败。继续安装依赖项。${NC}"
+    fi
+    
+    # 安装依赖
+    local dependencies=("curl" "wget")
+    
     for dep in "${dependencies[@]}"; do
-        if ! command -v $dep &> /dev/null; then
-            missing_deps+=($dep)
+        if ! command -v "$dep" &> /dev/null; then
+            echo -e "${YELLOW}正在安装 $dep...${NC}"
+            if ! sudo $package_manager $install_cmd "$dep"; then
+                echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
+            fi
+        else
+            echo -e "${GREEN}$dep 已安装。${NC}"
         fi
     done
-
-    if [ ${#missing_deps[@]} -ne 0 ]; then
-        echo "正在安装缺少的依赖项: ${missing_deps[*]}"
-        if ! sudo apt-get update; then
-            echo "更新包列表失败，请检查您的网络连接。"
-            exit 1
-        fi
-        for dep in "${missing_deps[@]}"; do
-            if ! sudo apt-get install -y $dep; then
-                echo "安装 $dep 失败。"
-                exit 1
-            fi
-        done
-        echo "所有依赖项已成功安装。"
-    else
-        echo "所有必要的依赖项已安装。"
-    fi
+    
+    echo -e "${GREEN}依赖项检查和安装完成。${NC}"
+    clear
 }
 
 # 获取IP地址
