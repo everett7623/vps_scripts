@@ -29,44 +29,63 @@ if [ "$(id -u)" != "0" ]; then
     echo "已获取 sudo 权限。"
 fi
 
-# 更新系统并安装依赖
-install_dependencies() {
-    echo -e "${YELLOW}正在更新系统并安装必要的依赖项...${NC}"
+# 更新系统
+update_system() {
+    echo -e "${YELLOW}正在更新系统...${NC}"
     
     local package_manager
     local update_cmd
-    local install_cmd
     
     if command -v apt &>/dev/null; then
         package_manager="apt-get"
         update_cmd="update"
-        install_cmd="install -y"
     elif command -v dnf &>/dev/null; then
         package_manager="dnf"
         update_cmd="check-update"
-        install_cmd="install -y"
     elif command -v yum &>/dev/null; then
         package_manager="yum"
         update_cmd="check-update"
-        install_cmd="install -y"
     elif command -v apk &>/dev/null; then
         package_manager="apk"
         update_cmd="update"
+    else
+        echo -e "${RED}不支持的Linux发行版${NC}"
+        return 1
+    fi
+    
+    if sudo $package_manager $update_cmd; then
+        echo -e "${GREEN}系统更新完成。${NC}"
+        [ "$package_manager" != "apk" ] && sudo $package_manager upgrade -y
+    else
+        echo -e "${RED}系统更新失败。${NC}"
+        return 1
+    fi
+}
+
+# 安装依赖
+install_dependencies() {
+    echo -e "${YELLOW}正在安装必要的依赖项...${NC}"
+    
+    local package_manager
+    local install_cmd
+    
+    if command -v apt &>/dev/null; then
+        package_manager="apt-get"
+        install_cmd="install -y"
+    elif command -v dnf &>/dev/null; then
+        package_manager="dnf"
+        install_cmd="install -y"
+    elif command -v yum &>/dev/null; then
+        package_manager="yum"
+        install_cmd="install -y"
+    elif command -v apk &>/dev/null; then
+        package_manager="apk"
         install_cmd="add"
     else
         echo -e "${RED}不支持的Linux发行版${NC}"
         return 1
     fi
     
-    # 更新系统
-    if sudo $package_manager $update_cmd; then
-        echo -e "${GREEN}系统更新完成。${NC}"
-        [ "$package_manager" != "apk" ] && sudo $package_manager upgrade -y
-    else
-        echo -e "${RED}系统更新失败。继续安装依赖项。${NC}"
-    fi
-    
-    # 安装依赖
     local dependencies=("curl" "wget")
     
     for dep in "${dependencies[@]}"; do
@@ -81,7 +100,6 @@ install_dependencies() {
     done
     
     echo -e "${GREEN}依赖项检查和安装完成。${NC}"
-    clear
 }
 
 # 获取IP地址
