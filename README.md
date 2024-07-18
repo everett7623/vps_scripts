@@ -3,7 +3,7 @@
 这是一个多功能 VPS 脚本工具集，包含系统更新、测速、IP 质量检测、流媒体解锁测试等多种实用功能。
 （此脚本是各大作者脚本的集合，未作任何修改，请放心食用。）
 
-**版本:** 2024-06-25  v1.0.5
+**版本:** 2024-06-25  v1.0.7
 
 **GitHub 地址:** [https://github.com/everett7623/vps_scripts](https://github.com/everett7623/vps_scripts)
 
