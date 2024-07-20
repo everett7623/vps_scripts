@@ -467,7 +467,7 @@ handle_choice() {
       fi
 
       echo ""
-      echo "服务端操作完成。现在您可以在客户端进行测试。"
+      echo -e "${PURPLE}服务端操作完成。现在您可以在客户端进行测试。${NC}"
       echo ""
       echo "客户端操作，比如Windows："
       echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
