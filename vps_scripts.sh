@@ -448,6 +448,26 @@ handle_choice() {
     11)
       clear
       echo -e "${PURPLE}执行 安装并启动iperf3服务端...${NC}"
+      apt-get install -y iperf3
+
+      # 检查iperf3是否已经在运行
+      if pgrep -x "iperf3" > /dev/null
+      then
+          echo "iperf3 服务已经在运行。"
+      else
+          echo "启动iperf3服务..."
+          iperf3 -s &
+          sleep 2
+          if pgrep -x "iperf3" > /dev/null
+          then
+              echo "iperf3服务启动成功，正在监听端口5201。"
+          else
+              echo "iperf3服务启动失败，请检查是否有其他程序占用了5201端口。"
+          fi
+      fi
+
+      echo ""
+      echo "服务端操作完成。现在您可以在客户端进行测试。"
       echo ""
       echo "客户端操作，比如Windows："
       echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
@@ -460,47 +480,35 @@ handle_choice() {
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}"
       echo "它会进行10秒的默认TCP下载测试。"
       echo "案例：.\iperf3.exe -c 104.234.111.111"
-
       echo ""
       echo -e "${BLUE}单线程上传测试:${NC}"
       echo -e "iperf3.exe -c ${RED}vps_ip${NC} -R"
       echo "该命令会测试从客户端到服务端VPS的上传带宽。"
       echo "案例：.\iperf3.exe -c 104.234.111.111 -R"
-
       echo ""
       echo -e "${BLUE}多线程下载测试:${NC}"
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -P 4"
       echo "这会运行一个4个流并行下载测试。"
       echo "案例：.\iperf3.exe -c 104.234.111.111 -P 4"
-
       echo ""
       echo -e "${BLUE}多线程上传测试:${NC}"
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -R -P 4"
       echo "案例：.\iperf3.exe -c 104.234.111.111 -R -P 4"
-
       echo ""
       echo -e "${BLUE}长时间下载测试:${NC}"
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -t 60"
       echo "该命令会测试60秒的长时间下载，观察带宽变化。"
       echo "案例：.\iperf3.exe -c 104.234.111.111 -t 60"
-
       echo ""
       echo -e "${BLUE}UDP模拟视频流测试:${NC}"
       echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -u -b 200m"
       echo "以200mbps的码率，测试UDP下载/模拟视频流。"
       echo "您也可以根据实际需求调整目标带宽-b值。"
       echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
-
       echo ""
       echo -e "${BLUE}其他参数示例:${NC}"
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -i 1       # 每1秒输出带宽报告"
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -p 5201    # 指定服务端端口为5201"
-
-      echo -e "${BLUE}上面的操作是客户端操作案例，下面启动服务端iperf3服务端:${NC}"
-      echo "不加任何参数，则默认监听TCP端口5201"
-      echo -e "${BLUE}等待看到服务端监听端口5201后 回到客户端按照案例操作即可:${NC}"
-      apt-get install -y iperf3
-      iperf3 -s
       ;;
     12)
       clear
