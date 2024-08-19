@@ -82,35 +82,70 @@ update_scripts() {
 
 # 更新系统
 update_system() {
+    detect_os || return 1
+
+    case "${os_type,,}" in
+        ubuntu|debian|linuxmint|elementary|pop)
+            update_cmd="apt-get update"
+            upgrade_cmd="apt-get upgrade -y"
+            install_cmd="apt-get install -y"
+            ;;
+        centos|rhel|fedora|rocky|almalinux|openeuler)
+            if command -v dnf &>/dev/null; then
+                update_cmd="dnf check-update"
+                upgrade_cmd="dnf upgrade -y"
+                install_cmd="dnf install -y"
+            else
+                update_cmd="yum check-update"
+                upgrade_cmd="yum upgrade -y"
+                install_cmd="yum install -y"
+            fi
+            ;;
+        opensuse*|sles)
+            update_cmd="zypper refresh"
+            upgrade_cmd="zypper update -y"
+            install_cmd="zypper install -y"
+            ;;
+        arch|manjaro)
+            update_cmd="pacman -Sy"
+            upgrade_cmd="pacman -Su --noconfirm"
+            install_cmd="pacman -S --noconfirm"
+            ;;
+        alpine)
+            update_cmd="apk update"
+            upgrade_cmd="apk upgrade"
+            install_cmd="apk add"
+            ;;
+        gentoo)
+            update_cmd="emerge --sync"
+            upgrade_cmd="emerge -uDN @world"
+            install_cmd="emerge"
+            ;;
+        cloudlinux)
+            update_cmd="yum check-update"
+            upgrade_cmd="yum upgrade -y"
+            install_cmd="yum install -y"
+            ;;
+        *)
+            echo -e "${RED}不支持的 Linux 发行版: $os_type${NC}"
+            return 1
+            ;;
+    esac
+
     echo -e "${YELLOW}正在更新系统...${NC}"
+    sudo $update_cmd && sudo $upgrade_cmd
     
-    local package_manager
-    local update_cmd
-    
-    if command -v apt &>/dev/null; then
-        package_manager="apt-get"
-        update_cmd="update"
-    elif command -v dnf &>/dev/null; then
-        package_manager="dnf"
-        update_cmd="check-update"
-    elif command -v yum &>/dev/null; then
-        package_manager="yum"
-        update_cmd="check-update"
-    elif command -v apk &>/dev/null; then
-        package_manager="apk"
-        update_cmd="update"
-    else
-        echo -e "${RED}不支持的Linux发行版${NC}"
-        return 1
-    fi
-    
-    if sudo $package_manager $update_cmd; then
-        echo -e "${GREEN}系统更新完成。${NC}"
-        [ "$package_manager" != "apk" ] && sudo $package_manager upgrade -y
-    else
+    if [ $? -ne 0 ]; then
         echo -e "${RED}系统更新失败。${NC}"
         return 1
     fi
+    echo -e "${GREEN}系统更新完成。${NC}"
+    
+    # 检查是否需要重启
+    if [ -f /var/run/reboot-required ]; then
+        echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
+    fi
+    return 0
 }
 
 # 安装依赖
