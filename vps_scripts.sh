@@ -150,42 +150,43 @@ update_system() {
 
 # 安装依赖
 install_dependencies() {
-    echo -e "${YELLOW}正在安装必要的依赖项...${NC}"
+    echo -e "${YELLOW}正在检查并安装必要的依赖项...${NC}"
     
-    local package_manager
-    local install_cmd
+    # 更新系统
+    update_system || echo -e "${RED}系统更新失败。继续安装依赖项。${NC}"
     
-    if command -v apt &>/dev/null; then
-        package_manager="apt-get"
-        install_cmd="install -y"
-    elif command -v dnf &>/dev/null; then
-        package_manager="dnf"
-        install_cmd="install -y"
-    elif command -v yum &>/dev/null; then
-        package_manager="yum"
-        install_cmd="install -y"
-    elif command -v apk &>/dev/null; then
-        package_manager="apk"
-        install_cmd="add"
-    else
-        echo -e "${RED}不支持的Linux发行版${NC}"
-        return 1
-    fi
-    
+    # 安装依赖
     local dependencies=("curl" "wget")
     
-    for dep in "${dependencies[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            echo -e "${YELLOW}正在安装 $dep...${NC}"
-            if ! sudo $package_manager $install_cmd "$dep"; then
-                echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
-            fi
-        else
-            echo -e "${GREEN}$dep 已安装。${NC}"
-        fi
-    done
+    case "${os_type,,}" in
+        gentoo)
+            for dep in "${dependencies[@]}"; do
+                if ! emerge -p $dep &>/dev/null; then
+                    echo -e "${YELLOW}正在安装 $dep...${NC}"
+                    if ! sudo emerge $dep; then
+                        echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
+                    fi
+                else
+                    echo -e "${GREEN}$dep 已安装。${NC}"
+                fi
+            done
+            ;;
+        *)
+            for dep in "${dependencies[@]}"; do
+                if ! command -v "$dep" &> /dev/null; then
+                    echo -e "${YELLOW}正在安装 $dep...${NC}"
+                    if ! sudo $install_cmd "$dep"; then
+                        echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
+                    fi
+                else
+                    echo -e "${GREEN}$dep 已安装。${NC}"
+                fi
+            done
+            ;;
+    esac
     
     echo -e "${GREEN}依赖项检查和安装完成。${NC}"
+    clear
 }
 
 # 获取IP地址
