@@ -98,62 +98,93 @@ update_scripts() {
     fi
 }
 
+# 检测操作系统
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        os_type=$ID
+    elif type lsb_release >/dev/null 2>&1; then
+        os_type=$(lsb_release -si)
+    elif [ -f /etc/lsb-release ]; then
+        . /etc/lsb-release
+        os_type=$DISTRIB_ID
+    elif [ -f /etc/debian_version ]; then
+        os_type="debian"
+    elif [ -f /etc/fedora-release ]; then
+        os_type="fedora"
+    elif [ -f /etc/centos-release ]; then
+        os_type="centos"
+    else
+        os_type=$(uname -s)
+    fi
+    os_type=$(echo $os_type | tr '[:upper:]' '[:lower:]')
+    echo "检测到的操作系统: $os_type"
+}
+
 # 更新系统
 update_system() {
-    detect_os || return 1
+    detect_os
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}无法检测操作系统。${NC}"
+        return 1
+    fi
     case "${os_type,,}" in
         ubuntu|debian|linuxmint|elementary|pop)
             update_cmd="apt-get update"
             upgrade_cmd="apt-get upgrade -y"
-            install_cmd="apt-get install -y"
+            clean_cmd="apt-get autoremove -y"
             ;;
         centos|rhel|fedora|rocky|almalinux|openeuler)
             if command -v dnf &>/dev/null; then
                 update_cmd="dnf check-update"
                 upgrade_cmd="dnf upgrade -y"
-                install_cmd="dnf install -y"
+                clean_cmd="dnf autoremove -y"
             else
                 update_cmd="yum check-update"
                 upgrade_cmd="yum upgrade -y"
-                install_cmd="yum install -y"
+                clean_cmd="yum autoremove -y"
             fi
             ;;
         opensuse*|sles)
             update_cmd="zypper refresh"
-            upgrade_cmd="zypper update -y"
-            install_cmd="zypper install -y"
+            upgrade_cmd="zypper dup -y"
+            clean_cmd="zypper clean -a"
             ;;
         arch|manjaro)
             update_cmd="pacman -Sy"
             upgrade_cmd="pacman -Syu --noconfirm"
-            install_cmd="pacman -S --noconfirm"
+            clean_cmd="pacman -Sc --noconfirm"
             ;;
         alpine)
             update_cmd="apk update"
             upgrade_cmd="apk upgrade"
-            install_cmd="apk add"
+            clean_cmd="apk cache clean"
             ;;
         gentoo)
             update_cmd="emerge --sync"
             upgrade_cmd="emerge -uDN @world"
-            install_cmd="emerge"
+            clean_cmd="emerge --depclean"
             ;;
         cloudlinux)
             update_cmd="yum check-update"
             upgrade_cmd="yum upgrade -y"
-            install_cmd="yum install -y"
+            clean_cmd="yum clean all"
             ;;
         *)
             echo -e "${RED}不支持的 Linux 发行版: $os_type${NC}"
             return 1
             ;;
     esac
+    
     echo -e "${YELLOW}正在更新系统...${NC}"
     sudo $update_cmd
     if [ $? -eq 0 ]; then
         sudo $upgrade_cmd
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}系统更新完成。${NC}"
+            echo -e "${YELLOW}正在清理系统...${NC}"
+            sudo $clean_cmd
+            echo -e "${GREEN}系统清理完成。${NC}"
             # 检查是否需要重启
             if [ -f /var/run/reboot-required ]; then
                 echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
@@ -165,9 +196,17 @@ update_system() {
     return 1
 }
 
+# 定义支持的操作系统类型
+SUPPORTED_OS=("ubuntu" "debian" "linuxmint" "elementary" "pop" "centos" "rhel" "fedora" "rocky" "almalinux" "openeuler" "opensuse" "sles" "arch" "manjaro" "alpine" "gentoo" "cloudlinux")
+
 # 安装依赖
 install_dependencies() {
     echo -e "${YELLOW}正在检查并安装必要的依赖项...${NC}"
+    
+    # 确保 os_type 已定义
+    if [ -z "$os_type" ]; then
+        detect_os
+    fi
     
     # 更新系统
     update_system || echo -e "${RED}系统更新失败。继续安装依赖项。${NC}"
@@ -175,12 +214,32 @@ install_dependencies() {
     # 安装依赖
     local dependencies=("curl" "wget")
     
+    # 检查是否为支持的操作系统
+    if [[ ! " ${SUPPORTED_OS[@]} " =~ " ${os_type} " ]]; then
+        echo -e "${RED}不支持的操作系统: $os_type${NC}"
+        return 1
+    fi
+    
     case "${os_type,,}" in
         gentoo)
+            install_cmd="emerge"
             for dep in "${dependencies[@]}"; do
                 if ! emerge -p $dep &>/dev/null; then
                     echo -e "${YELLOW}正在安装 $dep...${NC}"
-                    if ! sudo emerge $dep; then
+                    if ! sudo $install_cmd $dep; then
+                        echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
+                    fi
+                else
+                    echo -e "${GREEN}$dep 已安装。${NC}"
+                fi
+            done
+            ;;
+        alpine)
+            install_cmd="apk add"
+            for dep in "${dependencies[@]}"; do
+                if ! command -v "$dep" &> /dev/null; then
+                    echo -e "${YELLOW}正在安装 $dep...${NC}"
+                    if ! sudo $install_cmd "$dep"; then
                         echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
                     fi
                 else
