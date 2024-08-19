@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-07-13 v1.0.7"  # 最新版本号
+VERSION="2024-08-19 v1.0.8"  # 最新版本号
 
 # 定义颜色
 RED='\033[0;31m'
@@ -31,24 +31,42 @@ fi
 
 # 更新脚本
 update_scripts() {
-    VERSION="2024-07-13 v1.0.7"  # 最新版本号
-    SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
-    VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
+    local VERSION="2024-08-19 v1.0.8"  # 最新版本号
+    local SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+    local VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
-    REMOTE_VERSION=$(curl -s $VERSION_URL)
+    echo -e "${YELLOW}正在检查更新...${NC}"
+    
+    local REMOTE_VERSION=$(curl -s -m 10 $VERSION_URL)
     if [ -z "$REMOTE_VERSION" ]; then
         echo -e "${RED}无法获取远程版本信息。请检查您的网络连接。${NC}"
         sleep 2
         return 1
     fi
-
+    
     if [ "$REMOTE_VERSION" != "$VERSION" ]; then
         echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
         echo -e "${BLUE}正在更新...${NC}"
         
-        if curl -s -o /tmp/vps_scripts.sh $SCRIPT_URL; then
-            NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
-            sed -i "s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$0"
+        if curl -s -m 30 -o /tmp/vps_scripts.sh $SCRIPT_URL; then
+            if [ ! -s /tmp/vps_scripts.sh ]; then
+                echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
+                sleep 2
+                return 1
+            fi
+            
+            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
+            if [ -z "$NEW_VERSION" ]; then
+                echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
+                sleep 2
+                return 1
+            fi
+            
+            if ! sed -i "s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$0"; then
+                echo -e "${RED}无法更新脚本中的版本号。请检查文件权限。${NC}"
+                sleep 2
+                return 1
+            fi
             
             if mv /tmp/vps_scripts.sh "$0"; then
                 chmod +x "$0"
@@ -83,7 +101,6 @@ update_scripts() {
 # 更新系统
 update_system() {
     detect_os || return 1
-
     case "${os_type,,}" in
         ubuntu|debian|linuxmint|elementary|pop)
             update_cmd="apt-get update"
@@ -108,7 +125,7 @@ update_system() {
             ;;
         arch|manjaro)
             update_cmd="pacman -Sy"
-            upgrade_cmd="pacman -Su --noconfirm"
+            upgrade_cmd="pacman -Syu --noconfirm"
             install_cmd="pacman -S --noconfirm"
             ;;
         alpine)
@@ -131,21 +148,21 @@ update_system() {
             return 1
             ;;
     esac
-
     echo -e "${YELLOW}正在更新系统...${NC}"
-    sudo $update_cmd && sudo $upgrade_cmd
-    
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}系统更新失败。${NC}"
-        return 1
+    sudo $update_cmd
+    if [ $? -eq 0 ]; then
+        sudo $upgrade_cmd
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}系统更新完成。${NC}"
+            # 检查是否需要重启
+            if [ -f /var/run/reboot-required ]; then
+                echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
+            fi
+            return 0
+        fi
     fi
-    echo -e "${GREEN}系统更新完成。${NC}"
-    
-    # 检查是否需要重启
-    if [ -f /var/run/reboot-required ]; then
-        echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
-    fi
-    return 0
+    echo -e "${RED}系统更新失败。${NC}"
+    return 1
 }
 
 # 安装依赖
