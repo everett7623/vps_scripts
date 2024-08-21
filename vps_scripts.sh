@@ -207,18 +207,6 @@ install_dependencies() {
     if [ -z "$os_type" ]; then
         detect_os
     fi
-    
-    # 更新系统
-    update_system || echo -e "${RED}系统更新失败。继续安装依赖项。${NC}"
-    
-    # 安装依赖
-    local dependencies=("curl")
-    
-    # 检查是否为支持的操作系统
-    if [[ ! " ${SUPPORTED_OS[@]} " =~ " ${os_type} " ]]; then
-        echo -e "${RED}不支持的操作系统: $os_type${NC}"
-        return 1
-    fi
 
     # 定义安装命令
     case "${os_type,,}" in
@@ -249,22 +237,22 @@ install_dependencies() {
             ;;
     esac
     
-    # 安装依赖
-    for dep in "${dependencies[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            echo -e "${YELLOW}正在安装 $dep...${NC}"
-            if ! sudo $install_cmd "$
-            dep"; then
-                echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
-            fi
-        else
-            echo -e "${GREEN}$dep 已安装。${NC}"
+    # 安装 curl
+    if ! command -v curl &> /dev/null; then
+        echo -e "${YELLOW}正在安装 curl...${NC}"
+        if ! sudo $install_cmd curl; then
+            echo -e "${RED}无法安装 curl。请手动安装此依赖项。${NC}"
+            return 1
         fi
-    done
+    else
+        echo -e "${GREEN}curl 已安装。${NC}"
+    fi
     
     echo -e "${GREEN}依赖项检查和安装完成。${NC}"
-    clear
 }
+
+# 检查并安装依赖
+install_dependencies
 
 # 获取IP地址
 ip_address() {
