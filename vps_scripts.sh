@@ -31,7 +31,7 @@ fi
 
 # 更新脚本
 update_scripts() {
-    local VERSION="2024-08-19 v1.0.8"  # 最新版本号
+    local VERSION="2024-08-21 v1.0.9"  # 最新版本号
     local SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     local VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
