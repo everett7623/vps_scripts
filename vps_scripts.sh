@@ -212,7 +212,7 @@ install_dependencies() {
     update_system || echo -e "${RED}系统更新失败。继续安装依赖项。${NC}"
     
     # 安装依赖
-    local dependencies=("curl" "wget")
+    local dependencies=("curl")
     
     # 检查是否为支持的操作系统
     if [[ ! " ${SUPPORTED_OS[@]} " =~ " ${os_type} " ]]; then
@@ -264,6 +264,11 @@ install_dependencies() {
     echo -e "${GREEN}依赖项检查和安装完成。${NC}"
     clear
 }
+
+# 检查并安装依赖
+echo "检查并安装必要的依赖项..."
+install_dependencies
+echo "依赖项检查和安装完成。"
 
 # 获取IP地址
 ip_address() {
@@ -744,11 +749,6 @@ handle_choice() {
 
 # 调用函数创建别名
 add_alias
-
-# 检查并安装依赖
-echo "检查并安装必要的依赖项..."
-install_dependencies
-echo "依赖项检查和安装完成。"
 
 clear
 # 输出欢迎信息
