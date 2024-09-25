@@ -103,8 +103,8 @@ detect_os() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         os_type=$ID
-    elif command -v lsb_release >/dev/null 2>&1; then
-        os_type=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
+    elif type lsb_release >/dev/null 2>&1; then
+        os_type=$(lsb_release -si)
     elif [ -f /etc/lsb-release ]; then
         . /etc/lsb-release
         os_type=$DISTRIB_ID
@@ -115,34 +115,19 @@ detect_os() {
     elif [ -f /etc/centos-release ]; then
         os_type="centos"
     else
-        os_type=$(uname -s | tr '[:upper:]' '[:lower:]')
+        os_type=$(uname -s)
     fi
+    os_type=$(echo $os_type | tr '[:upper:]' '[:lower:]')
     echo "检测到的操作系统: $os_type"
-}
-
-
-# 执行命令并处理结果
-execute_command() {
-    local cmd="\$1"
-    echo -e "${YELLOW}正在执行: $cmd${NC}"
-    if ! sudo $cmd; then
-        echo -e "${RED}命令失败: $cmd${NC}"
-        return 1
-    fi
-    return 0
 }
 
 # 更新系统
 update_system() {
     detect_os
-    local os_type=$?
-    if [ $os_type -ne 0 ]; then
+    if [ $? -ne 0 ]; then
         echo -e "${RED}无法检测操作系统。${NC}"
         return 1
     fi
-
-    local update_cmd upgrade_cmd clean_cmd
-
     case "${os_type,,}" in
         ubuntu|debian|linuxmint|elementary|pop)
             update_cmd="apt-get update"
@@ -190,19 +175,27 @@ update_system() {
             return 1
             ;;
     esac
-
-    if ! execute_command "$update_cmd"; then return 1; fi
-    if ! execute_command "$upgrade_cmd"; then return 1; fi
-    if ! execute_command "$clean_cmd"; then return 1; fi
-
-    # 检查是否需要重启
-    if [ -f /var/run/reboot-required ]; then
-        echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
+    
+    echo -e "${YELLOW}正在更新系统...${NC}"
+    sudo $update_cmd
+    if [ $? -eq 0 ]; then
+        sudo $upgrade_cmd
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}系统更新完成。${NC}"
+            echo -e "${YELLOW}正在清理系统...${NC}"
+            sudo $clean_cmd
+            echo -e "${GREEN}系统清理完成。${NC}"
+            # 检查是否需要重启
+            if [ -f /var/run/reboot-required ]; then
+                echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
+            fi
+            return 0
+        fi
     fi
-
-    echo -e "${GREEN}系统更新和清理完成。${NC}"
-    return 0
+    echo -e "${RED}系统更新失败。${NC}"
+    return 1
 }
+
 
 # 定义支持的操作系统类型
 SUPPORTED_OS=("ubuntu" "debian" "linuxmint" "elementary" "pop" "centos" "rhel" "fedora" "rocky" "almalinux" "openeuler" "opensuse" "sles" "arch" "manjaro" "alpine" "gentoo" "cloudlinux")
