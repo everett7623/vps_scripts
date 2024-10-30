@@ -630,7 +630,7 @@ handle_choice() {
     15)
       clear
       echo -e "${PURPLE}执行 科技lion脚本...${NC}"
-      curl -sS -O https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh && chmod +x kejilion.sh && ./kejilion.sh
+      bash <(curl -sL kejilion.sh)
       ;;
     16)
       clear
