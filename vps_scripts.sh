@@ -363,14 +363,14 @@ show_menu() {
   echo "------------------------------------------------------------------------------"
   echo -e "${YELLOW}1) 本机信息${NC}                        ${YELLOW}13) VPS一键脚本工具箱${NC}"
   echo -e "${YELLOW}2) 更新系统${NC}                        ${YELLOW}14) jcnf 常用脚本工具包${NC}"
-  echo -e "${YELLOW}3) 清理系统${NC}                        ${YELLOW}15) 科技lion脚本${NC}"
+  echo -e "${YELLOW}3) 清理系统${NC}                        ${YELLOW}15) 科技Lion脚本${NC}"
   echo -e "${YELLOW}4) Yabs${NC}                            ${YELLOW}16) BlueSkyXN脚本${NC}"
   echo -e "${YELLOW}5) 融合怪${NC}                          ${YELLOW}17) 勇哥Singbox${NC}"
-  echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥x-ui${NC}"
+  echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
   echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
-  echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) Mack-a八合一${NC}"
-  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) Warp集合${NC}"
-  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装docker${NC}"
+  echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
+  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) 3X-UI优化版${NC}"
+  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装Docker${NC}"
   echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
   echo -e "${YELLOW}12) 超售测试${NC}"
   echo "------------------------------------------------------------------------------"
@@ -624,12 +624,12 @@ handle_choice() {
       ;;
     14)
       clear
-      echo -e "${PURPLE}执行 jcnf 常用脚本工具包 ...${NC}"
+      echo -e "${PURPLE}执行 Jcnf 常用脚本工具包 ...${NC}"
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       ;;
     15)
       clear
-      echo -e "${PURPLE}执行 科技lion脚本...${NC}"
+      echo -e "${PURPLE}执行 科技Lion脚本...${NC}"
       bash <(curl -sL kejilion.sh)
       ;;
     16)
@@ -644,7 +644,7 @@ handle_choice() {
       ;;
     18)
       clear
-      echo -e "${PURPLE}执行 勇哥x-ui ...${NC}"
+      echo -e "${PURPLE}执行 勇哥X-UI ...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
       ;;
     19)
@@ -654,17 +654,17 @@ handle_choice() {
       ;;
     20)
       clear
-      echo -e "${PURPLE}执行 Mack-a八合一 ...${NC}"
-      wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
+      echo -e "${PURPLE}执行 3X-UI ...${NC}"
+      bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
       ;;
     21)
       clear
-      echo -e "${PURPLE}执行 Warp集合 脚本...${NC}"
-      bash <(curl -sSL https://gitlab.com/fscarmen/warp_unlock/-/raw/main/unlock.sh)
+      echo -e "${PURPLE}执行 3X-UI优化版...${NC}"
+      bash <(curl -Ls https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh)
       ;;
     22)
       clear
-      echo -e "${PURPLE}执行 安装docker...${NC}"
+      echo -e "${PURPLE}执行 安装Docker...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
       ;;
     66)
