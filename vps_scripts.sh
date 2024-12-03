@@ -45,13 +45,13 @@ update_scripts() {
         echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
         echo -e "${BLUE}正在更新...${NC}"
         
-        if curl -s -m 30 -o /tmp/vps.sh $SCRIPT_URL; then
+        if curl -s -m 30 -o /tmp/vps_scripts.sh $SCRIPT_URL; then
             if [ ! -s /tmp/vps.sh ]; then
                 echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
                 return 1
             fi
             
-            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps.sh | cut -d'"' -f2)
+            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
             if [ -z "$NEW_VERSION" ]; then
                 echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
                 return 1
@@ -230,6 +230,43 @@ ip_address() {
     fi
 }
 
+# 统计使用次数
+sum_run_times() {
+    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
+    if [[ -n "$COUNT" ]]; then
+        daily_count=$(cut -d " " -f1 <<< "$COUNT")
+        total_count=$(cut -d " " -f3 <<< "$COUNT")
+    else
+        echo "Failed to fetch usage counts."
+        daily_count=0
+        total_count=0
+    fi
+}
+
+# 调用函数获取统计数据
+sum_run_times
+
+#清理系统
+clean_system() {
+    case "$(uname -s)" in
+        Linux)
+            if command -v apt &>/dev/null; then
+                apt autoremove --purge -y && apt clean -y && apt autoclean -y
+                apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+                journalctl --vacuum-time=1s
+            elif command -v yum &>/dev/null; then
+                yum autoremove -y && yum clean all
+                journalctl --vacuum-time=1s
+            fi
+            ;;
+        *)
+            echo -e "${RED}暂不支持该操作系统的清理功能。${NC}"
+            return 1
+            ;;
+    esac
+    echo -e "${GREEN}系统清理完成。${NC}"
+}
+
 # 创建快捷指令
 add_alias() {
     local alias_file="/root/.vps_aliases"
@@ -272,43 +309,6 @@ add_alias() {
     fi
 }
 
-# 统计使用次数
-sum_run_times() {
-    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
-    if [[ -n "$COUNT" ]]; then
-        daily_count=$(cut -d " " -f1 <<< "$COUNT")
-        total_count=$(cut -d " " -f3 <<< "$COUNT")
-    else
-        echo "Failed to fetch usage counts."
-        daily_count=0
-        total_count=0
-    fi
-}
-
-# 调用函数获取统计数据
-sum_run_times
-
-#清理系统
-clean_system() {
-    case "$(uname -s)" in
-        Linux)
-            if command -v apt &>/dev/null; then
-                apt autoremove --purge -y && apt clean -y && apt autoclean -y
-                apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-                journalctl --vacuum-time=1s
-            elif command -v yum &>/dev/null; then
-                yum autoremove -y && yum clean all
-                journalctl --vacuum-time=1s
-            fi
-            ;;
-        *)
-            echo -e "${RED}暂不支持该操作系统的清理功能。${NC}"
-            return 1
-            ;;
-    esac
-    echo -e "${GREEN}系统清理完成。${NC}"
-}
-
 # 调用函数创建别名
 add_alias
 
@@ -342,29 +342,29 @@ show_welcome() {
 
 # 显示菜单
 show_menu() {
-    echo ""
-    echo "------------------------------------------------------------------------------"
-    echo -e "${YELLOW}1) 本机信息${NC}                        ${YELLOW}13) VPS一键脚本工具箱${NC}"
-    echo -e "${YELLOW}2) 更新系统${NC}                        ${YELLOW}14) jcnf 常用脚本工具包${NC}"
-    echo -e "${YELLOW}3) 清理系统${NC}                        ${YELLOW}15) 科技Lion脚本${NC}"
-    echo -e "${YELLOW}4) Yabs${NC}                            ${YELLOW}16) BlueSkyXN脚本${NC}"
-    echo -e "${YELLOW}5) 融合怪${NC}                          ${YELLOW}17) 勇哥Singbox${NC}"
-    echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
-    echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
-    echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
-    echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) 3X-UI优化版${NC}"
-    echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装Docker${NC}"
-    echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
-    echo -e "${YELLOW}12) 超售测试${NC}"
-    echo "------------------------------------------------------------------------------"
-    echo -e "${GREEN}66) NodeLoc聚合测试脚本${NC}"
-    echo -e "${YELLOW}88) 更新脚本${NC}"
-    echo -e "${YELLOW}99) 卸载脚本${NC}"
-    echo -e "${YELLOW}0) 退出${NC}"
-    echo "------------------------------------------------------------------------------"
-    read -p "请选择要执行的脚本: " choice
+  echo ""
+  echo "------------------------------------------------------------------------------"
+  echo -e "${YELLOW}1) 本机信息${NC}                        ${YELLOW}13) VPS一键脚本工具箱${NC}"
+  echo -e "${YELLOW}2) 更新系统${NC}                        ${YELLOW}14) jcnf 常用脚本工具包${NC}"
+  echo -e "${YELLOW}3) 清理系统${NC}                        ${YELLOW}15) 科技Lion脚本${NC}"
+  echo -e "${YELLOW}4) Yabs${NC}                            ${YELLOW}16) BlueSkyXN脚本${NC}"
+  echo -e "${YELLOW}5) 融合怪${NC}                          ${YELLOW}17) 勇哥Singbox${NC}"
+  echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
+  echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
+  echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
+  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) 3X-UI优化版${NC}"
+  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装Docker${NC}"
+  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
+  echo -e "${YELLOW}12) 超售测试${NC}"
+  echo "------------------------------------------------------------------------------"
+  echo -e "${GREEN}66) NodeLoc聚合测试脚本${NC}"
+  echo -e "${YELLOW}88) 更新脚本${NC}"
+  echo -e "${YELLOW}99) 卸载脚本${NC}"
+  echo -e "${YELLOW}0) 退出${NC}"
+  echo "------------------------------------------------------------------------------"
+  read -p "请选择要执行的脚本: " choice
   
-    case $choice in
+  case $choice in
       1)
       clear
       echo -e "${PURPLE}执行本机信息...${NC}"
@@ -724,11 +724,11 @@ show_menu() {
       echo "脚本卸载完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
-     0)
+    0)
       echo -e "${RED}感谢使用脚本，期待你的下次使用！${NC}"
       exit 0
       ;;
-     *)
+    *)
       echo -e "${RED}无效选择，请重新输入。${NC}"
       sleep 3s
       show_menu  # 修复无效输入后重新显示菜单
