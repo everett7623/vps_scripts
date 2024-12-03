@@ -356,13 +356,6 @@ clean_system() {
         fi
 }
 
-# 处理用户选择
-handle_choice() {
-    local choice=$1
-    case $choice in
-
-}
-
 # 调用函数创建别名
 add_alias
 
@@ -416,7 +409,7 @@ show_menu() {
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   echo "------------------------------------------------------------------------------"
-  echo "请选择要执行的脚本："choice
+  echo "请选择要执行的脚本：" choice
   
   case $choice in
 
