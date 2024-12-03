@@ -344,9 +344,22 @@ show_welcome() {
 show_menu() {
   echo ""
   echo "------------------------------------------------------------------------------"
-  echo -e "${YELLOW}1) 本机信息${NC}"
-  echo -e "${YELLOW}2) 更新系统${NC}"
-  echo -e "${YELLOW}3) 清理系统${NC}"
+  echo -e "${YELLOW}1) 本机信息${NC}                        ${YELLOW}13) VPS一键脚本工具箱${NC}"
+  echo -e "${YELLOW}2) 更新系统${NC}                        ${YELLOW}14) jcnf 常用脚本工具包${NC}"
+  echo -e "${YELLOW}3) 清理系统${NC}                        ${YELLOW}15) 科技Lion脚本${NC}"
+  echo -e "${YELLOW}4) Yabs${NC}                            ${YELLOW}16) BlueSkyXN脚本${NC}"
+  echo -e "${YELLOW}5) 融合怪${NC}                          ${YELLOW}17) 勇哥Singbox${NC}"
+  echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
+  echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
+  echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
+  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) 3X-UI优化版${NC}"
+  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装Docker${NC}"
+  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
+  echo -e "${YELLOW}12) 超售测试${NC}"
+  echo "------------------------------------------------------------------------------"
+  echo -e "${GREEN}66) NodeLoc聚合测试脚本${NC}"
+  echo -e "${YELLOW}88) 更新脚本${NC}"
+  echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   echo "------------------------------------------------------------------------------"
   read -p "请选择要执行的脚本: " choice
@@ -480,6 +493,235 @@ show_menu() {
       echo -e "${PURPLE}执行 清理系统...${NC}"
       clean_system
       echo "系统清理完成"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    4)
+      clear
+      echo -e "${PURPLE}执行 Yabs测试...${NC}"
+      wget -qO- yabs.sh | bash
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    5)
+      clear
+      echo -e "${PURPLE}执行 融合怪测试...${NC}"
+      curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    6)
+      clear
+      echo -e "${PURPLE}执行 IP质量测试...${NC}"
+      bash <(curl -Ls IP.Check.Place)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    7)
+      clear
+      echo -e "${PURPLE}执行 流媒体解锁...${NC}"
+      bash <(curl -L -s media.ispvps.com)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    8)
+      clear
+      echo -e "${PURPLE}执行 响应测试脚本...${NC}"
+      bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    9)
+      clear
+      echo -e "${PURPLE}执行 三网测速（多/单线程）...${NC}"
+      bash <(curl -sL https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    10)
+      clear
+      echo -e "${PURPLE}执行 AutoTrace三网回程路由...${NC}"
+      wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    11)
+      clear
+      echo -e "${PURPLE}执行 安装并启动iperf3服务端...${NC}"
+      apt-get install -y iperf3
+
+      # 检查iperf3是否已经在运行
+      if pgrep -x "iperf3" > /dev/null
+      then
+          echo "iperf3 服务已经在运行。"
+      else
+          echo "启动iperf3服务..."
+          iperf3 -s &
+          sleep 2
+          if pgrep -x "iperf3" > /dev/null
+          then
+              echo "iperf3服务启动成功，正在监听端口5201。"
+          else
+              echo "iperf3服务启动失败，请检查是否有其他程序占用了5201端口。"
+          fi
+      fi
+
+      echo ""
+      echo -e "${PURPLE}服务端操作完成。现在您可以在客户端进行测试。${NC}"
+      echo ""
+      echo "客户端操作，比如Windows："
+      echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
+      echo "在Windows电脑上，下载iperf3 Windows版本，解压到任意目录，例如D:\iperf3"
+      echo "打开命令提示符窗口，切换到iperf3目录:"
+      echo "cd D:\iperf3"
+      
+      echo ""
+      echo -e "${BLUE}执行客户端命令，连接到VPS的IP:${NC}"
+      echo -e "iperf3.exe -c ${RED}vps_ip${NC}"
+      echo "它会进行10秒的默认TCP下载测试。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111"
+      echo ""
+      echo -e "${BLUE}单线程上传测试:${NC}"
+      echo -e "iperf3.exe -c ${RED}vps_ip${NC} -R"
+      echo "该命令会测试从客户端到服务端VPS的上传带宽。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -R"
+      echo ""
+      echo -e "${BLUE}多线程下载测试:${NC}"
+      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -P 4"
+      echo "这会运行一个4个流并行下载测试。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -P 4"
+      echo ""
+      echo -e "${BLUE}多线程上传测试:${NC}"
+      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -R -P 4"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -R -P 4"
+      echo ""
+      echo -e "${BLUE}长时间下载测试:${NC}"
+      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -t 60"
+      echo "该命令会测试60秒的长时间下载，观察带宽变化。"
+      echo "案例：.\iperf3.exe -c 104.234.111.111 -t 60"
+      echo ""
+      echo -e "${BLUE}UDP模拟视频流测试:${NC}"
+      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -u -b 200m"
+      echo "以200mbps的码率，测试UDP下载/模拟视频流。"
+      echo "您也可以根据实际需求调整目标带宽-b值。"
+      echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
+      echo ""
+      echo -e "${BLUE}其他参数示例:${NC}"
+      echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -i 1       # 每1秒输出带宽报告"
+      echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -p 5201    # 指定服务端端口为5201"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    12)
+      clear
+      echo -e "${PURPLE}执行 超售测试...${NC}"
+      wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    13)
+      clear
+      echo -e "${PURPLE}执行 VPS一键脚本工具箱 ...${NC}"
+      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    14)
+      clear
+      echo -e "${PURPLE}执行 Jcnf 常用脚本工具包 ...${NC}"
+      wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    15)
+      clear
+      echo -e "${PURPLE}执行 科技Lion脚本...${NC}"
+      bash <(curl -sL kejilion.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    16)
+      clear
+      echo -e "${PURPLE}执行 BlueSkyXN脚本 ...${NC}"
+      wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    17)
+      clear
+      echo -e "${PURPLE}执行 勇哥Singbox ...${NC}"
+      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    18)
+      clear
+      echo -e "${PURPLE}执行 勇哥X-UI ...${NC}"
+      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    19)
+      clear
+      echo -e "${PURPLE}执行 Fscarmen-Singbox ...${NC}"
+      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    20)
+      clear
+      echo -e "${PURPLE}执行 3X-UI ...${NC}"
+      bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    21)
+      clear
+      echo -e "${PURPLE}执行 3X-UI优化版...${NC}"
+      bash <(curl -Ls https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    22)
+      clear
+      echo -e "${PURPLE}执行 安装Docker...${NC}"
+      curl -fsSL https://get.docker.com | bash -s docker
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    66)
+      clear
+      echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
+      wget -O Nlbench.sh https://raw.githubusercontent.com/everett7623/nodeloc_vps_test/main/Nlbench.sh && chmod +x Nlbench.sh && ./Nlbench.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    88)
+      clear
+      echo -e "${PURPLE}执行更新脚本...${NC}"
+      update_scripts
+      echo "脚本更新完成"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    99)
+      clear
+      echo -e "${PURPLE}执行 卸载脚本...${NC}"
+      
+      # 删除之前可能运行过的脚本
+      echo -e "${BLUE}删除之前可能运行过的脚本...${NC}"
+      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
+      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
+      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
+      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
+      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
+      [ -f /root/box.sh ] && rm -f /root/box.sh
+      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
+
+      # 清理可能的残留文件和目录
+      echo -e "${BLUE}清理可能的残留文件和目录...${NC}"
+      [ -d /tmp/yabs* ] && rm -rf /tmp/yabs*
+      [ -f /tmp/bench.sh* ] && rm -rf /tmp/bench.sh*
+      [ -f /root/.ssh_tool_cache ] && rm -f /root/.ssh_tool_cache
+      [ -f /root/.ssh_tool_backup ] && rm -f /root/.ssh_tool_backup
+
+      # 尝试卸载Docker(如果是通过脚本安装的)
+      echo -e "${BLUE}尝试卸载Docker...${NC}"
+      if command -v docker &> /dev/null; then
+        echo "正在卸载Docker..."
+        sudo apt-get remove docker docker-engine docker.io containerd runc -y
+        sudo apt-get purge docker-ce docker-ce-cli containerd.io -y
+        sudo rm -rf /var/lib/docker /etc/docker
+        sudo groupdel docker 2>/dev/null
+        sudo rm -rf /var/run/docker.sock
+      fi
+
+      # 删除主脚本及其相关文件
+      echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
+      [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
+      [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
+      [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
+      [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
+      
+      echo "脚本卸载完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
     0)
