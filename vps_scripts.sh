@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-11-28 v1.1.21"  # 最新版本号
+VERSION="2024-12-03 v1.2.0"  # 最新版本号
 
 # 定义颜色
 RED='\033[0;31m'
@@ -31,7 +31,7 @@ fi
 
 # 更新脚本
 update_scripts() {
-    local VERSION="2024-11-28 v1.1.21"  # 最新版本号
+    local VERSION="2024-12-03 v1.2.0"  # 最新版本号
     local SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
     local VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
     
@@ -356,10 +356,47 @@ clean_system() {
         fi
 }
 
+# 处理用户选择
+handle_choice() {
+    local choice=$1
+    case $choice in
+
+}
+
+# 调用函数创建别名
+add_alias
+
+clear
+# 输出欢迎信息
+show_welcome() {
+echo ""
+echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
+echo ""
+echo "VPS脚本集合 $VERSION"
+echo "GitHub地址: https://github.com/everett7623/vps_scripts"
+echo "VPS选购: https://www.nodeloc.com/vps"
+echo ""
+echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
+echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
+echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
+echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
+echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
+echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
+echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
+echo ""
+echo "支持Ubuntu/Debian"
+echo ""
+echo -e "快捷键已设置为${RED}v${NC}或${RED}vps${NC},下次运行输入${RED}v${NC}或${RED}vps${NC}可快速启动此脚本"
+echo ""
+echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
+echo ""
+echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
+echo ""
+}
+
 # 显示菜单
 show_menu() {
   echo ""
-  echo "请选择要执行的脚本："
   echo "------------------------------------------------------------------------------"
   echo -e "${YELLOW}1) 本机信息${NC}                        ${YELLOW}13) VPS一键脚本工具箱${NC}"
   echo -e "${YELLOW}2) 更新系统${NC}                        ${YELLOW}14) jcnf 常用脚本工具包${NC}"
@@ -379,13 +416,11 @@ show_menu() {
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   echo "------------------------------------------------------------------------------"
-}
+  echo "请选择要执行的脚本："choice
+  
+  case $choice in
 
-# 处理用户选择
-handle_choice() {
-    local choice=$1
-    case $choice in
-    1)
+      1)
       clear
       echo -e "${PURPLE}执行本机信息...${NC}"
 
@@ -719,51 +754,28 @@ handle_choice() {
       
       echo "脚本卸载完成"
       ;;
-    0)
-    clear
-    exit
-      ;;
-    *)
-      echo -e "${PURPLE}无效选择，请重新输入。${NC}"
+     0)
+      echo -e "${RED}感谢使用NodeLoc聚合测试脚本，已退出脚本，期待你的下次使用！${NC}"
+      exit 0
+     ;;
+     *)
+      echo -e "${RED}无效选择，请重新输入。${NC}"
+      sleep 3s
+      clear
+      show_welcome
       ;;
     esac
-
-    # 执行完选项后自动返回主菜单
-    return
 }
 
-# 调用函数创建别名
-add_alias
+# 主函数
+main() {
 
-clear
-# 输出欢迎信息
-echo ""
-echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-echo ""
-echo "VPS脚本集合 $VERSION"
-echo "GitHub地址: https://github.com/everett7623/vps_scripts"
-echo "VPS选购: https://www.nodeloc.com/vps"
-echo ""
-echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
-echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
-echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
-echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
-echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
-echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
-echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
-echo ""
-echo "支持Ubuntu/Debian"
-echo ""
-echo -e "快捷键已设置为${RED}v${NC}或${RED}vps${NC},下次运行输入${RED}v${NC}或${RED}vps${NC}可快速启动此脚本"
-echo ""
-echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
-echo ""
-echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-echo ""
+    # 主循环
+    while true; do
+        show_welcome
+        show_menu
+    done
+}
 
-# 主循坏
-while true; do
-    show_menu
-    read -p "输入数字选择对应的脚本: " choice
-    handle_choice "$choice"
-done
+# 运行主函数
+main
