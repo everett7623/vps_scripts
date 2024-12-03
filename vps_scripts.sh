@@ -757,7 +757,7 @@ show_menu() {
       clear
       show_welcome
       ;;
-    esac
+ esac
 }
 
 # 主函数
