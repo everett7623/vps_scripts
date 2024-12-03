@@ -46,7 +46,7 @@ update_scripts() {
         echo -e "${BLUE}正在更新...${NC}"
         
         if curl -s -m 30 -o /tmp/vps_scripts.sh $SCRIPT_URL; then
-            if [ ! -s /tmp/vps.sh ]; then
+            if [ ! -s /tmp/vps_scripts.sh ]; then
                 echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
                 return 1
             fi
@@ -267,51 +267,6 @@ clean_system() {
     echo -e "${GREEN}系统清理完成。${NC}"
 }
 
-# 创建快捷指令
-add_alias() {
-    local alias_file="/root/.vps_aliases"
-    echo "# VPS script aliases" > "$alias_file"
-    echo "alias v='bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)'" >> "$alias_file"
-    echo "alias vps='bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)'" >> "$alias_file"
-
-    # 在shell配置文件中添加对别名文件的引用
-    local config_files=("/root/.bashrc" "/root/.profile" "/root/.bash_profile")
-    local updated=false
-
-    for config_file in "${config_files[@]}"; do
-        if [ -f "$config_file" ]; then
-            if ! grep -q "source $alias_file" "$config_file"; then
-                echo "source $alias_file" >> "$config_file"
-                updated=true
-            fi
-        fi
-    done
-
-    if $updated; then
-        echo "别名已添加到配置文件。"
-        # 自动执行source命令
-        for config_file in "${config_files[@]}"; do
-            if [ -f "$config_file" ]; then
-                source "$config_file"
-                echo "已执行 source $config_file"
-                break  # 只需执行一次
-            fi
-        done
-        echo "别名现在应该可以使用了。"
-    else
-        echo "别名已经存在，无需更新。"
-    fi
-
-    # 确保在重启后别名仍然可用
-    if [ ! -f "/etc/profile.d/vps_aliases.sh" ]; then
-        echo "source $alias_file" | sudo tee /etc/profile.d/vps_aliases.sh > /dev/null
-        echo "已创建 /etc/profile.d/vps_aliases.sh 以确保重启后别名仍然可用。"
-    fi
-}
-
-# 调用函数创建别名
-add_alias
-
 # 输出欢迎信息
 show_welcome() {
     clear
@@ -331,8 +286,6 @@ show_welcome() {
     echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
     echo ""
     echo "支持Ubuntu/Debian"
-    echo ""
-    echo -e "快捷键已设置为${RED}v${NC}或${RED}vps${NC},下次运行输入${RED}v${NC}或${RED}vps${NC}可快速启动此脚本"
     echo ""
     echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
     echo ""
