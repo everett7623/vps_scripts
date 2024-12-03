@@ -285,75 +285,47 @@ sum_run_times
 
 #清理系统
 clean_system() {
-        if command -v apt &>/dev/null; then
-          apt autoremove --purge -y && apt clean -y && apt autoclean -y
-          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
-        elif command -v yum &>/dev/null; then
-          yum autoremove -y && yum clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v dnf &>/dev/null; then
-          dnf autoremove -y && dnf clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v apk &>/dev/null; then
-          apk autoremove -y
-          apk clean
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-        else
-          echo -e "${RED}暂不支持你的系统！${NC}"
-          exit 1
-        fi
+    case "$(uname -s)" in
+        Linux)
+            if command -v apt &>/dev/null; then
+                apt autoremove --purge -y && apt clean -y && apt autoclean -y
+                apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+                journalctl --vacuum-time=1s
+            elif command -v yum &>/dev/null; then
+                yum autoremove -y && yum clean all
+                journalctl --vacuum-time=1s
+            fi
+            ;;
+        *)
+            echo -e "${RED}暂不支持该操作系统的清理功能。${NC}"
+            return 1
+            ;;
+    esac
+    echo -e "${GREEN}系统清理完成。${NC}"
 }
 
-clear
 # 输出欢迎信息
 show_welcome() {
-echo ""
-echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-echo ""
-echo "VPS脚本集合 $VERSION"
-echo "GitHub地址: https://github.com/everett7623/vps_scripts"
-echo "VPS选购: https://www.nodeloc.com/vps"
-echo ""
-echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
-echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
-echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
-echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
-echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
-echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
-echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
-echo ""
-echo "支持Ubuntu/Debian"
-echo ""
-echo -e "快捷键已设置为${RED}v${NC}或${RED}vps${NC},下次运行输入${RED}v${NC}或${RED}vps${NC}可快速启动此脚本"
-echo ""
-echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
-echo ""
-echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-echo ""
+    clear
+    echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
+    echo "VPS脚本集合 $VERSION"
+    echo "GitHub地址: https://github.com/everett7623/vps_scripts"
+    echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
 }
 
+# 显示菜单
 # 显示菜单
 show_menu() {
   echo ""
   echo "------------------------------------------------------------------------------"
-  echo -e "${YELLOW}1) 本机信息${NC}
-  echo -e "${YELLOW}2) 更新系统${NC}
-  echo -e "${YELLOW}3) 清理系统${NC}
+  echo -e "${YELLOW}1) 本机信息${NC}"
+  echo -e "${YELLOW}2) 更新系统${NC}"
+  echo -e "${YELLOW}3) 清理系统${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   echo "------------------------------------------------------------------------------"
   read -p "请选择要执行的脚本: " choice
   
   case $choice in
-
       1)
       clear
       echo -e "${PURPLE}执行本机信息...${NC}"
@@ -469,7 +441,6 @@ show_menu() {
       echo -e "${WHITE}系统运行时长: ${YELLOW}${runtime}${NC}"
       echo ""
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     2)
       clear
@@ -477,7 +448,6 @@ show_menu() {
       update_system
       echo "系统更新完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     3)
       clear
@@ -485,28 +455,26 @@ show_menu() {
       clean_system
       echo "系统清理完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
-     0)
+    0)
       echo -e "${RED}感谢使用脚本，期待你的下次使用！${NC}"
       exit 0
       ;;
-     *)
+    *)
       echo -e "${RED}无效选择，请重新输入。${NC}"
       sleep 3s
-      return  # 添加这一行
+      show_menu  # 修复无效输入后重新显示菜单
       ;;
  esac
 }
 
 # 主函数
-main() 
-{
-# 主循环
-    while true; do
-        show_welcome
-        show_menu
-    done
+main() {
+  while true; do
+    show_welcome
+    show_menu
+  done
 }
+
 # 运行主函数
 main
