@@ -62,7 +62,7 @@ update_scripts() {
                 return 1
             fi
             
-            if mv /tmp/vps.sh "$0"; then
+            if mv /tmp/vps_scripts.sh "$0"; then
                 chmod +x "$0"
                 echo -e "${GREEN}脚本更新成功！新版本: $NEW_VERSION${NC}"
                 echo -e "${YELLOW}请等待 3 秒...${NC}"
