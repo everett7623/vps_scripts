@@ -409,7 +409,7 @@ show_menu() {
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
   echo "------------------------------------------------------------------------------"
-  echo "请选择要执行的脚本：" choice
+  read -p "请选择要执行的脚本: " choice
   
   case $choice in
 
