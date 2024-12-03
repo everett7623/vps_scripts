@@ -45,7 +45,7 @@
 1. 确保您以 `root` 用户身份运行脚本。
 2. 下载并运行脚本：
     ```bash
-    wget -O vps.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh && chmod +x vps.sh && clear && ./vps.sh
+    wget -O vps.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh && chmod +x vps.sh && ./vps.sh
     ```
     或
     ```bash
