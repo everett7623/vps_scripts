@@ -327,32 +327,23 @@ sum_run_times
 
 #清理系统
 clean_system() {
-        if command -v apt &>/dev/null; then
-          apt autoremove --purge -y && apt clean -y && apt autoclean -y
-          apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//')) -y
-        elif command -v yum &>/dev/null; then
-          yum autoremove -y && yum clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v dnf &>/dev/null; then
-          dnf autoremove -y && dnf clean all
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          dnf remove $(rpm -q kernel | grep -v $(uname -r)) -y
-        elif command -v apk &>/dev/null; then
-          apk autoremove -y
-          apk clean
-          journalctl --vacuum-time=1s
-          journalctl --vacuum-size=50M
-          apk del $(apk info -e | grep '^r' | awk '{print $1}') -y
-        else
-          echo -e "${RED}暂不支持你的系统！${NC}"
-          exit 1
-        fi
+    case "$(uname -s)" in
+        Linux)
+            if command -v apt &>/dev/null; then
+                apt autoremove --purge -y && apt clean -y && apt autoclean -y
+                apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
+                journalctl --vacuum-time=1s
+            elif command -v yum &>/dev/null; then
+                yum autoremove -y && yum clean all
+                journalctl --vacuum-time=1s
+            fi
+            ;;
+        *)
+            echo -e "${RED}暂不支持该操作系统的清理功能。${NC}"
+            return 1
+            ;;
+    esac
+    echo -e "${GREEN}系统清理完成。${NC}"
 }
 
 # 调用函数创建别名
@@ -411,7 +402,6 @@ show_menu() {
   read -p "请选择要执行的脚本: " choice
   
   case $choice in
-
       1)
       clear
       echo -e "${PURPLE}执行本机信息...${NC}"
@@ -527,7 +517,6 @@ show_menu() {
       echo -e "${WHITE}系统运行时长: ${YELLOW}${runtime}${NC}"
       echo ""
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     2)
       clear
@@ -535,7 +524,6 @@ show_menu() {
       update_system
       echo "系统更新完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     3)
       clear
@@ -543,56 +531,48 @@ show_menu() {
       clean_system
       echo "系统清理完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     4)
       clear
       echo -e "${PURPLE}执行 Yabs测试...${NC}"
       wget -qO- yabs.sh | bash
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     5)
       clear
       echo -e "${PURPLE}执行 融合怪测试...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     6)
       clear
       echo -e "${PURPLE}执行 IP质量测试...${NC}"
       bash <(curl -Ls IP.Check.Place)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     7)
       clear
       echo -e "${PURPLE}执行 流媒体解锁...${NC}"
       bash <(curl -L -s media.ispvps.com)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     8)
       clear
       echo -e "${PURPLE}执行 响应测试脚本...${NC}"
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     9)
       clear
       echo -e "${PURPLE}执行 三网测速（多/单线程）...${NC}"
       bash <(curl -sL https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     10)
       clear
       echo -e "${PURPLE}执行 AutoTrace三网回程路由...${NC}"
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     11)
       clear
@@ -659,91 +639,78 @@ show_menu() {
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -i 1       # 每1秒输出带宽报告"
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -p 5201    # 指定服务端端口为5201"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     12)
       clear
       echo -e "${PURPLE}执行 超售测试...${NC}"
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     13)
       clear
       echo -e "${PURPLE}执行 VPS一键脚本工具箱 ...${NC}"
       curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     14)
       clear
       echo -e "${PURPLE}执行 Jcnf 常用脚本工具包 ...${NC}"
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     15)
       clear
       echo -e "${PURPLE}执行 科技Lion脚本...${NC}"
       bash <(curl -sL kejilion.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     16)
       clear
       echo -e "${PURPLE}执行 BlueSkyXN脚本 ...${NC}"
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     17)
       clear
       echo -e "${PURPLE}执行 勇哥Singbox ...${NC}"
       bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     18)
       clear
       echo -e "${PURPLE}执行 勇哥X-UI ...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     19)
       clear
       echo -e "${PURPLE}执行 Fscarmen-Singbox ...${NC}"
       bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     20)
       clear
       echo -e "${PURPLE}执行 3X-UI ...${NC}"
       bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     21)
       clear
       echo -e "${PURPLE}执行 3X-UI优化版...${NC}"
       bash <(curl -Ls https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     22)
       clear
       echo -e "${PURPLE}执行 安装Docker...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     66)
       clear
       echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
       wget -O Nlbench.sh https://raw.githubusercontent.com/everett7623/nodeloc_vps_test/main/Nlbench.sh && chmod +x Nlbench.sh && ./Nlbench.sh
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     88)
       clear
@@ -751,7 +718,6 @@ show_menu() {
       update_scripts
       echo "脚本更新完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
     99)
       clear
@@ -794,7 +760,6 @@ show_menu() {
       
       echo "脚本卸载完成"
       read -n 1 -s -r -p "按任意键返回主菜单..."
-      return
       ;;
      0)
       echo -e "${RED}感谢使用脚本，期待你的下次使用！${NC}"
@@ -803,19 +768,18 @@ show_menu() {
      *)
       echo -e "${RED}无效选择，请重新输入。${NC}"
       sleep 3s
-      return  # 添加这一行
+      show_menu  # 修复无效输入后重新显示菜单
       ;;
  esac
 }
 
 # 主函数
-main() 
-{
-# 主循环
-    while true; do
-        show_welcome
-        show_menu
-    done
+main() {
+  while true; do
+    show_welcome
+    show_menu
+  done
 }
+
 # 运行主函数
 main
