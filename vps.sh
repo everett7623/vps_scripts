@@ -48,14 +48,14 @@ update_scripts() {
         echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
         echo -e "${BLUE}正在更新...${NC}"
         
-        if curl -s -m 30 -o /tmp/vps_scripts.sh $SCRIPT_URL; then
+        if curl -s -m 30 -o /tmp/vps.sh $SCRIPT_URL; then
             if [ ! -s /tmp/vps_scripts.sh ]; then
                 echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
                 sleep 2
                 return 1
             fi
             
-            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
+            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps.sh | cut -d'"' -f2)
             if [ -z "$NEW_VERSION" ]; then
                 echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
                 sleep 2
