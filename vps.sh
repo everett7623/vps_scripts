@@ -1,6 +1,6 @@
 #!/bin/bash
 VERSION="2024-12-03 v1.2.1"  # 只需定义一次版本号
-SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
 
 # 定义颜色
@@ -45,13 +45,13 @@ update_scripts() {
         echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
         echo -e "${BLUE}正在更新...${NC}"
         
-        if curl -s -m 30 -o /tmp/vps_scripts.sh $SCRIPT_URL; then
-            if [ ! -s /tmp/vps_scripts.sh ]; then
+        if curl -s -m 30 -o /tmp/vps.sh $SCRIPT_URL; then
+            if [ ! -s /tmp/vps.sh ]; then
                 echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
                 return 1
             fi
             
-            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
+            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps.sh | cut -d'"' -f2)
             if [ -z "$NEW_VERSION" ]; then
                 echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
                 return 1
@@ -232,7 +232,7 @@ ip_address() {
 
 # 统计使用次数
 sum_run_times() {
-    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
+    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
     if [[ -n "$COUNT" ]]; then
         daily_count=$(cut -d " " -f1 <<< "$COUNT")
         total_count=$(cut -d " " -f3 <<< "$COUNT")
@@ -669,7 +669,7 @@ show_menu() {
 
       # 删除主脚本及其相关文件
       echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
-      [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
+      [ -f /root/vps.sh ] && rm -f /root/vps.sh
       [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
       [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
       [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
