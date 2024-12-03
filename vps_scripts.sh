@@ -526,53 +526,73 @@ show_menu() {
       echo "------------------------"
       echo -e "${WHITE}系统运行时长: ${YELLOW}${runtime}${NC}"
       echo ""
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     2)
       clear
       echo -e "${PURPLE}执行更新系统...${NC}"
       update_system
       echo "系统更新完成"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     3)
       clear
       echo -e "${PURPLE}执行 清理系统...${NC}"
       clean_system
       echo "系统清理完成"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     4)
       clear
       echo -e "${PURPLE}执行 Yabs测试...${NC}"
       wget -qO- yabs.sh | bash
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     5)
       clear
       echo -e "${PURPLE}执行 融合怪测试...${NC}"
       curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     6)
       clear
       echo -e "${PURPLE}执行 IP质量测试...${NC}"
       bash <(curl -Ls IP.Check.Place)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     7)
       clear
       echo -e "${PURPLE}执行 流媒体解锁...${NC}"
       bash <(curl -L -s media.ispvps.com)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     8)
       clear
       echo -e "${PURPLE}执行 响应测试脚本...${NC}"
       bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     9)
       clear
       echo -e "${PURPLE}执行 三网测速（多/单线程）...${NC}"
       bash <(curl -sL https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     10)
       clear
       echo -e "${PURPLE}执行 AutoTrace三网回程路由...${NC}"
       wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     11)
       clear
@@ -638,72 +658,100 @@ show_menu() {
       echo -e "${BLUE}其他参数示例:${NC}"
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -i 1       # 每1秒输出带宽报告"
       echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -p 5201    # 指定服务端端口为5201"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     12)
       clear
       echo -e "${PURPLE}执行 超售测试...${NC}"
       wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     13)
       clear
       echo -e "${PURPLE}执行 VPS一键脚本工具箱 ...${NC}"
       curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     14)
       clear
       echo -e "${PURPLE}执行 Jcnf 常用脚本工具包 ...${NC}"
       wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     15)
       clear
       echo -e "${PURPLE}执行 科技Lion脚本...${NC}"
       bash <(curl -sL kejilion.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     16)
       clear
       echo -e "${PURPLE}执行 BlueSkyXN脚本 ...${NC}"
       wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     17)
       clear
       echo -e "${PURPLE}执行 勇哥Singbox ...${NC}"
       bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     18)
       clear
       echo -e "${PURPLE}执行 勇哥X-UI ...${NC}"
       bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     19)
       clear
       echo -e "${PURPLE}执行 Fscarmen-Singbox ...${NC}"
       bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     20)
       clear
       echo -e "${PURPLE}执行 3X-UI ...${NC}"
       bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     21)
       clear
       echo -e "${PURPLE}执行 3X-UI优化版...${NC}"
       bash <(curl -Ls https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     22)
       clear
       echo -e "${PURPLE}执行 安装Docker...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     66)
       clear
       echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
       wget -O Nlbench.sh https://raw.githubusercontent.com/everett7623/nodeloc_vps_test/main/Nlbench.sh && chmod +x Nlbench.sh && ./Nlbench.sh
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     88)
       clear
       echo -e "${PURPLE}执行更新脚本...${NC}"
       update_scripts
       echo "脚本更新完成"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
     99)
       clear
@@ -745,31 +793,29 @@ show_menu() {
       [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
       
       echo "脚本卸载完成"
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      return
       ;;
      0)
-      echo -e "${RED}感谢使用NodeLoc聚合测试脚本，已退出脚本，期待你的下次使用！${NC}"
+      echo -e "${RED}感谢使用脚本，期待你的下次使用！${NC}"
       exit 0
-     ;;
+      ;;
      *)
       echo -e "${RED}无效选择，请重新输入。${NC}"
       sleep 3s
-      clear
-      show_welcome
+      return  # 添加这一行
       ;;
  esac
 }
 
 # 主函数
-main() {
-
-
-
+main() 
+{
 # 主循环
     while true; do
         show_welcome
         show_menu
     done
 }
-
 # 运行主函数
 main
