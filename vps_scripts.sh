@@ -196,7 +196,6 @@ update_system() {
     return 1
 }
 
-
 # 定义支持的操作系统类型
 SUPPORTED_OS=("ubuntu" "debian" "linuxmint" "elementary" "pop" "centos" "rhel" "fedora" "rocky" "almalinux" "openeuler" "opensuse" "sles" "arch" "manjaro" "alpine" "gentoo" "cloudlinux")
 
@@ -323,9 +322,6 @@ sum_run_times() {
     fi
 }
 
-# 调用函数获取统计数据
-sum_run_times
-      
 #清理系统
 clean_system() {
         if command -v apt &>/dev/null; then
@@ -763,10 +759,12 @@ show_menu() {
 # 主函数
 main() {
 
-    # 主循环
+# 调用函数获取统计数据
+sum_run_times
+
+# 主循环
     while true; do
         show_welcome
-        show_menu
     done
 }
 
