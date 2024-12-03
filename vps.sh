@@ -1,5 +1,7 @@
 #!/bin/bash
-VERSION="2024-12-03 v1.2.0"  # 最新版本号
+VERSION="2024-12-03 v1.2.0"  # 只需定义一次版本号
+SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
 
 # 定义颜色
 RED='\033[0;31m'
@@ -31,16 +33,11 @@ fi
 
 # 更新脚本
 update_scripts() {
-    local VERSION="2024-12-03 v1.2.0"  # 最新版本号
-    local SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
-    local VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
-    
     echo -e "${YELLOW}正在检查更新...${NC}"
     
     local REMOTE_VERSION=$(curl -s -m 10 $VERSION_URL)
     if [ -z "$REMOTE_VERSION" ]; then
         echo -e "${RED}无法获取远程版本信息。请检查您的网络连接。${NC}"
-        sleep 2
         return 1
     fi
     
@@ -49,26 +46,23 @@ update_scripts() {
         echo -e "${BLUE}正在更新...${NC}"
         
         if curl -s -m 30 -o /tmp/vps.sh $SCRIPT_URL; then
-            if [ ! -s /tmp/vps_scripts.sh ]; then
+            if [ ! -s /tmp/vps.sh ]; then
                 echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
-                sleep 2
                 return 1
             fi
             
             local NEW_VERSION=$(grep '^VERSION=' /tmp/vps.sh | cut -d'"' -f2)
             if [ -z "$NEW_VERSION" ]; then
                 echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
-                sleep 2
                 return 1
             fi
             
             if ! sed -i "s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$0"; then
                 echo -e "${RED}无法更新脚本中的版本号。请检查文件权限。${NC}"
-                sleep 2
                 return 1
             fi
             
-            if mv /tmp/vps_scripts.sh "$0"; then
+            if mv /tmp/vps.sh "$0"; then
                 chmod +x "$0"
                 echo -e "${GREEN}脚本更新成功！新版本: $NEW_VERSION${NC}"
                 echo -e "${YELLOW}请等待 3 秒...${NC}"
@@ -80,21 +74,17 @@ update_scripts() {
                     exec bash "$0"
                 else
                     echo -e "${YELLOW}请手动重启脚本以应用更新。${NC}"
-                    sleep 2
                 fi
             else
                 echo -e "${RED}无法替换脚本文件。请检查权限。${NC}"
-                sleep 2
                 return 1
             fi
         else
             echo -e "${RED}下载新版本失败。请稍后重试。${NC}"
-            sleep 2
             return 1
         fi
     else
         echo -e "${GREEN}脚本已是最新版本 $VERSION。${NC}"
-        sleep 2
     fi
 }
 
@@ -114,6 +104,8 @@ detect_os() {
         os_type="fedora"
     elif [ -f /etc/centos-release ]; then
         os_type="centos"
+    elif [ -f /etc/redhat-release ]; then
+        os_type="redhat"
     else
         os_type=$(uname -s)
     fi
@@ -124,10 +116,6 @@ detect_os() {
 # 更新系统
 update_system() {
     detect_os
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}无法检测操作系统。${NC}"
-        return 1
-    fi
     case "${os_type,,}" in
         ubuntu|debian|linuxmint|elementary|pop)
             update_cmd="apt-get update"
@@ -145,55 +133,30 @@ update_system() {
                 clean_cmd="yum autoremove -y"
             fi
             ;;
-        opensuse*|sles)
-            update_cmd="zypper refresh"
-            upgrade_cmd="zypper dup -y"
-            clean_cmd="zypper clean -a"
-            ;;
         arch|manjaro)
             update_cmd="pacman -Sy"
             upgrade_cmd="pacman -Syu --noconfirm"
             clean_cmd="pacman -Sc --noconfirm"
-            ;;
-        alpine)
-            update_cmd="apk update"
-            upgrade_cmd="apk upgrade"
-            clean_cmd="apk cache clean"
-            ;;
-        gentoo)
-            update_cmd="emerge --sync"
-            upgrade_cmd="emerge -uDN @world"
-            clean_cmd="emerge --depclean"
-            ;;
-        cloudlinux)
-            update_cmd="yum check-update"
-            upgrade_cmd="yum upgrade -y"
-            clean_cmd="yum clean all"
             ;;
         *)
             echo -e "${RED}不支持的 Linux 发行版: $os_type${NC}"
             return 1
             ;;
     esac
-    
-    echo -e "${YELLOW}正在更新系统...${NC}"
     sudo $update_cmd
     if [ $? -eq 0 ]; then
         sudo $upgrade_cmd
         if [ $? -eq 0 ]; then
-            echo -e "${GREEN}系统更新完成。${NC}"
-            echo -e "${YELLOW}正在清理系统...${NC}"
             sudo $clean_cmd
-            echo -e "${GREEN}系统清理完成。${NC}"
-            # 检查是否需要重启
-            if [ -f /var/run/reboot-required ]; then
-                echo -e "${YELLOW}系统更新需要重启才能完成。请在方便时重启系统。${NC}"
-            fi
-            return 0
+            echo -e "${GREEN}系统更新完成。${NC}"
+        else
+            echo -e "${RED}升级失败。${NC}"
+            return 1
         fi
+    else
+        echo -e "${RED}更新失败。${NC}"
+        return 1
     fi
-    echo -e "${RED}系统更新失败。${NC}"
-    return 1
 }
 
 # 定义支持的操作系统类型
