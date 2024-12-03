@@ -310,7 +310,7 @@ show_menu() {
   echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
   echo -e "${YELLOW}12) 超售测试${NC}"
   echo "------------------------------------------------------------------------------"
-  echo -e "${GREEN}66) NodeLoc聚合测试脚本${NC}"
+  echo -e "${RED}66) NodeLoc聚合测试脚本${NC}"
   echo -e "${YELLOW}88) 更新脚本${NC}"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
