@@ -322,6 +322,9 @@ sum_run_times() {
     fi
 }
 
+# 调用函数获取统计数据
+sum_run_times
+
 #清理系统
 clean_system() {
         if command -v apt &>/dev/null; then
@@ -759,12 +762,12 @@ show_menu() {
 # 主函数
 main() {
 
-# 调用函数获取统计数据
-sum_run_times
+
 
 # 主循环
     while true; do
         show_welcome
+        show_menu
     done
 }
 
