@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2024-12-03 v1.2.1"  # 只需定义一次版本号
+VERSION="2025-03-18 v1.2.2"  # 只需定义一次版本号
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
 
@@ -625,7 +625,7 @@ show_menu() {
     66)
       clear
       echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
-      wget -O Nlbench.sh https://raw.githubusercontent.com/everett7623/nodeloc_vps_test/main/Nlbench.sh && chmod +x Nlbench.sh && ./Nlbench.sh
+      curl -sSL abc.sd | bash
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
     88)
