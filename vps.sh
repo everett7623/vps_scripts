@@ -311,6 +311,7 @@ show_menu() {
   echo -e "${YELLOW}12) 超售测试${NC}"
   echo "------------------------------------------------------------------------------"
   echo -e "${RED}66) NodeLoc聚合测试脚本${NC}"
+  echo -e "${RED}66) XY网络质量体检脚本${NC}"
   echo -e "${YELLOW}88) 更新脚本${NC}"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
@@ -626,6 +627,12 @@ show_menu() {
       clear
       echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
       curl -sSL abc.sd | bash
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    77)
+      clear
+      echo -e "${PURPLE}执行 XY网络质量体检脚本...${NC}"
+      bash <(curl -sL Net.Check.Place)
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
     88)
