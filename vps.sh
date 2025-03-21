@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2025-03-18 v1.2.2"  # 只需定义一次版本号
+VERSION="2025-03-21 v1.2.3"  # 只需定义一次版本号
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
 
