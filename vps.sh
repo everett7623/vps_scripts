@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2025-03-21 v1.2.3"  # 只需定义一次版本号
+VERSION="2025-05-19 v1.2.4"  # 只需定义一次版本号
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
 
@@ -621,6 +621,12 @@ show_menu() {
       clear
       echo -e "${PURPLE}执行 安装Docker...${NC}"
       curl -fsSL https://get.docker.com | bash -s docker
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    23)
+      clear
+      echo -e "${PURPLE}执行 执行哪吒Agent清理${NC}"
+      bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
     66)
