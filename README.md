@@ -3,7 +3,7 @@
 这是一个多功能 VPS 脚本工具集，包含系统更新、测速、IP 质量检测、流媒体解锁测试等多种实用功能。
 （此脚本是各大作者脚本的集合，未作任何修改，请放心食用。）
 
-**版本:** 2025-03-18 v1.2.2
+**版本:** 2025-05-1 v1.2.3
 
 **GitHub 地址:** [https://github.com/everett7623/vps_scripts](https://github.com/everett7623/vps_scripts)
 
@@ -34,8 +34,10 @@
 20) Mack-a八合一
 21) Warp集合
 22) 安装docker
+23) 哪吒agent清理
 ------------------------------------------------------------------------------
 66）NodeLoc聚合测试脚本
+77）XY网络质量体检脚本
 88) 更新脚本
 99) 卸载脚本
 0) 退出
@@ -44,6 +46,15 @@
 
 1. 确保您以 `root` 用户身份运行脚本。
 2. 下载并运行脚本：
+
+    ```bash
+    bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+    ```
+    或
+    ```bash
+    bash <(wget -qO- https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+    ```
+    或
     ```bash
     wget -O vps.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh && chmod +x vps.sh && ./vps.sh
     ```
@@ -52,7 +63,7 @@
     curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o vps.sh&& chmod +x vps.sh && ./vps.sh
     ```
 
-4. 根据提示输入对应的数字选择要执行的功能。
+3. 根据提示输入对应的数字选择要执行的功能。
 
 ![vps_scripts.png](https://img.y8o.de/i/2024/06/25/667ae40793519.png)
 
