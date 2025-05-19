@@ -305,9 +305,9 @@ show_menu() {
   echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
   echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
   echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
-  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) 3X-UI优化版${NC}"
-  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装Docker${NC}"
-  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
+  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}            ${YELLOW}21) 3X-UI优化版${NC}"
+  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}           ${YELLOW}22) 安装Docker${NC}"
+  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}          ${YELLOW}23) 哪吒Agent清理${NC}""
   echo -e "${YELLOW}12) 超售测试${NC}"
   echo "------------------------------------------------------------------------------"
   echo -e "${RED}66) NodeLoc聚合测试脚本${NC}"
@@ -625,7 +625,7 @@ show_menu() {
       ;;
     23)
       clear
-      echo -e "${PURPLE}执行 执行哪吒Agent清理${NC}"
+      echo -e "${PURPLE}执行 哪吒Agent清理${NC}"
       bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
