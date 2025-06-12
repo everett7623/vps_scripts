@@ -1,4 +1,5 @@
-# VPS Scripts - 多功能 VPS 脚本工具集(目前不可用，升级中)
+# VPS Scripts - 多功能 VPS 脚本工具集
+(新版本目前不可用，升级中)，请使用旧脚本：bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
 
 <div align="center">
 
