@@ -48,7 +48,7 @@
 2. 下载并运行脚本：
 
     ```bash
-    bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+    bash <(curl -sL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
     ```
     或
     ```bash
