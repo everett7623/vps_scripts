@@ -1,6 +1,6 @@
 #!/bin/bash
-VERSION="2024-12-03 v1.2.1"  # 只需定义一次版本号
-SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
+VERSION="2025-05-19 v1.2.4"  # 只需定义一次版本号
+SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
 VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
 
 # 定义颜色
@@ -45,13 +45,13 @@ update_scripts() {
         echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
         echo -e "${BLUE}正在更新...${NC}"
         
-        if curl -s -m 30 -o /tmp/vps_scripts.sh $SCRIPT_URL; then
-            if [ ! -s /tmp/vps_scripts.sh ]; then
+        if curl -s -m 30 -o /tmp/vps.sh $SCRIPT_URL; then
+            if [ ! -s /tmp/vps.sh ]; then
                 echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
                 return 1
             fi
             
-            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps_scripts.sh | cut -d'"' -f2)
+            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps.sh | cut -d'"' -f2)
             if [ -z "$NEW_VERSION" ]; then
                 echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
                 return 1
@@ -62,7 +62,7 @@ update_scripts() {
                 return 1
             fi
             
-            if mv /tmp/vps_scripts.sh "$0"; then
+            if mv /tmp/vps.sh "$0"; then
                 chmod +x "$0"
                 echo -e "${GREEN}脚本更新成功！新版本: $NEW_VERSION${NC}"
                 echo -e "${YELLOW}请等待 3 秒...${NC}"
@@ -232,7 +232,7 @@ ip_address() {
 
 # 统计使用次数
 sum_run_times() {
-    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps_scripts.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
+    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
     if [[ -n "$COUNT" ]]; then
         daily_count=$(cut -d " " -f1 <<< "$COUNT")
         total_count=$(cut -d " " -f3 <<< "$COUNT")
@@ -305,12 +305,13 @@ show_menu() {
   echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
   echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
   echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
-  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}           ${YELLOW}21) 3X-UI优化版${NC}"
-  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}          ${YELLOW}22) 安装Docker${NC}"
-  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}"
+  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}            ${YELLOW}21) 3X-UI优化版${NC}"
+  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}           ${YELLOW}22) 安装Docker${NC}"
+  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}          ${YELLOW}23) 哪吒Agent清理${NC}"
   echo -e "${YELLOW}12) 超售测试${NC}"
   echo "------------------------------------------------------------------------------"
-  echo -e "${GREEN}66) NodeLoc聚合测试脚本${NC}"
+  echo -e "${RED}66) NodeLoc聚合测试脚本${NC}"
+  echo -e "${RED}77) XY网络质量体检脚本${NC}"
   echo -e "${YELLOW}88) 更新脚本${NC}"
   echo -e "${YELLOW}99) 卸载脚本${NC}"
   echo -e "${YELLOW}0) 退出${NC}"
@@ -622,10 +623,22 @@ show_menu() {
       curl -fsSL https://get.docker.com | bash -s docker
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
+    23)
+      clear
+      echo -e "${PURPLE}执行 哪吒Agent清理${NC}"
+      bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh)
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
     66)
       clear
       echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
-      wget -O Nlbench.sh https://raw.githubusercontent.com/everett7623/nodeloc_vps_test/main/Nlbench.sh && chmod +x Nlbench.sh && ./Nlbench.sh
+      curl -sSL abc.sd | bash
+      read -n 1 -s -r -p "按任意键返回主菜单..."
+      ;;
+    77)
+      clear
+      echo -e "${PURPLE}执行 XY网络质量体检脚本...${NC}"
+      bash <(curl -sL Net.Check.Place)
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
     88)
@@ -669,7 +682,7 @@ show_menu() {
 
       # 删除主脚本及其相关文件
       echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
-      [ -f /root/vps_scripts.sh ] && rm -f /root/vps_scripts.sh
+      [ -f /root/vps.sh ] && rm -f /root/vps.sh
       [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
       [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
       [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
