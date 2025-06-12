@@ -60,7 +60,7 @@
     ```
     或
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o vps.sh&& chmod +x vps.sh && ./vps.sh
+    curl -sL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o vps.sh && chmod +x vps.sh && ./vps.sh
     ```
 
 3. 根据提示输入对应的数字选择要执行的功能。
