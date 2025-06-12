@@ -1,5 +1,8 @@
 # VPS Scripts - 多功能 VPS 脚本工具集
-(新版本目前不可用，升级中)，请使用旧脚本：bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
+(新版本目前不可用，升级中)，请使用旧脚本：
+```bash
+bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
+```
 
 <div align="center">
 
@@ -93,10 +96,10 @@
 ### 一键安装
 
 ```bash
-# 使用 curl
 bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+```
 
-# 使用 wget
+```bash
 bash <(wget -qO- https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
 ```
 
