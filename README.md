@@ -1,4 +1,4 @@
-# VPS Scripts - 多功能 VPS 脚本工具集
+# VPS Scripts - 多功能 VPS 脚本工具集(目前不可用，升级中)
 
 <div align="center">
 
