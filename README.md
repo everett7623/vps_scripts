@@ -7,9 +7,6 @@
 
 **GitHub 地址:** [https://github.com/everett7623/vps_scripts](https://github.com/everett7623/vps_scripts)
 
-**VPS 选购:** [NodeLoc VPS](https://www.nodeloc.com/vps)
-
-
 ## 功能列表
 
 1) 本机信息
