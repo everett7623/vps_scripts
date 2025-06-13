@@ -141,7 +141,6 @@ main() {
     test_youtube_premium
     
     echo -e "${GREEN}流媒体解锁测试完成!${NC}"
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
