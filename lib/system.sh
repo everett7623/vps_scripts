@@ -1,579 +1,568 @@
 #!/bin/bash
-# lib/system.sh - VPS Scripts 系统检测和兼容性库
 
-# 防止重复加载
-if [ -n "$VPS_SCRIPTS_SYSTEM_LOADED" ]; then
-    return 0
-fi
-VPS_SCRIPTS_SYSTEM_LOADED=1
+# ===================================================================
+# 文件名: lib/system.sh
+# 描述: 系统检测与操作库
+# 作者: everett7623
+# 版本: 1.0.0
+# 更新日期: 2025-01-10
+# ===================================================================
 
-# 加载依赖
-source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# 加载公共函数库
+source "${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/common.sh"
 
-# 系统信息全局变量
-export OS=""
-export OS_VERSION=""
-export OS_CODENAME=""
-export OS_PRETTY_NAME=""
-export ARCH=""
-export KERNEL=""
-export PKG_MANAGER=""
-export PKG_INSTALL=""
-export PKG_UPDATE=""
-export PKG_UPGRADE=""
-export PKG_SEARCH=""
-export PKG_REMOVE=""
-export PKG_CLEAN=""
-export INIT_SYSTEM=""
-export SERVICE_CMD=""
+# ===================================================================
+# 系统检测函数
+# ===================================================================
 
-# 检测操作系统详细信息
-detect_os_detailed() {
-    # 架构检测
-    ARCH=$(uname -m)
-    case $ARCH in
-        x86_64) ARCH="amd64" ;;
-        aarch64) ARCH="arm64" ;;
-        armv7l) ARCH="armv7" ;;
-        i686) ARCH="386" ;;
-    esac
+# 检测操作系统
+detect_os() {
+    local os_type=""
+    local os_version=""
+    local os_codename=""
     
-    # 内核版本
-    KERNEL=$(uname -r)
-    
-    # 发行版检测
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-        OS_VERSION=$VERSION_ID
-        OS_CODENAME=$VERSION_CODENAME
-        OS_PRETTY_NAME=$PRETTY_NAME
-    elif [ -f /etc/redhat-release ]; then
-        OS="centos"
-        OS_VERSION=$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))
-        OS_PRETTY_NAME="CentOS Linux $OS_VERSION"
-    elif [ -f /etc/centos-release ]; then
-        OS="centos"
-        OS_VERSION=$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides centos-release))
-        OS_PRETTY_NAME="CentOS Linux $OS_VERSION"
+    if [[ -f /etc/os-release ]]; then
+        source /etc/os-release
+        os_type="${ID,,}"
+        os_version="$VERSION_ID"
+        os_codename="${VERSION_CODENAME:-$UBUNTU_CODENAME}"
     elif command_exists lsb_release; then
-        OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
-        OS_VERSION=$(lsb_release -sr)
-        OS_CODENAME=$(lsb_release -sc)
-        OS_PRETTY_NAME=$(lsb_release -sd)
+        os_type="$(lsb_release -si | tr '[:upper:]' '[:lower:]')"
+        os_version="$(lsb_release -sr)"
+        os_codename="$(lsb_release -sc)"
+    elif [[ -f /etc/debian_version ]]; then
+        os_type="debian"
+        os_version="$(cat /etc/debian_version)"
+    elif [[ -f /etc/redhat-release ]]; then
+        os_type="centos"
+        os_version="$(rpm -q --qf "%{VERSION}" centos-release)"
     else
-        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-        OS_VERSION=$(uname -r)
-        OS_PRETTY_NAME="$OS $OS_VERSION"
+        os_type="unknown"
+        os_version="unknown"
     fi
     
-    # 标准化系统名称
-    case "$OS" in
-        ubuntu|debian|raspbian)
-            OS_FAMILY="debian"
+    export OS_TYPE="$os_type"
+    export OS_VERSION="$os_version"
+    export OS_CODENAME="$os_codename"
+    
+    log_info "检测到操作系统: $OS_TYPE $OS_VERSION ($OS_CODENAME)"
+}
+
+# 获取包管理器
+get_package_manager() {
+    if command_exists apt-get; then
+        echo "apt"
+    elif command_exists yum; then
+        echo "yum"
+    elif command_exists dnf; then
+        echo "dnf"
+    elif command_exists pacman; then
+        echo "pacman"
+    elif command_exists zypper; then
+        echo "zypper"
+    elif command_exists apk; then
+        echo "apk"
+    else
+        echo "unknown"
+    fi
+}
+
+# 检测系统架构
+detect_architecture() {
+    local arch=$(uname -m)
+    
+    case "$arch" in
+        x86_64|amd64)
+            echo "amd64"
             ;;
-        centos|rhel|fedora|rocky|almalinux|oracle|cloudlinux)
-            OS_FAMILY="rhel"
+        aarch64|arm64)
+            echo "arm64"
             ;;
-        opensuse*|sles)
-            OS_FAMILY="suse"
+        armv7*|armhf)
+            echo "armv7"
             ;;
-        arch|manjaro|endeavouros)
-            OS_FAMILY="arch"
-            ;;
-        alpine)
-            OS_FAMILY="alpine"
+        i386|i686)
+            echo "i386"
             ;;
         *)
-            OS_FAMILY="unknown"
+            echo "$arch"
+            ;;
+    esac
+}
+
+# 检测虚拟化类型
+detect_virtualization() {
+    if command_exists systemd-detect-virt; then
+        systemd-detect-virt
+    elif [[ -f /proc/cpuinfo ]]; then
+        if grep -q "hypervisor" /proc/cpuinfo; then
+            echo "vm"
+        else
+            echo "physical"
+        fi
+    else
+        echo "unknown"
+    fi
+}
+
+# ===================================================================
+# 系统信息获取函数
+# ===================================================================
+
+# 获取系统负载
+get_system_load() {
+    local load_1min load_5min load_15min
+    read load_1min load_5min load_15min _ < /proc/loadavg
+    echo "$load_1min $load_5min $load_15min"
+}
+
+# 获取系统运行时间
+get_system_uptime() {
+    local uptime_seconds=$(cat /proc/uptime | cut -d. -f1)
+    local days=$((uptime_seconds / 86400))
+    local hours=$(((uptime_seconds % 86400) / 3600))
+    local minutes=$(((uptime_seconds % 3600) / 60))
+    
+    if [[ $days -gt 0 ]]; then
+        printf "%d天 %d小时 %d分钟" $days $hours $minutes
+    elif [[ $hours -gt 0 ]]; then
+        printf "%d小时 %d分钟" $hours $minutes
+    else
+        printf "%d分钟" $minutes
+    fi
+}
+
+# 获取CPU信息
+get_cpu_info() {
+    local cpu_model=""
+    local cpu_cores=""
+    local cpu_threads=""
+    
+    if [[ -f /proc/cpuinfo ]]; then
+        cpu_model=$(grep -m1 "model name" /proc/cpuinfo | cut -d: -f2 | xargs)
+        cpu_cores=$(grep -c "^processor" /proc/cpuinfo)
+        cpu_threads=$(grep -c "^processor" /proc/cpuinfo)
+    fi
+    
+    echo "型号: $cpu_model"
+    echo "核心数: $cpu_cores"
+    echo "线程数: $cpu_threads"
+}
+
+# 获取内存信息
+get_memory_info() {
+    local total used free available
+    
+    if [[ -f /proc/meminfo ]]; then
+        total=$(grep "MemTotal:" /proc/meminfo | awk '{print $2}')
+        available=$(grep "MemAvailable:" /proc/meminfo | awk '{print $2}')
+        
+        # 转换为MB
+        total=$((total / 1024))
+        available=$((available / 1024))
+        used=$((total - available))
+        
+        echo "总计: ${total}MB"
+        echo "已用: ${used}MB"
+        echo "可用: ${available}MB"
+        echo "使用率: $(awk "BEGIN {printf \"%.1f\", ($used/$total)*100}")%"
+    fi
+}
+
+# 获取磁盘信息
+get_disk_info() {
+    local disk_info=$(df -h / | awk 'NR==2 {print $2" "$3" "$4" "$5}')
+    local total=$(echo $disk_info | awk '{print $1}')
+    local used=$(echo $disk_info | awk '{print $2}')
+    local available=$(echo $disk_info | awk '{print $3}')
+    local usage=$(echo $disk_info | awk '{print $4}')
+    
+    echo "总计: $total"
+    echo "已用: $used"
+    echo "可用: $available"
+    echo "使用率: $usage"
+}
+
+# 获取网络信息
+get_network_info() {
+    local ipv4_address=""
+    local ipv6_address=""
+    local default_interface=""
+    
+    # 获取默认网络接口
+    default_interface=$(ip route | grep default | awk '{print $5}' | head -n1)
+    
+    # 获取IPv4地址
+    ipv4_address=$(ip -4 addr show "$default_interface" 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
+    
+    # 获取IPv6地址
+    ipv6_address=$(ip -6 addr show "$default_interface" 2>/dev/null | grep -oP '(?<=inet6\s)[\da-f:]+' | grep -v '^fe80' | head -n1)
+    
+    # 尝试获取公网IP
+    local public_ipv4=$(curl -s -4 --max-time 5 ifconfig.me 2>/dev/null || echo "未知")
+    local public_ipv6=$(curl -s -6 --max-time 5 ifconfig.me 2>/dev/null || echo "未知")
+    
+    echo "默认接口: $default_interface"
+    echo "内网IPv4: ${ipv4_address:-无}"
+    echo "内网IPv6: ${ipv6_address:-无}"
+    echo "公网IPv4: $public_ipv4"
+    echo "公网IPv6: $public_ipv6"
+}
+
+# ===================================================================
+# 系统操作函数
+# ===================================================================
+
+# 更新系统包索引
+update_package_index() {
+    local pm=$(get_package_manager)
+    
+    log_info "正在更新包索引..."
+    
+    case "$pm" in
+        apt)
+            apt-get update -qq
+            ;;
+        yum)
+            yum makecache -q
+            ;;
+        dnf)
+            dnf makecache -q
+            ;;
+        pacman)
+            pacman -Sy --noconfirm
+            ;;
+        zypper)
+            zypper --quiet refresh
+            ;;
+        apk)
+            apk update -q
+            ;;
+        *)
+            log_error "不支持的包管理器: $pm"
+            return 1
             ;;
     esac
     
-    export OS_FAMILY
-}
-
-# 检测包管理器
-detect_package_manager() {
-    if command_exists apt-get; then
-        PKG_MANAGER="apt"
-        PKG_INSTALL="apt-get install -y"
-        PKG_UPDATE="apt-get update"
-        PKG_UPGRADE="apt-get upgrade -y"
-        PKG_SEARCH="apt-cache search"
-        PKG_REMOVE="apt-get remove -y"
-        PKG_CLEAN="apt-get autoremove -y && apt-get clean"
-        export DEBIAN_FRONTEND=noninteractive
-    elif command_exists dnf; then
-        PKG_MANAGER="dnf"
-        PKG_INSTALL="dnf install -y"
-        PKG_UPDATE="dnf check-update || true"
-        PKG_UPGRADE="dnf upgrade -y"
-        PKG_SEARCH="dnf search"
-        PKG_REMOVE="dnf remove -y"
-        PKG_CLEAN="dnf autoremove -y && dnf clean all"
-    elif command_exists yum; then
-        PKG_MANAGER="yum"
-        PKG_INSTALL="yum install -y"
-        PKG_UPDATE="yum check-update || true"
-        PKG_UPGRADE="yum upgrade -y"
-        PKG_SEARCH="yum search"
-        PKG_REMOVE="yum remove -y"
-        PKG_CLEAN="yum autoremove -y && yum clean all"
-    elif command_exists zypper; then
-        PKG_MANAGER="zypper"
-        PKG_INSTALL="zypper install -y"
-        PKG_UPDATE="zypper refresh"
-        PKG_UPGRADE="zypper update -y"
-        PKG_SEARCH="zypper search"
-        PKG_REMOVE="zypper remove -y"
-        PKG_CLEAN="zypper clean -a"
-    elif command_exists pacman; then
-        PKG_MANAGER="pacman"
-        PKG_INSTALL="pacman -S --noconfirm"
-        PKG_UPDATE="pacman -Sy"
-        PKG_UPGRADE="pacman -Syu --noconfirm"
-        PKG_SEARCH="pacman -Ss"
-        PKG_REMOVE="pacman -R --noconfirm"
-        PKG_CLEAN="pacman -Sc --noconfirm"
-    elif command_exists apk; then
-        PKG_MANAGER="apk"
-        PKG_INSTALL="apk add --no-cache"
-        PKG_UPDATE="apk update"
-        PKG_UPGRADE="apk upgrade"
-        PKG_SEARCH="apk search"
-        PKG_REMOVE="apk del"
-        PKG_CLEAN="apk cache clean"
-    else
-        error_exit "未找到支持的包管理器"
-    fi
-}
-
-# 检测init系统
-detect_init_system() {
-    if command_exists systemctl && systemctl --version >/dev/null 2>&1; then
-        INIT_SYSTEM="systemd"
-        SERVICE_CMD="systemctl"
-    elif command_exists service; then
-        INIT_SYSTEM="sysvinit"
-        SERVICE_CMD="service"
-    elif command_exists rc-service; then
-        INIT_SYSTEM="openrc"
-        SERVICE_CMD="rc-service"
-    else
-        INIT_SYSTEM="unknown"
-        SERVICE_CMD=""
-    fi
-}
-
-# 完整的系统检测
-detect_system() {
-    info "正在检测系统环境..."
-    
-    detect_os_detailed
-    detect_package_manager
-    detect_init_system
-    
-    debug "操作系统: $OS_PRETTY_NAME"
-    debug "系统家族: $OS_FAMILY"
-    debug "架构: $ARCH"
-    debug "内核: $KERNEL"
-    debug "包管理器: $PKG_MANAGER"
-    debug "Init系统: $INIT_SYSTEM"
-}
-
-# 检查系统兼容性
-check_system_compatibility() {
-    local supported_os=("ubuntu" "debian" "centos" "rhel" "fedora" "rocky" "almalinux" "opensuse" "arch" "manjaro" "alpine")
-    local supported_arch=("amd64" "arm64")
-    
-    # 检查操作系统
-    local os_supported=false
-    for supported in "${supported_os[@]}"; do
-        if [[ "$OS" == "$supported"* ]]; then
-            os_supported=true
-            break
-        fi
-    done
-    
-    if [ "$os_supported" = false ]; then
-        warning "当前操作系统 ($OS) 可能不被完全支持"
-    fi
-    
-    # 检查架构
-    local arch_supported=false
-    for supported in "${supported_arch[@]}"; do
-        if [ "$ARCH" = "$supported" ]; then
-            arch_supported=true
-            break
-        fi
-    done
-    
-    if [ "$arch_supported" = false ]; then
-        warning "当前架构 ($ARCH) 可能不被完全支持"
-    fi
-    
-    # 检查最小内核版本
-    local min_kernel="3.10"
-    if version_compare "$KERNEL" "$min_kernel" && [ $? -eq 2 ]; then
-        warning "内核版本过低 ($KERNEL < $min_kernel)，某些功能可能无法使用"
-    fi
-    
-    return 0
+    log_success "包索引更新完成"
 }
 
 # 安装软件包
 install_package() {
-    local packages=("$@")
-    
-    info "安装软件包: ${packages[*]}"
-    
-    # 更新包列表（对于某些系统）
-    case "$PKG_MANAGER" in
-        apt|apk)
-            run_command "$PKG_UPDATE" "更新软件包列表" || true
-            ;;
-    esac
-    
-    # 安装包
-    for package in "${packages[@]}"; do
-        if ! package_installed "$package"; then
-            debug "正在安装: $package"
-            if ! run_command "$PKG_INSTALL $package" "安装 $package"; then
-                warning "无法安装 $package"
-            fi
-        else
-            debug "$package 已安装"
-        fi
-    done
-}
-
-# 检查软件包是否已安装
-package_installed() {
     local package="$1"
+    local pm=$(get_package_manager)
     
-    case "$PKG_MANAGER" in
+    log_info "正在安装: $package"
+    
+    case "$pm" in
         apt)
-            dpkg -l | grep -q "^ii\s\+$package"
+            DEBIAN_FRONTEND=noninteractive apt-get install -y "$package"
             ;;
-        yum|dnf)
-            rpm -q "$package" >/dev/null 2>&1
+        yum)
+            yum install -y "$package"
+            ;;
+        dnf)
+            dnf install -y "$package"
             ;;
         pacman)
-            pacman -Q "$package" >/dev/null 2>&1
-            ;;
-        apk)
-            apk info -e "$package" >/dev/null 2>&1
+            pacman -S --noconfirm "$package"
             ;;
         zypper)
-            zypper se -i "$package" >/dev/null 2>&1
+            zypper --non-interactive install "$package"
+            ;;
+        apk)
+            apk add --no-cache "$package"
             ;;
         *)
-            command_exists "$package"
-            ;;
-    esac
-}
-
-# 系统服务管理
-manage_service() {
-    local action="$1"
-    local service="$2"
-    
-    case "$INIT_SYSTEM" in
-        systemd)
-            case "$action" in
-                start)   systemctl start "$service" ;;
-                stop)    systemctl stop "$service" ;;
-                restart) systemctl restart "$service" ;;
-                enable)  systemctl enable "$service" ;;
-                disable) systemctl disable "$service" ;;
-                status)  systemctl status "$service" ;;
-                *)       error_exit "未知的服务操作: $action" ;;
-            esac
-            ;;
-        sysvinit)
-            case "$action" in
-                start|stop|restart|status)
-                    service "$service" "$action"
-                    ;;
-                enable)
-                    if command_exists update-rc.d; then
-                        update-rc.d "$service" enable
-                    elif command_exists chkconfig; then
-                        chkconfig "$service" on
-                    fi
-                    ;;
-                disable)
-                    if command_exists update-rc.d; then
-                        update-rc.d "$service" disable
-                    elif command_exists chkconfig; then
-                        chkconfig "$service" off
-                    fi
-                    ;;
-                *)
-                    error_exit "未知的服务操作: $action"
-                    ;;
-            esac
-            ;;
-        openrc)
-            case "$action" in
-                start|stop|restart|status)
-                    rc-service "$service" "$action"
-                    ;;
-                enable)
-                    rc-update add "$service" default
-                    ;;
-                disable)
-                    rc-update del "$service" default
-                    ;;
-                *)
-                    error_exit "未知的服务操作: $action"
-                    ;;
-            esac
-            ;;
-        *)
-            error_exit "不支持的init系统: $INIT_SYSTEM"
-            ;;
-    esac
-}
-
-# 获取系统资源信息
-get_system_resources() {
-    local resource="$1"
-    
-    case "$resource" in
-        cpu_usage)
-            if command_exists mpstat; then
-                mpstat 1 1 | awk 'END{print 100-$NF"%"}'
-            else
-                top -bn1 | grep 'Cpu(s)' | awk '{print $2+$4"%"}'
-            fi
-            ;;
-        memory_usage)
-            free | awk 'NR==2{printf "%.2f%%", $3*100/$2}'
-            ;;
-        disk_usage)
-            df -h / | awk 'NR==2{print $5}'
-            ;;
-        load_average)
-            uptime | awk -F'load average:' '{print $2}'
-            ;;
-        network_interfaces)
-            ip -o link show | awk -F': ' '{print $2}' | grep -v lo
-            ;;
-        *)
-            echo "Unknown"
-            ;;
-    esac
-}
-
-# 系统优化建议
-suggest_system_optimization() {
-    info "系统优化建议："
-    
-    # 检查交换空间
-    local swap_total=$(free -b | awk 'NR==3{print $2}')
-    if [ "$swap_total" -eq 0 ]; then
-        warning "未配置交换空间，建议添加交换文件"
-    fi
-    
-    # 检查文件描述符限制
-    local fd_limit=$(ulimit -n)
-    if [ "$fd_limit" -lt 65536 ]; then
-        warning "文件描述符限制较低 ($fd_limit)，建议增加到 65536"
-    fi
-    
-    # 检查内核参数
-    if [ -f /proc/sys/net/ipv4/tcp_congestion_control ]; then
-        local tcp_cc=$(cat /proc/sys/net/ipv4/tcp_congestion_control)
-        if [ "$tcp_cc" != "bbr" ] && [ "$tcp_cc" != "bbr2" ]; then
-            info "当前TCP拥塞控制: $tcp_cc，可考虑使用 BBR"
-        fi
-    fi
-    
-    # 检查时区
-    if command_exists timedatectl; then
-        local timezone=$(timedatectl | grep "Time zone" | awk '{print $3}')
-        if [ "$timezone" = "UTC" ]; then
-            info "系统时区为 UTC，可能需要调整为本地时区"
-        fi
-    fi
-}
-
-# 安装基础依赖
-install_base_dependencies() {
-    info "安装基础依赖..."
-    
-    local base_deps=()
-    
-    # 通用依赖
-    base_deps+=("curl" "wget" "sudo" "ca-certificates")
-    
-    # 根据系统添加特定依赖
-    case "$OS_FAMILY" in
-        debian)
-            base_deps+=("apt-transport-https" "gnupg" "lsb-release")
-            base_deps+=("net-tools" "dnsutils" "iputils-ping")
-            ;;
-        rhel)
-            base_deps+=("epel-release" "net-tools" "bind-utils" "iputils")
-            # CentOS 8+ 需要 PowerTools/CRB
-            if [ "$OS" = "centos" ] && [ "${OS_VERSION%%.*}" -ge 8 ]; then
-                dnf config-manager --set-enabled powertools 2>/dev/null || \
-                dnf config-manager --set-enabled crb 2>/dev/null || true
-            fi
-            ;;
-        arch)
-            base_deps+=("net-tools" "bind" "iputils")
-            ;;
-        alpine)
-            base_deps+=("net-tools" "bind-tools" "iputils")
-            ;;
-        suse)
-            base_deps+=("net-tools" "bind-utils" "iputils")
+            log_error "不支持的包管理器: $pm"
+            return 1
             ;;
     esac
     
-    # 安装依赖
-    install_package "${base_deps[@]}"
+    if [[ $? -eq 0 ]]; then
+        log_success "$package 安装成功"
+        return 0
+    else
+        log_error "$package 安装失败"
+        return 1
+    fi
 }
 
-# 系统更新
-system_update() {
-    info "更新系统..."
+# 卸载软件包
+remove_package() {
+    local package="$1"
+    local pm=$(get_package_manager)
     
-    case "$PKG_MANAGER" in
+    log_info "正在卸载: $package"
+    
+    case "$pm" in
         apt)
-            run_command "$PKG_UPDATE" "更新软件包列表"
-            run_command "$PKG_UPGRADE" "升级软件包"
+            apt-get remove -y "$package"
+            apt-get autoremove -y
             ;;
-        yum|dnf)
-            run_command "$PKG_UPDATE" "检查更新"
-            run_command "$PKG_UPGRADE" "升级软件包"
+        yum)
+            yum remove -y "$package"
+            ;;
+        dnf)
+            dnf remove -y "$package"
             ;;
         pacman)
-            run_command "$PKG_UPDATE" "更新软件包数据库"
-            run_command "$PKG_UPGRADE" "升级系统"
-            ;;
-        apk)
-            run_command "$PKG_UPDATE" "更新软件包索引"
-            run_command "$PKG_UPGRADE" "升级软件包"
+            pacman -R --noconfirm "$package"
             ;;
         zypper)
-            run_command "$PKG_UPDATE" "刷新软件源"
-            run_command "$PKG_UPGRADE" "升级软件包"
+            zypper --non-interactive remove "$package"
+            ;;
+        apk)
+            apk del "$package"
+            ;;
+        *)
+            log_error "不支持的包管理器: $pm"
+            return 1
             ;;
     esac
     
-    success "系统更新完成"
+    if [[ $? -eq 0 ]]; then
+        log_success "$package 卸载成功"
+        return 0
+    else
+        log_error "$package 卸载失败"
+        return 1
+    fi
 }
 
-# 系统清理
-system_cleanup() {
-    info "清理系统..."
+# 检查服务状态
+check_service_status() {
+    local service="$1"
     
-    # 清理包管理器缓存
-    run_command "$PKG_CLEAN" "清理软件包缓存"
+    if command_exists systemctl; then
+        if systemctl is-active --quiet "$service"; then
+            echo "running"
+        else
+            echo "stopped"
+        fi
+    elif command_exists service; then
+        if service "$service" status &>/dev/null; then
+            echo "running"
+        else
+            echo "stopped"
+        fi
+    else
+        echo "unknown"
+    fi
+}
+
+# 启动服务
+start_service() {
+    local service="$1"
+    
+    log_info "正在启动服务: $service"
+    
+    if command_exists systemctl; then
+        systemctl start "$service"
+    elif command_exists service; then
+        service "$service" start
+    else
+        log_error "无法启动服务，系统不支持 systemctl 或 service 命令"
+        return 1
+    fi
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "$service 启动成功"
+        return 0
+    else
+        log_error "$service 启动失败"
+        return 1
+    fi
+}
+
+# 停止服务
+stop_service() {
+    local service="$1"
+    
+    log_info "正在停止服务: $service"
+    
+    if command_exists systemctl; then
+        systemctl stop "$service"
+    elif command_exists service; then
+        service "$service" stop
+    else
+        log_error "无法停止服务，系统不支持 systemctl 或 service 命令"
+        return 1
+    fi
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "$service 停止成功"
+        return 0
+    else
+        log_error "$service 停止失败"
+        return 1
+    fi
+}
+
+# 重启服务
+restart_service() {
+    local service="$1"
+    
+    log_info "正在重启服务: $service"
+    
+    if command_exists systemctl; then
+        systemctl restart "$service"
+    elif command_exists service; then
+        service "$service" restart
+    else
+        log_error "无法重启服务，系统不支持 systemctl 或 service 命令"
+        return 1
+    fi
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "$service 重启成功"
+        return 0
+    else
+        log_error "$service 重启失败"
+        return 1
+    fi
+}
+
+# 启用服务自启动
+enable_service() {
+    local service="$1"
+    
+    log_info "正在启用服务自启动: $service"
+    
+    if command_exists systemctl; then
+        systemctl enable "$service"
+    elif command_exists chkconfig; then
+        chkconfig "$service" on
+    elif command_exists update-rc.d; then
+        update-rc.d "$service" enable
+    else
+        log_error "无法启用服务自启动，系统不支持相关命令"
+        return 1
+    fi
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "$service 自启动已启用"
+        return 0
+    else
+        log_error "$service 自启动启用失败"
+        return 1
+    fi
+}
+
+# 禁用服务自启动
+disable_service() {
+    local service="$1"
+    
+    log_info "正在禁用服务自启动: $service"
+    
+    if command_exists systemctl; then
+        systemctl disable "$service"
+    elif command_exists chkconfig; then
+        chkconfig "$service" off
+    elif command_exists update-rc.d; then
+        update-rc.d "$service" disable
+    else
+        log_error "无法禁用服务自启动，系统不支持相关命令"
+        return 1
+    fi
+    
+    if [[ $? -eq 0 ]]; then
+        log_success "$service 自启动已禁用"
+        return 0
+    else
+        log_error "$service 自启动禁用失败"
+        return 1
+    fi
+}
+
+# ===================================================================
+# 系统优化函数
+# ===================================================================
+
+# 优化系统参数
+optimize_system_parameters() {
+    log_info "正在优化系统参数..."
+    
+    # 备份原始配置
+    backup_file "/etc/sysctl.conf"
+    
+    # 网络优化参数
+    cat >> /etc/sysctl.conf <<EOF
+
+# VPS Scripts 系统优化参数
+# 网络优化
+net.core.rmem_max = 67108864
+net.core.wmem_max = 67108864
+net.core.netdev_max_backlog = 5000
+net.ipv4.tcp_rmem = 4096 87380 67108864
+net.ipv4.tcp_wmem = 4096 65536 67108864
+net.ipv4.tcp_mtu_probing = 1
+net.ipv4.tcp_congestion_control = bbr
+net.core.default_qdisc = fq
+
+# 系统优化
+fs.file-max = 1000000
+fs.inotify.max_user_instances = 8192
+vm.swappiness = 10
+vm.dirty_ratio = 15
+vm.dirty_background_ratio = 5
+EOF
+    
+    # 应用参数
+    sysctl -p &>/dev/null
+    
+    log_success "系统参数优化完成"
+}
+
+# 清理系统垃圾
+cleanup_system() {
+    log_info "正在清理系统垃圾..."
+    
+    local pm=$(get_package_manager)
+    
+    case "$pm" in
+        apt)
+            apt-get autoremove -y &>/dev/null
+            apt-get autoclean -y &>/dev/null
+            apt-get clean -y &>/dev/null
+            ;;
+        yum|dnf)
+            yum clean all -y &>/dev/null
+            ;;
+        pacman)
+            pacman -Sc --noconfirm &>/dev/null
+            ;;
+        zypper)
+            zypper clean -a &>/dev/null
+            ;;
+        apk)
+            apk cache clean &>/dev/null
+            ;;
+    esac
     
     # 清理日志
-    if command_exists journalctl; then
-        journalctl --vacuum-time=7d 2>/dev/null || true
-    fi
+    find /var/log -type f -name "*.log" -mtime +30 -delete 2>/dev/null
     
     # 清理临时文件
-    find /tmp -type f -atime +7 -delete 2>/dev/null || true
-    find /var/tmp -type f -atime +7 -delete 2>/dev/null || true
+    find /tmp -type f -atime +7 -delete 2>/dev/null
+    find /var/tmp -type f -atime +7 -delete 2>/dev/null
     
-    # 清理旧内核（仅限某些系统）
-    case "$OS_FAMILY" in
-        debian)
-            if command_exists apt-get; then
-                apt-get autoremove --purge -y $(dpkg -l | awk '/^rc/ {print $2}') 2>/dev/null || true
-            fi
-            ;;
-        rhel)
-            if command_exists package-cleanup; then
-                package-cleanup --oldkernels --count=2 -y 2>/dev/null || true
-            fi
-            ;;
-    esac
-    
-    success "系统清理完成"
-}
-
-# 配置系统限制
-configure_system_limits() {
-    local limits_file="/etc/security/limits.conf"
-    
-    info "配置系统限制..."
-    
-    # 备份原文件
-    backup_file "$limits_file"
-    
-    # 添加优化配置
-    cat >> "$limits_file" << EOF
-
-# VPS Scripts Optimization
-* soft nofile 65535
-* hard nofile 65535
-* soft nproc 65535
-* hard nproc 65535
-EOF
-    
-    # 应用当前会话
-    ulimit -n 65535
-    ulimit -u 65535
-    
-    success "系统限制配置完成"
-}
-
-# 启用 BBR
-enable_bbr() {
-    info "检查并启用 BBR..."
-    
-    # 检查内核版本
-    local kernel_version=$(uname -r | cut -d. -f1,2)
-    if version_compare "$kernel_version" "4.9" && [ $? -eq 2 ]; then
-        warning "内核版本过低，无法启用 BBR"
-        return 1
+    # 清理系统日志
+    if command_exists journalctl; then
+        journalctl --vacuum-time=7d &>/dev/null
     fi
     
-    # 检查是否已启用
-    if [ -f /proc/sys/net/ipv4/tcp_congestion_control ]; then
-        local current_cc=$(cat /proc/sys/net/ipv4/tcp_congestion_control)
-        if [ "$current_cc" = "bbr" ]; then
-            success "BBR 已启用"
-            return 0
-        fi
-    fi
-    
-    # 加载 BBR 模块
-    modprobe tcp_bbr 2>/dev/null || true
-    
-    # 配置 sysctl
-    cat >> /etc/sysctl.conf << EOF
-
-# Enable BBR
-net.core.default_qdisc=fq
-net.ipv4.tcp_congestion_control=bbr
-EOF
-    
-    # 应用配置
-    sysctl -p
-    
-    # 验证
-    local new_cc=$(sysctl -n net.ipv4.tcp_congestion_control)
-    if [ "$new_cc" = "bbr" ]; then
-        success "BBR 启用成功"
-    else
-        warning "BBR 启用失败"
-        return 1
-    fi
+    log_success "系统清理完成"
 }
 
+# ===================================================================
 # 导出所有函数
-export -f detect_os_detailed detect_package_manager detect_init_system
-export -f detect_system check_system_compatibility
-export -f install_package package_installed manage_service
-export -f get_system_resources suggest_system_optimization
-export -f install_base_dependencies system_update system_cleanup
-export -f configure_system_limits enable_bbr
+# ===================================================================
+
+export -f detect_os get_package_manager detect_architecture detect_virtualization
+export -f get_system_load get_system_uptime get_cpu_info get_memory_info
+export -f get_disk_info get_network_info
+export -f update_package_index install_package remove_package
+export -f check_service_status start_service stop_service restart_service
+export -f enable_service disable_service
+export -f optimize_system_parameters cleanup_system
