@@ -275,7 +275,6 @@ show_welcome() {
     echo ""
     echo "VPS脚本集合 $VERSION"
     echo "GitHub地址: https://github.com/everett7623/vps_scripts"
-    echo "VPS选购: https://www.nodeloc.com/vps"
     echo ""
     echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
     echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
