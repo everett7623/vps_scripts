@@ -122,8 +122,6 @@ main() {
     else
         echo -e "${YELLOW}操作已取消。${NC}"
     fi
-    
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
