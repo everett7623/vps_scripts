@@ -136,7 +136,6 @@ main() {
     
     echo -e "${GREEN}回程路由测试完成!${NC}"
     echo -e "${YELLOW}测试结果已保存到/tmp目录下。${NC}"
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
