@@ -132,7 +132,6 @@ main() {
     test_unicom
     
     echo -e "${GREEN}三网测速完成!${NC}"
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
