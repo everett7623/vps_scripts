@@ -1,12 +1,6 @@
 #!/bin/bash
 #/vps_scripts/scripts/other_tools/bbr.sh - VPS Scripts BBR网络加速工具
 
-# 加载核心库（根据项目结构定位）
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-source "$PROJECT_ROOT/lib/common.sh"
-source "$PROJECT_ROOT/lib/system.sh"
-
 # 模块信息
 MODULE_NAME="BBR网络加速"
 MODULE_VERSION="1.0.0"
