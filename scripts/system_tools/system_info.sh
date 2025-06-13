@@ -13,16 +13,10 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# 获取脚本所在目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# 计算项目根目录（向上两层）
-PROJECT_ROOT="$(realpath "${SCRIPT_DIR}/../../")"
-
 # 加载核心库文件
-source "${PROJECT_ROOT}/lib/common.sh"
-source "${PROJECT_ROOT}/lib/system.sh"
-source "${PROJECT_ROOT}/lib/menu.sh"
+source "vps_scripts/lib/common.sh"
+source "vps_scripts/lib/system.sh"
+source "vps_scripts/lib/menu.sh"
 
 # ===================================================================
 # 脚本配置
