@@ -30,7 +30,7 @@ WHITE='\033[0;37m'
 print_header() {
     clear
     echo -e "${GREEN}====================================================${RESET}"
-    echo -e "${CYAN}             VPS 综合管理脚本 (在线版)              ${RESET}"
+    echo -e "${CYAN}             VPS 综合管理脚本        )              ${RESET}"
     echo -e "${YELLOW}       Project: github.com/everett7623/vps_scripts       ${RESET}"
     echo -e "${GREEN}====================================================${RESET}"
     echo ""
