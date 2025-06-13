@@ -63,6 +63,34 @@ update_system() {
     echo -e "${GREEN}系统更新完成。${NC}"
 }
 
+# 判断网络环境（国内/国外）
+detect_network_env() {
+    echo -e "${BLUE}正在检测网络环境...${NC}"
+    
+    # 尝试访问阿里云镜像站，判断是否为国内网络环境
+    if curl -s -m 5 https://mirrors.aliyun.com > /dev/null; then
+        # 能访问阿里云，可能是国内环境，再测试Docker官方源速度
+        echo -e "${YELLOW}正在测试Docker官方源下载速度...${NC}"
+        OFFICIAL_SPEED=$(curl -s -w "%{speed_download}" -o /dev/null https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/amd64/containerd.io_1.4.9-1_amd64.deb -m 10)
+        
+        # 转换为KB/s
+        OFFICIAL_SPEED_KB=$(echo "$OFFICIAL_SPEED / 1024" | bc)
+        
+        if (( $(echo "$OFFICIAL_SPEED_KB < 50" | bc -l) )); then
+            # 下载速度低于50KB/s，判定为国内网络环境
+            echo -e "${GREEN}检测到国内网络环境，将使用阿里云镜像安装Docker。${NC}"
+            return 0 # 0表示国内环境
+        else
+            echo -e "${GREEN}检测到国外网络环境，将使用官方源安装Docker。${NC}"
+            return 1 # 1表示国外环境
+        fi
+    else
+        # 无法访问阿里云，判定为国外网络环境
+        echo -e "${GREEN}检测到国外网络环境，将使用官方源安装Docker。${NC}"
+        return 1 # 1表示国外环境
+    fi
+}
+
 # 安装Docker和Docker Compose
 install_docker() {
     echo -e "${BLUE}正在安装Docker和Docker Compose...${NC}"
@@ -71,21 +99,15 @@ install_docker() {
     if command -v docker &>/dev/null; then
         echo -e "${YELLOW}Docker已安装，跳过安装。${NC}"
     else
-        if [ "$OS" = "Ubuntu" ] || [ "$OS" = "Debian" ]; then
-            apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
-            curl -fsSL https://download.docker.com/linux/$OS/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/$OS $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt update -y
-            apt install -y docker-ce docker-ce-cli containerd.io
-        elif [ "$OS" = "CentOS Linux" ] || [ "$OS" = "Red Hat/CentOS" ]; then
-            yum install -y yum-utils
-            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-            yum install -y docker-ce docker-ce-cli containerd.io
-        elif [ "$OS" = "Arch Linux" ]; then
-            pacman -S --noconfirm docker
+        # 判断网络环境
+        if detect_network_env; then
+            # 国内环境，使用阿里云镜像
+            echo -e "${BLUE}正在使用阿里云镜像安装Docker...${NC}"
+            curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
         else
-            echo -e "${RED}不支持的操作系统，无法安装Docker。${NC}"
-            return 1
+            # 国外环境，使用官方源
+            echo -e "${BLUE}正在使用官方源安装Docker...${NC}"
+            curl -fsSL https://get.docker.com | bash -s docker
         fi
         
         # 启动Docker服务
