@@ -1,565 +1,401 @@
 #!/bin/bash
-# lib/menu.sh - VPS Scripts 菜单系统库
 
-# 防止重复加载
-if [ -n "$VPS_SCRIPTS_MENU_LOADED" ]; then
-    return 0
-fi
-VPS_SCRIPTS_MENU_LOADED=1
+# ===================================================================
+# 文件名: lib/menu.sh
+# 描述: 菜单渲染与交互逻辑
+# 作者: everett7623
+# 版本: 1.0.0
+# 更新日期: 2025-01-10
+# ===================================================================
 
-# 加载依赖
-source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# 加载公共函数库
+source "${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/common.sh"
 
-# 菜单配置
-export MENU_WIDTH=70
-export MENU_BORDER_CHAR="━"
-export MENU_PROMPT="请选择"
-export MENU_INVALID_MSG="无效的选择，请重新输入"
-export MENU_BACK_OPTION="0"
-export MENU_BACK_TEXT="返回"
+# 定义菜单样式
+export MENU_STYLE_SIMPLE="simple"
+export MENU_STYLE_FANCY="fancy"
+export MENU_STYLE_COMPACT="compact"
 
-# 菜单历史栈
-declare -a MENU_HISTORY=()
-export MENU_HISTORY
+# 默认菜单样式
+MENU_CURRENT_STYLE="${MENU_STYLE_FANCY}"
 
-# 绘制菜单边框
-draw_menu_border() {
-    local title="$1"
-    local width="${2:-$MENU_WIDTH}"
-    local border_char="${3:-$MENU_BORDER_CHAR}"
+# ===================================================================
+# 菜单渲染函数
+# ===================================================================
+
+# 设置菜单样式
+set_menu_style() {
+    local style="$1"
     
-    # 计算标题位置
-    local title_len=${#title}
-    local padding=$(( (width - title_len - 2) / 2 ))
-    local left_padding=$(printf "%${padding}s" | tr ' ' "$border_char")
-    local right_padding_len=$(( width - padding - title_len - 2 ))
-    local right_padding=$(printf "%${right_padding_len}s" | tr ' ' "$border_char")
-    
-    echo -e "${BLUE}${left_padding} ${title} ${right_padding}${NC}"
+    case "$style" in
+        "$MENU_STYLE_SIMPLE"|"$MENU_STYLE_FANCY"|"$MENU_STYLE_COMPACT")
+            MENU_CURRENT_STYLE="$style"
+            ;;
+        *)
+            log_warn "未知的菜单样式: $style，使用默认样式"
+            ;;
+    esac
 }
 
-# 创建菜单项
-create_menu_item() {
-    local key="$1"
+# 显示菜单头部
+show_menu_header() {
+    local title="$1"
+    local subtitle="$2"
+    
+    clear
+    
+    case "$MENU_CURRENT_STYLE" in
+        "$MENU_STYLE_SIMPLE")
+            echo -e "${YELLOW}$title${NC}"
+            [[ -n "$subtitle" ]] && echo -e "${CYAN}$subtitle${NC}"
+            echo ""
+            ;;
+        "$MENU_STYLE_FANCY")
+            local width=78
+            echo -e "${YELLOW}$(printf '═%.0s' $(seq 1 $width))${NC}"
+            printf "${YELLOW}║${NC} %-*s ${YELLOW}║${NC}\n" $((width-4)) "$title"
+            [[ -n "$subtitle" ]] && printf "${YELLOW}║${NC} ${CYAN}%-*s${NC} ${YELLOW}║${NC}\n" $((width-4)) "$subtitle"
+            echo -e "${YELLOW}$(printf '═%.0s' $(seq 1 $width))${NC}"
+            echo ""
+            ;;
+        "$MENU_STYLE_COMPACT")
+            echo -e "${YELLOW}=== $title ===${NC}"
+            [[ -n "$subtitle" ]] && echo -e "${CYAN}$subtitle${NC}"
+            ;;
+    esac
+}
+
+# 显示菜单项
+show_menu_item() {
+    local number="$1"
     local text="$2"
-    local color="${3:-$YELLOW}"
-    local key_width=4
+    local status="${3:-}"
     
-    printf "${color}%-${key_width}s${NC} %s" "${key})" "$text"
+    case "$MENU_CURRENT_STYLE" in
+        "$MENU_STYLE_SIMPLE")
+            if [[ -n "$status" ]]; then
+                printf "  %-3s %-40s [%s]\n" "$number)" "$text" "$status"
+            else
+                printf "  %-3s %s\n" "$number)" "$text"
+            fi
+            ;;
+        "$MENU_STYLE_FANCY")
+            if [[ -n "$status" ]]; then
+                printf "${YELLOW}║${NC}  ${BLUE}%-3s${NC} %-40s ${GREEN}[%s]${NC}\n" "$number)" "$text" "$status"
+            else
+                printf "${YELLOW}║${NC}  ${BLUE}%-3s${NC} %s\n" "$number)" "$text"
+            fi
+            ;;
+        "$MENU_STYLE_COMPACT")
+            if [[ -n "$status" ]]; then
+                printf "%3s) %-30s [%s]\n" "$number" "$text" "$status"
+            else
+                printf "%3s) %s\n" "$number" "$text"
+            fi
+            ;;
+    esac
 }
 
-# 显示菜单
-show_menu() {
-    local title="$1"
-    shift
-    local items=("$@")
+# 显示菜单分隔线
+show_menu_separator() {
+    local text="${1:-}"
     
-    # 绘制标题
-    draw_menu_border "$title"
-    
-    # 显示菜单项
-    local i=0
-    while [ $i -lt ${#items[@]} ]; do
-        local item="${items[$i]}"
-        local next_item="${items[$((i+1))]:-}"
-        
-        # 解析菜单项格式: "key|text|color"
-        IFS='|' read -r key text color <<< "$item"
-        color="${color:-$YELLOW}"
-        
-        # 创建菜单项
-        local menu_item=$(create_menu_item "$key" "$text" "$color")
-        
-        # 检查是否需要并排显示
-        if [ -n "$next_item" ] && [ ${#menu_item} -lt 35 ]; then
-            # 并排显示两个菜单项
-            IFS='|' read -r next_key next_text next_color <<< "$next_item"
-            next_color="${next_color:-$YELLOW}"
-            local next_menu_item=$(create_menu_item "$next_key" "$next_text" "$next_color")
-            
-            printf "%-35s %s\n" "$menu_item" "$next_menu_item"
-            i=$((i + 2))
-        else
-            # 单独显示
-            echo "$menu_item"
-            i=$((i + 1))
-        fi
-    done
-    
-    # 添加返回选项
-    if [ ${#MENU_HISTORY[@]} -gt 0 ]; then
-        echo ""
-        create_menu_item "$MENU_BACK_OPTION" "$MENU_BACK_TEXT"
-        echo ""
-    fi
-    
-    # 绘制底部边框
-    draw_menu_border ""
+    case "$MENU_CURRENT_STYLE" in
+        "$MENU_STYLE_SIMPLE")
+            if [[ -n "$text" ]]; then
+                echo -e "\n${CYAN}--- $text ---${NC}"
+            else
+                echo ""
+            fi
+            ;;
+        "$MENU_STYLE_FANCY")
+            if [[ -n "$text" ]]; then
+                local width=78
+                local text_len=${#text}
+                local padding=$(( (width - text_len - 4) / 2 ))
+                echo -e "${YELLOW}├$(printf '─%.0s' $(seq 1 $padding))┤${NC} ${CYAN}$text${NC} ${YELLOW}├$(printf '─%.0s' $(seq 1 $padding))┤${NC}"
+            else
+                echo -e "${YELLOW}├$(printf '─%.0s' $(seq 1 76))┤${NC}"
+            fi
+            ;;
+        "$MENU_STYLE_COMPACT")
+            if [[ -n "$text" ]]; then
+                echo -e "${CYAN}-- $text --${NC}"
+            else
+                echo "---"
+            fi
+            ;;
+    esac
 }
+
+# 显示菜单底部
+show_menu_footer() {
+    case "$MENU_CURRENT_STYLE" in
+        "$MENU_STYLE_SIMPLE")
+            echo ""
+            ;;
+        "$MENU_STYLE_FANCY")
+            echo -e "${YELLOW}$(printf '═%.0s' $(seq 1 78))${NC}"
+            ;;
+        "$MENU_STYLE_COMPACT")
+            echo ""
+            ;;
+    esac
+}
+
+# ===================================================================
+# 菜单交互函数
+# ===================================================================
 
 # 读取用户选择
 read_menu_choice() {
-    local prompt="${1:-$MENU_PROMPT}"
-    local valid_choices=("${@:2}")
+    local prompt="${1:-请选择}"
+    local default="${2:-}"
+    local timeout="${3:-0}"
+    
     local choice
     
-    while true; do
-        read -p "$prompt: " choice
-        
-        # 检查是否为空
-        if [ -z "$choice" ]; then
-            echo -e "${RED}$MENU_INVALID_MSG${NC}"
-            continue
-        fi
-        
-        # 检查是否为返回选项
-        if [ "$choice" = "$MENU_BACK_OPTION" ] && [ ${#MENU_HISTORY[@]} -gt 0 ]; then
-            return 0
-        fi
-        
-        # 检查是否为有效选择
-        if [ ${#valid_choices[@]} -eq 0 ]; then
-            # 没有指定有效选择，接受任何输入
-            break
+    if [[ $timeout -gt 0 ]]; then
+        if [[ -n "$default" ]]; then
+            read -t "$timeout" -p "$prompt [$default]: " choice || choice="$default"
         else
-            local valid=false
-            for valid_choice in "${valid_choices[@]}"; do
-                if [ "$choice" = "$valid_choice" ]; then
-                    valid=true
-                    break
-                fi
-            done
-            
-            if [ "$valid" = true ]; then
-                break
-            else
-                echo -e "${RED}$MENU_INVALID_MSG${NC}"
-            fi
+            read -t "$timeout" -p "$prompt: " choice
         fi
-    done
+    else
+        if [[ -n "$default" ]]; then
+            read -p "$prompt [$default]: " choice
+            [[ -z "$choice" ]] && choice="$default"
+        else
+            read -p "$prompt: " choice
+        fi
+    fi
     
     echo "$choice"
 }
 
-# 菜单导航
-navigate_menu() {
-    local menu_id="$1"
+# 验证菜单选择
+validate_menu_choice() {
+    local choice="$1"
+    local min="$2"
+    local max="$3"
     
-    # 添加到历史
-    MENU_HISTORY+=("$menu_id")
-    
-    # 导出当前菜单ID
-    export CURRENT_MENU_ID="$menu_id"
-}
-
-# 返回上级菜单
-go_back_menu() {
-    if [ ${#MENU_HISTORY[@]} -gt 1 ]; then
-        # 移除当前菜单
-        unset MENU_HISTORY[-1]
-        # 获取上级菜单
-        CURRENT_MENU_ID="${MENU_HISTORY[-1]}"
-        return 0
-    else
+    # 检查是否为数字
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
         return 1
     fi
+    
+    # 检查范围
+    if (( choice < min || choice > max )); then
+        return 1
+    fi
+    
+    return 0
 }
 
-# 清除菜单历史
-clear_menu_history() {
-    MENU_HISTORY=()
-    CURRENT_MENU_ID=""
-}
-
-# 创建确认对话框
-show_confirm_dialog() {
+# 显示错误信息
+show_menu_error() {
     local message="$1"
-    local default="${2:-n}"
-    
-    echo ""
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━ 确认 ━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${WHITE}$message${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
-    confirm "$message" "$default"
+    echo -e "${RED}错误: $message${NC}"
+    sleep 2
 }
 
-# 显示信息框
-show_info_box() {
-    local title="$1"
-    local message="$2"
-    local wait="${3:-true}"
-    
+# 显示成功信息
+show_menu_success() {
+    local message="$1"
+    echo -e "${GREEN}成功: $message${NC}"
+    sleep 2
+}
+
+# 暂停等待
+pause_menu() {
+    local message="${1:-按任意键继续...}"
+    read -n 1 -s -r -p "$message"
     echo ""
-    draw_menu_border "$title"
-    echo -e "${WHITE}$message${NC}"
-    draw_menu_border ""
+}
+
+# ===================================================================
+# 高级菜单功能
+# ===================================================================
+
+# 创建动态菜单
+create_dynamic_menu() {
+    local -n menu_items=$1  # 使用名称引用
+    local title="$2"
+    local subtitle="${3:-}"
     
-    if [ "$wait" = true ]; then
-        echo ""
-        read -n 1 -s -r -p "按任意键继续..."
+    show_menu_header "$title" "$subtitle"
+    
+    local i=1
+    for item in "${menu_items[@]}"; do
+        # 如果item包含|分隔符，则分割为文本和状态
+        if [[ "$item" == *"|"* ]]; then
+            local text="${item%|*}"
+            local status="${item#*|}"
+            show_menu_item "$i" "$text" "$status"
+        else
+            show_menu_item "$i" "$item"
+        fi
+        ((i++))
+    done
+    
+    show_menu_separator
+    show_menu_item "0" "返回上级菜单"
+    show_menu_footer
+    
+    local choice=$(read_menu_choice "请选择" "" 0)
+    
+    if validate_menu_choice "$choice" 0 ${#menu_items[@]}; then
+        echo "$choice"
+    else
+        show_menu_error "无效的选择"
+        echo "-1"
     fi
 }
 
-# 显示错误框
-show_error_box() {
-    local title="${1:-错误}"
-    local message="$2"
+# 创建复选菜单
+create_checkbox_menu() {
+    local -n options=$1  # 选项数组
+    local -n selected=$2  # 已选中数组
+    local title="$3"
     
-    echo ""
-    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━ $title ━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${RED}$message${NC}"
-    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    read -n 1 -s -r -p "按任意键继续..."
+    while true; do
+        show_menu_header "$title" "使用空格选择/取消选择，回车确认"
+        
+        local i=1
+        for option in "${options[@]}"; do
+            local mark=" "
+            for sel in "${selected[@]}"; do
+                if [[ "$sel" == "$option" ]]; then
+                    mark="✓"
+                    break
+                fi
+            done
+            printf "  [${GREEN}%s${NC}] %2d) %s\n" "$mark" "$i" "$option"
+            ((i++))
+        done
+        
+        show_menu_separator
+        show_menu_item "0" "确认选择"
+        show_menu_footer
+        
+        local choice=$(read_menu_choice "请选择" "" 0)
+        
+        if [[ "$choice" == "0" ]]; then
+            break
+        elif validate_menu_choice "$choice" 1 ${#options[@]}; then
+            local index=$((choice - 1))
+            local option="${options[$index]}"
+            
+            # 切换选中状态
+            local found=0
+            for i in "${!selected[@]}"; do
+                if [[ "${selected[$i]}" == "$option" ]]; then
+                    unset 'selected[$i]'
+                    selected=("${selected[@]}")  # 重建数组
+                    found=1
+                    break
+                fi
+            done
+            
+            if [[ $found -eq 0 ]]; then
+                selected+=("$option")
+            fi
+        fi
+    done
 }
 
-# 显示进度框
-show_progress_box() {
+# 创建输入菜单
+create_input_menu() {
+    local title="$1"
+    local prompt="$2"
+    local default="${3:-}"
+    local validation_func="${4:-}"
+    
+    show_menu_header "$title"
+    
+    while true; do
+        local input=$(read_menu_choice "$prompt" "$default" 0)
+        
+        # 如果提供了验证函数，则验证输入
+        if [[ -n "$validation_func" ]]; then
+            if $validation_func "$input"; then
+                echo "$input"
+                break
+            else
+                show_menu_error "输入无效，请重试"
+            fi
+        else
+            echo "$input"
+            break
+        fi
+    done
+}
+
+# 创建确认菜单
+create_confirm_menu() {
+    local title="$1"
+    local message="$2"
+    local default="${3:-n}"
+    
+    show_menu_header "$title"
+    echo -e "$message"
+    echo ""
+    
+    local choice
+    if [[ "$default" == "y" ]]; then
+        choice=$(read_menu_choice "确定要继续吗? [Y/n]" "y" 0)
+    else
+        choice=$(read_menu_choice "确定要继续吗? [y/N]" "n" 0)
+    fi
+    
+    [[ "$choice" =~ ^[Yy]$ ]]
+}
+
+# ===================================================================
+# 进度条功能
+# ===================================================================
+
+# 显示进度条菜单
+show_progress_menu() {
     local title="$1"
     local total="$2"
     local current=0
     
-    # 创建命名管道
-    local pipe=$(mktemp -u)
-    mkfifo "$pipe"
+    show_menu_header "$title"
     
-    # 后台显示进度
-    (
-        while IFS= read -r line; do
-            current=$line
-            clear
-            draw_menu_border "$title"
-            show_progress "$current" "$total" 50 "进度"
-            draw_menu_border ""
-            
-            if [ "$current" -ge "$total" ]; then
-                break
-            fi
-        done < "$pipe"
+    while read -r line; do
+        ((current++))
         
-        rm -f "$pipe"
-    ) &
-    
-    local progress_pid=$!
-    
-    # 返回管道路径和进程ID
-    echo "$pipe:$progress_pid"
-}
-
-# 更新进度框
-update_progress_box() {
-    local pipe_info="$1"
-    local value="$2"
-    
-    local pipe="${pipe_info%:*}"
-    
-    if [ -p "$pipe" ]; then
-        echo "$value" > "$pipe"
-    fi
-}
-
-# 关闭进度框
-close_progress_box() {
-    local pipe_info="$1"
-    
-    local pipe="${pipe_info%:*}"
-    local pid="${pipe_info#*:}"
-    
-    if [ -p "$pipe" ]; then
-        # 发送最大值以关闭进度框
-        echo "999999" > "$pipe"
-        rm -f "$pipe"
-    fi
-    
-    # 等待进程结束
-    wait "$pid" 2>/dev/null || true
-}
-
-# 创建列表选择菜单
-show_list_menu() {
-    local title="$1"
-    shift
-    local items=("$@")
-    local selected=0
-    local key
-    
-    while true; do
-        clear
-        draw_menu_border "$title"
+        local percent=$((current * 100 / total))
+        local bar_length=50
+        local filled_length=$((bar_length * current / total))
         
-        # 显示列表项
-        for i in "${!items[@]}"; do
-            if [ $i -eq $selected ]; then
-                echo -e "${GREEN}▶ ${items[$i]}${NC}"
-            else
-                echo -e "  ${items[$i]}"
-            fi
-        done
+        printf "\r["
+        printf "%${filled_length}s" | tr ' ' '='
+        printf "%$((bar_length - filled_length))s" | tr ' ' '-'
+        printf "] %3d%% (%d/%d)" "$percent" "$current" "$total"
         
-        draw_menu_border ""
-        echo "使用 ↑/↓ 或 j/k 移动，Enter 确认，q 退出"
-        
-        # 读取键盘输入
-        read -rsn1 key
-        
-        case "$key" in
-            A|k) # 上
-                ((selected--))
-                [ $selected -lt 0 ] && selected=$((${#items[@]} - 1))
-                ;;
-            B|j) # 下
-                ((selected++))
-                [ $selected -ge ${#items[@]} ] && selected=0
-                ;;
-            ''|' ') # Enter
-                echo "$selected"
-                return 0
-                ;;
-            q|Q) # 退出
-                return 1
-                ;;
-        esac
-    done
-}
-
-# 创建多选菜单
-show_checkbox_menu() {
-    local title="$1"
-    shift
-    local items=("$@")
-    local selected=()
-    local cursor=0
-    local key
-    
-    # 初始化选中状态
-    for i in "${!items[@]}"; do
-        selected[$i]=false
-    done
-    
-    while true; do
-        clear
-        draw_menu_border "$title"
-        
-        # 显示选项
-        for i in "${!items[@]}"; do
-            local checkbox="[ ]"
-            [ "${selected[$i]}" = true ] && checkbox="[x]"
-            
-            if [ $i -eq $cursor ]; then
-                echo -e "${GREEN}▶ $checkbox ${items[$i]}${NC}"
-            else
-                echo -e "  $checkbox ${items[$i]}"
-            fi
-        done
-        
-        draw_menu_border ""
-        echo "使用 ↑/↓ 移动，空格 选择/取消，Enter 确认，q 退出"
-        
-        # 读取键盘输入
-        read -rsn1 key
-        
-        case "$key" in
-            A|k) # 上
-                ((cursor--))
-                [ $cursor -lt 0 ] && cursor=$((${#items[@]} - 1))
-                ;;
-            B|j) # 下
-                ((cursor++))
-                [ $cursor -ge ${#items[@]} ] && cursor=0
-                ;;
-            ' ') # 空格 - 切换选择
-                if [ "${selected[$cursor]}" = true ]; then
-                    selected[$cursor]=false
-                else
-                    selected[$cursor]=true
-                fi
-                ;;
-            ''|$'\n') # Enter - 确认
-                # 返回选中的索引
-                local result=""
-                for i in "${!selected[@]}"; do
-                    if [ "${selected[$i]}" = true ]; then
-                        result="$result $i"
-                    fi
-                done
-                echo "$result"
-                return 0
-                ;;
-            q|Q) # 退出
-                return 1
-                ;;
-        esac
-    done
-}
-
-# 创建输入框
-show_input_box() {
-    local title="$1"
-    local prompt="$2"
-    local default="$3"
-    local validation_func="$4"
-    
-    local input
-    
-    while true; do
-        clear
-        draw_menu_border "$title"
-        echo -e "${WHITE}$prompt${NC}"
-        if [ -n "$default" ]; then
-            echo -e "${CYAN}默认值: $default${NC}"
-        fi
-        draw_menu_border ""
-        
-        read -p "> " input
-        
-        # 使用默认值
-        if [ -z "$input" ] && [ -n "$default" ]; then
-            input="$default"
+        # 处理输入行
+        if [[ -n "$line" ]]; then
+            echo ""
+            echo "$line"
         fi
         
-        # 验证输入
-        if [ -n "$validation_func" ]; then
-            if ! $validation_func "$input"; then
-                show_error_box "输入无效" "请重新输入"
-                continue
-            fi
+        if [[ $current -ge $total ]]; then
+            echo ""
+            break
         fi
-        
-        echo "$input"
-        return 0
     done
 }
 
-# 验证函数示例
-validate_number() {
-    local input="$1"
-    [[ "$input" =~ ^[0-9]+$ ]]
-}
-
-validate_ip() {
-    local input="$1"
-    local regex="^([0-9]{1,3}\.){3}[0-9]{1,3}$"
-    
-    if [[ "$input" =~ $regex ]]; then
-        # 检查每个段是否在有效范围内
-        IFS='.' read -ra ADDR <<< "$input"
-        for i in "${ADDR[@]}"; do
-            if [ "$i" -gt 255 ]; then
-                return 1
-            fi
-        done
-        return 0
-    else
-        return 1
-    fi
-}
-
-validate_email() {
-    local input="$1"
-    local regex="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    [[ "$input" =~ $regex ]]
-}
-
-validate_url() {
-    local input="$1"
-    local regex="^(https?|ftp)://[^\s/$.?#].[^\s]*$"
-    [[ "$input" =~ $regex ]]
-}
-
-validate_port() {
-    local input="$1"
-    if [[ "$input" =~ ^[0-9]+$ ]]; then
-        [ "$input" -ge 1 ] && [ "$input" -le 65535 ]
-    else
-        return 1
-    fi
-}
-
-# 创建表格显示
-show_table() {
-    local title="$1"
-    shift
-    local headers=("$@")
-    
-    # 计算列宽
-    local col_widths=()
-    for header in "${headers[@]}"; do
-        col_widths+=(${#header})
-    done
-    
-    # 绘制标题
-    draw_menu_border "$title"
-    
-    # 绘制表头
-    local header_line=""
-    for i in "${!headers[@]}"; do
-        header_line+=$(printf "%-${col_widths[$i]}s  " "${headers[$i]}")
-    done
-    echo -e "${CYAN}$header_line${NC}"
-    
-    # 绘制分隔线
-    local separator=""
-    for width in "${col_widths[@]}"; do
-        separator+=$(printf '%*s' "$width" | tr ' ' '-')
-        separator+="  "
-    done
-    echo "$separator"
-}
-
-# 添加表格行
-add_table_row() {
-    local values=("$@")
-    local row=""
-    
-    for i in "${!values[@]}"; do
-        row+=$(printf "%-${col_widths[$i]:-15}s  " "${values[$i]}")
-    done
-    echo "$row"
-}
-
-# 分页显示
-show_paged_output() {
-    local title="$1"
-    local content="$2"
-    local lines_per_page="${3:-20}"
-    
-    local total_lines=$(echo "$content" | wc -l)
-    local current_page=1
-    local total_pages=$(( (total_lines + lines_per_page - 1) / lines_per_page ))
-    
-    while true; do
-        clear
-        draw_menu_border "$title (页 $current_page/$total_pages)"
-        
-        # 显示当前页内容
-        local start_line=$(( (current_page - 1) * lines_per_page + 1 ))
-        local end_line=$(( start_line + lines_per_page - 1 ))
-        echo "$content" | sed -n "${start_line},${end_line}p"
-        
-        draw_menu_border ""
-        echo "使用 n(下一页) p(上一页) q(退出)"
-        
-        read -rsn1 key
-        case "$key" in
-            n|N)
-                [ $current_page -lt $total_pages ] && ((current_page++))
-                ;;
-            p|P)
-                [ $current_page -gt 1 ] && ((current_page--))
-                ;;
-            q|Q)
-                break
-                ;;
-        esac
-    done
-}
-
+# ===================================================================
 # 导出所有函数
-export -f draw_menu_border create_menu_item show_menu read_menu_choice
-export -f navigate_menu go_back_menu clear_menu_history
-export -f show_confirm_dialog show_info_box show_error_box
-export -f show_progress_box update_progress_box close_progress_box
-export -f show_list_menu show_checkbox_menu show_input_box
-export -f validate_number validate_ip validate_email validate_url validate_port
-export -f show_table add_table_row show_paged_output
+# ===================================================================
+
+export -f set_menu_style show_menu_header show_menu_item
+export -f show_menu_separator show_menu_footer
+export -f read_menu_choice validate_menu_choice
+export -f show_menu_error show_menu_success pause_menu
+export -f create_dynamic_menu create_checkbox_menu
+export -f create_input_menu create_confirm_menu
+export -f show_progress_menu
