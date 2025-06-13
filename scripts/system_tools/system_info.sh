@@ -13,11 +13,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# 加载核心库文件
-source "vps_scripts/lib/common.sh"
-source "vps_scripts/lib/system.sh"
-source "vps_scripts/lib/menu.sh"
-
 # ===================================================================
 # 脚本配置
 # ===================================================================
