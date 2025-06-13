@@ -5,11 +5,15 @@
 #
 #      Project: https://github.com/everett7623/vps_scripts/
 #      Author: Jensfrank
-#      Version: 2.0.1
+#      Version: 2.0.0
 #
-#      This script is the main entry point for managing a VPS.
-#      It provides a menu-driven interface to access various tools.
+#      This script acts as a remote launcher. It can be run via 'curl | bash'
+#      and will dynamically fetch and execute sub-scripts from the GitHub repo.
 # ==============================================================================
+
+# --- Base URL for the GitHub repository's raw content ---
+# All sub-scripts will be fetched from this base path.
+GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 
 # --- Colors for Terminal Output ---
 RESET='\033[0m'
@@ -21,55 +25,50 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 
-# --- Execution Environment Check ---
-# Prevents running the script via a pipe (e.g., curl | bash) which breaks relative path logic.
-if [[ "${BASH_SOURCE[0]}" == /dev/fd/* || -z "${BASH_SOURCE[0]}" ]]; then
-    echo -e "${RED}错误：此脚本不能通过管道 (e.g., 'curl ... | bash') 运行。${RESET}"
-    echo -e "${YELLOW}请先将项目克隆或下载到您的服务器上，然后按如下方式运行：${RESET}"
-    echo -e "${WHITE}1. 克隆项目: git clone https://github.com/everett7623/vps_scripts.git${RESET}"
-    echo -e "${WHITE}2. 进入目录: cd vps_scripts${RESET}"
-    echo -e "${WHITE}3. 运行脚本: bash vps.sh${RESET}"
-    exit 1
-fi
-
-# --- Script Base Directory ---
-# Detects the script's absolute path. SCRIPT_DIR will be the '/path/to/vps_scripts' directory.
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-# CORRECTED: The 'scripts' directory is directly inside SCRIPT_DIR.
-SUB_SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
 # --- Function to display a header ---
 print_header() {
     clear
     echo -e "${GREEN}====================================================${RESET}"
-    echo -e "${CYAN}             VPS 综合管理脚本 (vps.sh)             ${RESET}"
+    echo -e "${CYAN}             VPS 综合管理脚本 (在线版)              ${RESET}"
     echo -e "${YELLOW}       Project: github.com/everett7623/vps_scripts       ${RESET}"
     echo -e "${GREEN}====================================================${RESET}"
     echo ""
 }
 
-# --- Function to execute a local script ---
-run_script() {
-    local script_path="${1}"
-    if [ -f "${script_path}" ]; then
-        # Ensure the script is executable
-        chmod +x "${script_path}"
-        # Execute the script
-        print_header
-        echo -e "${YELLOW}正在执行脚本: ${script_path}${RESET}\n"
-        bash "${script_path}"
+# --- Function to fetch and execute a script from the repository ---
+run_repo_script() {
+    local script_repo_path="${1}"
+    local full_url="${GITHUB_RAW_URL}/${script_repo_path}"
+
+    print_header
+    echo -e "${YELLOW}正在从远程仓库加载并执行脚本:${RESET}"
+    echo -e "${WHITE}${full_url}${RESET}\n"
+
+    # Use curl or wget to fetch the script and pipe it to bash
+    if command -v curl >/dev/null 2>&1; then
+        bash <(curl -sSL "${full_url}")
+    elif command -v wget >/dev/null 2>&1; then
+        bash <(wget -qO- "${full_url}")
     else
-        echo -e "${RED}错误: 脚本未找到: ${script_path}${RESET}"
+        echo -e "${RED}错误: 'curl' 或 'wget' 命令未找到，无法下载所需脚本。${RESET}"
+        sleep 3
+        return 1
     fi
+
+    if [ $? -ne 0 ]; then
+        echo -e "\n${RED}脚本执行失败或未找到: ${full_url}${RESET}"
+    fi
+
     echo -e "\n${CYAN}按任意键返回...${RESET}"
     read -n 1 -s -r
 }
 
-# --- Function to execute a remote script/command ---
+# --- Function to execute a third-party remote script/command ---
 run_remote_command() {
     local command_to_run="${1}"
     print_header
-    echo -e "${YELLOW}正在执行以下远程命令:${RESET}"
+    echo -e "${YELLOW}正在执行以下第三方命令:${RESET}"
     echo -e "${WHITE}${command_to_run}${RESET}\n"
     if eval "${command_to_run}"; then
         echo -e "\n${GREEN}命令执行成功。${RESET}"
@@ -103,13 +102,13 @@ system_tools_menu() {
         read -p "请输入选项 [0-7]: " choice
 
         case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/system_tools/system_info.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/system_tools/install_deps.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/system_tools/update_system.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/system_tools/system_clean.sh" ;;
-            5) run_script "${SUB_SCRIPTS_DIR}/system_tools/system_optimize.sh" ;;
-            6) run_script "${SUB_SCRIPTS_DIR}/system_tools/change_hostname.sh" ;;
-            7) run_script "${SUB_SCRIPTS_DIR}/system_tools/set_timezone.sh" ;;
+            1) run_repo_script "scripts/system_tools/system_info.sh" ;;
+            2) run_repo_script "scripts/system_tools/install_deps.sh" ;;
+            3) run_repo_script "scripts/system_tools/update_system.sh" ;;
+            4) run_repo_script "scripts/system_tools/system_clean.sh" ;;
+            5) run_repo_script "scripts/system_tools/system_optimize.sh" ;;
+            6) run_repo_script "scripts/system_tools/change_hostname.sh" ;;
+            7) run_repo_script "scripts/system_tools/set_timezone.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
@@ -139,18 +138,18 @@ network_test_menu() {
         read -p "请输入选项 [0-12]: " choice
 
         case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/network_test/backhaul_route_test.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/network_test/bandwidth_test.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/network_test/cdn_latency_test.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/network_test/ip_quality_test.sh" ;;
-            5) run_script "${SUB_SCRIPTS_DIR}/network_test/network_connectivity_test.sh" ;;
-            6) run_script "${SUB_SCRIPTS_DIR}/network_test/network_quality_test.sh" ;;
-            7) run_script "${SUB_SCRIPTS_DIR}/network_test/network_security_scan.sh" ;;
-            8) run_script "${SUB_SCRIPTS_DIR}/network_test/network_speedtest.sh" ;;
-            9) run_script "${SUB_SCRIPTS_DIR}/network_test/network_traceroute.sh" ;;
-            10) run_script "${SUB_SCRIPTS_DIR}/network_test/port_scanner.sh" ;;
-            11) run_script "${SUB_SCRIPTS_DIR}/network_test/response_time_test.sh" ;;
-            12) run_script "${SUB_SCRIPTS_DIR}/network_test/streaming_unlock_test.sh" ;;
+            1) run_repo_script "scripts/network_test/backhaul_route_test.sh" ;;
+            2) run_repo_script "scripts/network_test/bandwidth_test.sh" ;;
+            3) run_repo_script "scripts/network_test/cdn_latency_test.sh" ;;
+            4) run_repo_script "scripts/network_test/ip_quality_test.sh" ;;
+            5) run_repo_script "scripts/network_test/network_connectivity_test.sh" ;;
+            6) run_repo_script "scripts/network_test/network_quality_test.sh" ;;
+            7) run_repo_script "scripts/network_test/network_security_scan.sh" ;;
+            8) run_repo_script "scripts/network_test/network_speedtest.sh" ;;
+            9) run_repo_script "scripts/network_test/network_traceroute.sh" ;;
+            10) run_repo_script "scripts/network_test/port_scanner.sh" ;;
+            11) run_repo_script "scripts/network_test/response_time_test.sh" ;;
+            12) run_repo_script "scripts/network_test/streaming_unlock_test.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
@@ -172,10 +171,10 @@ performance_test_menu() {
         read -p "请输入选项 [0-4]: " choice
 
         case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/performance_test/cpu_benchmark.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/performance_test/disk_io_benchmark.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/performance_test/memory_benchmark.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/performance_test/network_throughput_test.sh" ;;
+            1) run_repo_script "scripts/performance_test/cpu_benchmark.sh" ;;
+            2) run_repo_script "scripts/performance_test/disk_io_benchmark.sh" ;;
+            3) run_repo_script "scripts/performance_test/memory_benchmark.sh" ;;
+            4) run_repo_script "scripts/performance_test/network_throughput_test.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
@@ -201,14 +200,14 @@ service_install_menu() {
         read -p "请输入选项 [0-8]: " choice
 
         case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/service_install/install_docker.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/service_install/install_lnmp.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/service_install/install_nodejs.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/service_install/install_python.sh" ;;
-            5) run_script "${SUB_SCRIPTS_DIR}/service_install/install_redis.sh" ;;
-            6) run_script "${SUB_SCRIPTS_DIR}/service_install/install_bt_panel.sh" ;;
-            7) run_script "${SUB_SCRIPTS_DIR}/service_install/install_1panel.sh" ;;
-            8) run_script "${SUB_SCRIPTS_DIR}/service_install/install_wordpress.sh" ;;
+            1) run_repo_script "scripts/service_install/install_docker.sh" ;;
+            2) run_repo_script "scripts/service_install/install_lnmp.sh" ;;
+            3) run_repo_script "scripts/service_install/install_nodejs.sh" ;;
+            4) run_repo_script "scripts/service_install/install_python.sh" ;;
+            5) run_repo_script "scripts/service_install/install_redis.sh" ;;
+            6) run_repo_script "scripts/service_install/install_bt_panel.sh" ;;
+            7) run_repo_script "scripts/service_install/install_1panel.sh" ;;
+            8) run_repo_script "scripts/service_install/install_wordpress.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
@@ -303,10 +302,10 @@ other_tools_menu() {
         read -p "请输入选项 [0-5]: " choice
 
         case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/other_tools/bbr.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/other_tools/fail2ban.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/other_tools/nezha.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/other_tools/swap.sh" ;;
+            1) run_repo_script "scripts/other_tools/bbr.sh" ;;
+            2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
+            3) run_repo_script "scripts/other_tools/nezha.sh" ;;
+            4) run_repo_script "scripts/other_tools/swap.sh" ;;
             5) run_remote_command "bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh)" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
@@ -314,50 +313,40 @@ other_tools_menu() {
     done
 }
 
-# --- Update Scripts Menu ---
-update_scripts_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 更新脚本菜单 ---${RESET}"
-        echo "1. 触发自动更新"
-        echo "2. 更新核心脚本"
-        echo "3. 更新依赖环境"
-        echo "4. 更新功能工具脚本"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-4]: " choice
+# --- Update/Uninstall Menus (Adjusted for online mode) ---
+# In online mode, "updating" means re-running the main script command.
+# "Uninstalling" is more complex as scripts are run ephemerally.
 
-        case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/update_scripts/trigger_auto_update.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/update_scripts/update_core_scripts.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/update_scripts/update_dependencies.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/update_scripts/update_functional_tools.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
+update_scripts_menu() {
+    print_header
+    echo -e "${PURPLE}--- 更新脚本 ---${RESET}"
+    echo -e "${YELLOW}您当前正在以在线模式运行脚本。${RESET}"
+    echo -e "要“更新”到最新版本，只需重新执行启动命令即可。"
+    echo -e "\n${WHITE}bash <(curl -sL ${GITHUB_RAW_URL}/vps.sh)${RESET}\n"
+    echo -e "\n${CYAN}按任意键返回...${RESET}"
+    read -n 1 -s -r
 }
 
-# --- Uninstall Scripts Menu ---
 uninstall_scripts_menu() {
-    while true; do
+     while true; do
         print_header
-        echo -e "${PURPLE}--- 卸载脚本菜单 ---${RESET}"
+        echo -e "${PURPLE}--- 卸载/清理菜单 ---${RESET}"
+        echo -e "${YELLOW}注意: 在线模式下，“卸载脚本本身”没有意义，因为它并未安装。${RESET}"
+        echo -e "此菜单主要用于清理由本脚本【安装的服务】所产生的残留文件。\n"
         echo "1. 清理服务残留"
         echo "2. 回滚系统环境"
         echo "3. 清除配置文件"
-        echo "4. !! 完全卸载此脚本 !! "
+        echo "4. 执行完全卸载/清理"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
         read -p "请输入选项 [0-4]: " choice
 
         case $choice in
-            1) run_script "${SUB_SCRIPTS_DIR}/uninstall_scripts/clean_service_residues.sh" ;;
-            2) run_script "${SUB_SCRIPTS_DIR}/uninstall_scripts/rollback_system_environment.sh" ;;
-            3) run_script "${SUB_SCRIPTS_DIR}/uninstall_scripts/clear_configuration_files.sh" ;;
-            4) run_script "${SUB_SCRIPTS_DIR}/uninstall_scripts/full_uninstall.sh" ;;
+            1) run_repo_script "scripts/uninstall_scripts/clean_service_residues.sh" ;;
+            2) run_repo_script "scripts/uninstall_scripts/rollback_system_environment.sh" ;;
+            3) run_repo_script "scripts/uninstall_scripts/clear_configuration_files.sh" ;;
+            4) run_repo_script "scripts/uninstall_scripts/full_uninstall.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
@@ -379,8 +368,8 @@ main_menu() {
         echo -e " 5. ${CYAN}优秀脚本${RESET}       - 集成社区广受好评的第三方脚本"
         echo -e " 6. ${CYAN}梯子工具${RESET}       - 常用代理工具一键安装脚本"
         echo -e " 7. ${CYAN}其他工具${RESET}       - BBR、Fail2ban、SWAP、哪吒监控等"
-        echo -e " 8. ${PURPLE}更新脚本${RESET}       - 更新此脚本套件"
-        echo -e " 9. ${RED}卸载脚本${RESET}       - 从系统中移除此脚本或相关组件"
+        echo -e " 8. ${PURPLE}更新脚本${RESET}       - 获取最新的脚本版本"
+        echo -e " 9. ${RED}卸载清理${RESET}       - 清理本脚本安装的服务或配置"
         echo "----------------------------------------------------"
         echo -e " 0. ${WHITE}退出脚本${RESET}"
         echo ""
