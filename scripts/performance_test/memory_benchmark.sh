@@ -148,7 +148,6 @@ main() {
     esac
     
     echo -e "${GREEN}内存性能测试完成!${NC}"
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
