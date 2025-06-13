@@ -127,7 +127,6 @@ main() {
     traceroute_target $target $method
     
     echo -e "${GREEN}网络路由追踪完成!${NC}"
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
