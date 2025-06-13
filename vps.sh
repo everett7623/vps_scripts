@@ -104,7 +104,7 @@ system_tools_menu() {
         case $choice in
             1) run_repo_script "scripts/system_tools/system_info.sh" ;;
             2) run_repo_script "scripts/system_tools/install_deps.sh" ;;
-            3) run_repo_script "scripts/system_tools/update_system.sh" ;;
+            3) run_repo_script "scripts/system_tools/system_update.sh" ;;
             4) run_repo_script "scripts/system_tools/system_clean.sh" ;;
             5) run_repo_script "scripts/system_tools/system_optimize.sh" ;;
             6) run_repo_script "scripts/system_tools/change_hostname.sh" ;;
@@ -225,11 +225,11 @@ good_scripts_menu() {
         echo "4. NodeLoc聚合测试脚本"
         echo "5. 融合怪测试"
         echo "6. 流媒体解锁测试"
-        echo "7. 响应测试脚本 (NodeBench)"
-        echo "8. VPS一键脚本工具箱 (eooce)"
+        echo "7. 响应测试脚本"
+        echo "8. VPS一键脚本工具箱"
         echo "9. Jcnf 常用脚本工具包"
         echo "10. 科技Lion脚本"
-        echo "11. BlueSkyXN脚本 (SKY-BOX)"
+        echo "11. BlueSkyXN脚本"
         echo "12. 三网测速 (多/单线程)"
         echo "13. AutoTrace三网回程路由"
         echo "14. 超售测试"
