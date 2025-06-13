@@ -5,7 +5,7 @@
 #
 #      Project: https://github.com/everett7623/vps_scripts/
 #      Author: Jensfrank
-#      Version: 2.0.0
+#      Version: 2.0.1
 #
 #      This script is the main entry point for managing a VPS.
 #      It provides a menu-driven interface to access various tools.
@@ -21,10 +21,22 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 
+# --- Execution Environment Check ---
+# Prevents running the script via a pipe (e.g., curl | bash) which breaks relative path logic.
+if [[ "${BASH_SOURCE[0]}" == /dev/fd/* || -z "${BASH_SOURCE[0]}" ]]; then
+    echo -e "${RED}错误：此脚本不能通过管道 (e.g., 'curl ... | bash') 运行。${RESET}"
+    echo -e "${YELLOW}请先将项目克隆或下载到您的服务器上，然后按如下方式运行：${RESET}"
+    echo -e "${WHITE}1. 克隆项目: git clone https://github.com/everett7623/vps_scripts.git${RESET}"
+    echo -e "${WHITE}2. 进入目录: cd vps_scripts${RESET}"
+    echo -e "${WHITE}3. 运行脚本: bash vps.sh${RESET}"
+    exit 1
+fi
+
 # --- Script Base Directory ---
-# Detects the script's absolute path, making it runnable from anywhere.
+# Detects the script's absolute path. SCRIPT_DIR will be the '/path/to/vps_scripts' directory.
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-SUB_SCRIPTS_DIR="${SCRIPT_DIR}/vps_scripts/scripts"
+# CORRECTED: The 'scripts' directory is directly inside SCRIPT_DIR.
+SUB_SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
 # --- Function to display a header ---
 print_header() {
