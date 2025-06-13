@@ -79,7 +79,6 @@ main() {
     test_cdn_latency
     
     echo -e "${GREEN}CDN延迟测试完成!${NC}"
-    read -n 1 -s -r -p "按任意键返回..."
 }
 
 # 执行主函数
