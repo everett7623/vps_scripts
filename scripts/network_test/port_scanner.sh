@@ -1,17 +1,6 @@
 #!/bin/bash
 # scripts/network_test/port_scanner.sh - VPS Scripts 端口扫描功能模块
 
-# 加载核心库
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"  # 回到 vps_scripts 目录
-
-# 加载 lib 下的核心脚本
-source "$PROJECT_ROOT/lib/common.sh"
-source "$PROJECT_ROOT/lib/system.sh"
-source "$PROJECT_ROOT/lib/menu.sh"
-source "$PROJECT_ROOT/lib/statistics.sh"
-source "$PROJECT_ROOT/lib/third_party.sh"
-
 # 模块信息
 MODULE_NAME="端口扫描"
 MODULE_VERSION="1.0.0"
