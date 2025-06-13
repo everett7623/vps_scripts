@@ -1,5 +1,5 @@
 #!/bin/bash
-#/scripts/service_install/install_lemp.sh - VPS Scripts LEMP栈安装工具
+#/scripts/service_install/install_lnmp.sh - VPS Scripts LEMP栈安装工具
 
 # 定义颜色
 RED='\033[0;31m'
