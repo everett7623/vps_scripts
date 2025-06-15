@@ -1,8 +1,5 @@
 #!/bin/bash
-#/scripts/system_tools/clean_system.sh - VPS Scripts 系统工具库
-
-#!/bin/bash
-# 系统清理脚本 - 清理系统垃圾文件和释放空间
+#/scripts/system_tools/clean_system.sh - VPS Scripts 系统清理脚本 - 清理系统垃圾文件和释放空间
 
 # 加载核心功能库
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
