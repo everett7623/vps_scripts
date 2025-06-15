@@ -1,231 +1,122 @@
 #!/bin/bash
-
-# ===================================================================
-# 脚本名称: [脚本名称]
-# 脚本描述: [脚本功能描述]
-# 作者: everett7623
-# 版本: 1.0.0
-# 更新日期: 2025-01-10
-# 使用方法: ./script_name.sh [参数]
-# ===================================================================
-
-# 严格模式
-set -euo pipefail
-IFS=$'\n\t'
+# 子脚本模板 - 展示如何正确使用核心功能库
+# 所有子脚本都应该遵循这个结构
 
 # 获取脚本所在目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARENT_DIR="$(dirname "$SCRIPT_PATH")"
 
-# 加载核心库文件
-source "${PROJECT_ROOT}/lib/common.sh"
-source "${PROJECT_ROOT}/lib/system.sh"
-source "${PROJECT_ROOT}/lib/menu.sh"
+# 加载核心功能库
+if [[ -f "${PARENT_DIR}/lib/common_functions.sh" ]]; then
+    source "${PARENT_DIR}/lib/common_functions.sh"
+else
+    echo "错误：无法找到核心功能库" >&2
+    exit 1
+fi
 
-# ===================================================================
-# 脚本配置
-# ===================================================================
+# 脚本信息
+SCRIPT_NAME="template"
+SCRIPT_VERSION="1.0.0"
+SCRIPT_DESCRIPTION="这是一个子脚本模板"
 
-# 脚本元信息
-readonly SCRIPT_NAME="[脚本名称]"
-readonly SCRIPT_VERSION="1.0.0"
-readonly SCRIPT_DESCRIPTION="[脚本功能描述]"
-
-# 脚本特定配置
-# 在这里添加脚本特定的配置变量
-
-# ===================================================================
-# 函数定义
-# ===================================================================
-
-# 显示使用帮助
-show_usage() {
+# 脚本特定的函数
+show_help() {
     cat << EOF
-${SCRIPT_NAME} v${SCRIPT_VERSION}
 ${SCRIPT_DESCRIPTION}
+版本: ${SCRIPT_VERSION}
 
-使用方法:
-    $(basename "$0") [选项]
+用法: $0 [选项]
 
 选项:
     -h, --help      显示此帮助信息
     -v, --version   显示版本信息
     -d, --debug     启用调试模式
-
+    
 示例:
-    $(basename "$0")
-    $(basename "$0") --help
+    $0              运行脚本
+    $0 --debug      以调试模式运行
 
 EOF
 }
 
-# 显示版本信息
-show_version() {
-    echo "${SCRIPT_NAME} v${SCRIPT_VERSION}"
-}
-
-# 初始化脚本
-init_script() {
-    log_info "正在初始化 ${SCRIPT_NAME}..."
-    
-    # 检查是否为root用户
-    check_root
-    
-    # 检测操作系统
-    detect_os
-    
-    # 检查依赖
-    check_dependencies
-    
-    # 创建必要的目录
-    create_directories
-    
-    log_success "初始化完成"
-}
-
-# 检查依赖
-check_dependencies() {
-    log_info "正在检查依赖..."
-    
-    # 在这里添加需要检查的依赖
-    # 示例:
-    # ensure_package "curl"
-    # ensure_package "wget"
-    
-    log_success "依赖检查完成"
-}
-
-# 创建必要的目录
-create_directories() {
-    # 在这里创建脚本需要的目录
-    # 示例:
-    # mkdir -p /var/lib/script_name
-    # mkdir -p /etc/script_name
-    :
-}
-
-# ===================================================================
-# 主要功能函数
-# ===================================================================
-
-# 主要功能函数
-# 在这里实现脚本的主要功能
-
-main_function() {
-    show_title "${SCRIPT_NAME}"
-    
-    log_info "开始执行主要功能..."
-    
-    # 在这里实现具体功能
-    # 示例:
-    # download_file "https://example.com/file" "/tmp/file"
-    # install_package "package_name"
-    
-    log_success "主要功能执行完成"
-}
-
-# ===================================================================
-# 清理函数
-# ===================================================================
-
-# 清理函数
-cleanup() {
-    log_info "正在清理..."
-    
-    # 在这里添加清理逻辑
-    # 示例:
-    # rm -f /tmp/temp_file
-    # stop_service "service_name"
-    
-    log_success "清理完成"
-}
-
-# ===================================================================
-# 错误处理
-# ===================================================================
-
-# 错误处理函数
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    
-    log_error "脚本在第 $line_number 行发生错误，退出码: $exit_code"
-    
-    # 执行清理
-    cleanup
-    
-    exit $exit_code
-}
-
-# 设置错误处理
-trap 'handle_error $LINENO' ERR
-
-# ===================================================================
-# 信号处理
-# ===================================================================
-
-# 处理中断信号
-handle_interrupt() {
-    echo ""
-    log_warn "脚本被中断"
-    cleanup
-    exit 130
-}
-
-# 设置信号处理
-trap 'handle_interrupt' INT TERM
-
-# ===================================================================
-# 主程序入口
-# ===================================================================
-
-main() {
-    # 解析命令行参数
+# 解析命令行参数
+parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -h|--help)
-                show_usage
+                show_help
                 exit 0
                 ;;
             -v|--version)
-                show_version
+                echo "${SCRIPT_NAME} v${SCRIPT_VERSION}"
                 exit 0
                 ;;
             -d|--debug)
-                export DEBUG="true"
-                log_info "调试模式已启用"
-                shift
-                ;;
-            -*)
-                log_error "未知选项: $1"
-                show_usage
-                exit 1
+                DEBUG=1
+                export DEBUG
+                log DEBUG "调试模式已启用"
                 ;;
             *)
-                # 处理其他参数
-                shift
+                log ERROR "未知选项: $1"
+                show_help
+                exit 1
                 ;;
         esac
+        shift
     done
-    
-    # 初始化脚本
-    init_script
-    
-    # 执行主要功能
-    main_function
-    
-    # 询问是否返回主菜单
-    if [[ "${RETURN_TO_MENU:-true}" == "true" ]]; then
-        echo ""
-        pause_menu "按任意键返回主菜单..."
-    fi
 }
 
-# ===================================================================
-# 执行主程序
-# ===================================================================
+# 主函数
+main() {
+    log INFO "开始执行 ${SCRIPT_NAME}..."
+    
+    # 检查权限
+    check_root
+    
+    # 检测系统
+    detect_os
+    
+    # 获取系统信息
+    get_system_info
+    
+    # 显示系统信息
+    echo -e "${CYAN}=== 系统信息 ===${NC}"
+    echo -e "${WHITE}操作系统:${NC} ${OS_PRETTY_NAME}"
+    echo -e "${WHITE}CPU型号:${NC} ${CPU_INFO}"
+    echo -e "${WHITE}CPU核心:${NC} ${CPU_CORES}"
+    echo -e "${WHITE}内存使用:${NC} ${MEM_USED}MB / ${MEM_TOTAL}MB (${MEM_PERCENT}%)"
+    echo -e "${WHITE}磁盘使用:${NC} ${DISK_INFO}"
+    echo ""
+    
+    # 执行具体功能
+    if confirm_action "是否继续执行测试功能？" "y"; then
+        log INFO "执行测试功能..."
+        
+        # 模拟进度条
+        for i in {1..10}; do
+            show_progress $i 10
+            sleep 0.2
+        done
+        echo ""
+        
+        log INFO "测试功能执行完成"
+    else
+        log INFO "用户取消操作"
+    fi
+    
+    # 按任意键返回
+    press_any_key
+}
 
-# 只有在直接执行脚本时才运行main函数
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
-fi
+# 清理函数
+cleanup() {
+    log DEBUG "执行清理操作..."
+    # 在这里添加清理代码
+}
+
+# 设置信号处理
+trap cleanup EXIT
+
+# 程序入口
+parse_arguments "$@"
+main
