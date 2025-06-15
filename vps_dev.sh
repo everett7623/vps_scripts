@@ -1,4 +1,4 @@
-#!/bin.bash
+#!/bin/bash
 #
 # vps_dev.sh - VPS Administration and Management Test Script
 #
@@ -10,21 +10,23 @@
 # Path: /vps_dev.sh
 
 # --- Global Variables ---
-# Base directory for the entire script suite
-BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Library for core functions
-LIB_DIR="${BASE_DIR}/lib"
-# Configuration file directory
-CONFIG_DIR="${BASE_DIR}/config"
-# Scripts directory
-SCRIPTS_DIR="${BASE_DIR}/scripts"
+# Determine the absolute path of the script's directory
+# This ensures that all paths are relative to the script's location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+# Define paths to core directories based on the script's location
+LIB_DIR="${SCRIPT_DIR}/lib"
+CONFIG_DIR="${SCRIPT_DIR}/config"
+SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
 # --- Source Core Libraries ---
-# Source common functions
+
+# Source common functions library
 if [ -f "${LIB_DIR}/common_functions.sh" ]; then
     source "${LIB_DIR}/common_functions.sh"
 else
-    echo "Error: Core library 'common_functions.sh' not found in ${LIB_DIR}."
+    echo "Error: Core functions library not found at '${LIB_DIR}/common_functions.sh'."
+    echo "Please ensure the script is run from the root of the 'vps_scripts' project directory."
     exit 1
 fi
 
@@ -32,7 +34,9 @@ fi
 if [ -f "${CONFIG_DIR}/vps_scripts.conf" ]; then
     source "${CONFIG_DIR}/vps_scripts.conf"
 else
-    echo "Warning: Configuration file 'vps_scripts.conf' not found in ${CONFIG_DIR}."
+    # It's a warning because the script might be able to run with default values
+    echo "Warning: Configuration file not found at '${CONFIG_DIR}/vps_scripts.conf'."
+    echo "The script will proceed with default settings."
 fi
 
 
@@ -297,4 +301,5 @@ show_main_menu() {
 }
 
 # --- Script Entry Point ---
+# This is where the script execution begins.
 show_main_menu
