@@ -1,764 +1,300 @@
-#!/bin/bash
-# VPS Scripts 改进版主脚本 - 保持原有菜单样式
-VERSION="2025-05-19 v1.2.4"  # 只需定义一次版本号
-SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
-VERSION_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/update_log.sh"
+#!/bin.bash
+#
+# vps_dev.sh - VPS Administration and Management Test Script
+#
+# This script is a development version for testing new features and structures
+# for the main vps.sh script. It provides a menu-driven interface to run
+# various system administration, benchmarking, and installation scripts.
+#
+# Project: https://github.com/everett7623/vps_scripts/
+# Path: /vps_dev.sh
 
-# 获取脚本所在目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# --- Global Variables ---
+# Base directory for the entire script suite
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Library for core functions
+LIB_DIR="${BASE_DIR}/lib"
+# Configuration file directory
+CONFIG_DIR="${BASE_DIR}/config"
+# Scripts directory
+SCRIPTS_DIR="${BASE_DIR}/scripts"
 
-# 尝试加载核心功能库
-if [[ -f "${SCRIPT_DIR}/lib/common_functions.sh" ]]; then
-    source "${SCRIPT_DIR}/lib/common_functions.sh"
-    USE_LIB=true
+# --- Source Core Libraries ---
+# Source common functions
+if [ -f "${LIB_DIR}/common_functions.sh" ]; then
+    source "${LIB_DIR}/common_functions.sh"
 else
-    USE_LIB=false
-    # 如果没有核心库，定义基础颜色变量以保持兼容
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[1;34m'
-    PURPLE='\033[0;35m'
-    WHITE='\033[1;37m'
-    NC='\033[0m' # No Color
-    
-    # 定义渐变颜色数组
-    colors=(
-        '\033[38;2;0;255;0m'    # 绿色
-        '\033[38;2;64;255;0m'
-        '\033[38;2;128;255;0m'
-        '\033[38;2;192;255;0m'
-        '\033[38;2;255;255;0m'  # 黄色
-    )
+    echo "Error: Core library 'common_functions.sh' not found in ${LIB_DIR}."
+    exit 1
 fi
 
-# 检查 root 权限并获取 sudo 权限
-if [ "$(id -u)" != "0" ]; then
-    echo "此脚本需要 root 权限运行。"
-    if ! sudo -v; then
-        echo "无法获取 sudo 权限，退出脚本。"
-        exit 1
-    fi
-    echo "已获取 sudo 权限。"
+# Source configuration file
+if [ -f "${CONFIG_DIR}/vps_scripts.conf" ]; then
+    source "${CONFIG_DIR}/vps_scripts.conf"
+else
+    echo "Warning: Configuration file 'vps_scripts.conf' not found in ${CONFIG_DIR}."
 fi
 
-# 更新脚本
-update_scripts() {
-    echo -e "${YELLOW}正在检查更新...${NC}"
-    
-    local REMOTE_VERSION=$(curl -s -m 10 $VERSION_URL)
-    if [ -z "$REMOTE_VERSION" ]; then
-        echo -e "${RED}无法获取远程版本信息。请检查您的网络连接。${NC}"
-        return 1
-    fi
-    
-    if [ "$REMOTE_VERSION" != "$VERSION" ]; then
-        echo -e "${BLUE}发现新版本 $REMOTE_VERSION，当前版本 $VERSION${NC}"
-        echo -e "${BLUE}正在更新...${NC}"
-        
-        if curl -s -m 30 -o /tmp/vps.sh $SCRIPT_URL; then
-            if [ ! -s /tmp/vps.sh ]; then
-                echo -e "${RED}下载的脚本文件为空。更新失败。${NC}"
-                return 1
-            fi
-            
-            local NEW_VERSION=$(grep '^VERSION=' /tmp/vps.sh | cut -d'"' -f2)
-            if [ -z "$NEW_VERSION" ]; then
-                echo -e "${RED}无法从下载的脚本中获取版本信息。更新失败。${NC}"
-                return 1
-            fi
-            
-            if ! sed -i "s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$0"; then
-                echo -e "${RED}无法更新脚本中的版本号。请检查文件权限。${NC}"
-                return 1
-            fi
-            
-            if mv /tmp/vps.sh "$0"; then
-                chmod +x "$0"
-                echo -e "${GREEN}脚本更新成功！新版本: $NEW_VERSION${NC}"
-                echo -e "${YELLOW}请等待 3 秒...${NC}"
-                sleep 3
-                echo -e "${YELLOW}是否重新启动脚本以应用更新？(Y/n)${NC}"
-                read -n 1 -r
-                echo
-                if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-                    exec bash "$0"
-                else
-                    echo -e "${YELLOW}请手动重启脚本以应用更新。${NC}"
-                fi
-            else
-                echo -e "${RED}无法替换脚本文件。请检查权限。${NC}"
-                return 1
-            fi
-        else
-            echo -e "${RED}下载新版本失败。请稍后重试。${NC}"
-            return 1
-        fi
-    else
-        echo -e "${GREEN}脚本已是最新版本 $VERSION。${NC}"
-    fi
-}
 
-# 检测操作系统（兼容原版和核心库版本）
-detect_os() {
-    if [[ "$USE_LIB" == true ]]; then
-        # 使用核心库的检测函数（如果已定义）
-        if declare -f detect_os > /dev/null; then
-            return
-        fi
-    fi
-    
-    # 原版检测逻辑
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        os_type=$ID
-    elif type lsb_release >/dev/null 2>&1; then
-        os_type=$(lsb_release -si)
-    elif [ -f /etc/lsb-release ]; then
-        . /etc/lsb-release
-        os_type=$DISTRIB_ID
-    elif [ -f /etc/debian_version ]; then
-        os_type="debian"
-    elif [ -f /etc/fedora-release ]; then
-        os_type="fedora"
-    elif [ -f /etc/centos-release ]; then
-        os_type="centos"
-    elif [ -f /etc/redhat-release ]; then
-        os_type="redhat"
-    else
-        os_type=$(uname -s)
-    fi
-    os_type=$(echo $os_type | tr '[:upper:]' '[:lower:]')
-    echo "检测到的操作系统: $os_type"
-}
+# --- Menu Functions ---
 
-# 更新系统（保持原版逻辑）
-update_system() {
-    detect_os
-    case "${os_type,,}" in
-        ubuntu|debian|linuxmint|elementary|pop)
-            update_cmd="apt-get update"
-            upgrade_cmd="apt-get upgrade -y"
-            clean_cmd="apt-get autoremove -y"
-            ;;
-        centos|rhel|fedora|rocky|almalinux|openeuler)
-            if command -v dnf &>/dev/null; then
-                update_cmd="dnf check-update"
-                upgrade_cmd="dnf upgrade -y"
-                clean_cmd="dnf autoremove -y"
-            else
-                update_cmd="yum check-update"
-                upgrade_cmd="yum upgrade -y"
-                clean_cmd="yum autoremove -y"
-            fi
-            ;;
-        arch|manjaro)
-            update_cmd="pacman -Sy"
-            upgrade_cmd="pacman -Syu --noconfirm"
-            clean_cmd="pacman -Sc --noconfirm"
-            ;;
-        *)
-            echo -e "${RED}不支持的 Linux 发行版: $os_type${NC}"
-            return 1
-            ;;
-    esac
-    sudo $update_cmd
-    if [ $? -eq 0 ]; then
-        sudo $upgrade_cmd
-        if [ $? -eq 0 ]; then
-            sudo $clean_cmd
-            echo -e "${GREEN}系统更新完成。${NC}"
-        else
-            echo -e "${RED}升级失败。${NC}"
-            return 1
-        fi
-    else
-        echo -e "${RED}更新失败。${NC}"
-        return 1
-    fi
-}
+# --- Sub-Menus ---
 
-# 定义支持的操作系统类型
-SUPPORTED_OS=("ubuntu" "debian" "linuxmint" "elementary" "pop" "centos" "rhel" "fedora" "rocky" "almalinux" "openeuler" "opensuse" "sles" "arch" "manjaro" "alpine" "gentoo" "cloudlinux")
-
-# 安装依赖
-install_dependencies() {
-    echo -e "${YELLOW}正在检查并安装必要的依赖项...${NC}"
-    
-    # 确保 os_type 已定义
-    if [ -z "$os_type" ]; then
-        detect_os
-    fi
-
-    # 定义安装命令
-    case "${os_type,,}" in
-        ubuntu|debian|linuxmint|elementary|pop)
-            install_cmd="apt-get install -y"
-            ;;
-        centos|rhel|fedora|rocky|almalinux|openeuler)
-            install_cmd="yum install -y"
-            ;;
-        opensuse*|sles)
-            install_cmd="zypper install -y"
-            ;;
-        arch|manjaro)
-            install_cmd="pacman -S --noconfirm"
-            ;;
-        alpine)
-            install_cmd="apk add"
-            ;;
-        gentoo)
-            install_cmd="emerge"
-            ;;
-        cloudlinux)
-            install_cmd="yum install -y"
-            ;;
-        *)
-            echo -e "${RED}不支持的 Linux 发行版: $os_type${NC}"
-            return 1
-            ;;
-    esac
-    
-    # 安装 curl
-    if ! command -v curl &> /dev/null; then
-        echo -e "${YELLOW}正在安装 curl...${NC}"
-        if ! sudo $install_cmd curl; then
-            echo -e "${RED}无法安装 curl。请手动安装此依赖项。${NC}"
-            return 1
-        fi
-    else
-        echo -e "${GREEN}curl 已安装。${NC}"
-    fi
-    
-    echo -e "${GREEN}依赖项检查和安装完成。${NC}"
-}
-
-# 检查并安装依赖
-install_dependencies
-
-# 获取IP地址（兼容版本）
-ip_address() {
-    if [[ "$USE_LIB" == true ]] && declare -f get_ip_address > /dev/null; then
-        get_ip_address
-        ipv4_address=$IPV4_ADDRESS
-        ipv6_address=$IPV6_ADDRESS
-    else
-        ipv4_address=$(curl -s --max-time 5 ipv4.ip.sb)
-        if [ -z "$ipv4_address" ]; then
-            ipv4_address=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
-        fi
-
-        ipv6_address=$(curl -s --max-time 5 ipv6.ip.sb)
-        if [ -z "$ipv6_address" ]; then
-            ipv6_address=$(ip -6 addr show | grep -oP '(?<=inet6\s)[\da-f:]+' | grep -v '^::1' | grep -v '^fe80' | head -n1)
-        fi
-    fi
-}
-
-# 统计使用次数
-sum_run_times() {
-    local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fblob%2Fmain%2Fvps.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+")
-    if [[ -n "$COUNT" ]]; then
-        daily_count=$(cut -d " " -f1 <<< "$COUNT")
-        total_count=$(cut -d " " -f3 <<< "$COUNT")
-    else
-        echo "Failed to fetch usage counts."
-        daily_count=0
-        total_count=0
-    fi
-}
-
-# 调用函数获取统计数据
-sum_run_times
-
-# 清理系统（保持原版逻辑）
-clean_system() {
-    case "$(uname -s)" in
-        Linux)
-            if command -v apt &>/dev/null; then
-                apt autoremove --purge -y && apt clean -y && apt autoclean -y
-                apt remove --purge $(dpkg -l | awk '/^rc/ {print $2}') -y
-                journalctl --vacuum-time=1s
-            elif command -v yum &>/dev/null; then
-                yum autoremove -y && yum clean all
-                journalctl --vacuum-time=1s
-            fi
-            ;;
-        *)
-            echo -e "${RED}暂不支持该操作系统的清理功能。${NC}"
-            return 1
-            ;;
-    esac
-    echo -e "${GREEN}系统清理完成。${NC}"
-}
-
-# 输出欢迎信息（保持原版样式）
-show_welcome() {
+# System Tools Menu
+show_system_tools_menu() {
     clear
-    echo ""
-    echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-    echo ""
-    echo "VPS脚本集合 $VERSION"
-    echo "GitHub地址: https://github.com/everett7623/vps_scripts"
-    echo "VPS选购: https://www.nodeloc.com/vps"
-    echo ""
-    echo -e "${colors[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${NC}"
-    echo -e "${colors[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${NC}"
-    echo -e "${colors[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${NC}"
-    echo -e "${colors[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${NC}"
-    echo -e "${colors[4]}  #   #  #            #           # #       #   #    #  #        #         # ${NC}"
-    echo -e "${colors[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${NC}"
-    echo -e "${colors[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${NC}"
-    echo ""
-    echo "支持Ubuntu/Debian"
-    echo ""
-    echo -e "今日运行次数: ${PURPLE}$daily_count${NC} 次，累计运行次数: ${PURPLE}$total_count${NC} 次"
-    echo ""
-    echo -e "${YELLOW}---------------------------------By'Jensfrank---------------------------------${NC}"
-    echo ""
+    echo "----------------------------------------"
+    echo "          System Tools Menu"
+    echo "----------------------------------------"
+    echo "1. View System Information"
+    echo "2. Install Common Dependencies"
+    echo "3. Update System"
+    echo "4. Clean System"
+    echo "5. Optimize System"
+    echo "6. Change Hostname"
+    echo "7. Set Timezone"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-7]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/system_tools/system_info.sh" ;;
+        2) bash "${SCRIPTS_DIR}/system_tools/install_deps.sh" ;;
+        3) bash "${SCRIPTS_DIR}/system_tools/update_system.sh" ;;
+        4) bash "${SCRIPTS_DIR}/system_tools/clean_system.sh" ;;
+        5) bash "${SCRIPTS_DIR}/system_tools/optimize_system.sh" ;;
+        6) bash "${SCRIPTS_DIR}/system_tools/change_hostname.sh" ;;
+        7) bash "${SCRIPTS_DIR}/system_tools/set_timezone.sh" ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_system_tools_menu
 }
 
-# 显示菜单（保持原版样式）
-show_menu() {
-  echo ""
-  echo "------------------------------------------------------------------------------"
-  echo -e "${YELLOW}1) 本机信息${NC}                        ${YELLOW}13) VPS一键脚本工具箱${NC}"
-  echo -e "${YELLOW}2) 更新系统${NC}                        ${YELLOW}14) jcnf 常用脚本工具包${NC}"
-  echo -e "${YELLOW}3) 清理系统${NC}                        ${YELLOW}15) 科技Lion脚本${NC}"
-  echo -e "${YELLOW}4) Yabs${NC}                            ${YELLOW}16) BlueSkyXN脚本${NC}"
-  echo -e "${YELLOW}5) 融合怪${NC}                          ${YELLOW}17) 勇哥Singbox${NC}"
-  echo -e "${YELLOW}6) IP质量${NC}                          ${YELLOW}18) 勇哥X-UI${NC}"
-  echo -e "${YELLOW}7) 流媒体解锁${NC}                      ${YELLOW}19) Fscarmen-Singbox${NC}"
-  echo -e "${YELLOW}8) 响应测试${NC}                        ${YELLOW}20) 3X-UI${NC}"
-  echo -e "${YELLOW}9) 三网测速（多/单线程）${NC}            ${YELLOW}21) 3X-UI优化版${NC}"
-  echo -e "${YELLOW}10) AutoTrace三网回程路由${NC}           ${YELLOW}22) 安装Docker${NC}"
-  echo -e "${YELLOW}11) 安装并启动iperf3服务端${NC}          ${YELLOW}23) 哪吒Agent清理${NC}"
-  echo -e "${YELLOW}12) 超售测试${NC}"
-  echo "------------------------------------------------------------------------------"
-  echo -e "${RED}66) NodeLoc聚合测试脚本${NC}"
-  echo -e "${RED}77) XY网络质量体检脚本${NC}"
-  echo -e "${YELLOW}88) 更新脚本${NC}"
-  echo -e "${YELLOW}99) 卸载脚本${NC}"
-  echo -e "${YELLOW}0) 退出${NC}"
-  echo "------------------------------------------------------------------------------"
-  read -p "请选择要执行的脚本: " choice
-  
-  case $choice in
-      1)
-      clear
-      echo -e "${PURPLE}执行本机信息...${NC}"
-      
-      # 尝试使用本地脚本
-      if [[ -f "${SCRIPT_DIR}/scripts/system_tools/system_info.sh" ]]; then
-          # 使用核心库执行本地脚本
-          if [[ "$USE_LIB" == true ]]; then
-              if declare -f run_script > /dev/null; then
-                  run_script "system_tools/system_info.sh"
-              else
-                  bash "${SCRIPT_DIR}/scripts/system_tools/system_info.sh"
-              fi
-          else
-              bash "${SCRIPT_DIR}/scripts/system_tools/system_info.sh"
-          fi
-      else
-          # 如果没有本地脚本，使用原版内置功能
-          ip_address
-
-          if [ "$(uname -m)" == "x86_64" ]; then
-            cpu_info=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
-          else
-            cpu_info=$(lscpu | grep 'Model name' | sed -e 's/Model name[[:space:]]*: //')
-          fi
-
-          cpu_usage=$(top -bn1 | grep 'Cpu(s)' | awk '{print $2 + $4}')
-          cpu_usage_percent=$(printf "%.2f" "$cpu_usage")%
-
-          cpu_cores=$(nproc)
-
-          mem_info=$(free -b | awk 'NR==2{printf "%.2f/%.2f MB (%.2f%%)", $3/1024/1024, $2/1024/1024, $3*100/$2}')
-
-          disk_info=$(df -h | awk '$NF=="/"{printf "%d/%dGB (%s)", $3,$2,$5}')
-
-          country=$(curl -s ipinfo.io/country)
-          city=$(curl -s ipinfo.io/city)
-
-          isp_info=$(curl -s ipinfo.io/org)
-
-          cpu_arch=$(uname -m)
-
-          hostname=$(hostname)
-
-          kernel_version=$(uname -r)
-
-          congestion_algorithm=$(sysctl -n net.ipv4.tcp_congestion_control)
-          queue_algorithm=$(sysctl -n net.core.default_qdisc)
-
-          # 尝试使用 lsb_release 获取系统信息
-          os_info=$(lsb_release -ds 2>/dev/null)
-
-          # 如果 lsb_release 命令失败，则尝试其他方法
-          if [ -z "$os_info" ]; then
-            # 检查常见的发行文件
-            if [ -f "/etc/os-release" ]; then
-              os_info=$(source /etc/os-release && echo "$PRETTY_NAME")
-            elif [ -f "/etc/debian_version" ]; then
-              os_info="Debian $(cat /etc/debian_version)"
-            elif [ -f "/etc/redhat-release" ]; then
-              os_info=$(cat /etc/redhat-release)
-            else
-              os_info="Unknown"
-            fi
-          fi
-
-          clear
-          output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
-            NR > 2 { rx_total += $2; tx_total += $10 }
-            END {
-                rx_units = "Bytes";
-                tx_units = "Bytes";
-                if (rx_total > 1024) { rx_total /= 1024; rx_units = "KB"; }
-                if (rx_total > 1024) { rx_total /= 1024; rx_units = "MB"; }
-                if (rx_total > 1024) { rx_total /= 1024; rx_units = "GB"; }
-
-                if (tx_total > 1024) { tx_total /= 1024; tx_units = "KB"; }
-                if (tx_total > 1024) { tx_total /= 1024; tx_units = "MB"; }
-                if (tx_total > 1024) { tx_total /= 1024; tx_units = "GB"; }
-
-                printf("总接收: %.2f %s\n总发送: %.2f %s\n", rx_total, rx_units, tx_total, tx_units);
-            }' /proc/net/dev)
-
-          current_time=$(date "+%Y-%m-%d %I:%M %p")
-
-          swap_used=$(free -m | awk 'NR==3{print $3}')
-          swap_total=$(free -m | awk 'NR==3{print $2}')
-
-          if [ "$swap_total" -eq 0 ]; then
-            swap_percentage=0
-          else
-            swap_percentage=$((swap_used * 100 / swap_total))
-          fi
-
-          swap_info="${swap_used}MB/${swap_total}MB (${swap_percentage}%)"
-
-          runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1 % 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d时 ", run_hours); printf("%d分\n", run_minutes)}')
-
-          echo ""
-          echo -e "${WHITE}系统信息详情${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}主机名: ${YELLOW}${hostname}${NC}"
-          echo -e "${WHITE}运营商: ${YELLOW}${isp_info}${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}系统版本: ${YELLOW}${os_info}${NC}"
-          echo -e "${WHITE}Linux版本: ${YELLOW}${kernel_version}${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}CPU架构: ${YELLOW}${cpu_arch}${NC}"
-          echo -e "${WHITE}CPU型号: ${YELLOW}${cpu_info}${NC}"
-          echo -e "${WHITE}CPU核心数: ${YELLOW}${cpu_cores}${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}CPU占用: ${YELLOW}${cpu_usage_percent}${NC}"
-          echo -e "${WHITE}物理内存: ${YELLOW}${mem_info}${NC}"
-          echo -e "${WHITE}虚拟内存: ${YELLOW}${swap_info}${NC}"
-          echo -e "${WHITE}硬盘占用: ${YELLOW}${disk_info}${NC}"
-          echo "------------------------"
-          echo -e "${PURPLE}$output${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}网络拥堵算法: ${YELLOW}${congestion_algorithm} ${queue_algorithm}${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}公网IPv4地址: ${YELLOW}${ipv4_address}${NC}"
-          echo -e "${WHITE}公网IPv6地址: ${YELLOW}${ipv6_address}${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}地理位置: ${YELLOW}${country} ${city}${NC}"
-          echo -e "${WHITE}系统时间: ${YELLOW}${current_time}${NC}"
-          echo "------------------------"
-          echo -e "${WHITE}系统运行时长: ${YELLOW}${runtime}${NC}"
-          echo ""
-      fi
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    2)
-      clear
-      echo -e "${PURPLE}执行更新系统...${NC}"
-      update_system
-      echo "系统更新完成"
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    3)
-      clear
-      echo -e "${PURPLE}执行 清理系统...${NC}"
-      clean_system
-      echo "系统清理完成"
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    4)
-      clear
-      echo -e "${PURPLE}执行 Yabs测试...${NC}"
-      wget -qO- yabs.sh | bash
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    5)
-      clear
-      echo -e "${PURPLE}执行 融合怪测试...${NC}"
-      curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    6)
-      clear
-      echo -e "${PURPLE}执行 IP质量测试...${NC}"
-      bash <(curl -Ls IP.Check.Place)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    7)
-      clear
-      echo -e "${PURPLE}执行 流媒体解锁...${NC}"
-      bash <(curl -L -s media.ispvps.com)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    8)
-      clear
-      echo -e "${PURPLE}执行 响应测试脚本...${NC}"
-      bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    9)
-      clear
-      echo -e "${PURPLE}执行 三网测速（多/单线程）...${NC}"
-      bash <(curl -sL https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    10)
-      clear
-      echo -e "${PURPLE}执行 AutoTrace三网回程路由...${NC}"
-      wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    11)
-      clear
-      echo -e "${PURPLE}执行 安装并启动iperf3服务端...${NC}"
-      apt-get install -y iperf3
-
-      # 检查iperf3是否已经在运行
-      if pgrep -x "iperf3" > /dev/null
-      then
-          echo "iperf3 服务已经在运行。"
-      else
-          echo "启动iperf3服务..."
-          iperf3 -s &
-          sleep 2
-          if pgrep -x "iperf3" > /dev/null
-          then
-              echo "iperf3服务启动成功，正在监听端口5201。"
-          else
-              echo "iperf3服务启动失败，请检查是否有其他程序占用了5201端口。"
-          fi
-      fi
-
-      echo ""
-      echo -e "${PURPLE}服务端操作完成。现在您可以在客户端进行测试。${NC}"
-      echo ""
-      echo "客户端操作，比如Windows："
-      echo -e "${RED}iperf3客户端下载地址(https://iperf.fr/iperf-download.php)${NC}"
-      echo "在Windows电脑上，下载iperf3 Windows版本，解压到任意目录，例如D:\iperf3"
-      echo "打开命令提示符窗口，切换到iperf3目录:"
-      echo "cd D:\iperf3"
-      
-      echo ""
-      echo -e "${BLUE}执行客户端命令，连接到VPS的IP:${NC}"
-      echo -e "iperf3.exe -c ${RED}vps_ip${NC}"
-      echo "它会进行10秒的默认TCP下载测试。"
-      echo "案例：.\iperf3.exe -c 104.234.111.111"
-      echo ""
-      echo -e "${BLUE}单线程上传测试:${NC}"
-      echo -e "iperf3.exe -c ${RED}vps_ip${NC} -R"
-      echo "该命令会测试从客户端到服务端VPS的上传带宽。"
-      echo "案例：.\iperf3.exe -c 104.234.111.111 -R"
-      echo ""
-      echo -e "${BLUE}多线程下载测试:${NC}"
-      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -P 4"
-      echo "这会运行一个4个流并行下载测试。"
-      echo "案例：.\iperf3.exe -c 104.234.111.111 -P 4"
-      echo ""
-      echo -e "${BLUE}多线程上传测试:${NC}"
-      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -R -P 4"
-      echo "案例：.\iperf3.exe -c 104.234.111.111 -R -P 4"
-      echo ""
-      echo -e "${BLUE}长时间下载测试:${NC}"
-      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -t 60"
-      echo "该命令会测试60秒的长时间下载，观察带宽变化。"
-      echo "案例：.\iperf3.exe -c 104.234.111.111 -t 60"
-      echo ""
-      echo -e "${BLUE}UDP模拟视频流测试:${NC}"
-      echo -e "iperf3.exe -c ${RED}vps_ip${NC}  -u -b 200m"
-      echo "以200mbps的码率，测试UDP下载/模拟视频流。"
-      echo "您也可以根据实际需求调整目标带宽-b值。"
-      echo "案例：.\iperf3.exe -c 104.234.111.11 -u -b 200m"
-      echo ""
-      echo -e "${BLUE}其他参数示例:${NC}"
-      echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -i 1       # 每1秒输出带宽报告"
-      echo -e ".\iperf3.exe -c ${RED}vps_ip${NC}  -p 5201    # 指定服务端端口为5201"
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    12)
-      clear
-      echo -e "${PURPLE}执行 超售测试...${NC}"
-      wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    13)
-      clear
-      echo -e "${PURPLE}执行 VPS一键脚本工具箱 ...${NC}"
-      curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    14)
-      clear
-      echo -e "${PURPLE}执行 Jcnf 常用脚本工具包 ...${NC}"
-      wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    15)
-      clear
-      echo -e "${PURPLE}执行 科技Lion脚本...${NC}"
-      bash <(curl -sL kejilion.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    16)
-      clear
-      echo -e "${PURPLE}执行 BlueSkyXN脚本 ...${NC}"
-      wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    17)
-      clear
-      echo -e "${PURPLE}执行 勇哥Singbox ...${NC}"
-      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    18)
-      clear
-      echo -e "${PURPLE}执行 勇哥X-UI ...${NC}"
-      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    19)
-      clear
-      echo -e "${PURPLE}执行 Fscarmen-Singbox ...${NC}"
-      bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    20)
-      clear
-      echo -e "${PURPLE}执行 3X-UI ...${NC}"
-      bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    21)
-      clear
-      echo -e "${PURPLE}执行 3X-UI优化版...${NC}"
-      bash <(curl -Ls https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    22)
-      clear
-      echo -e "${PURPLE}执行 安装Docker...${NC}"
-      curl -fsSL https://get.docker.com | bash -s docker
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    23)
-      clear
-      echo -e "${PURPLE}执行 哪吒Agent清理${NC}"
-      bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    66)
-      clear
-      echo -e "${PURPLE}执行 NodeLoc聚合测试脚本...${NC}"
-      curl -sSL abc.sd | bash
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    77)
-      clear
-      echo -e "${PURPLE}执行 XY网络质量体检脚本...${NC}"
-      bash <(curl -sL Net.Check.Place)
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    88)
-      clear
-      echo -e "${PURPLE}执行更新脚本...${NC}"
-      update_scripts
-      echo "脚本更新完成"
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    99)
-      clear
-      echo -e "${PURPLE}执行 卸载脚本...${NC}"
-      
-      # 删除之前可能运行过的脚本
-      echo -e "${BLUE}删除之前可能运行过的脚本...${NC}"
-      [ -f /root/yabs.sh ] && rm -f /root/yabs.sh
-      [ -f /root/ecs.sh ] && rm -f /root/ecs.sh
-      [ -f /root/memoryCheck.sh ] && rm -f /root/memoryCheck.sh
-      [ -f /root/ssh_tool.sh ] && rm -f /root/ssh_tool.sh
-      [ -f /root/kejilion.sh ] && rm -f /root/kejilion.sh
-      [ -f /root/box.sh ] && rm -f /root/box.sh
-      [ -f /root/AutoTrace.sh ] && rm -f /root/AutoTrace.sh
-
-      # 清理可能的残留文件和目录
-      echo -e "${BLUE}清理可能的残留文件和目录...${NC}"
-      [ -d /tmp/yabs* ] && rm -rf /tmp/yabs*
-      [ -f /tmp/bench.sh* ] && rm -rf /tmp/bench.sh*
-      [ -f /root/.ssh_tool_cache ] && rm -f /root/.ssh_tool_cache
-      [ -f /root/.ssh_tool_backup ] && rm -f /root/.ssh_tool_backup
-
-      # 尝试卸载Docker(如果是通过脚本安装的)
-      echo -e "${BLUE}尝试卸载Docker...${NC}"
-      if command -v docker &> /dev/null; then
-        echo "正在卸载Docker..."
-        sudo apt-get remove docker docker-engine docker.io containerd runc -y
-        sudo apt-get purge docker-ce docker-ce-cli containerd.io -y
-        sudo rm -rf /var/lib/docker /etc/docker
-        sudo groupdel docker 2>/dev/null
-        sudo rm -rf /var/run/docker.sock
-      fi
-
-      # 删除主脚本及其相关文件
-      echo -e "${BLUE}删除主脚本及其相关文件...${NC}"
-      [ -f /root/vps.sh ] && rm -f /root/vps.sh
-      [ -f /root/.vps_script_count ] && rm -f /root/.vps_script_count
-      [ -f /root/.vps_script_daily_count ] && rm -f /root/.vps_script_daily_count
-      [ -f /tmp/vps_scripts_updated.flag ] && rm -f /tmp/vps_scripts_updated.flag
-      
-      echo "脚本卸载完成"
-      read -n 1 -s -r -p "按任意键返回主菜单..."
-      ;;
-    0)
-      echo -e "${RED}感谢使用脚本，期待你的下次使用！${NC}"
-      exit 0
-      ;;
-    *)
-      echo -e "${RED}无效选择，请重新输入。${NC}"
-      sleep 3s
-      show_menu  # 修复无效输入后重新显示菜单
-      ;;
- esac
+# Network Test Menu
+show_network_test_menu() {
+    clear
+    echo "----------------------------------------"
+    echo "          Network Test Menu"
+    echo "----------------------------------------"
+    echo "1. Backhaul Route Test"
+    echo "2. Bandwidth Test"
+    echo "3. CDN Latency Test"
+    echo "4. IP Quality Test"
+    echo "5. Network Connectivity Test"
+    echo "6. Network Quality Test"
+    echo "7. Network Security Scan"
+    echo "8. Network Speedtest"
+    echo "9. Traceroute"
+    echo "10. Port Scanner"
+    echo "11. Response Time Test"
+    echo "12. Streaming Unlock Test"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-12]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/network_test/backhaul_route_test.sh" ;;
+        2) bash "${SCRIPTS_DIR}/network_test/bandwidth_test.sh" ;;
+        3) bash "${SCRIPTS_DIR}/network_test/cdn_latency_test.sh" ;;
+        4) bash "${SCRIPTS_DIR}/network_test/ip_quality_test.sh" ;;
+        5) bash "${SCRIPTS_DIR}/network_test/network_connectivity_test.sh" ;;
+        6) bash "${SCRIPTS_DIR}/network_test/network_quality_test.sh" ;;
+        7) bash "${SCRIPTS_DIR}/network_test/network_security_scan.sh" ;;
+        8) bash "${SCRIPTS_DIR}/network_test/network_speedtest.sh" ;;
+        9) bash "${SCRIPTS_DIR}/network_test/network_traceroute.sh" ;;
+        10) bash "${SCRIPTS_DIR}/network_test/port_scanner.sh" ;;
+        11) bash "${SCRIPTS_DIR}/network_test/response_time_test.sh" ;;
+        12) bash "${SCRIPTS_DIR}/network_test/streaming_unlock_test.sh" ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_network_test_menu
 }
 
-# 主函数
-main() {
-  # 如果有核心库，进行初始化
-  if [[ "$USE_LIB" == true ]]; then
-    if declare -f init_directories > /dev/null; then
-      init_directories
-    fi
-    if declare -f load_config > /dev/null; then
-      load_config
-    fi
-  fi
-  
-  while true; do
-    show_welcome
-    show_menu
-  done
+# Performance Test Menu
+show_performance_test_menu() {
+    clear
+    echo "----------------------------------------"
+    echo "        Performance Test Menu"
+    echo "----------------------------------------"
+    echo "1. CPU Benchmark"
+    echo "2. Disk I/O Benchmark"
+    echo "3. Memory Benchmark"
+    echo "4. Network Throughput Test"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-4]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/performance_test/cpu_benchmark.sh" ;;
+        2) bash "${SCRIPTS_DIR}/performance_test/disk_io_benchmark.sh" ;;
+        3) bash "${SCRIPTS_DIR}/performance_test/memory_benchmark.sh" ;;
+        4) bash "${SCRIPTS_DIR}/performance_test/network_throughput_test.sh" ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_performance_test_menu
 }
 
-# 运行主函数
-main
+# Service Installation Menu
+show_service_install_menu() {
+    clear
+    echo "----------------------------------------"
+    echo "       Service Installation Menu"
+    echo "----------------------------------------"
+    echo "1. Install Docker"
+    echo "2. Install LNMP Stack"
+    echo "3. Install Node.js"
+    echo "4. Install Python"
+    echo "5. Install Redis"
+    echo "6. Install BT Panel"
+    echo "7. Install 1Panel"
+    echo "8. Install WordPress"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-8]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/service_install/install_docker.sh" ;;
+        2) bash "${SCRIPTS_DIR}/service_install/install_lnmp.sh" ;;
+        3) bash "${SCRIPTS_DIR}/service_install/install_nodejs.sh" ;;
+        4) bash "${SCRIPTS_DIR}/service_install/install_python.sh" ;;
+        5) bash "${SCRIPTS_DIR}/service_install/install_redis.sh" ;;
+        6) bash "${SCRIPTS_DIR}/service_install/install_bt_panel.sh" ;;
+        7) bash "${SCRIPTS_DIR}/service_install/install_1panel.sh" ;;
+        8) bash "${SCRIPTS_DIR}/service_install/install_wordpress.sh" ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_service_install_menu
+}
+
+# Good Scripts Menu
+show_good_scripts_menu() {
+    bash "${SCRIPTS_DIR}/good_scripts/good_scripts.sh"
+    read -n 1 -s -r -p "Press any key to continue..."
+}
+
+# Proxy Tools Menu
+show_proxy_tools_menu() {
+    bash "${SCRIPTS_DIR}/proxy_tools/proxy_tools.sh"
+    read -n 1 -s -r -p "Press any key to continue..."
+}
+
+# Other Tools Menu
+show_other_tools_menu() {
+    clear
+    echo "----------------------------------------"
+    echo "           Other Tools Menu"
+    echo "----------------------------------------"
+    echo "1. BBR Acceleration"
+    echo "2. Install Fail2ban"
+    echo "3. Install Nezha Monitoring"
+    echo "4. Set SWAP"
+    echo "5. Clean Nezha Agent"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-5]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/other_tools/bbr.sh" ;;
+        2) bash "${SCRIPTS_DIR}/other_tools/fail2ban.sh" ;;
+        3) bash "${SCRIPTS_DIR}/other_tools/nezha.sh" ;;
+        4) bash "${SCRIPTS_DIR}/other_tools/swap.sh" ;;
+        5) bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh) ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_other_tools_menu
+}
+
+# Update Scripts Menu
+show_update_scripts_menu() {
+    clear
+    echo "----------------------------------------"
+    echo "          Update Scripts Menu"
+    echo "----------------------------------------"
+    echo "1. Trigger Auto-Update"
+    echo "2. Update Core Scripts"
+    echo "3. Update Dependencies"
+    echo "4. Update Functional Tools"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-4]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/update_scripts/trigger_auto_update.sh" ;;
+        2) bash "${SCRIPTS_DIR}/update_scripts/update_core_scripts.sh" ;;
+        3) bash "${SCRIPTS_DIR}/update_scripts/update_dependencies.sh" ;;
+        4) bash "${SCRIPTS_DIR}/update_scripts/update_functional_tools.sh" ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_update_scripts_menu
+}
+
+# Uninstall Scripts Menu
+show_uninstall_scripts_menu() {
+    clear
+    echo "----------------------------------------"
+    echo "         Uninstall Scripts Menu"
+    echo "----------------------------------------"
+    echo "1. Clean Service Residues"
+    echo "2. Rollback System Environment"
+    echo "3. Clear Configuration Files"
+    echo "4. Full Uninstall"
+    echo "0. Back to Main Menu"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-4]: " choice
+    case $choice in
+        1) bash "${SCRIPTS_DIR}/uninstall_scripts/clean_service_residues.sh" ;;
+        2) bash "${SCRIPTS_DIR}/uninstall_scripts/rollback_system_environment.sh" ;;
+        3) bash "${SCRIPTS_DIR}/uninstall_scripts/clear_configuration_files.sh" ;;
+        4) bash "${SCRIPTS_DIR}/uninstall_scripts/full_uninstall.sh" ;;
+        0) return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    read -n 1 -s -r -p "Press any key to continue..."
+    show_uninstall_scripts_menu
+}
+
+
+# --- Main Menu ---
+show_main_menu() {
+    clear
+    echo "========================================"
+    echo "   VPS Scripts Main Menu (Dev Version)"
+    echo "========================================"
+    echo "  Project: https://github.com/everett7623/vps_scripts/"
+    echo "----------------------------------------"
+    echo "1. System Tools"
+    echo "2. Network Tests"
+    echo "3. Performance Tests"
+    echo "4. Service Installation"
+    echo "5. Awesome Scripts Collection"
+    echo "6. Proxy Tools Collection"
+    echo "7. Other Tools"
+    echo "8. Update Scripts"
+    echo "9. Uninstall Scripts"
+    echo "0. Exit"
+    echo "----------------------------------------"
+    read -p "Enter your choice [0-9]: " main_choice
+    case $main_choice in
+        1) show_system_tools_menu ;;
+        2) show_network_test_menu ;;
+        3) show_performance_test_menu ;;
+        4) show_service_install_menu ;;
+        5) show_good_scripts_menu ;;
+        6) show_proxy_tools_menu ;;
+        7) show_other_tools_menu ;;
+        8) show_update_scripts_menu ;;
+        9) show_uninstall_scripts_menu ;;
+        0) echo "Exiting script. Goodbye!"; exit 0 ;;
+        *) echo "Invalid option, please try again." ; read -n 1 -s -r -p "Press any key to continue..." ;;
+    esac
+    show_main_menu
+}
+
+# --- Script Entry Point ---
+show_main_menu
