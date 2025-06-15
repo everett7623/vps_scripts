@@ -4,8 +4,8 @@
 # 功能: 提供VPS系统管理、网络测试、性能测试等功能的开发测试界面
 
 # 导入配置和公共函数
-source "lib/common_functions.sh"
-source "config/vps_scripts.conf"
+source "./lib/common_functions.sh"
+source "./config/vps_scripts.conf"
 
 # 定义颜色变量
 RED='\033[0;31m'
