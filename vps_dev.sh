@@ -4,8 +4,9 @@
 # 功能: 提供VPS系统管理、网络测试、性能测试等功能的开发测试界面
 
 # 导入配置和公共函数
-source "$(dirname "$0")/lib/common_functions.sh"
-source "$(dirname "$0")/config/vps_scripts.conf"
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+source "$SCRIPT_DIR/lib/common_functions.sh"
+source "$SCRIPT_DIR/config/vps_scripts.conf"
 
 # 定义颜色变量
 RED='\033[0;31m'
@@ -27,6 +28,50 @@ show_title() {
     show_separator
     echo -e "${CYAN}                  $1                  ${NC}"
     show_separator
+}
+
+# 检查命令是否存在
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# 检查依赖
+check_dependencies() {
+    local dependencies=("curl" "wget" "jq")
+    local missing_deps=()
+    
+    for dep in "${dependencies[@]}"; do
+        if ! command_exists "$dep"; then
+            missing_deps+=("$dep")
+        fi
+    done
+    
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}警告: 缺少以下依赖: ${missing_deps[*]}${NC}"
+        echo -e "${YELLOW}某些功能可能无法正常工作。建议先安装这些依赖。${NC}"
+        read -p "按Enter键继续..."
+    fi
+}
+
+# 获取系统信息（如果common_functions.sh中未定义）
+get_os_info() {
+    if command_exists lsb_release; then
+        lsb_release -ds
+    elif [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        echo "$PRETTY_NAME"
+    elif [[ -f /etc/lsb-release ]]; then
+        . /etc/lsb-release
+        echo "$DISTRIB_DESCRIPTION"
+    else
+        echo "未知系统"
+    fi
+}
+
+# 获取公网IP（如果common_functions.sh中未定义）
+get_public_ip() {
+    local ip=$(curl -s https://api.ipify.org)
+    echo "${ip:-未获取到}"
 }
 
 # 运行脚本函数
@@ -108,13 +153,13 @@ system_tools_menu() {
         read -p "请输入选项 [1-7/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/system_tools/system_info.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/system_tools/install_deps.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/system_tools/update_system.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/system_tools/clean_system.sh" ;;
-            5) run_script "$(dirname "$0")/scripts/system_tools/optimize_system.sh" ;;
-            6) run_script "$(dirname "$0")/scripts/system_tools/change_hostname.sh" ;;
-            7) run_script "$(dirname "$0")/scripts/system_tools/set_timezone.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/system_tools/system_info.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/system_tools/install_deps.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/system_tools/update_system.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/system_tools/clean_system.sh" ;;
+            5) run_script "$SCRIPT_DIR/scripts/system_tools/optimize_system.sh" ;;
+            6) run_script "$SCRIPT_DIR/scripts/system_tools/change_hostname.sh" ;;
+            7) run_script "$SCRIPT_DIR/scripts/system_tools/set_timezone.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -145,18 +190,18 @@ network_test_menu() {
         read -p "请输入选项 [1-12/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/network_test/backhaul_route_test.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/network_test/bandwidth_test.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/network_test/cdn_latency_test.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/network_test/ip_quality_test.sh" ;;
-            5) run_script "$(dirname "$0")/scripts/network_test/network_connectivity_test.sh" ;;
-            6) run_script "$(dirname "$0")/scripts/network_test/network_quality_test.sh" ;;
-            7) run_script "$(dirname "$0")/scripts/network_test/network_security_scan.sh" ;;
-            8) run_script "$(dirname "$0")/scripts/network_test/network_speedtest.sh" ;;
-            9) run_script "$(dirname "$0")/scripts/network_test/network_traceroute.sh" ;;
-            10) run_script "$(dirname "$0")/scripts/network_test/port_scanner.sh" ;;
-            11) run_script "$(dirname "$0")/scripts/network_test/response_time_test.sh" ;;
-            12) run_script "$(dirname "$0")/scripts/network_test/streaming_unlock_test.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/network_test/backhaul_route_test.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/network_test/bandwidth_test.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/network_test/cdn_latency_test.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/network_test/ip_quality_test.sh" ;;
+            5) run_script "$SCRIPT_DIR/scripts/network_test/network_connectivity_test.sh" ;;
+            6) run_script "$SCRIPT_DIR/scripts/network_test/network_quality_test.sh" ;;
+            7) run_script "$SCRIPT_DIR/scripts/network_test/network_security_scan.sh" ;;
+            8) run_script "$SCRIPT_DIR/scripts/network_test/network_speedtest.sh" ;;
+            9) run_script "$SCRIPT_DIR/scripts/network_test/network_traceroute.sh" ;;
+            10) run_script "$SCRIPT_DIR/scripts/network_test/port_scanner.sh" ;;
+            11) run_script "$SCRIPT_DIR/scripts/network_test/response_time_test.sh" ;;
+            12) run_script "$SCRIPT_DIR/scripts/network_test/streaming_unlock_test.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -179,10 +224,10 @@ performance_test_menu() {
         read -p "请输入选项 [1-4/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/performance_test/cpu_benchmark.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/performance_test/disk_io_benchmark.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/performance_test/memory_benchmark.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/performance_test/network_throughput_test.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/performance_test/cpu_benchmark.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/performance_test/disk_io_benchmark.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/performance_test/memory_benchmark.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/performance_test/network_throughput_test.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -209,14 +254,14 @@ service_install_menu() {
         read -p "请输入选项 [1-8/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/service_install/install_docker.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/service_install/install_lnmp.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/service_install/install_nodejs.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/service_install/install_python.sh" ;;
-            5) run_script "$(dirname "$0")/scripts/service_install/install_redis.sh" ;;
-            6) run_script "$(dirname "$0")/scripts/service_install/install_bt_panel.sh" ;;
-            7) run_script "$(dirname "$0")/scripts/service_install/install_1panel.sh" ;;
-            8) run_script "$(dirname "$0")/scripts/service_install/install_wordpress.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/service_install/install_docker.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/service_install/install_lnmp.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/service_install/install_nodejs.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/service_install/install_python.sh" ;;
+            5) run_script "$SCRIPT_DIR/scripts/service_install/install_redis.sh" ;;
+            6) run_script "$SCRIPT_DIR/scripts/service_install/install_bt_panel.sh" ;;
+            7) run_script "$SCRIPT_DIR/scripts/service_install/install_1panel.sh" ;;
+            8) run_script "$SCRIPT_DIR/scripts/service_install/install_wordpress.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -249,20 +294,20 @@ good_scripts_menu() {
         read -p "请输入选项 [1-14/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 1" ;;
-            2) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 2" ;;
-            3) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 3" ;;
-            4) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 4" ;;
-            5) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 5" ;;
-            6) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 6" ;;
-            7) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 7" ;;
-            8) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 8" ;;
-            9) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 9" ;;
-            10) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 10" ;;
-            11) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 11" ;;
-            12) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 12" ;;
-            13) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 13" ;;
-            14) run_script "$(dirname "$0")/scripts/good_scripts/good_scripts.sh 14" ;;
+            1) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 1" ;;
+            2) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 2" ;;
+            3) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 3" ;;
+            4) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 4" ;;
+            5) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 5" ;;
+            6) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 6" ;;
+            7) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 7" ;;
+            8) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 8" ;;
+            9) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 9" ;;
+            10) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 10" ;;
+            11) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 11" ;;
+            12) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 12" ;;
+            13) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 13" ;;
+            14) run_script "$SCRIPT_DIR/scripts/good_scripts/good_scripts.sh 14" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -286,11 +331,11 @@ proxy_tools_menu() {
         read -p "请输入选项 [1-5/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/proxy_tools/proxy_tools.sh 1" ;;
-            2) run_script "$(dirname "$0")/scripts/proxy_tools/proxy_tools.sh 2" ;;
-            3) run_script "$(dirname "$0")/scripts/proxy_tools/proxy_tools.sh 3" ;;
-            4) run_script "$(dirname "$0")/scripts/proxy_tools/proxy_tools.sh 4" ;;
-            5) run_script "$(dirname "$0")/scripts/proxy_tools/proxy_tools.sh 5" ;;
+            1) run_script "$SCRIPT_DIR/scripts/proxy_tools/proxy_tools.sh 1" ;;
+            2) run_script "$SCRIPT_DIR/scripts/proxy_tools/proxy_tools.sh 2" ;;
+            3) run_script "$SCRIPT_DIR/scripts/proxy_tools/proxy_tools.sh 3" ;;
+            4) run_script "$SCRIPT_DIR/scripts/proxy_tools/proxy_tools.sh 4" ;;
+            5) run_script "$SCRIPT_DIR/scripts/proxy_tools/proxy_tools.sh 5" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -314,11 +359,11 @@ other_tools_menu() {
         read -p "请输入选项 [1-5/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/other_tools/bbr.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/other_tools/fail2ban.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/other_tools/nezha.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/other_tools/swap.sh" ;;
-            5) run_script "$(dirname "$0")/scripts/other_tools/nezha_cleaner.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/other_tools/bbr.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/other_tools/fail2ban.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/other_tools/nezha.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/other_tools/swap.sh" ;;
+            5) run_script "$SCRIPT_DIR/scripts/other_tools/nezha_cleaner.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -341,10 +386,10 @@ update_scripts_menu() {
         read -p "请输入选项 [1-4/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/update_scripts/trigger_auto_update.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/update_scripts/update_core_scripts.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/update_scripts/update_dependencies.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/update_scripts/update_functional_tools.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/update_scripts/trigger_auto_update.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/update_scripts/update_core_scripts.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/update_scripts/update_dependencies.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/update_scripts/update_functional_tools.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
@@ -367,32 +412,14 @@ uninstall_scripts_menu() {
         read -p "请输入选项 [1-4/b]: " choice
         
         case $choice in
-            1) run_script "$(dirname "$0")/scripts/uninstall_scripts/clean_service_residues.sh" ;;
-            2) run_script "$(dirname "$0")/scripts/uninstall_scripts/rollback_system_environment.sh" ;;
-            3) run_script "$(dirname "$0")/scripts/uninstall_scripts/clear_configuration_files.sh" ;;
-            4) run_script "$(dirname "$0")/scripts/uninstall_scripts/full_uninstall.sh" ;;
+            1) run_script "$SCRIPT_DIR/scripts/uninstall_scripts/clean_service_residues.sh" ;;
+            2) run_script "$SCRIPT_DIR/scripts/uninstall_scripts/rollback_system_environment.sh" ;;
+            3) run_script "$SCRIPT_DIR/scripts/uninstall_scripts/clear_configuration_files.sh" ;;
+            4) run_script "$SCRIPT_DIR/scripts/uninstall_scripts/full_uninstall.sh" ;;
             b) return ;;
             *) echo -e "${RED}错误: 无效选项，请重新输入!${NC}"; sleep 1 ;;
         esac
     done
-}
-
-# 检查依赖
-check_dependencies() {
-    local dependencies=("curl" "wget" "jq")
-    local missing_deps=()
-    
-    for dep in "${dependencies[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            missing_deps+=("$dep")
-        fi
-    done
-    
-    if [[ ${#missing_deps[@]} -gt 0 ]]; then
-        echo -e "${YELLOW}警告: 缺少以下依赖: ${missing_deps[*]}${NC}"
-        echo -e "${YELLOW}某些功能可能无法正常工作。建议先安装这些依赖。${NC}"
-        read -p "按Enter键继续..."
-    fi
 }
 
 # 主程序入口
