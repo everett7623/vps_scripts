@@ -141,11 +141,8 @@ handle_choice() {
             }
             ;;
         3)  # 清理系统
-            execute_local_script "clean_system.sh" || {
-                log INFO "使用内置清理功能"
-                apt-get autoremove -y && apt-get clean -y 2>/dev/null || \
-                yum autoremove -y && yum clean all 2>/dev/null
-            }
+            execute_local_script "clean_system.sh" || \
+            execute_remote_script "https://raw.githubusercontent.com/everett7623/vps_scripts/main//scripts/system_tools/clean_system.sh" "clean_system.sh"
             ;;
         4)  # Yabs
             execute_remote_script "https://yabs.sh" "yabs.sh"
