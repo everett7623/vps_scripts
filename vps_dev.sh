@@ -16,26 +16,83 @@ NC='\033[0m' # No Color
 
 # 版本信息
 VERSION="1.0.0-dev"
-AUTHOR="Jensfrank"
+AUTHOR="Everett"
 PROJECT_URL="https://github.com/everett7623/vps_scripts/"
+GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 
-# 获取脚本所在目录的绝对路径
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 定义安装目录
+INSTALL_DIR="/root/vps_scripts"
+
+# 检查并创建安装目录
+ensure_install_dir() {
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo -e "${YELLOW}首次运行，正在初始化环境...${NC}"
+        mkdir -p "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
+        
+        # 克隆整个项目
+        echo -e "${GREEN}正在下载脚本文件...${NC}"
+        git clone https://github.com/everett7623/vps_scripts.git . 2>/dev/null || {
+            # 如果git失败，尝试使用curl下载必要文件
+            echo -e "${YELLOW}Git克隆失败，尝试使用curl下载...${NC}"
+            
+            # 创建必要的目录结构
+            mkdir -p lib config scripts/{system_tools,network_test,performance_test,service_install,good_scripts,proxy_tools,other_tools,update_scripts,uninstall_scripts}
+            
+            # 下载核心文件
+            curl -sL "${GITHUB_RAW_URL}/vps_dev.sh" -o vps_dev.sh
+            curl -sL "${GITHUB_RAW_URL}/lib/common_functions.sh" -o lib/common_functions.sh
+            curl -sL "${GITHUB_RAW_URL}/config/vps_scripts.conf" -o config/vps_scripts.conf
+            
+            # 下载system_info.sh作为示例
+            curl -sL "${GITHUB_RAW_URL}/scripts/system_tools/system_info.sh" -o scripts/system_tools/system_info.sh
+            
+            chmod +x vps_dev.sh
+        }
+        
+        echo -e "${GREEN}初始化完成！${NC}"
+        echo ""
+    fi
+    
+    # 切换到安装目录
+    cd "$INSTALL_DIR"
+}
 
 # 加载公共函数库
-if [ -f "${SCRIPT_DIR}/lib/common_functions.sh" ]; then
-    source "${SCRIPT_DIR}/lib/common_functions.sh"
-else
-    echo -e "${RED}错误: 无法找到公共函数库文件${NC}"
-    exit 1
-fi
+load_common_functions() {
+    if [ -f "${INSTALL_DIR}/lib/common_functions.sh" ]; then
+        source "${INSTALL_DIR}/lib/common_functions.sh"
+    else
+        # 如果本地没有，尝试下载
+        echo -e "${YELLOW}下载公共函数库...${NC}"
+        mkdir -p "${INSTALL_DIR}/lib"
+        curl -sL "${GITHUB_RAW_URL}/lib/common_functions.sh" -o "${INSTALL_DIR}/lib/common_functions.sh"
+        if [ -f "${INSTALL_DIR}/lib/common_functions.sh" ]; then
+            source "${INSTALL_DIR}/lib/common_functions.sh"
+        else
+            echo -e "${RED}错误: 无法加载公共函数库${NC}"
+            return 1
+        fi
+    fi
+    return 0
+}
 
 # 加载配置文件
-if [ -f "${SCRIPT_DIR}/config/vps_scripts.conf" ]; then
-    source "${SCRIPT_DIR}/config/vps_scripts.conf"
-else
-    echo -e "${YELLOW}警告: 无法找到配置文件，使用默认配置${NC}"
-fi
+load_config() {
+    if [ -f "${INSTALL_DIR}/config/vps_scripts.conf" ]; then
+        source "${INSTALL_DIR}/config/vps_scripts.conf"
+    else
+        # 如果本地没有，尝试下载
+        echo -e "${YELLOW}下载配置文件...${NC}"
+        mkdir -p "${INSTALL_DIR}/config"
+        curl -sL "${GITHUB_RAW_URL}/config/vps_scripts.conf" -o "${INSTALL_DIR}/config/vps_scripts.conf"
+        if [ -f "${INSTALL_DIR}/config/vps_scripts.conf" ]; then
+            source "${INSTALL_DIR}/config/vps_scripts.conf"
+        else
+            echo -e "${YELLOW}警告: 无法加载配置文件，使用默认配置${NC}"
+        fi
+    fi
+}
 
 # 显示脚本头部信息
 show_header() {
@@ -75,18 +132,35 @@ show_main_menu() {
 run_script() {
     local script_path="$1"
     local script_name="$(basename "$script_path")"
+    local full_path="${INSTALL_DIR}/${script_path}"
     
-    if [ -f "${SCRIPT_DIR}/${script_path}" ]; then
-        echo -e "${GREEN}正在执行: ${script_name}${NC}"
-        bash "${SCRIPT_DIR}/${script_path}"
-        echo -e "${GREEN}执行完成！${NC}"
-        echo ""
-        read -p "按回车键返回菜单..."
-    else
-        echo -e "${RED}错误: 脚本文件不存在 - ${script_path}${NC}"
-        echo ""
-        read -p "按回车键返回菜单..."
+    # 检查脚本是否存在，如果不存在则尝试下载
+    if [ ! -f "$full_path" ]; then
+        echo -e "${YELLOW}脚本不存在，尝试下载...${NC}"
+        local dir_path=$(dirname "$full_path")
+        mkdir -p "$dir_path"
+        
+        # 尝试从GitHub下载
+        curl -sL "${GITHUB_RAW_URL}/${script_path}" -o "$full_path"
+        
+        if [ -f "$full_path" ]; then
+            chmod +x "$full_path"
+            echo -e "${GREEN}下载成功！${NC}"
+        else
+            echo -e "${RED}错误: 无法下载脚本 - ${script_path}${NC}"
+            echo -e "${YELLOW}请检查网络连接或手动下载完整项目${NC}"
+            echo ""
+            read -p "按回车键返回菜单..."
+            return
+        fi
     fi
+    
+    # 执行脚本
+    echo -e "${GREEN}正在执行: ${script_name}${NC}"
+    bash "$full_path"
+    echo -e "${GREEN}执行完成！${NC}"
+    echo ""
+    read -p "按回车键返回菜单..."
 }
 
 # 系统工具子菜单
@@ -373,6 +447,13 @@ main() {
         echo -e "${YELLOW}请使用 sudo bash $0 重新运行${NC}"
         exit 1
     fi
+    
+    # 初始化环境
+    ensure_install_dir
+    
+    # 加载必要的文件
+    load_common_functions || echo -e "${YELLOW}警告: 公共函数库加载失败，部分功能可能不可用${NC}"
+    load_config
     
     # 显示开发版本提示
     show_header
