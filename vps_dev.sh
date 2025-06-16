@@ -19,6 +19,9 @@ CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 NC='\033[0m' # No Color
 
+# 导出颜色变量供子脚本使用
+export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NC
+
 # 设置脚本路径
 if [ -n "${BASH_SOURCE[0]}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
     # 脚本以文件形式存在
