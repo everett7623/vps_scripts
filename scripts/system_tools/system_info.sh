@@ -2,18 +2,18 @@
 
 # 脚本名称: system_info.sh
 # 用途: 查看系统详细信息，包括硬件配置、系统版本、网络信息等
-# 脚本路径: vps_scripts/scripts/system_tools/system_info.sh
+# 脚本路径: scripts/system_tools/system_info.sh
 
 # 获取脚本所在目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 获取项目根目录
+# 获取项目根目录 - 向上两级目录
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # 尝试多种方式找到项目根目录
 if [ ! -f "${PROJECT_ROOT}/lib/common_functions.sh" ]; then
     # 可能是通过临时目录运行
     if [[ "${SCRIPT_DIR}" == /tmp/vps_scripts_* ]]; then
-        PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+        PROJECT_ROOT="${SCRIPT_DIR}/../.."
     fi
 fi
 
