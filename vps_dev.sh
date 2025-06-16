@@ -6,11 +6,8 @@
 # 版本: DEV-1.0.0
 # 更新时间: 2025-01-16
 
-# 设置脚本路径
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
-LIB_DIR="${SCRIPT_DIR}/lib"
-CONFIG_DIR="${SCRIPT_DIR}/config"
+# GitHub 仓库信息
+GITHUB_RAW="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 
 # 颜色定义
 RED='\033[0;31m'
@@ -21,6 +18,54 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 NC='\033[0m' # No Color
+
+# 设置脚本路径
+if [ -n "${BASH_SOURCE[0]}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    # 脚本以文件形式存在
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+    # 脚本通过 bash <(curl ...) 运行，创建临时目录
+    SCRIPT_DIR="/tmp/vps_scripts_$"
+    mkdir -p "${SCRIPT_DIR}"
+fi
+
+SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
+LIB_DIR="${SCRIPT_DIR}/lib"
+CONFIG_DIR="${SCRIPT_DIR}/config"
+
+# 创建必要的目录
+mkdir -p "${LIB_DIR}" "${CONFIG_DIR}"
+
+# 下载依赖文件的函数
+download_dependency() {
+    local url="$1"
+    local dest="$2"
+    local desc="$3"
+    
+    echo -e "${CYAN}正在下载 ${desc}...${NC}"
+    if curl -sL "${url}" -o "${dest}" 2>/dev/null; then
+        echo -e "${GREEN}✓ ${desc} 下载成功${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ ${desc} 下载失败${NC}"
+        return 1
+    fi
+}
+
+# 检查并下载公共函数库
+if [ ! -f "${LIB_DIR}/common_functions.sh" ]; then
+    download_dependency "${GITHUB_RAW}/lib/common_functions.sh" "${LIB_DIR}/common_functions.sh" "公共函数库" || {
+        echo -e "${RED}错误: 无法下载公共函数库${NC}"
+        exit 1
+    }
+fi
+
+# 检查并下载配置文件
+if [ ! -f "${CONFIG_DIR}/vps_scripts.conf" ]; then
+    download_dependency "${GITHUB_RAW}/config/vps_scripts.conf" "${CONFIG_DIR}/vps_scripts.conf" "配置文件" || {
+        echo -e "${YELLOW}警告: 无法下载配置文件，使用默认配置${NC}"
+    }
+fi
 
 # 加载配置文件
 if [ -f "${CONFIG_DIR}/vps_scripts.conf" ]; then
@@ -82,59 +127,31 @@ system_tools_menu() {
         
         case $choice in
             1)
-                if [ -f "${SCRIPTS_DIR}/system_tools/system_info.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/system_info.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/system_info.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             2)
-                if [ -f "${SCRIPTS_DIR}/system_tools/install_deps.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/install_deps.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/install_deps.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             3)
-                if [ -f "${SCRIPTS_DIR}/system_tools/update_system.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/update_system.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/update_system.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             4)
-                if [ -f "${SCRIPTS_DIR}/system_tools/clean_system.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/clean_system.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/clean_system.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             5)
-                if [ -f "${SCRIPTS_DIR}/system_tools/optimize_system.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/optimize_system.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/optimize_system.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             6)
-                if [ -f "${SCRIPTS_DIR}/system_tools/change_hostname.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/change_hostname.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/change_hostname.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             7)
-                if [ -f "${SCRIPTS_DIR}/system_tools/set_timezone.sh" ]; then
-                    bash "${SCRIPTS_DIR}/system_tools/set_timezone.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/system_tools/set_timezone.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             0)
@@ -172,99 +189,51 @@ network_test_menu() {
         
         case $choice in
             1)
-                if [ -f "${SCRIPTS_DIR}/network_test/backhaul_route_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/backhaul_route_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/backhaul_route_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             2)
-                if [ -f "${SCRIPTS_DIR}/network_test/bandwidth_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/bandwidth_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/bandwidth_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             3)
-                if [ -f "${SCRIPTS_DIR}/network_test/cdn_latency_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/cdn_latency_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/cdn_latency_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             4)
-                if [ -f "${SCRIPTS_DIR}/network_test/ip_quality_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/ip_quality_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/ip_quality_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             5)
-                if [ -f "${SCRIPTS_DIR}/network_test/network_connectivity_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/network_connectivity_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/network_connectivity_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             6)
-                if [ -f "${SCRIPTS_DIR}/network_test/network_quality_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/network_quality_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/network_quality_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             7)
-                if [ -f "${SCRIPTS_DIR}/network_test/network_security_scan.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/network_security_scan.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/network_security_scan.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             8)
-                if [ -f "${SCRIPTS_DIR}/network_test/network_speedtest.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/network_speedtest.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/network_speedtest.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             9)
-                if [ -f "${SCRIPTS_DIR}/network_test/network_traceroute.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/network_traceroute.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/network_traceroute.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             10)
-                if [ -f "${SCRIPTS_DIR}/network_test/port_scanner.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/port_scanner.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/port_scanner.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             11)
-                if [ -f "${SCRIPTS_DIR}/network_test/response_time_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/response_time_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/response_time_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             12)
-                if [ -f "${SCRIPTS_DIR}/network_test/streaming_unlock_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/network_test/streaming_unlock_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/network_test/streaming_unlock_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             0)
@@ -294,35 +263,19 @@ performance_test_menu() {
         
         case $choice in
             1)
-                if [ -f "${SCRIPTS_DIR}/performance_test/cpu_benchmark.sh" ]; then
-                    bash "${SCRIPTS_DIR}/performance_test/cpu_benchmark.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/performance_test/cpu_benchmark.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             2)
-                if [ -f "${SCRIPTS_DIR}/performance_test/disk_io_benchmark.sh" ]; then
-                    bash "${SCRIPTS_DIR}/performance_test/disk_io_benchmark.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/performance_test/disk_io_benchmark.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             3)
-                if [ -f "${SCRIPTS_DIR}/performance_test/memory_benchmark.sh" ]; then
-                    bash "${SCRIPTS_DIR}/performance_test/memory_benchmark.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/performance_test/memory_benchmark.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             4)
-                if [ -f "${SCRIPTS_DIR}/performance_test/network_throughput_test.sh" ]; then
-                    bash "${SCRIPTS_DIR}/performance_test/network_throughput_test.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/performance_test/network_throughput_test.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             0)
@@ -443,11 +396,7 @@ good_scripts_menu() {
         
         case $choice in
             1)
-                if [ -f "${SCRIPTS_DIR}/good_scripts/good_scripts.sh" ]; then
-                    bash "${SCRIPTS_DIR}/good_scripts/good_scripts.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/good_scripts/good_scripts.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             0)
@@ -474,11 +423,7 @@ proxy_tools_menu() {
         
         case $choice in
             1)
-                if [ -f "${SCRIPTS_DIR}/proxy_tools/proxy_tools.sh" ]; then
-                    bash "${SCRIPTS_DIR}/proxy_tools/proxy_tools.sh"
-                else
-                    echo -e "${RED}错误: 脚本不存在${NC}"
-                fi
+                run_script "scripts/proxy_tools/proxy_tools.sh"
                 read -p "按任意键继续..." -n 1
                 ;;
             0)
@@ -671,6 +616,17 @@ uninstall_scripts_menu() {
         esac
     done
 }
+
+# 清理函数
+cleanup() {
+    if [[ "${SCRIPT_DIR}" == /tmp/vps_scripts_* ]]; then
+        echo -e "${CYAN}正在清理临时文件...${NC}"
+        rm -rf "${SCRIPT_DIR}"
+    fi
+}
+
+# 设置退出时清理
+trap cleanup EXIT
 
 # 主函数
 main() {
