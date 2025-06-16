@@ -4,22 +4,33 @@
 # 用途: 查看系统详细信息，包括硬件配置、系统版本、网络信息等
 # 脚本路径: scripts/system_tools/system_info.sh
 
-# 获取脚本所在目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 获取项目根目录 - 向上两级目录
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-
-# 尝试多种方式找到项目根目录
-if [ ! -f "${PROJECT_ROOT}/lib/common_functions.sh" ]; then
-    # 可能是通过临时目录运行
-    if [[ "${SCRIPT_DIR}" == /tmp/vps_scripts_* ]]; then
-        PROJECT_ROOT="${SCRIPT_DIR}/../.."
-    fi
+# 使用环境变量或自动检测项目根目录
+if [ -n "${VPS_PROJECT_ROOT}" ]; then
+    # 从主脚本传递的环境变量
+    PROJECT_ROOT="${VPS_PROJECT_ROOT}"
+    LIB_DIR="${VPS_LIB_DIR}"
+    CONFIG_DIR="${VPS_CONFIG_DIR}"
+else
+    # 独立运行时自动检测
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    LIB_DIR="${PROJECT_ROOT}/lib"
+    CONFIG_DIR="${PROJECT_ROOT}/config"
 fi
 
 # 加载公共函数库
-if [ -f "${PROJECT_ROOT}/lib/common_functions.sh" ]; then
-    source "${PROJECT_ROOT}/lib/common_functions.sh"
+if [ -f "${LIB_DIR}/common_functions.sh" ]; then
+    source "${LIB_DIR}/common_functions.sh"
+else
+    # 如果找不到公共函数库，定义基本的颜色变量
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    BLUE='\033[0;34m'
+    PURPLE='\033[0;35m'
+    CYAN='\033[0;36m'
+    WHITE='\033[0;37m'
+    NC='\033[0m'
 fi
 
 # 颜色定义
