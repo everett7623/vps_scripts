@@ -17,12 +17,16 @@ NC='\033[0m' # No Color
 # 获取脚本所在目录（相对于项目根目录）
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# 定义安装目录（与主脚本保持一致）
+INSTALL_DIR="/root/vps_scripts"
+
 # 加载公共函数库
-if [ -f "${SCRIPT_DIR}/lib/common_functions.sh" ]; then
+if [ -f "${INSTALL_DIR}/lib/common_functions.sh" ]; then
+    source "${INSTALL_DIR}/lib/common_functions.sh"
+elif [ -f "${SCRIPT_DIR}/lib/common_functions.sh" ]; then
     source "${SCRIPT_DIR}/lib/common_functions.sh"
 else
-    echo -e "${RED}错误: 无法找到公共函数库文件${NC}"
-    exit 1
+    echo -e "${YELLOW}警告: 公共函数库未找到，部分功能可能不可用${NC}"
 fi
 
 # 函数：显示标题
