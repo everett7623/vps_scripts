@@ -9,6 +9,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # 获取项目根目录
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# 尝试多种方式找到项目根目录
+if [ ! -f "${PROJECT_ROOT}/lib/common_functions.sh" ]; then
+    # 可能是通过临时目录运行
+    if [[ "${SCRIPT_DIR}" == /tmp/vps_scripts_* ]]; then
+        PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    fi
+fi
+
 # 加载公共函数库
 if [ -f "${PROJECT_ROOT}/lib/common_functions.sh" ]; then
     source "${PROJECT_ROOT}/lib/common_functions.sh"
