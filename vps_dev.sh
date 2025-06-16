@@ -95,16 +95,16 @@ show_banner() {
 # 显示主菜单
 show_main_menu() {
     echo -e "${YELLOW}==================== 主菜单 ====================${NC}"
-    echo -e "${GREEN}1.${NC} 系统工具"
-    echo -e "${GREEN}2.${NC} 网络测试"
-    echo -e "${GREEN}3.${NC} 性能测试"
-    echo -e "${GREEN}4.${NC} 服务安装"
-    echo -e "${GREEN}5.${NC} 优秀脚本"
-    echo -e "${GREEN}6.${NC} 梯子工具"
-    echo -e "${GREEN}7.${NC} 其他工具"
-    echo -e "${GREEN}8.${NC} 更新脚本"
-    echo -e "${GREEN}9.${NC} 卸载脚本"
-    echo -e "${RED}0.${NC} 退出"
+    echo -e "  ${GREEN}1${NC}. 系统工具"
+    echo -e "  ${GREEN}2${NC}. 网络测试"
+    echo -e "  ${GREEN}3${NC}. 性能测试"
+    echo -e "  ${GREEN}4${NC}. 服务安装"
+    echo -e "  ${GREEN}5${NC}. 优秀脚本"
+    echo -e "  ${GREEN}6${NC}. 梯子工具"
+    echo -e "  ${GREEN}7${NC}. 其他工具"
+    echo -e "  ${GREEN}8${NC}. 更新脚本"
+    echo -e "  ${GREEN}9${NC}. 卸载脚本"
+    echo -e "  ${RED}0${NC}. 退出"
     echo -e "${YELLOW}===============================================${NC}"
 }
 
@@ -113,14 +113,14 @@ system_tools_menu() {
     while true; do
         show_banner
         echo -e "${YELLOW}================== 系统工具 ==================${NC}"
-        echo -e "${GREEN}1.${NC} 查看系统信息"
-        echo -e "${GREEN}2.${NC} 安装常用依赖"
-        echo -e "${GREEN}3.${NC} 更新系统"
-        echo -e "${GREEN}4.${NC} 清理系统"
-        echo -e "${GREEN}5.${NC} 系统优化"
-        echo -e "${GREEN}6.${NC} 修改主机名"
-        echo -e "${GREEN}7.${NC} 设置时区"
-        echo -e "${RED}0.${NC} 返回主菜单"
+        echo -e "  ${GREEN}1${NC}. 查看系统信息"
+        echo -e "  ${GREEN}2${NC}. 安装常用依赖"
+        echo -e "  ${GREEN}3${NC}. 更新系统"
+        echo -e "  ${GREEN}4${NC}. 清理系统"
+        echo -e "  ${GREEN}5${NC}. 系统优化"
+        echo -e "  ${GREEN}6${NC}. 修改主机名"
+        echo -e "  ${GREEN}7${NC}. 设置时区"
+        echo -e "  ${RED}0${NC}. 返回主菜单"
         echo -e "${YELLOW}===============================================${NC}"
         
         read -p "请输入选项 [0-7]: " choice
