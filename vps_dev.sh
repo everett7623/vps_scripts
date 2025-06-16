@@ -4,7 +4,7 @@
 # 描述: VPS管理工具测试版本
 # 作者: VPS Scripts Development Team
 # 版本: DEV-1.0.0
-# 更新时间: 2025-01-16
+# 更新时间: 2025-06-16
 
 # GitHub 仓库信息
 GITHUB_RAW="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
