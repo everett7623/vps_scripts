@@ -1,355 +1,503 @@
 #!/bin/bash
-# lib/common_functions.sh - VPS脚本核心功能库
-# 提供通用的函数和变量定义
 
-# 版本信息
-LIB_VERSION="1.0.0"
+# ==================================================================
+# 脚本名称: 公共函数库
+# 脚本文件: common_functions.sh
+# 脚本路径: lib/common_functions.sh
+# 脚本用途: 提供VPS脚本工具集的公共函数和工具函数
+# 作者: Jensfrank
+# 项目地址: https://github.com/everett7623/vps_scripts/
+# 版本: 1.0.0
+# 更新日期: 2025-01-17
+# ==================================================================
 
-# 颜色定义
+# 颜色定义（全局使用）
 export RED='\033[0;31m'
 export GREEN='\033[0;32m'
-export YELLOW='\033[1;33m'
-export BLUE='\033[1;34m'
+export YELLOW='\033[0;33m'
+export BLUE='\033[0;34m'
 export PURPLE='\033[0;35m'
 export CYAN='\033[0;36m'
-export WHITE='\033[1;37m'
+export WHITE='\033[0;37m'
 export NC='\033[0m' # No Color
+export BOLD='\033[1m'
 
-# 渐变颜色数组
-export colors=(
-    '\033[38;2;0;255;0m'    # 绿色
-    '\033[38;2;64;255;0m'
-    '\033[38;2;128;255;0m'
-    '\033[38;2;192;255;0m'
-    '\033[38;2;255;255;0m'  # 黄色
-)
+# 日志级别
+export LOG_LEVEL_DEBUG=0
+export LOG_LEVEL_INFO=1
+export LOG_LEVEL_WARN=2
+export LOG_LEVEL_ERROR=3
 
-# 项目路径定义
-export SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export LIB_DIR="${SCRIPT_DIR}/lib"
-export CONFIG_DIR="${SCRIPT_DIR}/config"
-export SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
-export LOG_DIR="${SCRIPT_DIR}/logs"
+# 默认日志级别
+export CURRENT_LOG_LEVEL=${LOG_LEVEL_INFO}
 
-# 创建必要的目录
-init_directories() {
-    mkdir -p "$LOG_DIR"
-    mkdir -p "$CONFIG_DIR"
-    mkdir -p "$SCRIPTS_DIR"
+# ==================================================================
+# 基础工具函数
+# ==================================================================
+
+# 打印带颜色的消息
+print_msg() {
+    local color=$1
+    local message=$2
+    echo -e "${color}${message}${NC}"
 }
 
-# 日志函数
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    case "$level" in
-        INFO)
-            echo -e "${GREEN}[INFO]${NC} ${message}"
-            ;;
-        WARN)
-            echo -e "${YELLOW}[WARN]${NC} ${message}"
-            ;;
-        ERROR)
-            echo -e "${RED}[ERROR]${NC} ${message}"
-            ;;
-        DEBUG)
-            [[ "${DEBUG:-0}" -eq 1 ]] && echo -e "${BLUE}[DEBUG]${NC} ${message}"
-            ;;
-    esac
-    
-    # 写入日志文件
-    echo "[${timestamp}] [${level}] ${message}" >> "${LOG_DIR}/vps_scripts.log"
+# 打印信息消息
+print_info() {
+    print_msg "${CYAN}" "[信息] $1"
 }
 
-# 错误处理函数
-handle_error() {
-    local error_code=$1
-    local error_msg="$2"
-    log ERROR "$error_msg (错误代码: $error_code)"
-    return $error_code
+# 打印成功消息
+print_success() {
+    print_msg "${GREEN}" "[成功] $1"
+}
+
+# 打印警告消息
+print_warn() {
+    print_msg "${YELLOW}" "[警告] $1"
+}
+
+# 打印错误消息
+print_error() {
+    print_msg "${RED}" "[错误] $1"
+}
+
+# 打印分隔线
+print_separator() {
+    local char="${1:-━}"
+    local width="${2:-90}"
+    local color="${3:-$BLUE}"
+    echo -e "${color}$(printf '%*s' "$width" | tr ' ' "$char")${NC}"
+}
+
+# ==================================================================
+# 系统检查函数
+# ==================================================================
+
+# 检查是否为root用户
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        print_error "此脚本需要 root 权限运行"
+        print_info "请使用 sudo -i 切换到 root 用户后重试"
+        return 1
+    fi
+    return 0
 }
 
 # 检查命令是否存在
 command_exists() {
-    command -v "$1" &>/dev/null
+    command -v "$1" &> /dev/null
 }
 
-# 检查root权限
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        log ERROR "此脚本需要root权限运行"
-        exit 1
-    fi
-}
-
-# 检查系统类型
-detect_os() {
-    if [[ -f /etc/os-release ]]; then
-        . /etc/os-release
-        OS_TYPE=$ID
-        OS_VERSION=$VERSION_ID
-        OS_PRETTY_NAME="$PRETTY_NAME"
-    elif command_exists lsb_release; then
-        OS_TYPE=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
-        OS_VERSION=$(lsb_release -sr)
-        OS_PRETTY_NAME=$(lsb_release -sd)
-    elif [[ -f /etc/debian_version ]]; then
-        OS_TYPE="debian"
-        OS_VERSION=$(cat /etc/debian_version)
-        OS_PRETTY_NAME="Debian $OS_VERSION"
-    else
-        OS_TYPE="unknown"
-        OS_VERSION="unknown"
-        OS_PRETTY_NAME="Unknown"
-    fi
+# 检查并安装缺失的命令
+ensure_command() {
+    local cmd=$1
+    local package=${2:-$1}
     
-    export OS_TYPE
-    export OS_VERSION
-    export OS_PRETTY_NAME
-    
-    log INFO "检测到操作系统: $OS_PRETTY_NAME"
-}
-
-# 获取包管理器
-get_package_manager() {
-    if command_exists apt-get; then
-        PKG_MANAGER="apt-get"
-        PKG_INSTALL="apt-get install -y"
-        PKG_UPDATE="apt-get update"
-        PKG_UPGRADE="apt-get upgrade -y"
-    elif command_exists yum; then
-        PKG_MANAGER="yum"
-        PKG_INSTALL="yum install -y"
-        PKG_UPDATE="yum check-update"
-        PKG_UPGRADE="yum upgrade -y"
-    elif command_exists dnf; then
-        PKG_MANAGER="dnf"
-        PKG_INSTALL="dnf install -y"
-        PKG_UPDATE="dnf check-update"
-        PKG_UPGRADE="dnf upgrade -y"
-    elif command_exists pacman; then
-        PKG_MANAGER="pacman"
-        PKG_INSTALL="pacman -S --noconfirm"
-        PKG_UPDATE="pacman -Sy"
-        PKG_UPGRADE="pacman -Syu --noconfirm"
-    elif command_exists zypper; then
-        PKG_MANAGER="zypper"
-        PKG_INSTALL="zypper install -y"
-        PKG_UPDATE="zypper refresh"
-        PKG_UPGRADE="zypper update -y"
-    else
-        log ERROR "未找到支持的包管理器"
-        return 1
-    fi
-    
-    export PKG_MANAGER PKG_INSTALL PKG_UPDATE PKG_UPGRADE
-}
-
-# 安装依赖包
-install_package() {
-    local package="$1"
-    if ! command_exists "$package"; then
-        log INFO "正在安装 $package..."
-        $PKG_INSTALL "$package" || handle_error $? "安装 $package 失败"
-    else
-        log INFO "$package 已安装"
-    fi
-}
-
-# 检查并安装基础依赖
-install_dependencies() {
-    log INFO "检查并安装必要的依赖..."
-    
-    get_package_manager || return 1
-    
-    # 更新包列表
-    log INFO "更新包列表..."
-    $PKG_UPDATE
-    
-    # 基础依赖列表
-    local deps=("curl" "wget" "git" "jq" "bc" "lsof" "net-tools")
-    
-    for dep in "${deps[@]}"; do
-        install_package "$dep"
-    done
-    
-    log INFO "依赖安装完成"
-}
-
-# 下载文件函数
-download_file() {
-    local url="$1"
-    local output="$2"
-    local max_retries=3
-    local retry_count=0
-    
-    while [ $retry_count -lt $max_retries ]; do
-        if command_exists wget; then
-            wget -q --show-progress -O "$output" "$url" && return 0
-        elif command_exists curl; then
-            curl -# -L -o "$output" "$url" && return 0
+    if ! command_exists "$cmd"; then
+        print_warn "命令 '$cmd' 未找到，正在安装..."
+        
+        # 检测包管理器并安装
+        if command_exists apt-get; then
+            apt-get update -qq && apt-get install -y "$package" &> /dev/null
+        elif command_exists yum; then
+            yum install -y "$package" &> /dev/null
+        elif command_exists dnf; then
+            dnf install -y "$package" &> /dev/null
+        elif command_exists pacman; then
+            pacman -S --noconfirm "$package" &> /dev/null
         else
-            log ERROR "没有找到wget或curl"
+            print_error "无法识别的包管理器，请手动安装 $package"
             return 1
         fi
         
-        retry_count=$((retry_count + 1))
-        log WARN "下载失败，重试 $retry_count/$max_retries..."
-        sleep 2
-    done
-    
-    return 1
+        if command_exists "$cmd"; then
+            print_success "$cmd 安装成功"
+            return 0
+        else
+            print_error "$cmd 安装失败"
+            return 1
+        fi
+    fi
+    return 0
 }
 
-# 执行脚本函数
-run_script() {
-    local script_name="$1"
-    shift
-    local args="$@"
-    local script_path="${SCRIPTS_DIR}/${script_name}"
+# ==================================================================
+# 系统信息函数
+# ==================================================================
+
+# 获取系统发行版
+get_os_release() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    elif [ -f /etc/redhat-release ]; then
+        echo "rhel"
+    elif [ -f /etc/debian_version ]; then
+        echo "debian"
+    else
+        echo "unknown"
+    fi
+}
+
+# 获取系统版本
+get_os_version() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$VERSION_ID"
+    else
+        echo "unknown"
+    fi
+}
+
+# 获取系统架构
+get_arch() {
+    uname -m
+}
+
+# 获取CPU核心数
+get_cpu_cores() {
+    nproc
+}
+
+# 获取总内存（单位：MB）
+get_total_memory() {
+    free -m | awk '/^Mem:/ {print $2}'
+}
+
+# ==================================================================
+# 网络相关函数
+# ==================================================================
+
+# 获取公网IP
+get_public_ip() {
+    local ip_version=${1:-4}
+    local timeout=${2:-5}
     
-    if [[ ! -f "$script_path" ]]; then
-        log ERROR "脚本不存在: $script_path"
+    local ip=""
+    if [ "$ip_version" = "4" ]; then
+        ip=$(curl -s -4 --max-time "$timeout" ifconfig.me || \
+             curl -s -4 --max-time "$timeout" ip.sb || \
+             curl -s -4 --max-time "$timeout" icanhazip.com)
+    else
+        ip=$(curl -s -6 --max-time "$timeout" ifconfig.me || \
+             curl -s -6 --max-time "$timeout" ip.sb || \
+             curl -s -6 --max-time "$timeout" icanhazip.com)
+    fi
+    
+    echo "$ip"
+}
+
+# 检查端口是否开放
+check_port() {
+    local port=$1
+    local protocol=${2:-tcp}
+    
+    if command_exists ss; then
+        ss -tuln | grep -q ":$port "
+    elif command_exists netstat; then
+        netstat -tuln | grep -q ":$port "
+    else
+        return 2  # 无法检查
+    fi
+}
+
+# 测试URL连通性
+test_url() {
+    local url=$1
+    local timeout=${2:-5}
+    
+    if curl -s --max-time "$timeout" --head "$url" | grep -q "200 OK"; then
+        return 0
+    else
         return 1
     fi
-    
-    if [[ ! -x "$script_path" ]]; then
-        chmod +x "$script_path"
-    fi
-    
-    log INFO "执行脚本: $script_name"
-    "$script_path" $args
-    local exit_code=$?
-    
-    if [[ $exit_code -eq 0 ]]; then
-        log INFO "脚本执行成功: $script_name"
-    else
-        log ERROR "脚本执行失败: $script_name (退出码: $exit_code)"
-    fi
-    
-    return $exit_code
 }
 
-# 获取系统信息
-get_system_info() {
-    # CPU信息
-    if [[ "$(uname -m)" == "x86_64" ]]; then
-        CPU_INFO=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
-    else
-        CPU_INFO=$(lscpu | grep 'Model name' | sed -e 's/Model name[[:space:]]*: //')
-    fi
-    
-    # CPU核心数
-    CPU_CORES=$(nproc)
-    
-    # 内存信息
-    MEM_TOTAL=$(free -b | awk 'NR==2{printf "%.2f", $2/1024/1024}')
-    MEM_USED=$(free -b | awk 'NR==2{printf "%.2f", $3/1024/1024}')
-    MEM_PERCENT=$(free -b | awk 'NR==2{printf "%.2f", $3*100/$2}')
-    
-    # 磁盘信息
-    DISK_INFO=$(df -h / | awk 'NR==2{printf "%s/%s (%s)", $3, $2, $5}')
-    
-    # 系统运行时间
-    UPTIME=$(uptime -p 2>/dev/null || uptime | awk -F'up' '{print $2}' | awk -F',' '{print $1}')
-    
-    export CPU_INFO CPU_CORES MEM_TOTAL MEM_USED MEM_PERCENT DISK_INFO UPTIME
-}
-
-# 获取IP地址
-get_ip_address() {
-    # IPv4地址
-    IPV4_ADDRESS=$(curl -s --max-time 5 ipv4.ip.sb 2>/dev/null)
-    if [[ -z "$IPV4_ADDRESS" ]]; then
-        IPV4_ADDRESS=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
-    fi
-    
-    # IPv6地址
-    IPV6_ADDRESS=$(curl -s --max-time 5 ipv6.ip.sb 2>/dev/null)
-    if [[ -z "$IPV6_ADDRESS" ]]; then
-        IPV6_ADDRESS=$(ip -6 addr show | grep -oP '(?<=inet6\s)[\da-f:]+' | grep -v '^::1' | grep -v '^fe80' | head -n1)
-    fi
-    
-    export IPV4_ADDRESS IPV6_ADDRESS
-}
+# ==================================================================
+# 进度条和等待函数
+# ==================================================================
 
 # 显示进度条
 show_progress() {
     local current=$1
     local total=$2
-    local width=50
-    local percentage=$((current * 100 / total))
-    local completed=$((width * current / total))
+    local width=${3:-50}
+    
+    local percent=$((current * 100 / total))
+    local filled=$((width * current / total))
     
     printf "\r["
-    printf "%${completed}s" | tr ' ' '='
-    printf "%$((width - completed))s" | tr ' ' '-'
-    printf "] %d%%" $percentage
-}
-
-# 按任意键继续
-press_any_key() {
-    echo ""
-    read -n 1 -s -r -p "按任意键返回主菜单..."
-    echo ""
-}
-
-# 确认操作
-confirm_action() {
-    local prompt="${1:-确定要继续吗？}"
-    local default="${2:-n}"
+    printf "%${filled}s" | tr ' ' '='
+    printf "%$((width - filled))s" | tr ' ' '-'
+    printf "] %3d%%" "$percent"
     
-    if [[ "$default" == "y" ]]; then
-        prompt="$prompt [Y/n]: "
-    else
-        prompt="$prompt [y/N]: "
+    if [ "$current" -eq "$total" ]; then
+        echo ""
     fi
+}
+
+# 带动画的等待函数
+wait_with_animation() {
+    local message=$1
+    local duration=$2
+    local spinner='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
     
-    read -r -p "$prompt" response
+    for ((i=0; i<duration*10; i++)); do
+        printf "\r${CYAN}%s %s${NC}" "$message" "${spinner:i%10:1}"
+        sleep 0.1
+    done
+    printf "\r%s\n" "$(printf ' %.0s' {1..${#message}})"
+}
+
+# ==================================================================
+# 文件和目录操作函数
+# ==================================================================
+
+# 安全创建目录
+safe_mkdir() {
+    local dir=$1
+    if [ ! -d "$dir" ]; then
+        mkdir -p "$dir" && print_success "目录 $dir 创建成功"
+    fi
+}
+
+# 备份文件
+backup_file() {
+    local file=$1
+    local backup_suffix=${2:-$(date +%Y%m%d_%H%M%S)}
     
-    case "$response" in
-        [yY][eE][sS]|[yY])
+    if [ -f "$file" ]; then
+        cp "$file" "${file}.${backup_suffix}" && \
+        print_success "文件 $file 已备份为 ${file}.${backup_suffix}"
+    fi
+}
+
+# 下载文件（带重试）
+download_file() {
+    local url=$1
+    local output=$2
+    local retries=${3:-3}
+    local timeout=${4:-30}
+    
+    for i in $(seq 1 "$retries"); do
+        if curl -fsSL --max-time "$timeout" "$url" -o "$output"; then
+            print_success "文件下载成功: $output"
             return 0
-            ;;
-        [nN][oO]|[nN])
-            return 1
-            ;;
-        "")
-            [[ "$default" == "y" ]] && return 0 || return 1
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+        else
+            print_warn "下载失败 (尝试 $i/$retries)..."
+            sleep 2
+        fi
+    done
+    
+    print_error "文件下载失败: $url"
+    return 1
 }
 
-# 加载配置文件
-load_config() {
-    local config_file="${CONFIG_DIR}/vps_scripts.conf"
-    if [[ -f "$config_file" ]]; then
-        source "$config_file"
-        log DEBUG "加载配置文件: $config_file"
+# ==================================================================
+# 配置文件操作函数
+# ==================================================================
+
+# 读取配置值
+read_config() {
+    local config_file=$1
+    local key=$2
+    local default=$3
+    
+    if [ -f "$config_file" ]; then
+        local value=$(grep "^${key}=" "$config_file" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+        echo "${value:-$default}"
     else
-        log WARN "配置文件不存在: $config_file"
+        echo "$default"
     fi
 }
 
-# 保存配置
-save_config() {
-    local key="$1"
-    local value="$2"
-    local config_file="${CONFIG_DIR}/vps_scripts.conf"
+# 写入配置值
+write_config() {
+    local config_file=$1
+    local key=$2
+    local value=$3
     
-    if grep -q "^${key}=" "$config_file" 2>/dev/null; then
-        sed -i "s/^${key}=.*/${key}=${value}/" "$config_file"
+    # 创建配置文件目录
+    local config_dir=$(dirname "$config_file")
+    safe_mkdir "$config_dir"
+    
+    # 如果配置文件不存在，创建它
+    if [ ! -f "$config_file" ]; then
+        touch "$config_file"
+    fi
+    
+    # 更新或添加配置项
+    if grep -q "^${key}=" "$config_file"; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$config_file"
     else
         echo "${key}=${value}" >> "$config_file"
     fi
 }
 
-# 初始化
-init_directories
-log INFO "加载核心功能库 v${LIB_VERSION}"
+# ==================================================================
+# 用户交互函数
+# ==================================================================
+
+# 询问Yes/No问题
+ask_yes_no() {
+    local question=$1
+    local default=${2:-n}
+    
+    local prompt="[y/N]"
+    if [ "$default" = "y" ]; then
+        prompt="[Y/n]"
+    fi
+    
+    while true; do
+        read -p "${question} ${prompt}: " answer
+        answer=${answer:-$default}
+        
+        case ${answer,,} in
+            y|yes) return 0 ;;
+            n|no) return 1 ;;
+            *) print_warn "请输入 y 或 n" ;;
+        esac
+    done
+}
+
+# 选择菜单
+select_option() {
+    local prompt=$1
+    shift
+    local options=("$@")
+    
+    PS3="${prompt}: "
+    select opt in "${options[@]}"; do
+        if [ -n "$opt" ]; then
+            echo "$REPLY"
+            return 0
+        else
+            print_warn "无效选项，请重新选择"
+        fi
+    done
+}
+
+# 读取用户输入（带默认值）
+read_input() {
+    local prompt=$1
+    local default=$2
+    local variable_name=$3
+    
+    if [ -n "$default" ]; then
+        read -p "${prompt} [${default}]: " input
+        input=${input:-$default}
+    else
+        read -p "${prompt}: " input
+    fi
+    
+    if [ -n "$variable_name" ]; then
+        eval "$variable_name='$input'"
+    else
+        echo "$input"
+    fi
+}
+
+# ==================================================================
+# 服务管理函数
+# ==================================================================
+
+# 检查服务状态
+check_service_status() {
+    local service=$1
+    
+    if systemctl is-active --quiet "$service"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# 启动服务
+start_service() {
+    local service=$1
+    
+    if systemctl start "$service"; then
+        print_success "服务 $service 启动成功"
+        return 0
+    else
+        print_error "服务 $service 启动失败"
+        return 1
+    fi
+}
+
+# 停止服务
+stop_service() {
+    local service=$1
+    
+    if systemctl stop "$service"; then
+        print_success "服务 $service 停止成功"
+        return 0
+    else
+        print_error "服务 $service 停止失败"
+        return 1
+    fi
+}
+
+# 重启服务
+restart_service() {
+    local service=$1
+    
+    if systemctl restart "$service"; then
+        print_success "服务 $service 重启成功"
+        return 0
+    else
+        print_error "服务 $service 重启失败"
+        return 1
+    fi
+}
+
+# ==================================================================
+# 清理和退出函数
+# ==================================================================
+
+# 清理临时文件
+cleanup_temp_files() {
+    local temp_dir=${1:-/tmp/vps_scripts_temp}
+    
+    if [ -d "$temp_dir" ]; then
+        rm -rf "$temp_dir"
+        print_info "临时文件已清理"
+    fi
+}
+
+# 优雅退出
+graceful_exit() {
+    local exit_code=${1:-0}
+    local message=$2
+    
+    if [ -n "$message" ]; then
+        if [ "$exit_code" -eq 0 ]; then
+            print_success "$message"
+        else
+            print_error "$message"
+        fi
+    fi
+    
+    # 执行清理操作
+    cleanup_temp_files
+    
+    exit "$exit_code"
+}
+
+# 设置陷阱以捕获退出信号
+trap 'graceful_exit 1 "脚本被中断"' INT TERM
+
+# ==================================================================
+# 导出所有函数，使其可被其他脚本使用
+# ==================================================================
+export -f print_msg print_info print_success print_warn print_error
+export -f print_separator check_root command_exists ensure_command
+export -f get_os_release get_os_version get_arch get_cpu_cores get_total_memory
+export -f get_public_ip check_port test_url
+export -f show_progress wait_with_animation
+export -f safe_mkdir backup_file download_file
+export -f read_config write_config
+export -f ask_yes_no select_option read_input
+export -f check_service_status start_service stop_service restart_service
+export -f cleanup_temp_files graceful_exit
