@@ -1,402 +1,228 @@
 #!/bin/bash
+# ======================================================================
+# 📌 脚本名称: vps_dev.sh (测试版)
+# 📍 脚本路径: /vps_scripts/vps_dev.sh
+# 🚀 主要用途: VPS服务器测试与开发功能集成
+# 🔧 适用系统: CentOS/Ubuntu/Debian
+# 📅 更新时间: 2025年06月17日
+# ======================================================================
 
-# ==============================================================================
-#                              VPS Management Scripts
-#
-#      Project: https://github.com/everett7623/vps_scripts/
-#      Author: Jensfrank
-#      Version: 2.0.0
-#
-#      This script acts as a remote launcher. It can be run via 'curl | bash'
-#      and will dynamically fetch and execute sub-scripts from the GitHub repo.
-# ==============================================================================
-
-# --- Base URL for the GitHub repository's raw content ---
-# All sub-scripts will be fetched from this base path.
-GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
-
-# --- Colors for Terminal Output ---
-RESET='\033[0m'
+# 颜色定义 - 保持与vps.sh一致的视觉风格
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
-WHITE='\033[0;37m'
+NC='\033[0m'      # 恢复默认颜色
+BOLD='\033[1m'    # 加粗
 
+# 脚本根目录定义
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPTS_DIR="$SCRIPT_DIR/scripts"
+SYSTEM_TOOLS_DIR="$SCRIPTS_DIR/system_tools"
+NETWORK_TEST_DIR="$SCRIPTS_DIR/network_test"
+PERFORMANCE_TEST_DIR="$SCRIPTS_DIR/performance_test"
+SERVICE_INSTALL_DIR="$SCRIPTS_DIR/service_install"
+GOOD_SCRIPTS_DIR="$SCRIPTS_DIR/good_scripts"
+PROXY_TOOLS_DIR="$SCRIPTS_DIR/proxy_tools"
+OTHER_TOOLS_DIR="$SCRIPTS_DIR/other_tools"
+UPDATE_SCRIPTS_DIR="$SCRIPTS_DIR/update_scripts"
+UNINSTALL_SCRIPTS_DIR="$SCRIPTS_DIR/uninstall_scripts"
 
-# --- Function to display a header ---
-print_header() {
+# 检查脚本依赖
+check_dependencies() {
+    echo -e "${YELLOW}[信息] 正在检查脚本运行依赖...${NC}"
+    # 这里可以添加依赖检查逻辑
+    command -v curl >/dev/null 2>&1 || { echo -e "${RED}[错误] 未找到curl命令，请先安装curl${NC}"; exit 1; }
+    echo -e "${GREEN}[成功] 依赖检查完成${NC}"
+}
+
+# 清屏并显示标题
+show_title() {
     clear
-    echo -e "${GREEN}==========================================================${RESET}"
-    echo -e "${CYAN}                   VPS 综合管理脚本                       ${RESET}"
-    echo -e "${CYAN}                  Author: Jensfrank                      ${RESET}"
-    echo -e "${YELLOW}   Project: https://github.com/everett7623/vps_scripts/  ${RESET}"
-    echo -e "${GREEN}==========================================================${RESET}"
-    echo ""
+    echo -e "${BOLD}${CYAN}======================================================================"
+    echo -e "                  VPS_DEV.SH - 测试开发脚本 (v1.0.0-dev)                "
+    echo -e "======================================================================${NC}"
+    echo -e "${YELLOW}[提示] 这是开发测试版本，用于功能验证和调试${NC}"
+    echo -e ""
 }
 
-# --- Function to fetch and execute a script from the repository ---
-run_repo_script() {
-    local script_repo_path="${1}"
-    local full_url="${GITHUB_RAW_URL}/${script_repo_path}"
-
-    print_header
-    echo -e "${YELLOW}正在从远程仓库加载并执行脚本:${RESET}"
-    echo -e "${WHITE}${full_url}${RESET}\n"
-
-    # Use curl or wget to fetch the script and pipe it to bash
-    if command -v curl >/dev/null 2>&1; then
-        bash <(curl -sSL "${full_url}")
-    elif command -v wget >/dev/null 2>&1; then
-        bash <(wget -qO- "${full_url}")
-    else
-        echo -e "${RED}错误: 'curl' 或 'wget' 命令未找到，无法下载所需脚本。${RESET}"
-        sleep 3
-        return 1
-    fi
-
-    if [ $? -ne 0 ]; then
-        echo -e "\n${RED}脚本执行失败或未找到: ${full_url}${RESET}"
-    fi
-
-    echo -e "\n${CYAN}按任意键返回...${RESET}"
-    read -n 1 -s -r
+# 主菜单函数
+show_main_menu() {
+    show_title
+    echo -e "${BOLD}${BLUE}===== 主菜单 - VPS 开发测试工具 ====${NC}"
+    echo -e "1. ${BOLD}系统工具${NC}         (查看系统信息、优化系统等)"
+    echo -e "2. ${BOLD}网络测试${NC}         (带宽、路由、CDN延迟等)"
+    echo -e "3. ${BOLD}性能测试${NC}         (CPU、磁盘、内存基准测试)"
+    echo -e "4. ${BOLD}服务安装${NC}         (Docker、LNMP、Node.js等)"
+    echo -e "5. ${BOLD}第三方工具${NC}       (整合优秀第三方脚本)"
+    echo -e "6. ${BOLD}其他工具${NC}         (BBR加速、哪吒监控等)"
+    echo -e "7. ${BOLD}脚本更新${NC}         (更新核心脚本、依赖环境)"
+    echo -e "8. ${BOLD}卸载工具${NC}         (清理服务残留、回滚环境)"
+    echo -e ""
+    echo -e "0. ${RED}退出脚本${NC}"
+    echo -e "${BOLD}${BLUE}============================================${NC}"
+    echo -e "${YELLOW}[提示] 输入对应数字选择功能，按Enter确认${NC}"
 }
 
-# --- Function to execute a third-party remote script/command ---
-run_remote_command() {
-    local command_to_run="${1}"
-    print_header
-    echo -e "${YELLOW}正在执行以下第三方命令:${RESET}"
-    echo -e "${WHITE}${command_to_run}${RESET}\n"
-    if eval "${command_to_run}"; then
-        echo -e "\n${GREEN}命令执行成功。${RESET}"
-    else
-        echo -e "\n${RED}命令执行失败。${RESET}"
-    fi
-    echo -e "\n${CYAN}按任意键返回...${RESET}"
-    read -n 1 -s -r
+# 系统工具子菜单
+show_system_tools_menu() {
+    show_title
+    echo -e "${BOLD}${BLUE}===== 系统工具 - 子菜单 ====${NC}"
+    echo -e "1. ${BOLD}查看系统信息${NC}       ($SYSTEM_TOOLS_DIR/system_info.sh)"
+    echo -e "2. ${BOLD}安装常用依赖${NC}       ($SYSTEM_TOOLS_DIR/install_deps.sh)"
+    echo -e "3. ${BOLD}更新系统${NC}           ($SYSTEM_TOOLS_DIR/update_system.sh)"
+    echo -e "4. ${BOLD}清理系统${NC}           ($SYSTEM_TOOLS_DIR/clean_system.sh)"
+    echo -e "5. ${BOLD}系统优化${NC}           ($SYSTEM_TOOLS_DIR/optimize_system.sh)"
+    echo -e "6. ${BOLD}修改主机名${NC}         ($SYSTEM_TOOLS_DIR/change_hostname.sh)"
+    echo -e "7. ${BOLD}设置时区${NC}           ($SYSTEM_TOOLS_DIR/set_timezone.sh)"
+    echo -e ""
+    echo -e "b. ${BOLD}返回主菜单${NC}"
+    echo -e "0. ${RED}退出脚本${NC}"
+    echo -e "${BOLD}${BLUE}============================================${NC}"
 }
 
+# 网络测试子菜单（优化合并重复功能）
+show_network_test_menu() {
+    show_title
+    echo -e "${BOLD}${BLUE}===== 网络测试 - 子菜单 ====${NC}"
+    echo -e "1. ${BOLD}带宽测试${NC}           ($NETWORK_TEST_DIR/bandwidth_test.sh)"
+    echo -e "2. ${BOLD}路由追踪${NC}           ($NETWORK_TEST_DIR/network_traceroute.sh)"
+    echo -e "3. ${BOLD}回程路由测试${NC}       ($NETWORK_TEST_DIR/backhaul_route_test.sh)"
+    echo -e "4. ${BOLD}CDN延迟测试${NC}       ($NETWORK_TEST_DIR/cdn_latency_test.sh)"
+    echo -e "5. ${BOLD}IP质量测试${NC}         ($NETWORK_TEST_DIR/ip_quality_test.sh)"
+    echo -e "6. ${BOLD}网络连通性测试${NC}     ($NETWORK_TEST_DIR/network_connectivity_test.sh)"
+    echo -e "7. ${BOLD}网络综合质量测试${NC}   ($NETWORK_TEST_DIR/network_quality_test.sh)"
+    echo -e "8. ${BOLD}流媒体解锁测试${NC}     ($NETWORK_TEST_DIR/streaming_unlock_test.sh)"
+    echo -e ""
+    echo -e "b. ${BOLD}返回主菜单${NC}"
+    echo -e "0. ${RED}退出脚本${NC}"
+    echo -e "${BOLD}${BLUE}============================================${NC}"
+}
 
-# ==============================================================================
-#                              SUB-MENU DEFINITIONS
-# ==============================================================================
+# 性能测试子菜单
+show_performance_test_menu() {
+    show_title
+    echo -e "${BOLD}${BLUE}===== 性能测试 - 子菜单 ====${NC}"
+    echo -e "1. ${BOLD}CPU基准测试${NC}       ($PERFORMANCE_TEST_DIR/cpu_benchmark.sh)"
+    echo -e "2. ${BOLD}磁盘IO测试${NC}         ($PERFORMANCE_TEST_DIR/disk_io_benchmark.sh)"
+    echo -e "3. ${BOLD}内存测试${NC}           ($PERFORMANCE_TEST_DIR/memory_benchmark.sh)"
+    echo -e "4. ${BOLD}网络吞吐量测试${NC}     ($PERFORMANCE_TEST_DIR/network_throughput_test.sh)"
+    echo -e ""
+    echo -e "b. ${BOLD}返回主菜单${NC}"
+    echo -e "0. ${RED}退出脚本${NC}"
+    echo -e "${BOLD}${BLUE}============================================${NC}"
+}
 
-# --- System Tools Menu ---
-system_tools_menu() {
+# 执行系统工具脚本
+execute_system_tool() {
+    case $1 in
+        1) bash "$SYSTEM_TOOLS_DIR/system_info.sh" ;;
+        2) bash "$SYSTEM_TOOLS_DIR/install_deps.sh" ;;
+        3) bash "$SYSTEM_TOOLS_DIR/update_system.sh" ;;
+        4) bash "$SYSTEM_TOOLS_DIR/clean_system.sh" ;;
+        5) bash "$SYSTEM_TOOLS_DIR/optimize_system.sh" ;;
+        6) bash "$SYSTEM_TOOLS_DIR/change_hostname.sh" ;;
+        7) bash "$SYSTEM_TOOLS_DIR/set_timezone.sh" ;;
+        b) return ;;
+        0) exit 0 ;;
+        *) echo -e "${RED}[错误] 无效选择，请重新输入${NC}"; sleep 2 ;;
+    esac
+}
+
+# 执行网络测试脚本
+execute_network_test() {
+    case $1 in
+        1) bash "$NETWORK_TEST_DIR/bandwidth_test.sh" ;;
+        2) bash "$NETWORK_TEST_DIR/network_traceroute.sh" ;;
+        3) bash "$NETWORK_TEST_DIR/backhaul_route_test.sh" ;;
+        4) bash "$NETWORK_TEST_DIR/cdn_latency_test.sh" ;;
+        5) bash "$NETWORK_TEST_DIR/ip_quality_test.sh" ;;
+        6) bash "$NETWORK_TEST_DIR/network_connectivity_test.sh" ;;
+        7) bash "$NETWORK_TEST_DIR/network_quality_test.sh" ;;
+        8) bash "$NETWORK_TEST_DIR/streaming_unlock_test.sh" ;;
+        b) return ;;
+        0) exit 0 ;;
+        *) echo -e "${RED}[错误] 无效选择，请重新输入${NC}"; sleep 2 ;;
+    esac
+}
+
+# 执行性能测试脚本
+execute_performance_test() {
+    case $1 in
+        1) bash "$PERFORMANCE_TEST_DIR/cpu_benchmark.sh" ;;
+        2) bash "$PERFORMANCE_TEST_DIR/disk_io_benchmark.sh" ;;
+        3) bash "$PERFORMANCE_TEST_DIR/memory_benchmark.sh" ;;
+        4) bash "$PERFORMANCE_TEST_DIR/network_throughput_test.sh" ;;
+        b) return ;;
+        0) exit 0 ;;
+        *) echo -e "${RED}[错误] 无效选择，请重新输入${NC}"; sleep 2 ;;
+    esac
+}
+
+# 主函数
+main() {
+    check_dependencies
+    
     while true; do
-        print_header
-        echo -e "${PURPLE}--- 系统工具菜单 ---${RESET}"
-        echo "1. 查看系统信息"
-        echo "2. 安装常用依赖"
-        echo "3. 更新系统"
-        echo "4. 清理系统"
-        echo "5. 系统优化"
-        echo "6. 修改主机名"
-        echo "7. 设置时区"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-7]: " choice
-
+        show_main_menu
+        read -p "请选择功能: " choice
+        
         case $choice in
-            1) run_repo_script "scripts/system_tools/system_info.sh" ;;
-            2) run_repo_script "scripts/system_tools/install_deps.sh" ;;
-            3) run_repo_script "scripts/system_tools/system_update.sh" ;;
-            4) run_repo_script "scripts/system_tools/system_clean.sh" ;;
-            5) run_repo_script "scripts/system_tools/system_optimize.sh" ;;
-            6) run_repo_script "scripts/system_tools/change_hostname.sh" ;;
-            7) run_repo_script "scripts/system_tools/set_timezone.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Network Test Menu ---
-network_test_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 网络测试菜单 ---${RESET}"
-        echo "1. 回程路由测试"
-        echo "2. 带宽测试"
-        echo "3. CDN 延迟测试"
-        echo "4. IP 质量测试"
-        echo "5. 网络连通性测试"
-        echo "6. 综合质量测试"
-        echo "7. 网络安全扫描"
-        echo "8. 网络测速"
-        echo "9. 路由追踪 (Traceroute)"
-        echo "10. 端口扫描"
-        echo "11. 响应时间测试"
-        echo "12. 流媒体解锁测试"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-12]: " choice
-
-        case $choice in
-            1) run_repo_script "scripts/network_test/backhaul_route_test.sh" ;;
-            2) run_repo_script "scripts/network_test/bandwidth_test.sh" ;;
-            3) run_repo_script "scripts/network_test/cdn_latency_test.sh" ;;
-            4) run_repo_script "scripts/network_test/ip_quality_test.sh" ;;
-            5) run_repo_script "scripts/network_test/network_connectivity_test.sh" ;;
-            6) run_repo_script "scripts/network_test/network_quality_test.sh" ;;
-            7) run_repo_script "scripts/network_test/network_security_scan.sh" ;;
-            8) run_repo_script "scripts/network_test/network_speedtest.sh" ;;
-            9) run_repo_script "scripts/network_test/network_traceroute.sh" ;;
-            10) run_repo_script "scripts/network_test/port_scanner.sh" ;;
-            11) run_repo_script "scripts/network_test/response_time_test.sh" ;;
-            12) run_repo_script "scripts/network_test/streaming_unlock_test.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Performance Test Menu ---
-performance_test_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 性能测试菜单 ---${RESET}"
-        echo "1. CPU 基准测试"
-        echo "2. 磁盘 IO 基准测试"
-        echo "3. 内存基准测试"
-        echo "4. 网络吞吐量测试"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-4]: " choice
-
-        case $choice in
-            1) run_repo_script "scripts/performance_test/cpu_benchmark.sh" ;;
-            2) run_repo_script "scripts/performance_test/disk_io_benchmark.sh" ;;
-            3) run_repo_script "scripts/performance_test/memory_benchmark.sh" ;;
-            4) run_repo_script "scripts/performance_test/network_throughput_test.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Service Install Menu ---
-service_install_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 服务安装菜单 ---${RESET}"
-        echo "1. 安装 Docker"
-        echo "2. 安装 LNMP 环境"
-        echo "3. 安装 Node.js"
-        echo "4. 安装 Python"
-        echo "5. 安装 Redis"
-        echo "6. 安装 宝塔面板"
-        echo "7. 安装 1Panel 面板"
-        echo "8. 安装 Wordpress"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-8]: " choice
-
-        case $choice in
-            1) run_repo_script "scripts/service_install/install_docker.sh" ;;
-            2) run_repo_script "scripts/service_install/install_lnmp.sh" ;;
-            3) run_repo_script "scripts/service_install/install_nodejs.sh" ;;
-            4) run_repo_script "scripts/service_install/install_python.sh" ;;
-            5) run_repo_script "scripts/service_install/install_redis.sh" ;;
-            6) run_repo_script "scripts/service_install/install_bt_panel.sh" ;;
-            7) run_repo_script "scripts/service_install/install_1panel.sh" ;;
-            8) run_repo_script "scripts/service_install/install_wordpress.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Good Scripts Menu ---
-good_scripts_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 第三方优秀脚本菜单 ---${RESET}"
-        echo "1. Yabs (VPS 综合性能测试)"
-        echo "2. XY-IP质量体检脚本"
-        echo "3. XY-网络质量检测脚本"
-        echo "4. NodeLoc聚合测试脚本"
-        echo "5. 融合怪测试"
-        echo "6. 流媒体解锁测试"
-        echo "7. 响应测试脚本"
-        echo "8. VPS一键脚本工具箱"
-        echo "9. Jcnf 常用脚本工具包"
-        echo "10. 科技Lion脚本"
-        echo "11. BlueSkyXN脚本"
-        echo "12. 三网测速 (多/单线程)"
-        echo "13. AutoTrace三网回程路由"
-        echo "14. 超售测试"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-14]: " choice
-
-        case $choice in
-            1) run_remote_command "wget -qO- yabs.sh | bash" ;;
-            2) run_remote_command "bash <(curl -Ls IP.Check.Place)" ;;
-            3) run_remote_command "bash <(curl -Ls Net.Check.Place)" ;;
-            4) run_remote_command "curl -sSL abc.sd | bash" ;;
-            5) run_remote_command "curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh" ;;
-            6) run_remote_command "bash <(curl -L -s media.ispvps.com)" ;;
-            7) run_remote_command "bash <(curl -sL https://nodebench.mereith.com/scripts/curltime.sh)" ;;
-            8) run_remote_command "curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh" ;;
-            9) run_remote_command "wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh" ;;
-            10) run_remote_command "bash <(curl -sL kejilion.sh)" ;;
-            11) run_remote_command "wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh" ;;
-            12) run_remote_command "bash <(curl -sL https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh)" ;;
-            13) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" ;;
-            14) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Ladder Tools Menu ---
-ladder_tools_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 梯子工具菜单 ---${RESET}"
-        echo "1. 勇哥 Singbox 脚本"
-        echo "2. F佬 Singbox 脚本"
-        echo "3. 勇哥 X-UI 脚本"
-        echo "4. 3X-UI 官方脚本"
-        echo "5. 3X-UI 优化版脚本"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-5]: " choice
-
-        case $choice in
-            1) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)" ;;
-            2) run_remote_command "bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)" ;;
-            3) run_remote_command "bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)" ;;
-            4) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)" ;;
-            5) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh)" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Other Tools Menu ---
-other_tools_menu() {
-    while true; do
-        print_header
-        echo -e "${PURPLE}--- 其他工具菜单 ---${RESET}"
-        echo "1. BBR 加速"
-        echo "2. Fail2ban 安装与配置"
-        echo "3. 安装哪吒监控 Agent"
-        echo "4. 设置 SWAP 虚拟内存"
-        echo "5. 哪吒 Agent 清理"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-5]: " choice
-
-        case $choice in
-            1) run_repo_script "scripts/other_tools/bbr.sh" ;;
-            2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
-            3) run_repo_script "scripts/other_tools/nezha.sh" ;;
-            4) run_repo_script "scripts/other_tools/swap.sh" ;;
-            5) run_remote_command "bash <(curl -s https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh)" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-# --- Update/Uninstall Menus (Adjusted for online mode) ---
-# In online mode, "updating" means re-running the main script command.
-# "Uninstalling" is more complex as scripts are run ephemerally.
-
-update_scripts_menu() {
-    print_header
-    echo -e "${PURPLE}--- 更新脚本 ---${RESET}"
-    echo -e "${YELLOW}您当前正在以在线模式运行脚本。${RESET}"
-    echo -e "要“更新”到最新版本，只需重新执行启动命令即可。"
-    echo -e "\n${WHITE}bash <(curl -sL ${GITHUB_RAW_URL}/vps.sh)${RESET}\n"
-    echo -e "\n${CYAN}按任意键返回...${RESET}"
-    read -n 1 -s -r
-}
-
-uninstall_scripts_menu() {
-     while true; do
-        print_header
-        echo -e "${PURPLE}--- 卸载/清理菜单 ---${RESET}"
-        echo -e "${YELLOW}注意: 在线模式下，“卸载脚本本身”没有意义，因为它并未安装。${RESET}"
-        echo -e "此菜单主要用于清理由本脚本【安装的服务】所产生的残留文件。\n"
-        echo "1. 清理服务残留"
-        echo "2. 回滚系统环境"
-        echo "3. 清除配置文件"
-        echo "4. 执行完全卸载/清理"
-        echo "--------------------"
-        echo "0. 返回主菜单"
-        echo ""
-        read -p "请输入选项 [0-4]: " choice
-
-        case $choice in
-            1) run_repo_script "scripts/uninstall_scripts/clean_service_residues.sh" ;;
-            2) run_repo_script "scripts/uninstall_scripts/rollback_system_environment.sh" ;;
-            3) run_repo_script "scripts/uninstall_scripts/clear_configuration_files.sh" ;;
-            4) run_repo_script "scripts/uninstall_scripts/full_uninstall.sh" ;;
-            0) return ;;
-            *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
-        esac
-    done
-}
-
-
-# ==============================================================================
-#                                MAIN MENU
-# ==============================================================================
-main_menu() {
-    while true; do
-        print_header
-        echo -e "${YELLOW}请选择要执行的操作类别:${RESET}"
-        echo -e " 1. ${CYAN}系统工具${RESET}       - 系统信息、更新、清理、优化等"
-        echo -e " 2. ${CYAN}网络测试${RESET}       - 路由、带宽、延迟、IP质量、流媒体等"
-        echo -e " 3. ${CYAN}性能测试${RESET}       - CPU、磁盘IO、内存、网络吞吐量基准测试"
-        echo -e " 4. ${CYAN}服务安装${RESET}       - Docker、LNMP、面板、Wordpress等"
-        echo -e " 5. ${CYAN}优秀脚本${RESET}       - 集成社区广受好评的第三方脚本"
-        echo -e " 6. ${CYAN}梯子工具${RESET}       - 常用代理工具一键安装脚本"
-        echo -e " 7. ${CYAN}其他工具${RESET}       - BBR、Fail2ban、SWAP、哪吒监控等"
-        echo -e " 8. ${PURPLE}更新脚本${RESET}       - 获取最新的脚本版本"
-        echo -e " 9. ${RED}卸载清理${RESET}       - 清理本脚本安装的服务或配置"
-        echo "----------------------------------------------------"
-        echo -e " 0. ${WHITE}退出脚本${RESET}"
-        echo ""
-        read -p "请输入选项 [0-9]: " choice
-
-        case $choice in
-            1) system_tools_menu ;;
-            2) network_test_menu ;;
-            3) performance_test_menu ;;
-            4) service_install_menu ;;
-            5) good_scripts_menu ;;
-            6) ladder_tools_menu ;;
-            7) other_tools_menu ;;
-            8) update_scripts_menu ;;
-            9) uninstall_scripts_menu ;;
-            0)
-                echo -e "\n${GREEN}感谢使用, 再见!${RESET}"
+            1) # 系统工具
+                while true; do
+                    show_system_tools_menu
+                    read -p "请选择功能: " subchoice
+                    execute_system_tool $subchoice
+                    if [ $subchoice == "0" ]; then exit 0; fi
+                    if [ $subchoice != "b" ]; then
+                        echo -e "${YELLOW}[提示] 按Enter键继续...${NC}"
+                        read -r
+                    else
+                        break
+                    fi
+                done
+                ;;
+            2) # 网络测试
+                while true; do
+                    show_network_test_menu
+                    read -p "请选择功能: " subchoice
+                    execute_network_test $subchoice
+                    if [ $subchoice == "0" ]; then exit 0; fi
+                    if [ $subchoice != "b" ]; then
+                        echo -e "${YELLOW}[提示] 按Enter键继续...${NC}"
+                        read -r
+                    else
+                        break
+                    fi
+                done
+                ;;
+            3) # 性能测试
+                while true; do
+                    show_performance_test_menu
+                    read -p "请选择功能: " subchoice
+                    execute_performance_test $subchoice
+                    if [ $subchoice == "0" ]; then exit 0; fi
+                    if [ $subchoice != "b" ]; then
+                        echo -e "${YELLOW}[提示] 按Enter键继续...${NC}"
+                        read -r
+                    else
+                        break
+                    fi
+                done
+                ;;
+            0) # 退出脚本
+                echo -e "${GREEN}[信息] 感谢使用vps_dev.sh测试脚本，再见！${NC}"
                 exit 0
                 ;;
             *)
-                echo -e "\n${RED}无效输入, 请输入 0-9 之间的数字!${RESET}"
+                echo -e "${RED}[错误] 无效选择，请输入1-8或0${NC}"
                 sleep 2
                 ;;
         esac
     done
 }
 
-# --- Script Execution Start ---
-main_menu
+# 启动脚本
+main
