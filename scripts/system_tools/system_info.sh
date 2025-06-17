@@ -36,6 +36,9 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # 加载公共函数库（如果存在）
 if [[ -f "${ROOT_DIR}/lib/common_functions.sh" ]]; then
     source "${ROOT_DIR}/lib/common_functions.sh"
+else
+    # 如果没有公共函数库，使用本地定义
+    :
 fi
 
 # 分隔线函数
