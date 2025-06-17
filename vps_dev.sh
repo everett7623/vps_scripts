@@ -59,32 +59,6 @@ function show_system_tools_menu() {
     echo -n "请输入你的选择 [0-7]: "
 }
 
-# 系统信息脚本（修改后的system_info.sh）
-function system_info() {
-    clear
-    echo -e "${CYAN}=====================================================${NC}"
-    echo -e "${CYAN}                  系统信息工具 (system_info.sh)                  ${NC}"
-    echo -e "${CYAN}=====================================================${NC}"
-    echo -e "${YELLOW}脚本路径: $(dirname "$0")/scripts/system_tools/system_info.sh${NC}"
-    echo -e "${YELLOW}用途: 显示VPS的详细系统信息${NC}"
-    echo -e "${CYAN}-----------------------------------------------------${NC}"
-    
-    # 显示系统信息
-    echo -e "${GREEN}系统信息:${NC}"
-    echo -e "操作系统: $(lsb_release -ds 2>/dev/null || cat /etc/*release 2>/dev/null | head -n1 || uname -om)"
-    echo -e "主机名: $(hostname)"
-    echo -e "内核: $(uname -r)"
-    echo -e "CPU: $(lscpu | grep 'Model name' | awk -F ': ' '{print $2}' | sed 's/  */ /g' || echo '未知')"
-    echo -e "CPU核心数: $(nproc --all)"
-    echo -e "内存: $(free -h | awk '/^Mem/ {print $2 " / " $7}')"
-    echo -e "磁盘空间: $(df -h / | awk 'NR==2 {print $3 " / " $2 " (" $5 ")"}')"
-    echo -e "系统运行时间: $(uptime -p | sed 's/up //')"
-    
-    echo -e "${CYAN}-----------------------------------------------------${NC}"
-    echo -n "按任意键返回系统工具菜单..."
-    read -n 1 -s
-}
-
 # 主循环
 while true; do
     show_main_menu
@@ -97,13 +71,13 @@ while true; do
                 read sub_choice
                 
                 case $sub_choice in
-                    1) system_info ;;
-                    2) source "$(dirname "$0")/scripts/system_tools/install_deps.sh" ;;
-                    3) source "$(dirname "$0")/scripts/system_tools/update_system.sh" ;;
-                    4) source "$(dirname "$0")/scripts/system_tools/clean_system.sh" ;;
-                    5) source "$(dirname "$0")/scripts/system_tools/optimize_system.sh" ;;
-                    6) source "$(dirname "$0")/scripts/system_tools/change_hostname.sh" ;;
-                    7) source "$(dirname "$0")/scripts/system_tools/set_timezone.sh" ;;
+                    1) source "/scripts/system_tools/install_deps.sh" ;;
+                    2) source "/scripts/system_tools/install_deps.sh" ;;
+                    3) source "/scripts/system_tools/update_system.sh" ;;
+                    4) source "/scripts/system_tools/clean_system.sh" ;;
+                    5) source "/scripts/system_tools/optimize_system.sh" ;;
+                    6) source "/scripts/system_tools/change_hostname.sh" ;;
+                    7) source "/scripts/system_tools/set_timezone.sh" ;;
                     0) break ;;
                     *) echo -e "${RED}错误: 无效选择，请重试!${NC}" && sleep 1 ;;
                 esac
