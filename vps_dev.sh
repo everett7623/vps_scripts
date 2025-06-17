@@ -4,7 +4,7 @@
 # 📍 脚本路径: /vps_scripts/vps_dev.sh
 # 🚀 主要用途: VPS服务器测试与开发功能集成
 # 🔧 适用系统: CentOS/Ubuntu/Debian
-# 📅 更新时间: 2025年06月17日
+# 📅 更新时间: 2025年06月18日
 # ======================================================================
 
 # 颜色定义 - 保持与vps.sh一致的视觉风格
@@ -17,8 +17,9 @@ CYAN='\033[0;36m'
 NC='\033[0m'      # 恢复默认颜色
 BOLD='\033[1m'    # 加粗
 
-# 脚本根目录定义
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# 【关键修复】正确获取脚本所在目录，兼容软链接等情况
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+# 重新拼接各功能目录路径
 SCRIPTS_DIR="$SCRIPT_DIR/scripts"
 SYSTEM_TOOLS_DIR="$SCRIPTS_DIR/system_tools"
 NETWORK_TEST_DIR="$SCRIPTS_DIR/network_test"
@@ -33,7 +34,7 @@ UNINSTALL_SCRIPTS_DIR="$SCRIPTS_DIR/uninstall_scripts"
 # 检查脚本依赖
 check_dependencies() {
     echo -e "${YELLOW}[信息] 正在检查脚本运行依赖...${NC}"
-    # 这里可以添加依赖检查逻辑
+    # 这里可以添加依赖检查逻辑，示例检查curl
     command -v curl >/dev/null 2>&1 || { echo -e "${RED}[错误] 未找到curl命令，请先安装curl${NC}"; exit 1; }
     echo -e "${GREEN}[成功] 依赖检查完成${NC}"
 }
