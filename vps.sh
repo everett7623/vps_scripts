@@ -123,16 +123,9 @@ network_test_menu() {
         echo -e "${PURPLE}--- 网络测试菜单 ---${RESET}"
         echo "1. 回程路由测试"
         echo "2. 带宽测试"
-        echo "3. CDN 延迟测试"
-        echo "4. IP 质量测试"
-        echo "5. 网络连通性测试"
-        echo "6. 综合质量测试"
-        echo "7. 网络安全扫描"
-        echo "8. 网络测速"
-        echo "9. 路由追踪 (Traceroute)"
-        echo "10. 端口扫描"
-        echo "11. 响应时间测试"
-        echo "12. 流媒体解锁测试"
+        echo "3. IP质量测试"
+        echo "4. 综合网络质量测试"
+        echo "5. 流媒体解锁测试"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -141,16 +134,9 @@ network_test_menu() {
         case $choice in
             1) run_repo_script "scripts/network_test/backhaul_route_test.sh" ;;
             2) run_repo_script "scripts/network_test/bandwidth_test.sh" ;;
-            3) run_repo_script "scripts/network_test/cdn_latency_test.sh" ;;
-            4) run_repo_script "scripts/network_test/ip_quality_test.sh" ;;
-            5) run_repo_script "scripts/network_test/network_connectivity_test.sh" ;;
-            6) run_repo_script "scripts/network_test/network_quality_test.sh" ;;
-            7) run_repo_script "scripts/network_test/network_security_scan.sh" ;;
-            8) run_repo_script "scripts/network_test/network_speedtest.sh" ;;
-            9) run_repo_script "scripts/network_test/network_traceroute.sh" ;;
-            10) run_repo_script "scripts/network_test/port_scanner.sh" ;;
-            11) run_repo_script "scripts/network_test/response_time_test.sh" ;;
-            12) run_repo_script "scripts/network_test/streaming_unlock_test.sh" ;;
+            3) run_repo_script "scripts/network_test/ip_quality_test.sh" ;;
+            4) run_repo_script "scripts/network_test/network_quality_test.sh" ;;
+            5) run_repo_script "scripts/network_test/streaming_unlock_test.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
