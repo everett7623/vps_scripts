@@ -1,475 +1,543 @@
 #!/bin/bash
-################################################################################
+#==============================================================================
 # 脚本名称: install_docker.sh
-# 脚本用途: 自动安装和配置Docker容器引擎
+# 脚本描述: Docker和Docker Compose安装脚本 - 支持多种系统的自动化安装
 # 脚本路径: vps_scripts/scripts/service_install/install_docker.sh
 # 作者: Jensfrank
-# 更新日期: $(date +%Y-%m-%d)
-################################################################################
+# 使用方法: bash install_docker.sh [选项]
+# 选项: 
+#   --remove     卸载Docker
+#   --update     更新Docker到最新版本
+#   --compose    只安装Docker Compose
+#   --cn         使用国内镜像源
+# 更新日期: 2025-01-17
+#==============================================================================
 
-# 定义脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARENT_DIR="$(dirname "$SCRIPT_DIR")"
-GRAND_PARENT_DIR="$(dirname "$PARENT_DIR")"
-
-# 加载通用函数库
-source "$PARENT_DIR/system_tools/install_deps.sh" 2>/dev/null || {
-    echo "错误: 无法加载依赖函数库"
-    exit 1
-}
+# 严格模式
+set -euo pipefail
 
 # 颜色定义
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
+readonly YELLOW='\033[0;33m'
 readonly BLUE='\033[0;34m'
-readonly PURPLE='\033[0;35m'
-readonly CYAN='\033[0;36m'
 readonly NC='\033[0m'
 
 # 全局变量
-DOCKER_VERSION=""
-DOCKER_COMPOSE_VERSION=""
-INSTALL_MODE=""
-CHINA_MIRROR=false
+readonly SCRIPT_NAME="Docker安装脚本"
+readonly SCRIPT_VERSION="1.0.0"
+readonly LOG_FILE="/tmp/docker_install_$(date +%Y%m%d_%H%M%S).log"
+readonly DOCKER_CONFIG_DIR="/etc/docker"
+readonly DOCKER_DATA_DIR="/var/lib/docker"
 
-# 函数: 显示帮助信息
+# 系统信息
+OS=""
+VERSION=""
+ARCH=""
+USE_CN_MIRROR=false
+ACTION="install"
+
+#==============================================================================
+# 函数定义
+#==============================================================================
+
+# 显示帮助信息
 show_help() {
-    echo "使用方法: $0 [选项]"
-    echo ""
-    echo "选项:"
-    echo "  -h, --help              显示此帮助信息"
-    echo "  -v, --version VERSION   指定Docker版本(默认:最新稳定版)"
-    echo "  -c, --compose VERSION   安装Docker Compose并指定版本"
-    echo "  -m, --mirror            使用中国镜像加速安装"
-    echo "  -u, --uninstall         卸载Docker"
-    echo ""
-    echo "示例:"
-    echo "  $0                      # 安装最新版Docker"
-    echo "  $0 -v 20.10.21         # 安装指定版本Docker"
-    echo "  $0 -c 2.20.3 -m        # 安装Docker和Compose，使用中国镜像"
+    cat << EOF
+${BLUE}${SCRIPT_NAME} v${SCRIPT_VERSION}${NC}
+
+使用方法: $(basename "$0") [选项]
+
+选项:
+    --remove     卸载Docker和Docker Compose
+    --update     更新Docker到最新版本
+    --compose    只安装Docker Compose
+    --cn         使用国内镜像源（适用于中国大陆用户）
+    -h, --help   显示此帮助信息
+
+示例:
+    $(basename "$0")             # 默认安装Docker和Docker Compose
+    $(basename "$0") --cn        # 使用国内镜像源安装
+    $(basename "$0") --remove    # 卸载Docker
+    $(basename "$0") --update    # 更新Docker
+
+EOF
 }
 
-# 函数: 检查系统要求
-check_requirements() {
-    echo -e "${BLUE}>>> 检查系统要求...${NC}"
+# 日志记录
+log() {
+    local level=$1
+    shift
+    local message="$*"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
-    # 检查操作系统
+    case $level in
+        INFO)  echo -e "${BLUE}[INFO]${NC} $message" ;;
+        SUCCESS) echo -e "${GREEN}[SUCCESS]${NC} $message" ;;
+        WARNING) echo -e "${YELLOW}[WARNING]${NC} $message" ;;
+        ERROR) echo -e "${RED}[ERROR]${NC} $message" ;;
+    esac
+    
+    echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+}
+
+# 错误处理
+error_exit() {
+    log ERROR "$1"
+    log ERROR "安装日志已保存到: $LOG_FILE"
+    exit 1
+}
+
+# 检查命令是否存在
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# 检查root权限
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        error_exit "此脚本需要root权限运行，请使用 sudo bash $0"
+    fi
+}
+
+# 检测系统信息
+detect_system() {
+    log INFO "检测系统信息..."
+    
+    # 检测操作系统
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
         VERSION=$VERSION_ID
     else
-        echo -e "${RED}错误: 无法确定操作系统类型${NC}"
-        exit 1
+        error_exit "无法检测操作系统信息"
     fi
     
-    # 检查系统架构
+    # 检测架构
     ARCH=$(uname -m)
     case $ARCH in
-        x86_64)
-            DOCKER_ARCH="amd64"
+        x86_64|amd64) ARCH="amd64" ;;
+        aarch64|arm64) ARCH="arm64" ;;
+        armv7l|armhf) ARCH="armhf" ;;
+        *) error_exit "不支持的系统架构: $ARCH" ;;
+    esac
+    
+    log SUCCESS "系统信息: $OS $VERSION ($ARCH)"
+}
+
+# 检查系统兼容性
+check_compatibility() {
+    log INFO "检查系统兼容性..."
+    
+    local supported=false
+    case $OS in
+        ubuntu)
+            case $VERSION in
+                18.04|20.04|22.04|24.04) supported=true ;;
+            esac
             ;;
-        aarch64|arm64)
-            DOCKER_ARCH="arm64"
+        debian)
+            case $VERSION in
+                9|10|11|12) supported=true ;;
+            esac
             ;;
-        armv7l|armhf)
-            DOCKER_ARCH="armhf"
+        centos|rhel|almalinux|rocky)
+            case $VERSION in
+                7|8|9) supported=true ;;
+            esac
             ;;
-        *)
-            echo -e "${RED}错误: 不支持的系统架构: $ARCH${NC}"
-            exit 1
+        fedora)
+            if [[ $VERSION -ge 35 ]]; then
+                supported=true
+            fi
             ;;
     esac
     
-    # 检查内核版本
-    KERNEL_VERSION=$(uname -r | cut -d'.' -f1,2)
-    KERNEL_MAJOR=$(echo $KERNEL_VERSION | cut -d'.' -f1)
-    KERNEL_MINOR=$(echo $KERNEL_VERSION | cut -d'.' -f2)
-    
-    if [[ $KERNEL_MAJOR -lt 3 ]] || ([[ $KERNEL_MAJOR -eq 3 ]] && [[ $KERNEL_MINOR -lt 10 ]]); then
-        echo -e "${RED}错误: Docker需要Linux内核版本3.10或更高${NC}"
-        echo -e "${RED}当前内核版本: $(uname -r)${NC}"
-        exit 1
+    if [[ $supported == false ]]; then
+        error_exit "不支持的系统: $OS $VERSION"
     fi
     
-    # 检查是否已安装Docker
-    if command -v docker &> /dev/null; then
-        CURRENT_VERSION=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-        echo -e "${YELLOW}警告: Docker已安装 (版本: $CURRENT_VERSION)${NC}"
-        read -p "是否继续重新安装? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 0
-        fi
-    fi
-    
-    echo -e "${GREEN}✓ 系统要求检查通过${NC}"
-    echo -e "  操作系统: $OS $VERSION"
-    echo -e "  系统架构: $ARCH ($DOCKER_ARCH)"
-    echo -e "  内核版本: $(uname -r)"
+    log SUCCESS "系统兼容性检查通过"
 }
 
-# 函数: 配置中国镜像源
-setup_china_mirror() {
-    echo -e "${BLUE}>>> 配置中国镜像源...${NC}"
-    
-    # 创建docker目录
-    mkdir -p /etc/docker
-    
-    # 配置daemon.json
-    cat > /etc/docker/daemon.json <<EOF
-{
-    "registry-mirrors": [
-        "https://docker.mirrors.ustc.edu.cn",
-        "https://hub-mirror.c.163.com",
-        "https://mirror.baidubce.com"
-    ],
-    "log-driver": "json-file",
-    "log-opts": {
-        "max-size": "100m",
-        "max-file": "3"
-    }
-}
-EOF
-    
-    echo -e "${GREEN}✓ 中国镜像源配置完成${NC}"
-}
-
-# 函数: 安装Docker (Ubuntu/Debian)
-install_docker_debian() {
-    echo -e "${BLUE}>>> 安装Docker (Debian/Ubuntu)...${NC}"
-    
-    # 更新包索引
-    apt-get update
-    
-    # 安装必要的包
-    apt-get install -y \
-        apt-transport-https \
-        ca-certificates \
-        curl \
-        gnupg \
-        lsb-release
-    
-    # 添加Docker官方GPG密钥
-    if [[ "$CHINA_MIRROR" == true ]]; then
-        curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/$OS/gpg | apt-key add -
-    else
-        curl -fsSL https://download.docker.com/linux/$OS/gpg | apt-key add -
-    fi
-    
-    # 添加Docker仓库
-    if [[ "$CHINA_MIRROR" == true ]]; then
-        add-apt-repository \
-            "deb [arch=$DOCKER_ARCH] https://mirrors.aliyun.com/docker-ce/linux/$OS \
-            $(lsb_release -cs) \
-            stable"
-    else
-        add-apt-repository \
-            "deb [arch=$DOCKER_ARCH] https://download.docker.com/linux/$OS \
-            $(lsb_release -cs) \
-            stable"
-    fi
-    
-    # 更新包索引
-    apt-get update
-    
-    # 安装Docker
-    if [[ -z "$DOCKER_VERSION" ]]; then
-        apt-get install -y docker-ce docker-ce-cli containerd.io
-    else
-        apt-get install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io
+# 设置国内镜像源
+setup_cn_mirrors() {
+    if [[ $USE_CN_MIRROR == true ]]; then
+        log INFO "配置国内镜像源..."
+        
+        case $OS in
+            ubuntu|debian)
+                # 备份原始源
+                cp /etc/apt/sources.list /etc/apt/sources.list.bak
+                
+                # 使用阿里云镜像
+                if [[ $OS == "ubuntu" ]]; then
+                    sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+                    sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+                else
+                    sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
+                fi
+                ;;
+            centos|rhel|almalinux|rocky)
+                # 使用阿里云镜像
+                sed -i 's|mirrorlist=|#mirrorlist=|g' /etc/yum.repos.d/CentOS-*.repo
+                sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://mirrors.aliyun.com|g' /etc/yum.repos.d/CentOS-*.repo
+                ;;
+        esac
+        
+        log SUCCESS "国内镜像源配置完成"
     fi
 }
 
-# 函数: 安装Docker (CentOS/RHEL/Fedora)
-install_docker_rhel() {
-    echo -e "${BLUE}>>> 安装Docker (CentOS/RHEL/Fedora)...${NC}"
+# 安装依赖
+install_dependencies() {
+    log INFO "安装必要的依赖..."
     
-    # 安装必要的包
-    yum install -y yum-utils device-mapper-persistent-data lvm2
+    case $OS in
+        ubuntu|debian)
+            apt-get update -qq
+            apt-get install -y -qq \
+                apt-transport-https \
+                ca-certificates \
+                curl \
+                gnupg \
+                lsb-release \
+                software-properties-common
+            ;;
+        centos|rhel|almalinux|rocky)
+            yum install -y -q \
+                yum-utils \
+                device-mapper-persistent-data \
+                lvm2
+            ;;
+        fedora)
+            dnf install -y -q \
+                dnf-plugins-core \
+                device-mapper-persistent-data \
+                lvm2
+            ;;
+    esac
     
-    # 添加Docker仓库
-    if [[ "$CHINA_MIRROR" == true ]]; then
-        yum-config-manager \
-            --add-repo \
-            https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
-    else
-        yum-config-manager \
-            --add-repo \
-            https://download.docker.com/linux/centos/docker-ce.repo
-    fi
-    
-    # 安装Docker
-    if [[ -z "$DOCKER_VERSION" ]]; then
-        yum install -y docker-ce docker-ce-cli containerd.io
-    else
-        yum install -y docker-ce-$DOCKER_VERSION docker-ce-cli-$DOCKER_VERSION containerd.io
-    fi
+    log SUCCESS "依赖安装完成"
 }
 
-# 函数: 安装Docker Compose
-install_docker_compose() {
-    echo -e "${BLUE}>>> 安装Docker Compose...${NC}"
+# 设置Docker仓库
+setup_docker_repo() {
+    log INFO "配置Docker仓库..."
     
-    # 确定Compose版本
-    if [[ -z "$DOCKER_COMPOSE_VERSION" ]]; then
-        if [[ "$CHINA_MIRROR" == true ]]; then
-            COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-        else
-            COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-        fi
+    local docker_repo_url
+    if [[ $USE_CN_MIRROR == true ]]; then
+        docker_repo_url="https://mirrors.aliyun.com/docker-ce"
     else
-        COMPOSE_VERSION="v$DOCKER_COMPOSE_VERSION"
+        docker_repo_url="https://download.docker.com"
     fi
     
-    # 下载Docker Compose
-    if [[ "$CHINA_MIRROR" == true ]]; then
-        COMPOSE_URL="https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"
-    else
-        COMPOSE_URL="https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"
-    fi
+    case $OS in
+        ubuntu|debian)
+            # 添加Docker GPG密钥
+            mkdir -p /etc/apt/keyrings
+            curl -fsSL "$docker_repo_url/linux/$OS/gpg" | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            
+            # 添加Docker仓库
+            echo \
+                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] $docker_repo_url/linux/$OS \
+                $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+            
+            apt-get update -qq
+            ;;
+            
+        centos|rhel|almalinux|rocky)
+            yum-config-manager --add-repo "$docker_repo_url/linux/centos/docker-ce.repo"
+            if [[ $USE_CN_MIRROR == true ]]; then
+                sed -i 's+download.docker.com+mirrors.aliyun.com/docker-ce+' /etc/yum.repos.d/docker-ce.repo
+            fi
+            ;;
+            
+        fedora)
+            dnf config-manager --add-repo "$docker_repo_url/linux/fedora/docker-ce.repo"
+            if [[ $USE_CN_MIRROR == true ]]; then
+                sed -i 's+download.docker.com+mirrors.aliyun.com/docker-ce+' /etc/yum.repos.d/docker-ce.repo
+            fi
+            ;;
+    esac
     
-    echo -e "${CYAN}下载Docker Compose ${COMPOSE_VERSION}...${NC}"
-    curl -L "$COMPOSE_URL" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-    
-    # 创建命令链接
-    ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-    
-    # 验证安装
-    if docker-compose --version &> /dev/null; then
-        echo -e "${GREEN}✓ Docker Compose安装成功${NC}"
-        docker-compose --version
-    else
-        echo -e "${RED}✗ Docker Compose安装失败${NC}"
-        return 1
-    fi
+    log SUCCESS "Docker仓库配置完成"
 }
 
-# 函数: 启动并配置Docker
-configure_docker() {
-    echo -e "${BLUE}>>> 配置Docker服务...${NC}"
+# 安装Docker
+install_docker() {
+    log INFO "安装Docker Engine..."
+    
+    case $OS in
+        ubuntu|debian)
+            apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            ;;
+        centos|rhel|almalinux|rocky|fedora)
+            if [[ $OS == "fedora" ]]; then
+                dnf install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            else
+                yum install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            fi
+            ;;
+    esac
     
     # 启动Docker服务
     systemctl enable docker
     systemctl start docker
     
-    # 等待Docker启动
-    for i in {1..30}; do
-        if docker info &> /dev/null; then
-            break
-        fi
-        echo -n "."
-        sleep 1
-    done
-    echo
-    
-    # 验证Docker是否正常运行
-    if ! docker info &> /dev/null; then
-        echo -e "${RED}错误: Docker服务启动失败${NC}"
-        systemctl status docker
-        exit 1
-    fi
-    
-    # 配置用户组
-    if [[ -n "$SUDO_USER" ]]; then
-        usermod -aG docker $SUDO_USER
-        echo -e "${GREEN}✓ 用户 $SUDO_USER 已添加到docker组${NC}"
-        echo -e "${YELLOW}注意: 请重新登录以使组权限生效${NC}"
-    fi
-    
-    echo -e "${GREEN}✓ Docker服务配置完成${NC}"
+    log SUCCESS "Docker Engine安装完成"
 }
 
-# 函数: 验证安装
+# 安装Docker Compose (独立版本)
+install_docker_compose() {
+    log INFO "安装Docker Compose..."
+    
+    local compose_version
+    compose_version=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    
+    if [[ -z $compose_version ]]; then
+        compose_version="v2.24.0"  # 默认版本
+        log WARNING "无法获取最新版本，使用默认版本 $compose_version"
+    fi
+    
+    local download_url
+    if [[ $USE_CN_MIRROR == true ]]; then
+        download_url="https://github.com.cnpmjs.org/docker/compose/releases/download/${compose_version}/docker-compose-linux-${ARCH}"
+    else
+        download_url="https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-${ARCH}"
+    fi
+    
+    # 下载并安装
+    curl -L "$download_url" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    
+    # 创建软链接
+    ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+    
+    log SUCCESS "Docker Compose安装完成"
+}
+
+# 配置Docker
+configure_docker() {
+    log INFO "配置Docker..."
+    
+    # 创建配置目录
+    mkdir -p "$DOCKER_CONFIG_DIR"
+    
+    # 配置Docker daemon
+    cat > "$DOCKER_CONFIG_DIR/daemon.json" << EOF
+{
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-size": "10m",
+        "max-file": "3"
+    },
+    "storage-driver": "overlay2"
+EOF
+    
+    # 添加国内镜像加速器
+    if [[ $USE_CN_MIRROR == true ]]; then
+        cat >> "$DOCKER_CONFIG_DIR/daemon.json" << EOF
+,
+    "registry-mirrors": [
+        "https://docker.mirrors.ustc.edu.cn",
+        "https://registry.docker-cn.com",
+        "https://mirror.ccs.tencentyun.com"
+    ]
+EOF
+    fi
+    
+    echo "}" >> "$DOCKER_CONFIG_DIR/daemon.json"
+    
+    # 重启Docker服务
+    systemctl daemon-reload
+    systemctl restart docker
+    
+    log SUCCESS "Docker配置完成"
+}
+
+# 验证安装
 verify_installation() {
-    echo -e "${BLUE}>>> 验证Docker安装...${NC}"
+    log INFO "验证安装..."
     
     # 检查Docker版本
-    echo -e "${CYAN}Docker版本信息:${NC}"
-    docker --version
+    if command_exists docker; then
+        local docker_version=$(docker --version)
+        log SUCCESS "Docker已安装: $docker_version"
+    else
+        error_exit "Docker安装失败"
+    fi
     
-    # 检查Docker服务状态
-    echo -e "\n${CYAN}Docker服务状态:${NC}"
-    systemctl is-active docker
+    # 检查Docker Compose版本
+    if command_exists docker-compose; then
+        local compose_version=$(docker-compose --version)
+        log SUCCESS "Docker Compose已安装: $compose_version"
+    fi
     
-    # 运行测试容器
-    echo -e "\n${CYAN}运行测试容器:${NC}"
-    docker run --rm hello-world
-    
-    # 显示Docker信息
-    echo -e "\n${CYAN}Docker系统信息:${NC}"
-    docker info | grep -E "Server Version|Storage Driver|Docker Root Dir"
-    
-    # 检查Docker Compose
-    if command -v docker-compose &> /dev/null; then
-        echo -e "\n${CYAN}Docker Compose版本:${NC}"
-        docker-compose --version
+    # 测试Docker运行
+    log INFO "测试Docker运行..."
+    if docker run --rm hello-world &>/dev/null; then
+        log SUCCESS "Docker运行正常"
+    else
+        log WARNING "Docker测试运行失败，请检查配置"
     fi
 }
 
-# 函数: 卸载Docker
-uninstall_docker() {
-    echo -e "${BLUE}>>> 卸载Docker...${NC}"
-    
-    read -p "确定要卸载Docker吗？这将删除所有容器和镜像。(y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 0
-    fi
-    
-    # 停止所有容器
-    echo -e "${YELLOW}停止所有运行中的容器...${NC}"
-    docker stop $(docker ps -aq) 2>/dev/null || true
-    
-    # 删除所有容器
-    echo -e "${YELLOW}删除所有容器...${NC}"
-    docker rm $(docker ps -aq) 2>/dev/null || true
-    
-    # 删除所有镜像
-    echo -e "${YELLOW}删除所有镜像...${NC}"
-    docker rmi $(docker images -q) 2>/dev/null || true
+# 卸载Docker
+remove_docker() {
+    log INFO "开始卸载Docker..."
     
     # 停止Docker服务
-    systemctl stop docker
-    systemctl disable docker
+    if systemctl is-active docker &>/dev/null; then
+        systemctl stop docker
+        systemctl disable docker
+    fi
     
-    # 卸载Docker包
     case $OS in
         ubuntu|debian)
-            apt-get purge -y docker-ce docker-ce-cli containerd.io
+            apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
             apt-get autoremove -y
             ;;
-        centos|rhel|fedora)
-            yum remove -y docker-ce docker-ce-cli containerd.io
+        centos|rhel|almalinux|rocky|fedora)
+            if [[ $OS == "fedora" ]]; then
+                dnf remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            else
+                yum remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            fi
             ;;
     esac
     
-    # 删除Docker数据目录
-    rm -rf /var/lib/docker
-    rm -rf /var/lib/containerd
-    rm -rf /etc/docker
-    
-    # 删除Docker Compose
+    # 删除Docker数据和配置
+    rm -rf "$DOCKER_DATA_DIR"
+    rm -rf "$DOCKER_CONFIG_DIR"
     rm -f /usr/local/bin/docker-compose
     rm -f /usr/bin/docker-compose
     
-    echo -e "${GREEN}✓ Docker卸载完成${NC}"
+    log SUCCESS "Docker卸载完成"
 }
 
-# 函数: 显示安装总结
-show_summary() {
-    echo -e "\n${GREEN}===================================================${NC}"
+# 更新Docker
+update_docker() {
+    log INFO "开始更新Docker..."
+    
+    case $OS in
+        ubuntu|debian)
+            apt-get update -qq
+            apt-get upgrade -y docker-ce docker-ce-cli containerd.io
+            ;;
+        centos|rhel|almalinux|rocky|fedora)
+            if [[ $OS == "fedora" ]]; then
+                dnf update -y docker-ce docker-ce-cli containerd.io
+            else
+                yum update -y docker-ce docker-ce-cli containerd.io
+            fi
+            ;;
+    esac
+    
+    # 更新Docker Compose
+    install_docker_compose
+    
+    # 重启Docker服务
+    systemctl restart docker
+    
+    log SUCCESS "Docker更新完成"
+}
+
+# 显示安装信息
+show_installation_info() {
+    echo
+    echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}Docker安装完成！${NC}"
-    echo -e "${GREEN}===================================================${NC}"
-    echo -e "\n${CYAN}安装信息:${NC}"
-    echo -e "  Docker版本: $(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
-    if command -v docker-compose &> /dev/null; then
-        echo -e "  Docker Compose版本: $(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
-    fi
-    echo -e "  配置文件: /etc/docker/daemon.json"
-    echo -e "  数据目录: /var/lib/docker"
-    
-    echo -e "\n${CYAN}常用命令:${NC}"
-    echo -e "  docker ps              # 查看运行中的容器"
-    echo -e "  docker images          # 查看镜像列表"
-    echo -e "  docker run [image]     # 运行容器"
-    echo -e "  docker-compose up -d   # 启动compose服务"
-    
-    echo -e "\n${CYAN}下一步建议:${NC}"
-    echo -e "  1. 重新登录以使用户组权限生效"
-    echo -e "  2. 运行 'docker run hello-world' 测试安装"
-    echo -e "  3. 配置镜像加速器以提高下载速度"
-    echo -e "${GREEN}===================================================${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo
+    echo -e "${BLUE}版本信息:${NC}"
+    docker --version
+    docker-compose --version 2>/dev/null || echo "Docker Compose: 使用 'docker compose' 命令"
+    echo
+    echo -e "${BLUE}常用命令:${NC}"
+    echo "  docker ps              # 查看运行中的容器"
+    echo "  docker images          # 查看镜像列表"
+    echo "  docker compose up -d   # 启动compose服务"
+    echo "  docker system prune    # 清理未使用的资源"
+    echo
+    echo -e "${BLUE}配置文件:${NC}"
+    echo "  $DOCKER_CONFIG_DIR/daemon.json"
+    echo
+    echo -e "${BLUE}日志文件:${NC}"
+    echo "  $LOG_FILE"
+    echo
 }
 
 # 主函数
 main() {
-    # 检查root权限
-    if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}错误: 此脚本需要root权限运行${NC}"
-        echo "请使用: sudo $0"
-        exit 1
-    fi
-    
-    # 解析命令行参数
+    # 解析参数
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --remove)
+                ACTION="remove"
+                shift
+                ;;
+            --update)
+                ACTION="update"
+                shift
+                ;;
+            --compose)
+                ACTION="compose"
+                shift
+                ;;
+            --cn)
+                USE_CN_MIRROR=true
+                shift
+                ;;
             -h|--help)
                 show_help
                 exit 0
                 ;;
-            -v|--version)
-                DOCKER_VERSION="$2"
-                shift 2
-                ;;
-            -c|--compose)
-                DOCKER_COMPOSE_VERSION="$2"
-                shift 2
-                ;;
-            -m|--mirror)
-                CHINA_MIRROR=true
-                shift
-                ;;
-            -u|--uninstall)
-                INSTALL_MODE="uninstall"
-                shift
-                ;;
             *)
-                echo -e "${RED}错误: 未知选项 $1${NC}"
+                log ERROR "未知选项: $1"
                 show_help
                 exit 1
                 ;;
         esac
     done
     
-    # 显示脚本信息
-    echo -e "${PURPLE}===================================================${NC}"
-    echo -e "${PURPLE}VPS Docker安装脚本${NC}"
-    echo -e "${PURPLE}作者: Jensfrank${NC}"
-    echo -e "${PURPLE}===================================================${NC}\n"
+    # 检查权限
+    check_root
     
-    # 执行相应操作
-    if [[ "$INSTALL_MODE" == "uninstall" ]]; then
-        uninstall_docker
-    else
-        # 检查系统要求
-        check_requirements
-        
-        # 配置中国镜像（如果需要）
-        if [[ "$CHINA_MIRROR" == true ]]; then
-            setup_china_mirror
-        fi
-        
-        # 根据系统类型安装Docker
-        case $OS in
-            ubuntu|debian)
-                install_docker_debian
-                ;;
-            centos|rhel|fedora)
-                install_docker_rhel
-                ;;
-            *)
-                echo -e "${RED}错误: 不支持的操作系统: $OS${NC}"
-                exit 1
-                ;;
-        esac
-        
-        # 配置Docker
-        configure_docker
-        
-        # 安装Docker Compose（如果需要）
-        if [[ -n "$DOCKER_COMPOSE_VERSION" ]] || [[ "$DOCKER_COMPOSE_VERSION" == "latest" ]]; then
+    # 检测系统
+    detect_system
+    check_compatibility
+    
+    # 开始执行
+    echo -e "${BLUE}${SCRIPT_NAME} v${SCRIPT_VERSION}${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    
+    case $ACTION in
+        install)
+            log INFO "开始安装Docker..."
+            setup_cn_mirrors
+            install_dependencies
+            setup_docker_repo
+            install_docker
             install_docker_compose
-        fi
-        
-        # 验证安装
-        verify_installation
-        
-        # 显示安装总结
-        show_summary
-    fi
+            configure_docker
+            verify_installation
+            show_installation_info
+            ;;
+        remove)
+            remove_docker
+            ;;
+        update)
+            update_docker
+            verify_installation
+            ;;
+        compose)
+            install_docker_compose
+            docker-compose --version
+            ;;
+    esac
+    
+    log SUCCESS "操作完成！"
 }
 
 # 执行主函数
