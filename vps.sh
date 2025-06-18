@@ -148,8 +148,8 @@ performance_test_menu() {
     while true; do
         print_header
         echo -e "${PURPLE}--- 性能测试菜单 ---${RESET}"
-        echo "1. CPU 基准测试"
-        echo "2. 磁盘 IO 基准测试"
+        echo "1. CPU基准测试"
+        echo "2. 磁盘IO基准测试"
         echo "3. 内存基准测试"
         echo "4. 网络吞吐量测试"
         echo "--------------------"
