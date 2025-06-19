@@ -175,12 +175,13 @@ service_install_menu() {
         echo -e "${PURPLE}--- 服务安装菜单 ---${RESET}"
         echo "1. 安装 Docker"
         echo "2. 安装 LNMP 环境"
-        echo "3. 安装 Node.js"
-        echo "4. 安装 Python"
-        echo "5. 安装 Redis"
-        echo "6. 安装 宝塔面板"
-        echo "7. 安装 1Panel 面板"
-        echo "8. 安装 Wordpress"
+        echo "3. 安装 LDNMP 环境"
+        echo "4. 安装 Node.js"
+        echo "5. 安装 Python"
+        echo "6. 安装 Redis"
+        echo "7. 安装 宝塔面板"
+        echo "8. 安装 1Panel 面板"
+        echo "9. 安装 Wordpress"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -188,13 +189,14 @@ service_install_menu() {
 
         case $choice in
             1) run_repo_script "scripts/service_install/install_docker.sh" ;;
-            2) run_repo_script "scripts/service_install/install_ldnmp.sh" ;;
-            3) run_repo_script "scripts/service_install/install_nodejs.sh" ;;
-            4) run_repo_script "scripts/service_install/install_python.sh" ;;
-            5) run_repo_script "scripts/service_install/install_redis.sh" ;;
-            6) run_repo_script "scripts/service_install/install_bt_panel.sh" ;;
-            7) run_repo_script "scripts/service_install/install_1panel.sh" ;;
-            8) run_repo_script "scripts/service_install/install_wordpress.sh" ;;
+            2) run_repo_script "scripts/service_install/install_lnmp.sh" ;;
+            3) run_repo_script "scripts/service_install/install_ldnmp.sh" ;;
+            4) run_repo_script "scripts/service_install/install_nodejs.sh" ;;
+            5) run_repo_script "scripts/service_install/install_python.sh" ;;
+            6) run_repo_script "scripts/service_install/install_redis.sh" ;;
+            7) run_repo_script "scripts/service_install/install_bt_panel.sh" ;;
+            8) run_repo_script "scripts/service_install/install_1panel.sh" ;;
+            9) run_repo_script "scripts/service_install/install_wordpress.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
