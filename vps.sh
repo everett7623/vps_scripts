@@ -188,7 +188,7 @@ service_install_menu() {
 
         case $choice in
             1) run_repo_script "scripts/service_install/install_docker.sh" ;;
-            2) run_repo_script "scripts/service_install/install_lnmp.sh" ;;
+            2) run_repo_script "scripts/service_install/install_ldnmp.sh" ;;
             3) run_repo_script "scripts/service_install/install_nodejs.sh" ;;
             4) run_repo_script "scripts/service_install/install_python.sh" ;;
             5) run_repo_script "scripts/service_install/install_redis.sh" ;;
