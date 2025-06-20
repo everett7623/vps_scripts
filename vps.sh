@@ -188,15 +188,15 @@ service_install_menu() {
         read -p "请输入选项 [0-9]: " choice
 
         case $choice in
-            1) run_repo_script "scripts/service_install/install_docker.sh" ;;
-            2) run_repo_script "scripts/service_install/install_nginx.sh" ;;
-            3) run_repo_script "scripts/service_install/install_ldnmp.sh" ;;
-            4) run_repo_script "scripts/service_install/install_nodejs.sh" ;;
-            5) run_repo_script "scripts/service_install/install_python.sh" ;;
-            6) run_repo_script "scripts/service_install/install_redis.sh" ;;
-            7) run_repo_script "scripts/service_install/install_bt_panel.sh" ;;
-            8) run_repo_script "scripts/service_install/install_1panel.sh" ;;
-            9) run_repo_script "scripts/service_install/install_wordpress.sh" ;;
+            1) run_repo_script "scripts/service_install/docker.sh" ;;
+            2) run_repo_script "scripts/service_install/nginx.sh" ;;
+            3) run_repo_script "scripts/service_install/ldnmp.sh" ;;
+            4) run_repo_script "scripts/service_install/nodejs.sh" ;;
+            5) run_repo_script "scripts/service_install/python.sh" ;;
+            6) run_repo_script "scripts/service_install/redis.sh" ;;
+            7) run_repo_script "scripts/service_install/bt_panel.sh" ;;
+            8) run_repo_script "scripts/service_install/1panel.sh" ;;
+            9) run_repo_script "scripts/service_install/wordpress.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
