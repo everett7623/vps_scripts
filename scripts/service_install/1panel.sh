@@ -1,8 +1,8 @@
 #!/bin/bash
 #==============================================================================
-# 脚本名称: install_1panel.sh
+# 脚本名称: 1panel.sh
 # 脚本描述: 1Panel运维面板安装配置脚本 - 现代化的Linux服务器管理面板
-# 脚本路径: vps_scripts/scripts/service_install/install_1panel.sh
+# 脚本路径: vps_scripts/scripts/service_install/1panel.sh
 # 作者: Jensfrank
 # 使用方法: bash install_1panel.sh [选项]
 # 选项: 
