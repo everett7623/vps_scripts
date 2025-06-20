@@ -174,7 +174,7 @@ service_install_menu() {
         print_header
         echo -e "${PURPLE}--- 服务安装菜单 ---${RESET}"
         echo "1. 安装 Docker"
-        echo "2. 安装 NGINX 环境"
+        echo "2. 安装 Nginx 环境"
         echo "3. 安装 LDNMP 环境"
         echo "4. 安装 Node.js"
         echo "5. 安装 Python"
