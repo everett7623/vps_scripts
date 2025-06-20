@@ -1,8 +1,8 @@
 #!/bin/bash
 #==============================================================================
-# 脚本名称: install_docker.sh
+# 脚本名称: docker.sh
 # 脚本描述: Docker和Docker Compose安装脚本 - 支持多种系统的自动化安装
-# 脚本路径: vps_scripts/scripts/service_install/install_docker.sh
+# 脚本路径: vps_scripts/scripts/service_install/docker.sh
 # 作者: Jensfrank
 # 使用方法: bash install_docker.sh [选项]
 # 选项: 
