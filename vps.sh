@@ -181,7 +181,7 @@ service_install_menu() {
         echo "6. 安装 Java"
         echo "7. 安装 Go"
         echo "8. 安装 Redis"
-        echo "9. 安装 MYSQL"
+        echo "9. 安装 MySQL/MariaDB"
         echo "10. 安装 宝塔面板"
         echo "11. 安装 1Panel 面板"
         echo "12. 安装 Wordpress"
