@@ -26,6 +26,7 @@ CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 
 
+
 # --- Function to display a header ---
 print_header() {
     clear
