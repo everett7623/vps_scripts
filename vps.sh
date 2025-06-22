@@ -179,12 +179,19 @@ service_install_menu() {
         echo "4. 安装 Node.js"
         echo "5. 安装 Python"
         echo "6. 安装 Java"
-        echo "7. 安装 Go"
-        echo "8. 安装 Redis"
-        echo "9. 安装 MySQL/MariaDB"
-        echo "10. 安装 宝塔面板"
-        echo "11. 安装 1Panel 面板"
-        echo "12. 安装 Wordpress"
+        echo "7. 安装 ruby"
+        echo "8. 安装 Rust"
+        echo "9. 安装 Go"
+        echo "10. 安装 Redis"
+        echo "11. 安装 MySQL/MariaDB"
+        echo "12. 安装 PostgreSQL"
+        echo "13. 安装 BT 宝塔国际版"       
+        echo "14. 安装 aaPanel 宝塔国际版"
+        echo "15. 安装 1Panel 面板"
+        echo "16. 安装 AMH 面板"
+        echo "17. 安装 Cyberpanel 面板"      
+        echo "18. 安装 Wordpress"
+        echo "19. 安装 Halo"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -197,12 +204,19 @@ service_install_menu() {
             4) run_repo_script "scripts/service_install/nodejs.sh" ;;
             5) run_repo_script "scripts/service_install/python.sh" ;;
             6) run_repo_script "scripts/service_install/java.sh" ;;
-            7) run_repo_script "scripts/service_install/go.sh" ;;
-            8) run_repo_script "scripts/service_install/redis.sh" ;;
-            9) run_repo_script "scripts/service_install/mysql.sh" ;;
-            10) run_repo_script "scripts/service_install/bt_panel.sh" ;;
-            11) run_repo_script "scripts/service_install/1panel.sh" ;;
-            12) run_repo_script "scripts/service_install/wordpress.sh" ;;
+            7) run_repo_script "scripts/service_install/ruby.sh" ;;
+            8) run_repo_script "scripts/service_install/rust.sh" ;;
+            9) run_repo_script "scripts/service_install/go.sh" ;;
+            10) run_repo_script "scripts/service_install/redis.sh" ;;
+            11) run_repo_script "scripts/service_install/mysql.sh" ;;
+            12) run_repo_script "scripts/service_install/postgresql.sh" ;;
+            13) run_repo_script "scripts/service_install/bt_panel.sh" ;;
+            14) run_repo_script "scripts/service_install/aapanel.sh" ;;
+            15) run_repo_script "scripts/service_install/1panel.sh" ;;
+            16) run_repo_script "scripts/service_install/amh.sh" ;;
+            17) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
+            18) run_repo_script "scripts/service_install/wordpress.sh" ;;
+            19) run_repo_script "scripts/service_install/halo.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
