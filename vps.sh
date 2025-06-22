@@ -178,10 +178,11 @@ service_install_menu() {
         echo "3. 安装 LDNMP 环境"
         echo "4. 安装 Node.js"
         echo "5. 安装 Python"
-        echo "6. 安装 Redis"
-        echo "7. 安装 宝塔面板"
-        echo "8. 安装 1Panel 面板"
-        echo "9. 安装 Wordpress"
+        echo "6. 安装 Java"
+        echo "7. 安装 Redis"
+        echo "8. 安装 宝塔面板"
+        echo "9. 安装 1Panel 面板"
+        echo "10. 安装 Wordpress"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -193,10 +194,11 @@ service_install_menu() {
             3) run_repo_script "scripts/service_install/ldnmp.sh" ;;
             4) run_repo_script "scripts/service_install/nodejs.sh" ;;
             5) run_repo_script "scripts/service_install/python.sh" ;;
-            6) run_repo_script "scripts/service_install/redis.sh" ;;
-            7) run_repo_script "scripts/service_install/bt_panel.sh" ;;
-            8) run_repo_script "scripts/service_install/1panel.sh" ;;
-            9) run_repo_script "scripts/service_install/wordpress.sh" ;;
+            6) run_repo_script "scripts/service_install/java.sh" ;;
+            7) run_repo_script "scripts/service_install/redis.sh" ;;
+            8) run_repo_script "scripts/service_install/bt_panel.sh" ;;
+            9) run_repo_script "scripts/service_install/1panel.sh" ;;
+            10) run_repo_script "scripts/service_install/wordpress.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
