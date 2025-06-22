@@ -181,9 +181,10 @@ service_install_menu() {
         echo "6. 安装 Java"
         echo "7. 安装 Go"
         echo "8. 安装 Redis"
-        echo "9. 安装 宝塔面板"
-        echo "10. 安装 1Panel 面板"
-        echo "11. 安装 Wordpress"
+        echo "9. 安装 MYSQL"
+        echo "10. 安装 宝塔面板"
+        echo "11. 安装 1Panel 面板"
+        echo "12. 安装 Wordpress"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -198,9 +199,10 @@ service_install_menu() {
             6) run_repo_script "scripts/service_install/java.sh" ;;
             7) run_repo_script "scripts/service_install/go.sh" ;;
             8) run_repo_script "scripts/service_install/redis.sh" ;;
-            9) run_repo_script "scripts/service_install/bt_panel.sh" ;;
-            10) run_repo_script "scripts/service_install/1panel.sh" ;;
-            11) run_repo_script "scripts/service_install/wordpress.sh" ;;
+            9) run_repo_script "scripts/service_install/mysql.sh" ;;
+            10) run_repo_script "scripts/service_install/bt_panel.sh" ;;
+            11) run_repo_script "scripts/service_install/1panel.sh" ;;
+            12) run_repo_script "scripts/service_install/wordpress.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
