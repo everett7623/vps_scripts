@@ -194,6 +194,7 @@ service_install_menu() {
         echo "18. 安装 Wordpress"
         echo "19. 安装 Halo"
         echo "26. 安装 Kubernetes容器编排平台"
+        echo "27. 安装 Jenkins CI/CD平台"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -220,6 +221,7 @@ service_install_menu() {
             18) run_repo_script "scripts/service_install/wordpress.sh" ;;
             19) run_repo_script "scripts/service_install/halo.sh" ;;
             26) run_repo_script "scripts/service_install/kubernetes.sh" ;;
+            27) run_repo_script "scripts/service_install/jenkins.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
