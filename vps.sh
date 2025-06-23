@@ -194,18 +194,16 @@ service_install_menu() {
         echo "18. 安装 Wordpress"
         echo "19. 安装 Halo 博客网站"
         echo "20. 安装 Typecho 轻量博客网站"
-        echo "21. 安装 Pbootcms 企业站"
-        echo "22. 安装 苹果 CMS 网站"
-        echo "23. 安装 Flarum 论坛网站"
-        echo "24. 安装 Discourse 论坛网站"
-        echo "25. 安装 Discuz 论坛"                                
-        echo "26. 安装 Kubernetes容器编排平台"
-        echo "27. 安装 Jenkins CI/CD平台"
-        echo "28. 安装 LinkStack 共享链接平台"
-        echo "29. 安装 独角数发卡网"
-        echo "30. 安装 NginxProxyManager 可视化面板"
-        echo "31. 安装 Frps 内网穿透 (服务端)"
-        echo "32. 安装 Frpc 内网穿透 (客户端)"
+        echo "21. 安装 Flarum 论坛网站"
+        echo "22. 安装 Discourse 论坛网站"
+        echo "23. 安装 Discuz 论坛"
+        echo "24. 安装 独角数发卡网"
+        echo "25. 安装 Kubernetes容器编排平台"
+        echo "26. 安装 Jenkins CI/CD平台"
+        echo "27. 安装 LinkStack 共享链接平台"
+        echo "28. 安装 NginxProxyManager 可视化面板"
+        echo "29. 安装 Frps 内网穿透 (服务端)"
+        echo "30. 安装 Frpc 内网穿透 (客户端)"
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
@@ -231,8 +229,17 @@ service_install_menu() {
             17) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
             18) run_repo_script "scripts/service_install/wordpress.sh" ;;
             19) run_repo_script "scripts/service_install/halo.sh" ;;
-            26) run_repo_script "scripts/service_install/kubernetes.sh" ;;
-            27) run_repo_script "scripts/service_install/jenkins.sh" ;;
+            20) run_repo_script "scripts/service_install/typecho.sh" ;;
+            21) run_repo_script "scripts/service_install/flarum.sh" ;;
+            22) run_repo_script "scripts/service_install/discourse.sh" ;;
+            23) run_repo_script "scripts/service_install/discuz.sh" ;;
+            24) run_repo_script "scripts/service_install/halo.sh" ;;
+            25) run_repo_script "scripts/service_install/kubernetes.sh" ;;
+            26) run_repo_script "scripts/service_install/jenkins.sh" ;;
+            27) run_repo_script "scripts/service_install/linkstack.sh" ;;
+            28) run_repo_script "scripts/service_install/npm.sh" ;;
+            29) run_repo_script "scripts/service_install/fprs.sh" ;;
+            30) run_repo_script "scripts/service_install/fprc.sh" ;;
             0) return ;;
             *) echo -e "${RED}无效输入, 请重新选择!${RESET}" && sleep 1 ;;
         esac
