@@ -224,7 +224,7 @@ service_install_menu() {
             10) run_repo_script "scripts/service_install/redis.sh" ;;
             11) run_repo_script "scripts/service_install/mysql.sh" ;;
             12) run_repo_script "scripts/service_install/postgresql.sh" ;;
-            13) run_repo_script "scripts/service_install/bt_panel.sh" ;;
+            13) run_repo_script "scripts/service_install/btpanel.sh" ;;
             14) run_repo_script "scripts/service_install/aapanel.sh" ;;
             15) run_repo_script "scripts/service_install/onepanel.sh" ;;
             16) run_repo_script "scripts/service_install/amh.sh" ;;
