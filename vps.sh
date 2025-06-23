@@ -186,7 +186,7 @@ service_install_menu() {
         echo "10. 安装 Redis"
         echo "11. 安装 MySQL/MariaDB"
         echo "12. 安装 PostgreSQL"
-        echo "13. 安装 BT 宝塔国际版"       
+        echo "13. 安装 BT 宝塔面板"       
         echo "14. 安装 aaPanel 宝塔国际版"
         echo "15. 安装 1Panel 面板"
         echo "16. 安装 AMH 面板"
