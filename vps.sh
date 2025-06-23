@@ -207,7 +207,7 @@ service_install_menu() {
         echo "--------------------"
         echo "0. 返回主菜单"
         echo ""
-        read -p "请输入选项 [0-9]: " choice
+        read -p "请输入选项 [0-30]: " choice
 
         case $choice in
             1) run_repo_script "scripts/service_install/docker.sh" ;;
