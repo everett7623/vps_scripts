@@ -1,8 +1,8 @@
 #!/bin/bash
 #==============================================================================
-# 脚本名称: amh_install.sh
+# 脚本名称: amh.sh
 # 脚本描述: AMH面板自动安装脚本 - 一键安装AMH服务器管理面板
-# 脚本路径: vps_scripts/scripts/service_install/amh_install.sh
+# 脚本路径: vps_scripts/scripts/service_install/amh.sh
 # 作者: Jensfrank
 # 使用方法: bash amh_install.sh [选项]
 # 选项: --version [版本号] (默认安装最新版)
@@ -44,7 +44,7 @@ show_help() {
     echo "=================================================="
     echo "AMH面板安装脚本"
     echo "=================================================="
-    echo "使用方法: bash amh_install.sh [选项]"
+    echo "使用方法: bash amh.sh [选项]"
     echo ""
     echo "选项:"
     echo "  --version [版本号]  指定安装版本 (默认: latest)"
@@ -54,10 +54,10 @@ show_help() {
     echo "  --help             显示此帮助信息"
     echo ""
     echo "示例:"
-    echo "  bash amh_install.sh                     # 安装最新版"
-    echo "  bash amh_install.sh --version 7.0       # 安装指定版本"
-    echo "  bash amh_install.sh --domain example.com # 设置域名"
-    echo "  bash amh_install.sh --uninstall         # 卸载面板"
+    echo "  bash amh.sh                     # 安装最新版"
+    echo "  bash amh.sh --version 7.0       # 安装指定版本"
+    echo "  bash amh.sh --domain example.com # 设置域名"
+    echo "  bash amh.sh --uninstall         # 卸载面板"
     echo "=================================================="
 }
 
