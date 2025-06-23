@@ -1,8 +1,8 @@
 #!/bin/bash
 #==============================================================================
-# 脚本名称: aapanel_official.sh
+# 脚本名称: aapanel.sh
 # 脚本描述: aaPanel（宝塔国际版）官方安装脚本增强版
-# 脚本路径: vps_scripts/scripts/service_install/aapanel_official.sh
+# 脚本路径: vps_scripts/scripts/service_install/aapanel.sh
 # 作者: Jensfrank
 # 使用方法: bash aapanel_official.sh [选项]
 # 选项说明:
