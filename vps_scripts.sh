@@ -595,7 +595,7 @@ show_menu() {
     18)
       clear
       echo -e "${PURPLE}执行 勇哥X-UI ...${NC}"
-      bash <(curl -Ls https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh)
+      bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/x-ui-yg/main/install.sh)
       read -n 1 -s -r -p "按任意键返回主菜单..."
       ;;
     19)
