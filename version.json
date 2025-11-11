@@ -1,0 +1,31 @@
+{
+  "version": "2.2.0",
+  "date": "2025-11-11",
+  "url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
+  "changelog_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/CHANGELOG.md",
+  "required_version": "2.0.0",
+  "features": [
+    "Multi-language support (EN/CN)",
+    "Automatic version checking",
+    "Script signature verification",
+    "Concurrent instance control",
+    "Enhanced error handling"
+  ],
+  "checksums": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "compatibility": {
+    "min_bash_version": "4.0",
+    "supported_os": [
+      "Debian 9+",
+      "Ubuntu 18.04+",
+      "CentOS 7+",
+      "Alpine 3.10+"
+    ]
+  },
+  "security": {
+    "signature_verification": true,
+    "https_only": true,
+    "concurrent_lock": true
+  }
+}
