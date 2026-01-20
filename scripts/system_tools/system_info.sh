@@ -1,53 +1,50 @@
 #!/bin/bash
-
-#==============================================================================
+# ==============================================================================
 # 脚本名称: system_info.sh
-# 描述: VPS系统信息查看脚本 - 全面展示系统配置、硬件信息和资源使用情况
-# 作者: Jensfrank
-# 路径: vps_scripts/scripts/system_tools/system_info.sh
-# 使用方法: bash system_info.sh
-# 更新日期: 2024-06-17
-#==============================================================================
+# 仓库地址: https://github.com/everett7623/vps_scripts
+# 脚本路径: scripts/system_tools/system_info.sh
+# 描述: VPS 系统信息深度检测脚本
+#       提供硬件配置、网络状态、系统负载、虚拟化架构及关键服务运行状态的全面报告。
+# 作者: Jensfrank (Optimized by AI)
+# 版本: 1.2.0 (Standardized)
+# 更新日期: 2026-01-20
+# ==============================================================================
 
-# 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[0;37m'
-NC='\033[0m' # No Color
+# ------------------------------------------------------------------------------
+# 1. 环境初始化与依赖加载
+# ------------------------------------------------------------------------------
 
-# 检查是否以root权限运行
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        echo -e "${YELLOW}提示: 某些信息可能需要root权限才能完整显示${NC}"
-        echo ""
-    fi
-}
+# 获取脚本真实路径（解决软链接问题）
+SCRIPT_PATH=$(readlink -f "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+# 定位项目根目录 (向上查找两级: scripts/system_tools/ -> scripts/ -> root/)
+PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
 
-# 打印分隔线
-print_separator() {
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-}
+# 尝试加载公共函数库
+LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
+if [ -f "$LIB_FILE" ]; then
+    source "$LIB_FILE"
+else
+    # 如果找不到库文件（例如单独运行此脚本），则定义简易回退函数，防止报错
+    echo "Warning: Common library not found. Using standalone mode."
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
+    print_title() { echo -e "\n${GREEN}▶ $1${NC}\n${BLUE}------------------------------------------------${NC}"; }
+    print_separator() { echo -e "${BLUE}------------------------------------------------${NC}"; }
+    get_public_ip() { curl -s -4 ip.sb; }
+fi
 
-# 打印标题
-print_title() {
-    local title="$1"
-    echo ""
-    echo -e "${GREEN}▶ $title${NC}"
-    echo -e "${BLUE}────────────────────────────────────────────────────────────────────────────${NC}"
-}
+# ------------------------------------------------------------------------------
+# 2. 信息采集函数定义
+# ------------------------------------------------------------------------------
 
-# 获取系统基本信息
-get_system_info() {
-    print_title "系统基本信息"
+# 获取系统基本概览
+get_system_overview() {
+    print_title "系统基本概览"
     
     # 主机名
     echo -e "${CYAN}主机名称:${NC} $(hostname)"
     
-    # 操作系统
+    # 操作系统 (优先读取 os-release)
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         echo -e "${CYAN}操作系统:${NC} $PRETTY_NAME"
@@ -61,268 +58,270 @@ get_system_info() {
     # 系统架构
     echo -e "${CYAN}系统架构:${NC} $(uname -m)"
     
-    # 系统运行时间
-    echo -e "${CYAN}运行时间:${NC} $(uptime -p 2>/dev/null || uptime)"
+    # 运行时间 (格式化输出)
+    echo -e "${CYAN}运行时间:${NC} $(uptime -p | sed 's/up //')"
     
-    # 当前时间
-    echo -e "${CYAN}当前时间:${NC} $(date '+%Y-%m-%d %H:%M:%S %Z')"
+    # 系统时间
+    echo -e "${CYAN}系统时间:${NC} $(date '+%Y-%m-%d %H:%M:%S %Z')"
     
-    # 时区
+    # 时区信息
     if [ -f /etc/timezone ]; then
         echo -e "${CYAN}系统时区:${NC} $(cat /etc/timezone)"
     else
-        echo -e "${CYAN}系统时区:${NC} $(timedatectl 2>/dev/null | grep "Time zone" | cut -d: -f2 | xargs)"
+        echo -e "${CYAN}系统时区:${NC} $(date +%Z)"
     fi
 }
 
-# 获取CPU信息
-get_cpu_info() {
-    print_title "CPU信息"
+# 获取 CPU 详细信息
+get_cpu_details() {
+    print_title "CPU 处理器信息"
     
-    # CPU型号
-    cpu_model=$(grep -m1 "model name" /proc/cpuinfo | cut -d: -f2 | xargs)
-    echo -e "${CYAN}CPU型号:${NC} ${cpu_model:-未知}"
+    # CPU 型号
+    local cpu_model=$(grep -m1 "model name" /proc/cpuinfo | cut -d: -f2 | xargs)
+    echo -e "${CYAN}CPU 型号:${NC} ${cpu_model:-未知}"
     
-    # CPU核心数
-    cpu_cores=$(nproc 2>/dev/null || grep -c "processor" /proc/cpuinfo)
-    echo -e "${CYAN}CPU核心:${NC} $cpu_cores 核"
+    # CPU 核心数
+    local cpu_cores=$(nproc 2>/dev/null || grep -c "processor" /proc/cpuinfo)
+    echo -e "${CYAN}CPU 核心:${NC} ${cpu_cores} 核"
     
-    # CPU频率
+    # CPU 频率 (尝试获取)
     if [ -f /proc/cpuinfo ]; then
-        cpu_freq=$(grep -m1 "cpu MHz" /proc/cpuinfo | cut -d: -f2 | xargs)
+        local cpu_freq=$(grep -m1 "cpu MHz" /proc/cpuinfo | cut -d: -f2 | xargs)
         if [ -n "$cpu_freq" ]; then
-            echo -e "${CYAN}CPU频率:${NC} ${cpu_freq} MHz"
+            echo -e "${CYAN}CPU 频率:${NC} ${cpu_freq} MHz"
         fi
     fi
     
-    # CPU使用率
-    cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
-    if [ -n "$cpu_usage" ]; then
-        echo -e "${CYAN}CPU使用率:${NC} ${cpu_usage}%"
-    fi
+    # CPU 实时使用率 (从 top 获取)
+    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+    echo -e "${CYAN}CPU 使用:${NC} ${cpu_usage}% (User+Sys)"
     
     # 系统负载
-    load_avg=$(uptime | awk -F'load average:' '{print $2}' | xargs)
-    echo -e "${CYAN}系统负载:${NC} $load_avg"
+    local load_avg=$(uptime | grep -o 'load average:.*' | cut -d: -f2 | xargs)
+    echo -e "${CYAN}系统负载:${NC} ${load_avg} (1/5/15 min)"
 }
 
-# 获取内存信息
-get_memory_info() {
-    print_title "内存信息"
+# 获取内存详细信息
+get_memory_details() {
+    print_title "内存与交换分区"
     
-    # 读取内存信息
-    mem_total=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-    mem_free=$(grep MemFree /proc/meminfo | awk '{print $2}')
-    mem_available=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
-    mem_buffers=$(grep Buffers /proc/meminfo | awk '{print $2}')
-    mem_cached=$(grep "^Cached" /proc/meminfo | awk '{print $2}')
+    # 从 /proc/meminfo 读取精确值 (单位 kB)
+    local mem_total=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    local mem_avail=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+    local mem_free=$(grep MemFree /proc/meminfo | awk '{print $2}')
     
-    # 转换为MB
-    mem_total_mb=$((mem_total / 1024))
-    mem_free_mb=$((mem_free / 1024))
-    mem_available_mb=$((mem_available / 1024))
-    mem_used_mb=$((mem_total_mb - mem_available_mb))
-    mem_usage=$((mem_used_mb * 100 / mem_total_mb))
+    # 转换为 MB
+    local mem_total_mb=$((mem_total / 1024))
+    local mem_avail_mb=$((mem_avail / 1024))
+    local mem_used_mb=$((mem_total_mb - mem_avail_mb))
     
-    echo -e "${CYAN}总内存:${NC} ${mem_total_mb} MB"
-    echo -e "${CYAN}已使用:${NC} ${mem_used_mb} MB (${mem_usage}%)"
-    echo -e "${CYAN}可用内存:${NC} ${mem_available_mb} MB"
-    echo -e "${CYAN}空闲内存:${NC} ${mem_free_mb} MB"
+    # 计算百分比
+    local mem_usage_pct=0
+    [ "$mem_total_mb" -gt 0 ] && mem_usage_pct=$((mem_used_mb * 100 / mem_total_mb))
     
-    # Swap信息
-    swap_total=$(grep SwapTotal /proc/meminfo | awk '{print $2}')
-    swap_free=$(grep SwapFree /proc/meminfo | awk '{print $2}')
+    echo -e "${CYAN}物理内存:${NC} ${mem_used_mb}MB / ${mem_total_mb}MB (使用率: ${mem_usage_pct}%)"
+    echo -e "${CYAN}可用内存:${NC} ${mem_avail_mb}MB"
     
+    # Swap 信息
+    local swap_total=$(grep SwapTotal /proc/meminfo | awk '{print $2}')
     if [ "$swap_total" -gt 0 ]; then
-        swap_total_mb=$((swap_total / 1024))
-        swap_free_mb=$((swap_free / 1024))
-        swap_used_mb=$((swap_total_mb - swap_free_mb))
-        swap_usage=$((swap_used_mb * 100 / swap_total_mb))
+        local swap_free=$(grep SwapFree /proc/meminfo | awk '{print $2}')
+        local swap_total_mb=$((swap_total / 1024))
+        local swap_used_mb=$(( (swap_total - swap_free) / 1024 ))
+        local swap_usage_pct=$((swap_used_mb * 100 / swap_total_mb))
         
-        echo ""
-        echo -e "${CYAN}Swap总量:${NC} ${swap_total_mb} MB"
-        echo -e "${CYAN}Swap已用:${NC} ${swap_used_mb} MB (${swap_usage}%)"
+        echo -e "${CYAN}Swap交换:${NC} ${swap_used_mb}MB / ${swap_total_mb}MB (使用率: ${swap_usage_pct}%)"
     else
-        echo ""
-        echo -e "${CYAN}Swap:${NC} 未配置"
+        echo -e "${CYAN}Swap交换:${NC} 未启用"
     fi
 }
 
-# 获取磁盘信息
-get_disk_info() {
-    print_title "磁盘信息"
+# 获取磁盘详细信息
+get_disk_details() {
+    print_title "磁盘存储状态"
     
-    # 磁盘使用情况
+    # 打印表头
+    printf "${CYAN}%-15s %-9s %-9s %-9s %-6s %s${NC}\n" "挂载点" "总容量" "已用" "可用" "使用%" "设备"
+    
+    # 遍历物理磁盘 (排除 tmpfs, overlay 等)
     df -h | grep -E '^/dev/' | while read line; do
-        device=$(echo $line | awk '{print $1}')
-        size=$(echo $line | awk '{print $2}')
-        used=$(echo $line | awk '{print $3}')
-        avail=$(echo $line | awk '{print $4}')
-        usage=$(echo $line | awk '{print $5}')
-        mount=$(echo $line | awk '{print $6}')
+        local device=$(echo $line | awk '{print $1}')
+        local size=$(echo $line | awk '{print $2}')
+        local used=$(echo $line | awk '{print $3}')
+        local avail=$(echo $line | awk '{print $4}')
+        local usage=$(echo $line | awk '{print $5}')
+        local mount=$(echo $line | awk '{print $6}')
         
-        echo -e "${CYAN}设备:${NC} $device"
-        echo -e "  挂载点: $mount"
-        echo -e "  总容量: $size | 已使用: $used | 可用: $avail | 使用率: $usage"
-        echo ""
+        printf "  %-15s %-9s %-9s %-9s %-6s %s\n" "$mount" "$size" "$used" "$avail" "$usage" "$device"
     done
     
-    # 显示总磁盘使用情况
-    total_disk=$(df -h --total 2>/dev/null | grep total | awk '{print $2}')
-    used_disk=$(df -h --total 2>/dev/null | grep total | awk '{print $3}')
-    avail_disk=$(df -h --total 2>/dev/null | grep total | awk '{print $4}')
-    usage_disk=$(df -h --total 2>/dev/null | grep total | awk '{print $5}')
-    
-    if [ -n "$total_disk" ]; then
-        echo -e "${PURPLE}磁盘总计:${NC} 总容量: $total_disk | 已使用: $used_disk | 可用: $avail_disk | 使用率: $usage_disk"
+    # 显示汇总信息 (尝试使用 df --total)
+    if df --help 2>&1 | grep -q -- "--total"; then
+        local total_line=$(df -h --total 2>/dev/null | grep "total$")
+        if [ -n "$total_line" ]; then
+            local total_size=$(echo $total_line | awk '{print $2}')
+            local total_used=$(echo $total_line | awk '{print $3}')
+            local total_usage=$(echo $total_line | awk '{print $5}')
+            echo ""
+            echo -e "${PURPLE}磁盘汇总:${NC} 总计 ${total_size} | 已用 ${total_used} | 总使用率 ${total_usage}"
+        fi
     fi
 }
 
-# 获取网络信息
-get_network_info() {
-    print_title "网络信息"
+# 获取网络配置与 IP
+get_network_details() {
+    print_title "网络配置信息"
     
-    # 获取所有网络接口
-    interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
+    # 遍历网络接口 (排除 lo)
+    local interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo)
     
-    for interface in $interfaces; do
-        # 获取IP地址
-        ip_addr=$(ip addr show $interface | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
-        ip6_addr=$(ip addr show $interface | grep -oP '(?<=inet6\s)[0-9a-fA-F:]+' | head -n1)
+    for iface in $interfaces; do
+        local ip4=$(ip addr show $iface | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
+        local ip6=$(ip addr show $iface | grep -oP '(?<=inet6\s)[0-9a-fA-F:]+' | head -n1)
+        local mac=$(ip link show $iface | grep -oP '(?<=link/ether\s)[0-9a-fA-F:]+')
+        local status=$(ip link show $iface | grep -oP '(?<=state\s)\w+')
         
-        # 获取MAC地址
-        mac_addr=$(ip link show $interface | grep -oP '(?<=link/ether\s)[0-9a-fA-F:]+')
-        
-        # 获取接口状态
-        status=$(ip link show $interface | grep -oP '(?<=state\s)\w+')
-        
-        echo -e "${CYAN}接口名称:${NC} $interface"
-        [ -n "$ip_addr" ] && echo -e "  IPv4地址: $ip_addr"
-        [ -n "$ip6_addr" ] && echo -e "  IPv6地址: $ip6_addr"
-        [ -n "$mac_addr" ] && echo -e "  MAC地址: $mac_addr"
-        echo -e "  状态: $status"
-        echo ""
+        # 仅显示活动接口
+        if [ -n "$ip4" ] || [ "$status" = "UP" ]; then
+            echo -e "${CYAN}接口名称:${NC} $iface [状态: $status]"
+            [ -n "$ip4" ] && echo -e "  IPv4: $ip4"
+            [ -n "$ip6" ] && echo -e "  IPv6: $ip6"
+            [ -n "$mac" ] && echo -e "  MAC : $mac"
+            echo ""
+        fi
     done
     
-    # 获取公网IP
-    echo -e "${CYAN}公网IP地址:${NC}"
-    public_ip=$(curl -s -4 --max-time 5 ip.sb 2>/dev/null || echo "获取失败")
-    echo -e "  IPv4: $public_ip"
+    # 公网 IP 检测 (复用库函数，支持 v4/v6)
+    echo -e "${CYAN}公网出口 IP:${NC}"
+    local pub_ip4=$(curl -s -4 --max-time 3 ip.sb 2>/dev/null || echo "检测失败")
+    echo -e "  IPv4: $pub_ip4"
     
-    public_ip6=$(curl -s -6 --max-time 5 ip.sb 2>/dev/null || echo "获取失败或不支持IPv6")
-    echo -e "  IPv6: $public_ip6"
+    local pub_ip6=$(curl -s -6 --max-time 3 ip.sb 2>/dev/null)
+    [ -n "$pub_ip6" ] && echo -e "  IPv6: $pub_ip6"
     
-    # DNS服务器
+    # IP 归属地查询
+    if [[ "$pub_ip4" != "检测失败" ]]; then
+        local region=$(curl -s --max-time 3 "https://ipapi.co/${pub_ip4}/country_name/" 2>/dev/null)
+        [ -n "$region" ] && echo -e "  归属地: $region"
+    fi
+    
+    # DNS 信息
     echo ""
-    echo -e "${CYAN}DNS服务器:${NC}"
+    echo -e "${CYAN}DNS 服务器:${NC}"
     if [ -f /etc/resolv.conf ]; then
         grep "^nameserver" /etc/resolv.conf | awk '{print "  " $2}'
     else
-        echo "  无法获取DNS信息"
+        echo "  未检测到配置文件"
     fi
 }
 
-# 获取虚拟化信息
-get_virtualization_info() {
-    print_title "虚拟化信息"
+# 获取虚拟化环境信息
+get_virtualization_details() {
+    print_title "虚拟化环境检测"
     
-    # 检测虚拟化类型
-    virt_type="物理机"
+    local virt_type="物理机 (Dedicated)"
     
-    # 检查各种虚拟化标识
-    if [ -f /proc/cpuinfo ]; then
-        if grep -q "hypervisor" /proc/cpuinfo; then
-            virt_type="虚拟机"
-        fi
-    fi
-    
-    # 检查systemd-detect-virt
+    # 检测逻辑：systemd -> dmidecode -> cpuinfo
     if command -v systemd-detect-virt &> /dev/null; then
-        detected_virt=$(systemd-detect-virt 2>/dev/null)
-        if [ "$detected_virt" != "none" ] && [ -n "$detected_virt" ]; then
-            virt_type="$detected_virt"
-        fi
+        local detected=$(systemd-detect-virt 2>/dev/null)
+        [ "$detected" != "none" ] && [ -n "$detected" ] && virt_type="$detected"
+    elif [ -f /proc/cpuinfo ] && grep -q "hypervisor" /proc/cpuinfo; then
+        virt_type="虚拟机 (Unknown Hypervisor)"
     fi
     
-    # 检查dmidecode（需要root权限）
-    if [ $EUID -eq 0 ] && command -v dmidecode &> /dev/null; then
-        dmi_info=$(dmidecode -s system-product-name 2>/dev/null)
-        case "$dmi_info" in
+    # 尝试使用 dmidecode 获取更准确信息 (需 root)
+    if [ "$EUID" -eq 0 ] && command -v dmidecode &> /dev/null; then
+        local product=$(dmidecode -s system-product-name 2>/dev/null)
+        case "$product" in
             *"VirtualBox"*) virt_type="VirtualBox" ;;
-            *"VMware"*) virt_type="VMware" ;;
-            *"KVM"*) virt_type="KVM" ;;
-            *"Xen"*) virt_type="Xen" ;;
-            *"Microsoft Corporation"*) virt_type="Hyper-V" ;;
-            *"QEMU"*) virt_type="QEMU" ;;
+            *"VMware"*)     virt_type="VMware" ;;
+            *"KVM"*)        virt_type="KVM" ;;
+            *"Bochs"*)      virt_type="Bochs" ;;
+            *"Alibaba"*)    virt_type="Aliyun ECS" ;;
+            *"Tencent"*)    virt_type="Tencent CVM" ;;
         esac
     fi
     
-    echo -e "${CYAN}虚拟化类型:${NC} $virt_type"
+    echo -e "${CYAN}架构类型:${NC} $virt_type"
     
-    # 如果是容器环境
+    # 容器检测
     if [ -f /.dockerenv ]; then
-        echo -e "${CYAN}容器环境:${NC} Docker"
+        echo -e "${CYAN}运行环境:${NC} Docker 容器"
     elif [ -f /run/.containerenv ]; then
-        echo -e "${CYAN}容器环境:${NC} Podman"
+        echo -e "${CYAN}运行环境:${NC} Podman 容器"
     elif grep -q "lxc" /proc/1/cgroup 2>/dev/null; then
-        echo -e "${CYAN}容器环境:${NC} LXC"
+        echo -e "${CYAN}运行环境:${NC} LXC 容器"
     fi
 }
 
-# 获取系统服务信息
-get_service_info() {
-    print_title "关键服务状态"
+# 获取关键服务状态
+get_service_status() {
+    print_title "关键服务监控"
     
-    # 定义要检查的服务列表
-    services=("ssh" "sshd" "nginx" "apache2" "httpd" "mysql" "mariadb" "postgresql" "redis" "docker" "firewalld" "ufw")
+    # 定义常见服务列表
+    local services=("ssh" "sshd" "nginx" "apache2" "docker" "mysql" "mariadb" "redis" "ufw" "iptables" "fail2ban" "cron")
+    local found_any=false
     
     for service in "${services[@]}"; do
-        if systemctl list-unit-files | grep -q "^${service}.service"; then
-            status=$(systemctl is-active $service 2>/dev/null)
-            if [ "$status" = "active" ]; then
-                echo -e "${GREEN}● $service${NC} - 运行中"
-            elif [ "$status" = "inactive" ]; then
-                echo -e "${YELLOW}● $service${NC} - 已停止"
+        # 仅检查系统中已安装的服务 (避免刷屏报错)
+        if systemctl list-unit-files "$service.service" >/dev/null 2>&1; then
+            found_any=true
+            if systemctl is-active --quiet "$service"; then
+                echo -e "  [${GREEN}RUNNING${NC}] $service"
             else
-                echo -e "${RED}● $service${NC} - $status"
+                echo -e "  [${YELLOW}STOPPED${NC}] $service"
             fi
         fi
     done
+    
+    if [ "$found_any" = false ]; then
+        echo -e "  ${YELLOW}未检测到预定义的常见服务。${NC}"
+    fi
 }
 
-# 获取用户信息
-get_user_info() {
-    print_title "用户信息"
+# 获取用户登录信息
+get_user_details() {
+    print_title "用户登录审计"
     
     echo -e "${CYAN}当前用户:${NC} $(whoami)"
-    echo -e "${CYAN}登录用户数:${NC} $(who | wc -l)"
+    echo -e "${CYAN}在线会话:${NC} $(who | wc -l)"
     echo ""
-    echo -e "${CYAN}最近登录:${NC}"
-    last -n 5 | head -n 5
+    echo -e "${CYAN}最近登录记录 (前5条):${NC}"
+    # 格式化输出 last 命令
+    last -n 5 | head -n 5 | awk '{printf "  %-10s %-15s %s %s %s (%s)\n", $1, $3, $4, $5, $6, $10}'
 }
 
-# 主函数
+# ------------------------------------------------------------------------------
+# 3. 主程序入口
+# ------------------------------------------------------------------------------
+
 main() {
+    # 检查权限 (非强制，但部分信息如 dmidecode 需要 root)
+    # check_root # 如果希望非 root 也能看基本信息，可注释此行
+    
     clear
-    echo -e "${PURPLE}╔════════════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║                         VPS 系统信息查看工具 v1.0                          ║${NC}"
-    echo -e "${PURPLE}╚════════════════════════════════════════════════════════════════════════════╝${NC}"
+    print_header "VPS 系统深度信息报告"
     
-    check_root
+    get_system_overview
+    get_cpu_details
+    get_memory_details
+    get_disk_details
+    get_network_details
+    get_virtualization_details
+    get_service_status
+    get_user_details
     
-    get_system_info
-    get_cpu_info
-    get_memory_info
-    get_disk_info
-    get_network_info
-    get_virtualization_info
-    get_service_info
-    get_user_info
-    
-    print_separator
-    echo -e "${GREEN}系统信息收集完成！${NC}"
     echo ""
+    print_separator
+    print_msg "$GREEN" "信息采集完毕。"
+    
+    # 仅在独立运行时暂停
+    if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+        echo ""
+        read -n 1 -s -r -p "按任意键退出..."
+        echo ""
+    fi
 }
 
-# 运行主函数
-main
+# 执行主函数
+main "$@"
