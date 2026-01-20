@@ -1,31 +1,49 @@
 {
-  "version": "2.2.0",
-  "date": "2025-11-11",
-  "url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
-  "changelog_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/CHANGELOG.md",
-  "required_version": "2.0.0",
-  "features": [
-    "Multi-language support (EN/CN)",
-    "Automatic version checking",
-    "Script signature verification",
-    "Concurrent instance control",
-    "Enhanced error handling"
-  ],
-  "checksums": {
-    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  "project": {
+    "name": "VPS Scripts",
+    "description": "VPS Comprehensive Management Toolkit",
+    "version": "2.6.0",
+    "release_date": "2026-01-20",
+    "author": "Jensfrank",
+    "repository": "https://github.com/everett7623/vps_scripts"
+  },
+  "update": {
+    "check_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.json",
+    "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
+    "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
+    "critical_update": false,
+    "message": "v2.6.0: Refactored for stateless remote execution. Optimized dashboard and dependency handling."
   },
   "compatibility": {
     "min_bash_version": "4.0",
     "supported_os": [
-      "Debian 9+",
       "Ubuntu 18.04+",
+      "Debian 10+",
       "CentOS 7+",
+      "AlmaLinux 8+",
+      "Rocky Linux 8+",
       "Alpine 3.10+"
+    ],
+    "architectures": [
+      "x86_64",
+      "aarch64"
     ]
   },
-  "security": {
-    "signature_verification": true,
-    "https_only": true,
-    "concurrent_lock": true
+  "dependencies": [
+    "curl",
+    "wget",
+    "git",
+    "sudo"
+  ],
+  "features": [
+    "Remote Module Launcher",
+    "Real-time System Dashboard",
+    "Automated Dependency Resolution",
+    "Integrated 3rd-party Tools",
+    "Modular Design"
+  ],
+  "checksums": {
+    "vps.sh": "auto-generated-on-release",
+    "common_functions.sh": "auto-generated-on-release"
   }
 }
