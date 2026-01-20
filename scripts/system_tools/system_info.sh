@@ -6,7 +6,7 @@
 # 描述: VPS 系统信息深度检测脚本
 #       提供硬件配置、网络状态、系统负载、虚拟化架构及关键服务运行状态的全面报告。
 # 作者: Jensfrank (Optimized by AI)
-# 版本: 1.2.0 (Standardized)
+# 版本: 1.2.1 (Fix Remote Mode)
 # 更新日期: 2026-01-20
 # ==============================================================================
 
@@ -25,11 +25,17 @@ LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
 if [ -f "$LIB_FILE" ]; then
     source "$LIB_FILE"
 else
-    # 如果找不到库文件（例如单独运行此脚本），则定义简易回退函数，防止报错
-    echo "Warning: Common library not found. Using standalone mode."
-    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
+    # [关键修复] 如果找不到库文件（远程模式），定义所有必需的 UI 函数
+    # ------------------------------------------------------------------
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; NC='\033[0m'
+    
+    # 补齐缺失的基础打印函数
+    print_msg() { echo -e "${1}${2}${NC}"; }
+    print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
     print_title() { echo -e "\n${GREEN}▶ $1${NC}\n${BLUE}------------------------------------------------${NC}"; }
     print_separator() { echo -e "${BLUE}------------------------------------------------${NC}"; }
+    
+    # 简易版 IP 获取
     get_public_ip() { curl -s -4 ip.sb; }
 fi
 
@@ -313,6 +319,7 @@ main() {
     
     echo ""
     print_separator
+    # 这里就是刚才报错的地方，现在定义了 print_msg，就不会报错了
     print_msg "$GREEN" "信息采集完毕。"
     
     # 仅在独立运行时暂停
