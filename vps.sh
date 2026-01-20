@@ -2,7 +2,7 @@
 # ==============================================================================
 # 脚本名称: vps.sh
 # 仓库地址: https://github.com/everett7623/vps_scripts
-# 脚本路径: vps_scripts/vps.sh
+# 脚本路径: vps_scripts/vps.sh (项目根目录)
 # 描述: VPS 综合管理工具箱 - 主入口脚本
 #       负责环境初始化、依赖加载、主菜单显示以及子模块调度。
 # 作者: Jensfrank (Optimized by AI)
