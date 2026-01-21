@@ -3,13 +3,11 @@
 # 脚本名称: bandwidth_test.sh
 # 仓库地址: https://github.com/everett7623/vps_scripts
 # 脚本路径: scripts/network_test/bandwidth_test.sh
-# 描述: VPS 带宽性能测试工具 (全球节点完整版 v1.5.0)
-#       【功能列表】
-#       1. Speedtest (集成 30+ 个全球精选节点，含成都、大阪、莫斯科等)
-#       2. 多线程并发下载测试 (4/8/16 线程)
-#       3. 带宽稳定性波动测试 (连续采样)
-#       4. CDN 节点测速 (Cloudflare/AWS/Vultr等)
-#       5. 自定义服务器 ID 测速
+# 描述: VPS 带宽性能测试工具 (v1.5.1 节点修复版)
+#       【更新说明】
+#       1. 替换了大面积失效的中国大陆节点，精选高可用 5G 节点。
+#       2. 移除了不稳定的移动节点，替换为南京/南宁等对海外友好的节点。
+#       3. 保留了多线程、CDN 测速及稳定性测试功能。
 # 作者: Jensfrank (Optimized by AI)
 # 更新日期: 2026-01-21
 # ==============================================================================
@@ -50,30 +48,36 @@ mkdir -p "$LOG_DIR" "$REPORT_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # ------------------------------------------------------------------------------
-# 2. Speedtest 节点库 (完整植入)
+# 2. Speedtest 节点库 (精选高可用列表)
 # ------------------------------------------------------------------------------
 declare -A SERVERS
 
-# --- 中国大陆 (China) ---
-SERVERS[cn_telecom_bj]="3633:北京电信"
-SERVERS[cn_telecom_sh]="24012:上海电信"
-SERVERS[cn_telecom_gz]="27594:广州电信"
-SERVERS[cn_telecom_cd]="23844:成都电信"
+# --- 中国电信 (China Telecom) ---
+# 选取江苏、天津、四川等骨干节点，存活率较高
+SERVERS[cn_ct_js]="5396:江苏电信 (苏州)"
+SERVERS[cn_ct_tj]="17145:天津电信"
+SERVERS[cn_ct_sc]="29026:四川电信 (成都)"
+SERVERS[cn_ct_ah]="3633:安徽电信 (合肥)"
 
-SERVERS[cn_unicom_bj]="5145:北京联通"
-SERVERS[cn_unicom_sh]="24447:上海联通"
-SERVERS[cn_unicom_gz]="26678:广州联通"
-SERVERS[cn_unicom_cd]="4690:成都联通"
+# --- 中国联通 (China Unicom) ---
+# 上海、湖南、辽宁节点通常对海外连接较好
+SERVERS[cn_cu_sh]="24447:上海联通"
+SERVERS[cn_cu_hn]="4870:湖南联通 (长沙)"
+SERVERS[cn_cu_ln]="16167:辽宁联通 (沈阳)"
+SERVERS[cn_cu_sc]="2461:四川联通 (成都)"
 
-SERVERS[cn_mobile_bj]="25858:北京移动"
-SERVERS[cn_mobile_sh]="25637:上海移动"
-SERVERS[cn_mobile_gz]="16192:深圳移动"
-SERVERS[cn_mobile_cd]="4575:成都移动"
+# --- 中国移动 (China Mobile) ---
+# 移动节点极其容易屏蔽海外，选取南京、南宁等相对宽松节点
+SERVERS[cn_cm_js]="27249:江苏移动 (南京)"
+SERVERS[cn_cm_gx]="15863:广西移动 (南宁)"
+SERVERS[cn_cm_ln]="26656:黑龙江移动 (哈尔滨)"
+# 备用：部分地区可能连不上
+# SERVERS[cn_cm_zj]="25637:浙江移动" 
 
 # --- 亚洲周边 (Asia) ---
 SERVERS[hk_hgc]="32155:香港 HGC"
 SERVERS[hk_stc]="13538:香港 STC"
-SERVERS[tw_cht]="3417:台湾 Chunghwa"
+SERVERS[tw_cht]="3417:台湾 Chunghwa (台北)"
 SERVERS[jp_tokyo]="48463:日本东京 (IPA)"
 SERVERS[jp_osaka]="44950:日本大阪 (Rakuten)"
 SERVERS[sg_singtel]="18458:新加坡 Singtel"
@@ -104,7 +108,7 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
 install_speedtest() {
     if command -v speedtest &>/dev/null; then return 0; fi
-    print_info "安装 Speedtest CLI..."
+    print_info "正在安装 Speedtest CLI..."
     
     if command -v apt-get &>/dev/null; then
         curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash &>> "$LOG_FILE"
@@ -113,6 +117,7 @@ install_speedtest() {
         curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | bash &>> "$LOG_FILE"
         yum install -y speedtest &>> "$LOG_FILE"
     else
+        # 二进制回退安装
         wget -qO "$TEMP_DIR/speedtest.tgz" "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-$(uname -m).tgz"
         tar -xzf "$TEMP_DIR/speedtest.tgz" -C "$TEMP_DIR"
         mv "$TEMP_DIR/speedtest" /usr/local/bin/
@@ -122,7 +127,7 @@ install_speedtest() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. 核心测试模块 (功能全保留)
+# 4. 核心测试模块
 # ------------------------------------------------------------------------------
 
 # [模块1] 基础下载测试
@@ -145,27 +150,29 @@ test_download_single() {
     fi
 }
 
-# [模块2] Speedtest 标准测速
+# [模块2] Speedtest 标准测速 (优化显示)
 run_speedtest() {
     local id=$1
     local name=$2
-    
-    echo -ne "  正在连接: ${CYAN}$name${NC} ... "
     local cmd="speedtest --format=json"
     [ -n "$id" ] && cmd="$cmd --server-id=$id"
     
+    echo -ne "  正在连接: ${CYAN}$name${NC} ... "
     local res=$($cmd 2>/dev/null)
+    
     if [ -n "$res" ]; then
         local dl=$(echo "$res" | grep -oP '"download":{"bandwidth":\K[0-9]+' | awk '{printf "%.2f", $1 * 8 / 1000000}')
         local ul=$(echo "$res" | grep -oP '"upload":{"bandwidth":\K[0-9]+' | awk '{printf "%.2f", $1 * 8 / 1000000}')
         local ping=$(echo "$res" | grep -oP '"latency":\K[0-9.]+' | head -1)
         
+        # 结果格式化输出
         echo -ne "\r"
         printf "  %-16s | 延迟: ${CYAN}%-6s${NC} | 下行: ${GREEN}%-8s${NC} | 上行: ${BLUE}%-8s${NC}\n" \
-            "${name:0:16}" "${ping}ms" "${dl}M" "${ul}M"
+            "${name:0:16}" "${ping}ms" "${dl} Mbps" "${ul} Mbps"
         echo "[$name] Ping: ${ping}ms, DL: ${dl} Mbps, UL: ${ul} Mbps" >> "$REPORT_FILE"
     else
         echo -e "\r  ${RED}[失败]${NC} $name - 节点不可用或超时"
+        log "Speedtest failed for $name ($id)"
     fi
 }
 
@@ -174,12 +181,14 @@ test_full_batch() {
     print_header "全球节点完整测速"
     install_speedtest
     
-    # 定义测试顺序，确保覆盖所有新加的节点
+    # 按地理顺序定义测试列表
     local order=(
-        # 中国
-        "cn_telecom_bj" "cn_telecom_sh" "cn_telecom_gz" "cn_telecom_cd"
-        "cn_unicom_bj" "cn_unicom_sh" "cn_unicom_gz" "cn_unicom_cd"
-        "cn_mobile_bj" "cn_mobile_sh" "cn_mobile_gz" "cn_mobile_cd"
+        # 中国电信
+        "cn_ct_js" "cn_ct_tj" "cn_ct_sc" "cn_ct_ah"
+        # 中国联通
+        "cn_cu_sh" "cn_cu_hn" "cn_cu_ln" "cn_cu_sc"
+        # 中国移动
+        "cn_cm_js" "cn_cm_gx" "cn_cm_ln"
         # 亚洲
         "hk_hgc" "hk_stc" "tw_cht" "jp_tokyo" "jp_osaka" "sg_singtel" "kr_seoul"
         # 美洲
@@ -273,7 +282,7 @@ custom_speedtest() {
     echo -e "${CYAN}正在搜索附近的节点...${NC}"
     speedtest --list | head -n 10
     echo ""
-    read -p "请输入 Server ID (例如 3633): " sid
+    read -p "请输入 Server ID (例如 24447): " sid
     read -p "请输入备注名称 (可选): " sname
     [ -z "$sname" ] && sname="Custom-$sid"
     
@@ -313,8 +322,9 @@ interactive_menu() {
             ;;
         2)
             install_speedtest
-            print_info "正在测试主要节点..."
-            for k in cn_telecom_sh cn_unicom_sh cn_mobile_sh hk_hgc jp_tokyo us_la sg_singtel; do
+            print_info "正在测试核心节点..."
+            # 测试标准：江苏电信/上海联通/南京移动 + 香港/东京/洛杉矶/新加坡
+            for k in cn_ct_js cn_cu_sh cn_cm_js hk_hgc jp_tokyo us_la sg_singtel; do
                 IFS=':' read -r id name <<< "${SERVERS[$k]}"
                 run_speedtest "$id" "$name"
             done
