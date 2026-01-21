@@ -14,25 +14,16 @@
 # 1. 全局配置与颜色定义
 # ------------------------------------------------------------------------------
 
-# 基础颜色定义
-export RED='\033[0;31m'
-export GREEN='\033[0;32m'
-export YELLOW='\033[1;33m'       # 改为加粗黄色，更醒目
-export BLUE='\033[0;34m'
-export PURPLE='\033[0;35m'        # 仅用于次要装饰
-export CYAN='\033[1;36m'          # 改为加粗青色
-export WHITE='\033[0;37m'
-export NC='\033[0m'               # No Color (Reset)
-export BOLD='\033[1m'
-
-# 新增亮色系（用于重要信息显示）
-export BRIGHT_RED='\033[1;91m'
-export BRIGHT_GREEN='\033[1;92m'
-export BRIGHT_YELLOW='\033[1;93m'
-export BRIGHT_BLUE='\033[1;94m'
-export BRIGHT_MAGENTA='\033[1;95m'
-export BRIGHT_CYAN='\033[1;96m'
-export BRIGHT_WHITE='\033[1;97m'
+# 基础颜色定义 (亮色系/加粗优化，适配深色背景)
+export RED='\033[1;91m'       # 亮红
+export GREEN='\033[1;92m'     # 亮绿
+export YELLOW='\033[1;93m'    # 亮黄
+export BLUE='\033[1;94m'      # 亮蓝
+export PURPLE='\033[1;95m'    # 亮紫
+export CYAN='\033[1;96m'      # 亮青
+export WHITE='\033[1;97m'     # 亮白
+export NC='\033[0m'           # 重置
+export BOLD='\033[1m'         # 加粗
 
 # 日志级别配置
 export LOG_LEVEL_DEBUG=0
@@ -54,11 +45,11 @@ print_msg() {
     echo -e "${color}${message}${NC}"
 }
 
-# 标准状态消息封装（优化颜色）
-print_info()    { print_msg "${BRIGHT_CYAN}" "[信息] $1"; }
-print_success() { print_msg "${BRIGHT_GREEN}" "[成功] $1"; }
-print_warn()    { print_msg "${BRIGHT_YELLOW}" "[警告] $1"; }
-print_error()   { print_msg "${BRIGHT_RED}" "[错误] $1"; }
+# 标准状态消息封装
+print_info()    { print_msg "${CYAN}" "[信息] $1"; }
+print_success() { print_msg "${GREEN}" "[成功] $1"; }
+print_warn()    { print_msg "${YELLOW}" "[警告] $1"; }
+print_error()   { print_msg "${RED}" "[错误] $1"; }
 
 # 打印分隔线 (自适应宽度，默认为 80 字符)
 print_separator() {
@@ -69,26 +60,27 @@ print_separator() {
     echo -e "${color}$(printf '%*s' "$width" | tr ' ' "$char")${NC}"
 }
 
-# [新] 打印大标题 (用于脚本启动时) - 使用醒目的亮白色
+# 打印大标题 (用于脚本启动时)
 print_header() {
     local title=" $1 "
     local width=80
-    print_separator "=" "$width" "$BRIGHT_CYAN"
+    echo ""
+    print_separator "=" "$width" "$CYAN"
     local padding=$(( (width - ${#title}) / 2 ))
-    echo -e "${BOLD}${BRIGHT_WHITE}$(printf '%*s' "$padding" '')${title}${NC}"
-    print_separator "=" "$width" "$BRIGHT_CYAN"
+    echo -e "${BOLD}${WHITE}$(printf '%*s' "$padding" '')${title}${NC}"
+    print_separator "=" "$width" "$CYAN"
     echo ""
 }
 
-# [新] 打印小节标题 (用于功能区块) - 使用醒目的亮黄色
+# 打印小节标题 (用于功能区块)
 print_title() {
     local title="$1"
     echo ""
-    echo -e "${BOLD}${BRIGHT_YELLOW}▶ $title${NC}"
-    print_separator "-" 80 "$CYAN"
+    echo -e "${BOLD}${YELLOW}▶ $title${NC}"
+    print_separator "-" 80 "$BLUE"
 }
 
-# 显示进度条 (Visual Progress Bar) - 优化颜色
+# 显示进度条 (Visual Progress Bar)
 show_progress() {
     local current=$1
     local total=$2
@@ -98,44 +90,45 @@ show_progress() {
     local filled=$((width * current / total))
     local empty=$((width - filled))
     
-    # 使用亮青色显示进度
-    printf "\r${BRIGHT_CYAN}[$(printf '%*s' "$filled" | tr ' ' '=')>$(printf '%*s' "$empty" | tr ' ' ' ')] ${percent}%%${NC}"
+    printf "\r${CYAN}[$(printf '%*s' "$filled" | tr ' ' '=')>$(printf '%*s' "$empty" | tr ' ' ' ')] ${percent}%%${NC}"
     
     if [ "$current" -eq "$total" ]; then
         echo ""
     fi
 }
 
-# 带动画的等待函数 (Loading Spinner) - 优化颜色
+# 带动画的等待函数 (Loading Spinner)
 wait_with_animation() {
     local message="$1"
     local duration=${2:-3} # 默认等待3秒，或者传入PID
     local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local i=0
     
     # 逻辑: 如果 duration 是一个存在的 PID，则一直等待直到进程结束
     # 否则，仅仅作为延时动画展示
     if [[ "$duration" =~ ^[0-9]+$ ]] && [ "$duration" -gt 1000 ] && kill -0 "$duration" 2>/dev/null; then
         # PID 模式
         while kill -0 "$duration" 2>/dev/null; do
-            local i=$(( (i + 1) % 10 ))
-            printf "\r${BRIGHT_CYAN}%s %s${NC}" "${spin:$i:1}" "$message"
+            i=$(( (i + 1) % 10 ))
+            printf "\r${CYAN}%s %s${NC}" "${spin:$i:1}" "$message"
             sleep 0.1
         done
     else
         # 时间模式
-        for ((i=0; i<duration*10; i++)); do
-            printf "\r${BRIGHT_CYAN}%s %s${NC}" "$message" "${spin:$i%10:1}"
+        for ((k=0; k<duration*10; k++)); do
+            i=$(( (i + 1) % 10 ))
+            printf "\r${CYAN}%s %s${NC}" "${spin:$i:1}" "$message"
             sleep 0.1
         done
     fi
-    printf "\r${BRIGHT_GREEN}✓ %s 完成        ${NC}\n" "$message"
+    printf "\r${GREEN}✓ %s 完成        ${NC}\n" "$message"
 }
 
 # ------------------------------------------------------------------------------
 # 3. 系统检查与环境探测函数
 # ------------------------------------------------------------------------------
 
-# 检查是否为 root 用户 (强制性检查)
+# 检查是否为 root 用户
 check_root() {
     if [[ $EUID -ne 0 ]]; then
         print_error "此脚本需要 root 权限运行"
