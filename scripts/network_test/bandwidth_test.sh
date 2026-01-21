@@ -40,7 +40,7 @@ if [ -f "$LIB_FILE" ]; then
     source "$LIB_FILE"
     [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 else
-    # Fallback UI
+    # [远程模式回退] 定义必需的 UI 和辅助函数
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; NC='\033[0m'
     print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
     print_success() { echo -e "${GREEN}[成功] $1${NC}"; }
@@ -60,7 +60,7 @@ declare -A SPEEDTEST_SERVERS
 
 # 智能检测 VPS 位置并加载对应节点
 detect_and_init_servers() {
-    print_info "正在检测 VPS 网络环境..."
+    print_header "检测 VPS 网络环境"
     
     # 检测到中国 DNS 的连通性
     local cn_check=$(ping -c 2 -W 2 114.114.114.114 2>/dev/null | grep -c "time=")
@@ -216,11 +216,13 @@ test_cdn_download() {
     
     declare -A CDN_NODES=(
         [cf_global]="https://speed.cloudflare.com/__down?bytes=25000000:Cloudflare Global"
-        [aws_sg]="http://s3-ap-southeast-1.amazonaws.com/speedtest/10MB.zip:AWS 新加坡"
-        [aws_jp]="http://s3-ap-northeast-1.amazonaws.com/speedtest/10MB.zip:AWS 日本"
-        [aws_us]="http://s3-us-west-1.amazonaws.com/speedtest/10MB.zip:AWS 美西"
-        [linode_sg]="http://speedtest.singapore.linode.com/100MB-singapore.bin:Linode 新加坡"
-        [do_sf]="http://speedtest-sfo3.digitalocean.com/100mb.test:DigitalOcean 旧金山"
+        [aws_us_east]="http://s3.us-east-1.amazonaws.com/speedtest.us-east-1/10MB.bin:AWS US East"
+        [aws_us_west]="http://s3-us-west-1.amazonaws.com/speedtest/10MB.zip:AWS US West"
+        [aws_ap_se]="http://s3-ap-southeast-1.amazonaws.com/speedtest/10MB.zip:AWS Singapore"
+        [aws_ap_ne]="http://s3-ap-northeast-1.amazonaws.com/speedtest/10MB.zip:AWS Japan"
+        [linode_sg]="http://speedtest.singapore.linode.com/100MB-singapore.bin:Linode Singapore"
+        [linode_jp]="http://speedtest.tokyo2.linode.com/100MB-tokyo2.bin:Linode Tokyo"
+        [do_sf]="http://speedtest-sfo3.digitalocean.com/100mb.test:DigitalOcean SF"
     )
     
     for key in "${!CDN_NODES[@]}"; do
@@ -228,7 +230,7 @@ test_cdn_download() {
         echo -ne "  ${CYAN}$name${NC} ... "
         
         local temp_file="$TEMP_DIR/cdn_test"
-        local speed=$(timeout 15 wget -O "$temp_file" --no-check-certificate "$url" 2>&1 | \
+        local speed=$(timeout 20 wget -O "$temp_file" --no-check-certificate "$url" 2>&1 | \
                       grep -o "[0-9.]\+ [KMG]B/s" | tail -1)
         rm -f "$temp_file"
         
@@ -238,6 +240,10 @@ test_cdn_download() {
                 local mbps=$(echo "$val * 8" | bc)
                 echo -e "${GREEN}${mbps} Mbps${NC}"
                 echo "CDN - $name: ${mbps} Mbps" >> "$REPORT_FILE"
+            elif [[ "$speed" =~ KB/s ]]; then
+                local val=$(echo "$speed" | awk '{print $1}')
+                local mbps=$(echo "scale=2; $val * 8 / 1024" | bc)
+                echo -e "${YELLOW}${mbps} Mbps${NC}"
             else
                 echo -e "${YELLOW}${speed}${NC}"
             fi
@@ -304,6 +310,24 @@ test_stability() {
     echo "Stability: Avg $avg Mbps, Jitter $jitter%" >> "$REPORT_FILE"
 }
 
+# [模块6] 自定义节点
+custom_speedtest() {
+    print_header "自定义 Speedtest 节点"
+    install_tools
+    echo -e "${CYAN}正在搜索附近的节点...${NC}"
+    speedtest --list | head -n 10
+    echo ""
+    read -p "请输入 Server ID: " sid
+    read -p "请输入备注名称 (可选): " sname
+    [ -z "$sname" ] && sname="Custom-$sid"
+    
+    if [ -n "$sid" ]; then
+        run_speedtest_single "$sid" "$sname"
+    else
+        print_error "ID 不能为空"
+    fi
+}
+
 # ------------------------------------------------------------------------------
 # 5. 交互菜单与入口
 # ------------------------------------------------------------------------------
@@ -322,24 +346,25 @@ generate_summary() {
 
 show_menu() {
     clear
-    print_header "VPS 全能带宽测试工具 (海外优化版)"
+    print_header "VPS 全能带宽测试工具 (v2.0.2)"
     
-    # 自动初始化环境
+    # 自动初始化
     detect_and_init_servers
     install_tools
     
     echo ""
     echo -e "${CYAN}请选择测试类型:${NC}"
-    echo -e " 1. 快速测试 (Speedtest 核心节点 + CDN)"
+    echo -e " 1. 快速测试 (Speedtest 自动 + CDN)"
     echo -e " 2. 完整测试 (全节点 + iperf3 + 路由质量)"
-    echo -e " 3. Speedtest 专项测试"
-    echo -e " 4. iperf3 专项测试"
+    echo -e " 3. Speedtest 专项测试 (30+ 节点)"
+    echo -e " 4. iperf3 专项测试 (公网节点)"
     echo -e " 5. CDN 下载测速"
     echo -e " 6. 回程质量测试 (Ping/丢包)"
     echo -e " 7. 稳定性测试 (波动率)"
+    echo -e " 8. 自定义节点 ID 测速"
     echo -e " 0. 退出"
     echo ""
-    read -p "请输入选项 [0-7]: " choice
+    read -p "请输入选项 [0-8]: " choice
     
     echo "" > "$REPORT_FILE"
     echo "Test Mode: $TEST_MODE | Time: $(date)" >> "$REPORT_FILE"
@@ -374,6 +399,7 @@ show_menu() {
         5) test_cdn_download ;;
         6) test_china_route ;;
         7) test_stability ;;
+        8) custom_speedtest ;;
         0) exit 0 ;;
         *) print_error "无效输入"; sleep 1; show_menu ;;
     esac
