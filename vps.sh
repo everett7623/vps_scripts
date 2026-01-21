@@ -121,7 +121,7 @@ system_tools_menu() {
             1) run_repo_script "scripts/system_tools/system_info.sh" ;;
             2) run_repo_script "scripts/system_tools/install_deps.sh" ;;
             3) run_repo_script "scripts/system_tools/update_system.sh" ;;
-            4) run_repo_script "scripts/system_tools/clean_system.sh.sh" ;;
+            4) run_repo_script "scripts/system_tools/clean_system.sh" ;;
             5) run_repo_script "scripts/system_tools/optimize_system.sh" ;;
             6) run_repo_script "scripts/system_tools/change_hostname.sh" ;;
             7) run_repo_script "scripts/system_tools/set_timezone.sh" ;;
