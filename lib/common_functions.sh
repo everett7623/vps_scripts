@@ -6,24 +6,33 @@
 # 描述: 提供 VPS 脚本工具集的公共 UI、日志、系统检测及服务管理函数。
 #       本库被设计为可被其他脚本 source 加载，以复用代码。
 # 作者: Jensfrank (Optimized by AI)
-# 版本: 1.0.1 (Remote Ready)
-# 更新日期: 2026-01-20
+# 版本: 1.0.2 (Color Optimized)
+# 更新日期: 2026-01-21
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
 # 1. 全局配置与颜色定义
 # ------------------------------------------------------------------------------
 
-# 颜色定义（导出供全局使用）
+# 基础颜色定义
 export RED='\033[0;31m'
 export GREEN='\033[0;32m'
-export YELLOW='\033[0;33m'
+export YELLOW='\033[1;33m'       # 改为加粗黄色，更醒目
 export BLUE='\033[0;34m'
-export PURPLE='\033[0;35m'
-export CYAN='\033[0;36m'
+export PURPLE='\033[0;35m'        # 仅用于次要装饰
+export CYAN='\033[1;36m'          # 改为加粗青色
 export WHITE='\033[0;37m'
-export NC='\033[0m' # No Color (Reset)
+export NC='\033[0m'               # No Color (Reset)
 export BOLD='\033[1m'
+
+# 新增亮色系（用于重要信息显示）
+export BRIGHT_RED='\033[1;91m'
+export BRIGHT_GREEN='\033[1;92m'
+export BRIGHT_YELLOW='\033[1;93m'
+export BRIGHT_BLUE='\033[1;94m'
+export BRIGHT_MAGENTA='\033[1;95m'
+export BRIGHT_CYAN='\033[1;96m'
+export BRIGHT_WHITE='\033[1;97m'
 
 # 日志级别配置
 export LOG_LEVEL_DEBUG=0
@@ -45,11 +54,11 @@ print_msg() {
     echo -e "${color}${message}${NC}"
 }
 
-# 标准状态消息封装
-print_info()    { print_msg "${CYAN}" "[信息] $1"; }
-print_success() { print_msg "${GREEN}" "[成功] $1"; }
-print_warn()    { print_msg "${YELLOW}" "[警告] $1"; }
-print_error()   { print_msg "${RED}" "[错误] $1"; }
+# 标准状态消息封装（优化颜色）
+print_info()    { print_msg "${BRIGHT_CYAN}" "[信息] $1"; }
+print_success() { print_msg "${BRIGHT_GREEN}" "[成功] $1"; }
+print_warn()    { print_msg "${BRIGHT_YELLOW}" "[警告] $1"; }
+print_error()   { print_msg "${BRIGHT_RED}" "[错误] $1"; }
 
 # 打印分隔线 (自适应宽度，默认为 80 字符)
 print_separator() {
@@ -60,26 +69,26 @@ print_separator() {
     echo -e "${color}$(printf '%*s' "$width" | tr ' ' "$char")${NC}"
 }
 
-# [新] 打印大标题 (用于脚本启动时)
+# [新] 打印大标题 (用于脚本启动时) - 使用醒目的亮白色
 print_header() {
     local title=" $1 "
     local width=80
-    print_separator "=" "$width" "$PURPLE"
+    print_separator "=" "$width" "$BRIGHT_CYAN"
     local padding=$(( (width - ${#title}) / 2 ))
-    echo -e "${BOLD}${PURPLE}$(printf '%*s' "$padding" '')${title}${NC}"
-    print_separator "=" "$width" "$PURPLE"
+    echo -e "${BOLD}${BRIGHT_WHITE}$(printf '%*s' "$padding" '')${title}${NC}"
+    print_separator "=" "$width" "$BRIGHT_CYAN"
     echo ""
 }
 
-# [新] 打印小节标题 (用于功能区块)
+# [新] 打印小节标题 (用于功能区块) - 使用醒目的亮黄色
 print_title() {
     local title="$1"
     echo ""
-    echo -e "${BOLD}${GREEN}▶ $title${NC}"
-    print_separator "-" 80 "$BLUE"
+    echo -e "${BOLD}${BRIGHT_YELLOW}▶ $title${NC}"
+    print_separator "-" 80 "$CYAN"
 }
 
-# 显示进度条 (Visual Progress Bar)
+# 显示进度条 (Visual Progress Bar) - 优化颜色
 show_progress() {
     local current=$1
     local total=$2
@@ -89,15 +98,15 @@ show_progress() {
     local filled=$((width * current / total))
     local empty=$((width - filled))
     
-    # \r 回车不换行，实现原地刷新
-    printf "\r${BLUE}[$(printf '%*s' "$filled" | tr ' ' '=')>$(printf '%*s' "$empty" | tr ' ' ' ')] ${percent}%%${NC}"
+    # 使用亮青色显示进度
+    printf "\r${BRIGHT_CYAN}[$(printf '%*s' "$filled" | tr ' ' '=')>$(printf '%*s' "$empty" | tr ' ' ' ')] ${percent}%%${NC}"
     
     if [ "$current" -eq "$total" ]; then
         echo ""
     fi
 }
 
-# 带动画的等待函数 (Loading Spinner)
+# 带动画的等待函数 (Loading Spinner) - 优化颜色
 wait_with_animation() {
     local message="$1"
     local duration=${2:-3} # 默认等待3秒，或者传入PID
@@ -109,17 +118,17 @@ wait_with_animation() {
         # PID 模式
         while kill -0 "$duration" 2>/dev/null; do
             local i=$(( (i + 1) % 10 ))
-            printf "\r${CYAN}%s %s${NC}" "${spin:$i:1}" "$message"
+            printf "\r${BRIGHT_CYAN}%s %s${NC}" "${spin:$i:1}" "$message"
             sleep 0.1
         done
     else
         # 时间模式
         for ((i=0; i<duration*10; i++)); do
-            printf "\r${CYAN}%s %s${NC}" "$message" "${spin:$i%10:1}"
+            printf "\r${BRIGHT_CYAN}%s %s${NC}" "$message" "${spin:$i%10:1}"
             sleep 0.1
         done
     fi
-    printf "\r${GREEN}✓ %s 完成        ${NC}\n" "$message"
+    printf "\r${BRIGHT_GREEN}✓ %s 完成        ${NC}\n" "$message"
 }
 
 # ------------------------------------------------------------------------------
