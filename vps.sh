@@ -11,6 +11,9 @@ GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
 PROJECT_VERSION="2.6.0"
 PROJECT_AUTHOR="Jensfrank"
+COMMUNITY_URL="https://nodeloc.com"
+VPS_RECOMMEND_URL="https://vpsknow.com"
+BLOG_URL="https://seedloc.com"
 LAUNCHER_STYLE_VERSION="2026.06"
 REPO_DOWNLOAD_BASES=(
     "https://raw.githubusercontent.com/everett7623/vps_scripts/main"
@@ -66,6 +69,14 @@ draw_rule() {
     printf '%b\n' "${RESET}"
 }
 
+print_recommended_links() {
+    local indent="${1:-}"
+
+    echo -e "${CYAN}${indent}论坛推荐:${RESET} ${COMMUNITY_URL}"
+    echo -e "${CYAN}${indent}VPS 推荐:${RESET} ${VPS_RECOMMEND_URL}"
+    echo -e "${CYAN}${indent}博客推荐:${RESET} ${BLOG_URL}"
+}
+
 print_header() {
     local terminal_width=80
 
@@ -77,6 +88,7 @@ print_header() {
         echo ""
         echo -e "${BOLD}${WHITE}VPS 脚本集合 ${PROJECT_VERSION}${RESET}  ${DIM}| 模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}${RESET}"
         echo -e "${CYAN}GitHub 地址:${RESET} ${PROJECT_URL}"
+        print_recommended_links
         echo ""
         echo -e "${GRADIENT_COLORS[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${RESET}"
         echo -e "${GRADIENT_COLORS[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${RESET}"
@@ -93,6 +105,7 @@ print_header() {
         echo -e "${BOLD}${WHITE}  VPS 脚本集合 ${PROJECT_VERSION}${RESET}"
         echo -e "${CYAN}  作者:${RESET} ${PROJECT_AUTHOR}  ${DIM}| 模块化启动器 ${LAUNCHER_STYLE_VERSION}${RESET}"
         echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
+        print_recommended_links "  "
         draw_rule 74 "$CYAN"
     fi
     echo ""
