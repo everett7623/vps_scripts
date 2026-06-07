@@ -234,7 +234,9 @@ show_help() {
 
 run_repo_script() {
     local script_rel_path="${1}"
-    local temp_file=""
+    local temp_root=""
+    local script_file=""
+    local exit_code=0
 
     print_header
     print_panel_title "官方模块"
@@ -247,29 +249,40 @@ run_repo_script() {
         return 1
     fi
 
-    temp_file=$(mktemp "/tmp/vps_repo_script.XXXXXX") || {
-        echo -e "${RED}[错误] 创建临时文件失败。${RESET}"
+    temp_root=$(mktemp -d "/tmp/vps_repo_runtime.XXXXXX") || {
+        echo -e "${RED}[错误] 创建临时运行目录失败。${RESET}"
         pause_for_menu
         return 1
     }
+    script_file="${temp_root}/${script_rel_path}"
 
-    if ! download_repo_file "${script_rel_path}" "${temp_file}"; then
-        rm -f "${temp_file}"
+    if ! mkdir -p "$(dirname "${script_file}")" "${temp_root}/lib" "${temp_root}/config"; then
+        rm -rf "${temp_root}"
+        echo -e "${RED}[错误] 初始化模块运行目录失败。${RESET}"
+        pause_for_menu
+        return 1
+    fi
+
+    if ! download_repo_file "${script_rel_path}" "${script_file}" ||
+       ! download_repo_file "lib/common_functions.sh" "${temp_root}/lib/common_functions.sh" ||
+       ! download_repo_file "config/vps_scripts.conf" "${temp_root}/config/vps_scripts.conf"; then
+        rm -rf "${temp_root}"
         echo -e "${RED}[错误] 下载模块失败。${RESET}"
         echo -e "${DIM}已尝试 GitHub Raw、GitHub 备用路径与 jsDelivr。${RESET}"
         pause_for_menu
         return 1
     fi
 
-    if ! bash -n "${temp_file}"; then
-        echo -e "${RED}[错误] 模块语法校验失败，已停止执行。${RESET}"
-    elif ! bash "${temp_file}"; then
+    bash "${script_file}" || exit_code=$?
+    if [ "${exit_code}" -ne 0 ]; then
         echo ""
         echo -e "${RED}[错误] 模块执行失败。${RESET}"
+        echo -e "${DIM}退出码: ${exit_code} | 模块: ${script_rel_path}${RESET}"
     fi
 
-    rm -f "${temp_file}"
+    rm -rf "${temp_root}"
     pause_for_menu
+    return "${exit_code}"
 }
 
 run_remote_script_url() {
