@@ -10,6 +10,11 @@ set -u
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
 LAUNCHER_STYLE_VERSION="2026.06"
+REPO_DOWNLOAD_BASES=(
+    "https://raw.githubusercontent.com/everett7623/vps_scripts/main"
+    "https://github.com/everett7623/vps_scripts/raw/refs/heads/main"
+    "https://cdn.jsdelivr.net/gh/everett7623/vps_scripts@main"
+)
 
 RESET='\033[0m'
 RED='\033[0;31m'
@@ -114,6 +119,27 @@ download_file_with_tool() {
     esac
 }
 
+download_repo_file() {
+    local relative_path="${1}"
+    local output="${2}"
+    local base_url=""
+    local attempt=0
+
+    for base_url in "${REPO_DOWNLOAD_BASES[@]}"; do
+        for attempt in 1 2; do
+            : > "${output}"
+            if download_file_with_tool "${base_url}/${relative_path}" "${output}" &&
+               [ -s "${output}" ] &&
+               bash -n "${output}" 2>/dev/null; then
+                return 0
+            fi
+            sleep "${attempt}"
+        done
+    done
+
+    return 1
+}
+
 require_install_permission() {
     if [ -n "${VPS_INSTALL_PREFIX:-}" ]; then
         return 0
@@ -151,7 +177,7 @@ install_vps_command() {
             return 1
         fi
         cp "${source_override}" "${launcher_temp}"
-    elif ! download_file_with_tool "${GITHUB_RAW_URL}/vps.sh" "${launcher_temp}"; then
+    elif ! download_repo_file "vps.sh" "${launcher_temp}"; then
         echo -e "${RED}[错误] 下载最新版启动器失败。${RESET}"
         rm -f "${launcher_temp}" "${command_temp}"
         return 1
@@ -208,7 +234,6 @@ show_help() {
 
 run_repo_script() {
     local script_rel_path="${1}"
-    local full_url="${GITHUB_RAW_URL}/${script_rel_path}"
     local temp_file=""
 
     print_header
@@ -228,18 +253,19 @@ run_repo_script() {
         return 1
     }
 
-    if ! download_file_with_tool "${full_url}" "${temp_file}" || [ ! -s "${temp_file}" ]; then
+    if ! download_repo_file "${script_rel_path}" "${temp_file}"; then
         rm -f "${temp_file}"
         echo -e "${RED}[错误] 下载模块失败。${RESET}"
-        echo -e "${DIM}URL:${RESET} ${full_url}"
+        echo -e "${DIM}已尝试 GitHub Raw、GitHub 备用路径与 jsDelivr。${RESET}"
         pause_for_menu
         return 1
     fi
 
-    if ! bash "${temp_file}"; then
+    if ! bash -n "${temp_file}"; then
+        echo -e "${RED}[错误] 模块语法校验失败，已停止执行。${RESET}"
+    elif ! bash "${temp_file}"; then
         echo ""
         echo -e "${RED}[错误] 模块执行失败。${RESET}"
-        echo -e "${DIM}URL:${RESET} ${full_url}"
     fi
 
     rm -f "${temp_file}"

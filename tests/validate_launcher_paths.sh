@@ -44,4 +44,8 @@ if [ "${missing}" -ne 0 ]; then
     exit 1
 fi
 
+grep -Fq "raw.githubusercontent.com/everett7623/vps_scripts/main" "${LAUNCHER}"
+grep -Fq "github.com/everett7623/vps_scripts/raw/refs/heads/main" "${LAUNCHER}"
+grep -Fq "cdn.jsdelivr.net/gh/everett7623/vps_scripts@main" "${LAUNCHER}"
+
 echo "Launcher references are valid."

@@ -34,13 +34,13 @@ fi
 
 show_help() {
     cat <<'EOF'
-Usage: bash system_info.sh [options]
+用法：bash system_info.sh [选项]
 
-Options:
-  --section <name>  Show one section only: overview, cpu, memory, disk, network,
-                    virtualization, services, users
-  --no-pause        Exit immediately after printing the report
-  --help, -h        Show this help message
+选项：
+  --section <名称>  仅显示指定部分：overview、cpu、memory、disk、network、
+                    virtualization、services、users
+  --no-pause        输出报告后立即退出
+  --help, -h        显示此帮助信息
 EOF
 }
 
@@ -49,12 +49,12 @@ parse_args() {
         case "$1" in
             --section)
                 shift
-                [ $# -gt 0 ] || { print_error "Missing value for --section."; exit 1; }
+                [ $# -gt 0 ] || { print_error "--section 缺少名称。"; exit 1; }
                 SHOW_SECTION="$1"
                 case "${SHOW_SECTION}" in
                     all|overview|cpu|memory|disk|network|virtualization|services|users) ;;
                     *)
-                        print_error "Unsupported section: ${SHOW_SECTION}"
+                        print_error "不支持的报告部分：${SHOW_SECTION}"
                         exit 1
                         ;;
                 esac
@@ -67,7 +67,7 @@ parse_args() {
                 exit 0
                 ;;
             *)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;
@@ -340,13 +340,13 @@ get_service_status() {
 }
 
 get_user_details() {
-    print_title "Users"
-    print_kv "Current User" "$(whoami)"
-    print_kv "Sessions" "$(who 2>/dev/null | wc -l | awk '{print $1}')"
+    print_title "用户信息"
+    print_kv "当前用户" "$(whoami)"
+    print_kv "会话数量" "$(who 2>/dev/null | wc -l | awk '{print $1}')"
 
     if command_exists last; then
         echo ""
-        printf "%bRecent logins:%b\n" "${CYAN}" "${NC}"
+        printf "%b最近登录:%b\n" "${CYAN}" "${NC}"
         last -n 5 2>/dev/null | head -n 5 | awk 'NF >= 6 {printf "  %-12s %-18s %s %s %s\n", $1, $3, $4, $5, $6}'
     fi
 }
@@ -354,7 +354,7 @@ get_user_details() {
 pause_if_needed() {
     if [ "${PAUSE_ON_EXIT}" = true ] && [[ "${BASH_SOURCE[0]}" == "${0}" ]] && [ -t 0 ]; then
         echo ""
-        read -r -n 1 -s -p "Press any key to exit..."
+        read -r -n 1 -s -p "按任意键退出..."
         echo ""
     fi
 }
@@ -363,7 +363,7 @@ main() {
     parse_args "$@"
 
     clear 2>/dev/null || true
-    print_header "VPS System Inventory"
+    print_header "VPS 系统信息"
 
     run_section "overview" get_system_overview
     run_section "cpu" get_cpu_details
@@ -376,7 +376,7 @@ main() {
 
     echo ""
     print_separator
-    print_success "System inventory complete."
+    print_success "系统信息采集完成。"
     pause_if_needed
 }
 

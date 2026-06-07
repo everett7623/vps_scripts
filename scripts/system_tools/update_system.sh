@@ -108,18 +108,18 @@ detect_system() {
 
 show_help() {
     cat <<'EOF'
-Usage: bash update_system.sh [options]
+用法：bash update_system.sh [选项]
 
-Options:
-  --auto, -y      Run without interactive confirmation
-  --kernel, -k    Include kernel/dist upgrade path when supported
-  --security, -s  Run security-only updates on yum/dnf based systems
-  --help, -h      Show this help message
+选项：
+  --auto, -y      无需交互确认
+  --kernel, -k    在支持时包含内核或发行版升级
+  --security, -s  在 yum/dnf 系统中仅安装安全更新
+  --help, -h      显示此帮助信息
 EOF
 }
 
 check_network() {
-    print_info "Checking network connectivity..."
+    print_info "正在检查网络连接..."
 
     if command -v ping >/dev/null 2>&1; then
         ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 && return 0
@@ -131,7 +131,7 @@ check_network() {
         curl -fsS --max-time 5 https://8.8.8.8 >/dev/null 2>&1 && return 0
     fi
 
-    print_error "Network connectivity check failed."
+    print_error "网络连接检查失败。"
     exit 1
 }
 
@@ -219,15 +219,15 @@ count_available_updates() {
 check_available_updates() {
     local count=0
 
-    print_info "Checking for available updates..."
+    print_info "正在检查可用更新..."
     count=$(count_available_updates)
 
     if [ "${count}" -eq 0 ]; then
-        print_success "No updates available."
+        print_success "当前没有可用更新。"
         exit 0
     fi
 
-    print_info "Found ${count} available update(s)."
+    print_info "发现 ${count} 个可用更新。"
     if [ "${PKG_MANAGER}" = "apt" ]; then
         apt list --upgradable 2>/dev/null | head -n 11
     fi
@@ -256,17 +256,17 @@ perform_update() {
     log "Selected update mode: ${description}"
 
     if [ "${AUTO_CONFIRM}" = "false" ]; then
-        read -r -p "Proceed with ${description}? [y/N]: " confirm
+        read -r -p "是否继续执行 ${description}？[y/N]: " confirm
         if [[ ! "${confirm}" =~ ^[Yy]$ ]]; then
-            print_warn "Update cancelled."
+            print_warn "已取消系统更新。"
             exit 0
         fi
     fi
 
     if run_logged_command "${description}" "${selected_cmd[@]}"; then
-        print_success "Update completed successfully."
+        print_success "系统更新成功完成。"
     else
-        print_error "Update failed. Check log: ${LOG_FILE}"
+        print_error "系统更新失败，请查看日志：${LOG_FILE}"
         exit 1
     fi
 }
@@ -306,7 +306,7 @@ check_reboot_needed() {
         sleep 5
         reboot
     else
-        read -r -p "Reboot now? [y/N]: " answer
+        read -r -p "是否立即重启？[y/N]: " answer
         [[ "${answer}" =~ ^[Yy]$ ]] && reboot
     fi
 }
@@ -338,13 +338,13 @@ main() {
             --kernel|-k) UPDATE_KERNEL=true ;;
             --security|-s) SECURITY_ONLY=true ;;
             --help|-h) show_help; exit 0 ;;
-            *) print_error "Unknown argument: $1"; show_help; exit 1 ;;
+            *) print_error "未知参数：$1"; show_help; exit 1 ;;
         esac
         shift
     done
 
     check_root
-    print_header "System Update Tool"
+    print_header "系统更新工具"
     detect_system
     check_network
     backup_configs

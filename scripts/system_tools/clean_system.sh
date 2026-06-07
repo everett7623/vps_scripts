@@ -70,15 +70,15 @@ log() {
 
 show_help() {
     cat <<'EOF'
-Usage: bash clean_system.sh [options]
+用法：bash clean_system.sh [选项]
 
-Options:
-  --auto, -a       Run the standard cleanup profile
-  --deep, -d       Run the standard profile plus deep-clean modules
-  --analyze        Print disk usage analysis only
-  --dry-run        Show what would be cleaned without deleting anything
-  --yes, -y        Skip confirmation prompts
-  --help, -h       Show this help message
+选项：
+  --auto, -a       执行标准清理方案
+  --deep, -d       执行标准清理并包含深度清理模块
+  --analyze        仅显示磁盘使用分析
+  --dry-run        预览清理内容，不删除任何文件
+  --yes, -y        跳过确认提示
+  --help, -h       显示此帮助信息
 EOF
 }
 
@@ -489,17 +489,17 @@ custom_menu() {
     local selection=""
 
     clear 2>/dev/null || true
-    print_header "Custom Cleanup"
-    echo "1) Package cache"
-    echo "2) Temporary files"
-    echo "3) Logs"
-    echo "4) Orphaned packages"
-    echo "5) Docker"
-    echo "6) Old kernels (deep clean)"
-    echo "7) User cache (deep clean)"
-    echo "0) Back"
+    print_header "自定义系统清理"
+    echo "1) 软件包缓存"
+    echo "2) 临时文件"
+    echo "3) 系统日志"
+    echo "4) 孤立软件包"
+    echo "5) Docker 残留"
+    echo "6) 旧内核（深度清理）"
+    echo "7) 用户缓存（深度清理）"
+    echo "0) 返回"
     echo ""
-    read -r -p "Enter one or more selections (for example: 1 3 5): " selection
+    read -r -p "请输入一个或多个选项（例如：1 3 5）: " selection
 
     [ "${selection}" = "0" ] && return 0
 
@@ -517,17 +517,17 @@ interactive_menu() {
 
     while true; do
         clear 2>/dev/null || true
-        print_header "System Cleanup"
-        printf "%bDisk usage:%b %s\n" "${CYAN}" "${NC}" "$(get_disk_usage)"
+        print_header "系统清理工具"
+        printf "%b磁盘使用:%b %s\n" "${CYAN}" "${NC}" "$(get_disk_usage)"
         echo ""
-        echo "1) Quick cleanup (cache, temp files, logs)"
-        echo "2) Standard cleanup (quick + orphans + Docker)"
-        echo "3) Deep cleanup (standard + old kernels + user cache)"
-        echo "4) Analyze disk usage only"
-        echo "5) Custom cleanup"
-        echo "0) Exit"
+        echo "1) 快速清理（缓存、临时文件、日志）"
+        echo "2) 标准清理（快速清理 + 孤立包 + Docker）"
+        echo "3) 深度清理（标准清理 + 旧内核 + 用户缓存）"
+        echo "4) 仅分析磁盘使用情况"
+        echo "5) 自定义清理"
+        echo "0) 退出"
         echo ""
-        read -r -p "Select an option [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice
 
         case "${choice}" in
             1)
@@ -539,10 +539,10 @@ interactive_menu() {
                 run_standard_profile
                 ;;
             3)
-                if confirm_if_needed "Deep cleanup may remove old kernels and user cache. Continue?"; then
+                if confirm_if_needed "深度清理可能删除旧内核和用户缓存，是否继续？"; then
                     run_deep_profile
                 else
-                    print_info "Deep cleanup cancelled."
+                    print_info "已取消深度清理。"
                     sleep 1
                     continue
                 fi
@@ -550,20 +550,20 @@ interactive_menu() {
             4)
                 analyze_disk
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 continue
                 ;;
             5)
                 custom_menu
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 continue
                 ;;
             0)
                 exit 0
                 ;;
             *)
-                print_error "Invalid selection."
+                print_error "无效选项。"
                 sleep 1
                 continue
                 ;;
@@ -574,7 +574,7 @@ interactive_menu() {
         fi
 
         echo ""
-        read -r -n 1 -s -p "Press any key to continue..."
+        read -r -n 1 -s -p "按任意键继续..."
     done
 }
 
@@ -609,7 +609,7 @@ parse_args() {
                 exit 0
                 ;;
             *)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;
@@ -632,7 +632,7 @@ main() {
     INITIAL_DISK_USAGE=$(get_disk_usage)
 
     if [ "${DRY_RUN}" = true ]; then
-        print_warn "DRY RUN mode is enabled. No files will be removed."
+        print_warn "当前为试运行模式，不会删除任何文件。"
     fi
 
     if [ "${DEEP_CLEAN}" = true ] && [ "${AUTO_CONFIRM}" = true ]; then

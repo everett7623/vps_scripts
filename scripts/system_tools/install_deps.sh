@@ -281,14 +281,14 @@ custom_menu() {
     local selections=""
 
     clear
-    print_header "Custom dependency install"
-    echo "1. Basic"
-    echo "2. Dev"
-    echo "3. Monitor"
-    echo "4. Security"
-    echo "0. Back"
+    print_header "自定义依赖安装"
+    echo "1. 基础工具"
+    echo "2. 开发工具"
+    echo "3. 监控工具"
+    echo "4. 安全工具"
+    echo "0. 返回"
     echo ""
-    read -r -p "Enter one or more selections (example: 1 3): " selections
+    read -r -p "请输入一个或多个选项（例如：1 3）: " selections
 
     [[ "$selections" == "0" ]] && return
     [[ "$selections" == *"1"* ]] && install_list="$install_list $BASIC_PACKAGES"
@@ -297,13 +297,13 @@ custom_menu() {
     [[ "$selections" == *"4"* ]] && install_list="$install_list $SECURITY_PACKAGES"
 
     if [ -z "$install_list" ]; then
-        print_warn "No valid package group selected."
+        print_warn "未选择有效的软件包分组。"
         sleep 1
         return
     fi
 
     run_install_flow "$install_list"
-    read -n 1 -s -r -p "Press any key to return..."
+    read -n 1 -s -r -p "按任意键返回..."
 }
 
 interactive_menu() {
@@ -311,18 +311,18 @@ interactive_menu() {
 
     while true; do
         clear
-        print_header "Dependency install wizard"
-        echo -e "${CYAN}Current OS:${NC} $OS_TYPE ($PKG_MANAGER)"
-        echo -e "${CYAN}Log file:${NC} $LOG_FILE"
+        print_header "常用依赖安装向导"
+        echo -e "${CYAN}当前系统:${NC} $OS_TYPE ($PKG_MANAGER)"
+        echo -e "${CYAN}日志文件:${NC} $LOG_FILE"
         echo ""
-        echo "1. Install basic tools"
-        echo "2. Install development tools"
-        echo "3. Install monitoring and security tools"
-        echo "4. Install everything"
-        echo "5. Custom selection"
-        echo "0. Exit"
+        echo "1. 安装基础工具"
+        echo "2. 安装开发工具"
+        echo "3. 安装监控与安全工具"
+        echo "4. 安装全部工具"
+        echo "5. 自定义选择"
+        echo "0. 退出"
         echo ""
-        read -r -p "Select [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice
 
         status=0
         case "$choice" in
@@ -332,23 +332,23 @@ interactive_menu() {
             4) run_install_flow "$BASIC_PACKAGES $DEV_PACKAGES $MONITOR_PACKAGES $SECURITY_PACKAGES" || status=$? ;;
             5) custom_menu; continue ;;
             0) exit 0 ;;
-            *) print_error "Invalid choice"; sleep 1; continue ;;
+            *) print_error "无效选项"; sleep 1; continue ;;
         esac
 
         echo ""
         if [ "$status" -eq 0 ]; then
-            print_success "Task completed."
+            print_success "任务执行完成。"
         else
-            print_warn "Task completed with warnings. See: $LOG_FILE"
+            print_warn "任务已完成，但存在警告，请查看：$LOG_FILE"
         fi
-        read -n 1 -s -r -p "Press any key to return..."
+        read -n 1 -s -r -p "按任意键返回..."
     done
 }
 
 main() {
     case "${1:-}" in
         --help|-h)
-            echo "Usage: bash install_deps.sh [--basic | --dev | --all]"
+            echo "用法：bash install_deps.sh [--basic | --dev | --all]"
             return 0
             ;;
     esac
@@ -370,7 +370,7 @@ main() {
             interactive_menu
             ;;
         *)
-            print_error "Unknown argument: $1"
+            print_error "未知参数：$1"
             exit 1
             ;;
     esac

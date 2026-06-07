@@ -59,14 +59,14 @@ log() {
 
 show_help() {
     cat <<'EOF'
-Usage: bash change_hostname.sh [options] [new-hostname]
+用法：bash change_hostname.sh [选项] [新主机名]
 
-Options:
-  --yes, -y        Skip confirmation prompts
-  --rollback       Roll back using the latest backup
-  --history        Show previous hostname backups
-  --show           Print current hostname and exit
-  --help, -h       Show this help message
+选项：
+  --yes, -y        跳过确认提示
+  --rollback       使用最近一次备份回滚
+  --history        显示主机名备份历史
+  --show           显示当前主机名并退出
+  --help, -h       显示此帮助信息
 EOF
 }
 
@@ -469,46 +469,46 @@ interactive_menu() {
 
     while true; do
         clear 2>/dev/null || true
-        print_header "VPS Hostname Manager"
-        printf "%bCurrent hostname:%b %s\n" "${CYAN}" "${NC}" "$(current_hostname)"
-        printf "%bPrimary IP:%b       %s\n" "${CYAN}" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
+        print_header "VPS 主机名管理"
+        printf "%b当前主机名:%b %s\n" "${CYAN}" "${NC}" "$(current_hostname)"
+        printf "%b主要 IP:%b    %s\n" "${CYAN}" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
         print_separator
-        echo "1) Change hostname"
-        echo "2) Roll back latest change"
-        echo "3) Show backup history"
-        echo "4) Show current hostname"
-        echo "0) Exit"
+        echo "1) 修改主机名"
+        echo "2) 回滚最近一次修改"
+        echo "3) 查看备份历史"
+        echo "4) 查看当前主机名"
+        echo "0) 退出"
         echo ""
-        read -r -p "Select an option [0-4]: " selection
+        read -r -p "请选择 [0-4]: " selection
 
         case "${selection}" in
             1)
-                read_input "Enter the new hostname"
+                read_input "请输入新的主机名"
                 new_name="${REPLY}"
                 [ -n "${new_name}" ] && change_hostname_flow "${new_name}"
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             2)
                 rollback_latest
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             3)
                 show_history
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             4)
                 show_current_hostname
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             0)
                 exit 0
                 ;;
             *)
-                print_error "Invalid selection."
+                print_error "无效选项。"
                 sleep 1
                 ;;
         esac
@@ -537,13 +537,13 @@ parse_args() {
                 exit 0
                 ;;
             --*)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;
             *)
                 if [ -n "${NEW_HOSTNAME}" ]; then
-                    print_error "Only one hostname argument is supported."
+                    print_error "只能指定一个主机名参数。"
                     exit 1
                 fi
                 NEW_HOSTNAME="$1"

@@ -62,17 +62,17 @@ log() {
 
 show_help() {
     cat <<'EOF'
-Usage: bash optimize_system.sh [options]
+用法：bash optimize_system.sh [选项]
 
-Options:
-  --auto, -a       Run all conservative optimization modules
-  --yes, -y        Skip confirmation prompts
-  --kernel         Apply safe sysctl tuning
-  --limits         Raise file/process limits
-  --memory         Ensure swap protection when memory is low
-  --services       Disable known low-value desktop services
-  --security       Apply SSH latency/security baseline
-  --help, -h       Show this help message
+选项：
+  --auto, -a       执行全部保守优化模块
+  --yes, -y        跳过确认提示
+  --kernel         应用安全的 sysctl 优化
+  --limits         提高文件与进程限制
+  --memory         在低内存环境中配置 Swap 保护
+  --services       禁用已知的低价值桌面服务
+  --security       应用 SSH 延迟与安全基线
+  --help, -h       显示此帮助信息
 EOF
 }
 
@@ -374,9 +374,9 @@ run_selected_modules() {
     echo ""
     print_separator
     if [ "${result}" -eq 0 ]; then
-        print_success "Selected optimization modules completed."
+        print_success "所选优化模块已完成。"
     else
-        print_warn "Optimization finished with warnings. Review ${LOG_FILE}."
+        print_warn "优化已完成，但存在警告，请查看 ${LOG_FILE}。"
     fi
     return "${result}"
 }
@@ -386,16 +386,16 @@ interactive_menu() {
 
     while true; do
         clear 2>/dev/null || true
-        print_header "VPS Safe Optimization"
-        echo "1) Run all conservative optimizations"
-        echo "2) Kernel tuning only"
-        echo "3) Limits tuning only"
-        echo "4) Memory protection only"
-        echo "5) Service cleanup only"
-        echo "6) SSH baseline only"
-        echo "0) Exit"
+        print_header "VPS 安全优化"
+        echo "1) 执行全部保守优化"
+        echo "2) 仅优化内核参数"
+        echo "3) 仅优化系统限制"
+        echo "4) 仅优化内存保护"
+        echo "5) 仅清理低价值服务"
+        echo "6) 仅应用 SSH 安全基线"
+        echo "0) 退出"
         echo ""
-        read -r -p "Select an option [0-6]: " selection
+        read -r -p "请选择 [0-6]: " selection
 
         case "${selection}" in
             1) RUN_ALL=true; break ;;
@@ -405,7 +405,7 @@ interactive_menu() {
             5) RUN_SERVICES=true; break ;;
             6) RUN_SECURITY=true; break ;;
             0) exit 0 ;;
-            *) print_error "Invalid selection."; sleep 1 ;;
+            *) print_error "无效选项。"; sleep 1 ;;
         esac
     done
 
@@ -441,7 +441,7 @@ parse_args() {
                 exit 0
                 ;;
             *)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;

@@ -129,19 +129,19 @@ check_root_or_exit() {
 
 show_help() {
     cat <<'EOF'
-Usage: bash set_timezone.sh [options] [timezone-or-alias]
+用法：bash set_timezone.sh [选项] [时区或别名]
 
-Options:
-  --list              List available timezones
-  --common            Show the curated common timezone table
-  --search <keyword>  Search available timezones
-  --ntp               Configure NTP and exit
-  --sync              Force a time sync and exit
-  --info              Show current timezone and clock info
-  --yes, -y           Skip confirmation prompts
-  --help, -h          Show this help message
+选项：
+  --list              列出全部可用时区
+  --common            显示常用时区表
+  --search <关键词>   搜索可用时区
+  --ntp               配置 NTP 后退出
+  --sync              强制同步时间后退出
+  --info              显示当前时区和时钟信息
+  --yes, -y           跳过确认提示
+  --help, -h          显示此帮助信息
 
-Common aliases:
+常用别名：
   cn, china, shanghai
   hk, hongkong
   tw, taiwan, taipei
@@ -538,74 +538,74 @@ interactive_menu() {
         clear 2>/dev/null || true
         show_time_info
         echo ""
-        echo "1) Choose from common timezones"
-        echo "2) Enter timezone manually"
-        echo "3) Search timezones"
-        echo "4) Configure NTP only"
-        echo "5) Sync time now"
-        echo "0) Exit"
+        echo "1) 从常用时区中选择"
+        echo "2) 手动输入时区"
+        echo "3) 搜索时区"
+        echo "4) 仅配置 NTP"
+        echo "5) 立即同步时间"
+        echo "0) 退出"
         echo ""
-        read -r -p "Select an option [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice
 
         case "${choice}" in
             1)
                 show_common_timezones
                 echo ""
-                read_input "Enter a timezone code or full timezone name"
+                read_input "请输入时区编号或完整时区名称"
                 selection="${REPLY}"
                 if [[ "${selection}" =~ ^[0-9]+$ ]] && get_timezone_by_number "${selection}" >/dev/null 2>&1; then
                     NEW_TIMEZONE=$(get_timezone_by_number "${selection}")
                 else
                     NEW_TIMEZONE="${selection}"
                 fi
-                read_input "Configure NTP as well?" "y"
+                read_input "是否同时配置 NTP？" "y"
                 update_ntp_choice_from_reply
                 apply_timezone_flow
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             2)
-                read_input "Enter timezone name (for example: Asia/Shanghai)"
+                read_input "请输入时区名称（例如：Asia/Shanghai）"
                 NEW_TIMEZONE="${REPLY}"
-                read_input "Configure NTP as well?" "y"
+                read_input "是否同时配置 NTP？" "y"
                 update_ntp_choice_from_reply
                 apply_timezone_flow
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             3)
-                read_input "Enter a search keyword"
+                read_input "请输入搜索关键词"
                 selection="${REPLY}"
                 echo ""
                 search_timezones "${selection}"
                 echo ""
-                read_input "Enter the full timezone name"
+                read_input "请输入完整时区名称"
                 NEW_TIMEZONE="${REPLY}"
-                read_input "Configure NTP as well?" "y"
+                read_input "是否同时配置 NTP？" "y"
                 update_ntp_choice_from_reply
                 apply_timezone_flow
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             4)
                 check_root_or_exit
                 ensure_runtime_dirs
                 configure_ntp
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             5)
                 check_root_or_exit
                 ensure_runtime_dirs
                 sync_time_manual
                 echo ""
-                read -r -n 1 -s -p "Press any key to continue..."
+                read -r -n 1 -s -p "按任意键继续..."
                 ;;
             0)
                 exit 0
                 ;;
             *)
-                print_error "Invalid selection."
+                print_error "无效选项。"
                 sleep 1
                 ;;
         esac
@@ -625,7 +625,7 @@ parse_args() {
                 ;;
             --search)
                 shift
-                [ $# -gt 0 ] || { print_error "Missing value for --search."; exit 1; }
+                [ $# -gt 0 ] || { print_error "--search 缺少搜索关键词。"; exit 1; }
                 SEARCH_KEYWORD="$1"
                 ;;
             --ntp)
@@ -647,13 +647,13 @@ parse_args() {
                 exit 0
                 ;;
             --*)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;
             *)
                 if [ -n "${TIMEZONE_ARG}" ]; then
-                    print_error "Only one timezone argument is supported."
+                    print_error "只能指定一个时区参数。"
                     exit 1
                 fi
                 TIMEZONE_ARG="$1"
