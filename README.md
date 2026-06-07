@@ -1,137 +1,154 @@
 # VPS Scripts - 多功能 VPS 脚本工具集
-(新版本目前不可用，升级中)，请使用旧脚本：
+
+> 当前主入口已恢复可用，推荐使用模块化启动器 `vps.sh`。
+> 兼容入口 `vps_scripts.sh` 仍然保留，方便老用户继续使用。
+
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
 ```
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
-[![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20CentOS%20%7C%20RHEL%20%7C%20Fedora%20%7C%20Arch-orange.svg)]()
-[![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)]()
+[![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20CentOS%20%7C%20RHEL%20%7C%20Fedora%20%7C%20Arch-orange.svg)](https://github.com/everett7623/vps_scripts)
+[![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
 [![Stars](https://img.shields.io/github/stars/everett7623/vps_scripts?style=social)](https://github.com/everett7623/vps_scripts)
 
-[**中文文档**](README.md) | [**English**](README_EN.md) | [**安装指南**](docs/installation.md) | [**使用手册**](docs/usage.md)
+[**项目地址**](https://github.com/everett7623/vps_scripts) | [**更新日志**](CHANGELOG.md) | [**开发指南**](DEVELOPMENT_GUIDE.md) | [**发布清单**](RELEASE_CHECKLIST.md)
 
 </div>
 
-## 📋 目录
+## 目录
 
-- [功能特性](#-功能特性)
-- [系统要求](#-系统要求)
-- [快速开始](#-快速开始)
-- [详细功能](#-详细功能)
-- [高级用法](#-高级用法)
-- [更新日志](#-更新日志)
-- [贡献指南](#-贡献指南)
-- [常见问题](#-常见问题)
-- [免责声明](#️-免责声明)
+- [当前状态](#当前状态)
+- [功能特性](#功能特性)
+- [系统要求](#系统要求)
+- [快速开始](#快速开始)
+- [详细功能](#详细功能)
+- [项目结构](#项目结构)
+- [验证与维护](#验证与维护)
+- [更新日志](#更新日志)
+- [开发与贡献](#开发与贡献)
+- [常见问题](#常见问题)
+- [免责声明](#免责声明)
 
-## ✨ 功能特性
+## 当前状态
 
-### 🖥️ 系统工具
-- **系统信息查看** - 详细展示CPU、内存、硬盘、网络等信息
-- **系统更新** - 支持多种Linux发行版的系统更新
-- **系统清理** - 清理缓存、日志、临时文件等
-- **系统优化** - BBR加速、内核参数优化、系统限制调整
+### 当前主线
+- `vps.sh` 已恢复为当前推荐主入口
+- `vps_scripts.sh` 作为兼容入口保留
+- 主框架、公共函数库和系统工具已完成一轮集中优化
+- 仓库已补充基础验证脚本，便于后续逐分类继续升级
 
-### 🌐 网络测试
-- **IP质量检测** - 检测IP质量、黑名单状态、地理位置等
-- **流媒体解锁** - 测试Netflix、YouTube、Disney+等流媒体解锁情况
-- **三网测速** - 电信、联通、移动三网速度测试
-- **回程路由** - 追踪VPS到国内的回程路由
-- **响应测试** - 测试全球各地到VPS的响应时间
-- **带宽测试** - 使用iperf3进行专业带宽测试
+### 已完成的重点
+- 启动器安全性与菜单映射修正
+- 公共函数库清理与高风险 `eval` 移除
+- 依赖安装与系统更新脚本幂等性增强
+- 系统工具核心脚本统一到新的日志、校验、备份风格
+- README、CHANGELOG、开发/发布文档补齐
 
-### 📊 性能测试
-- **YABS测试** - 综合性能基准测试
-- **融合怪测试** - 集成多种测试的综合脚本
-- **超售测试** - 检测VPS是否存在超售情况
-- **CPU性能** - 单核/多核性能测试
-- **内存性能** - 内存读写速度测试
-- **硬盘性能** - 4K随机读写、顺序读写测试
+### 当前优化阶段
+- `system_tools`：主脚本已完成首轮收口
+- `network_test`：待继续统一结构与输出风格
+- `performance_test`：待继续整理
+- `service_install`：待逐个提升安全性与可维护性
 
-### 🚀 服务部署
-- **Docker环境** - 一键安装Docker和Docker Compose
-- **Web环境** - Nginx、Apache、PHP、MySQL快速部署
-- **开发环境** - Node.js、Python、Java、Go环境配置
-- **代理服务** - Shadowsocks、V2Ray、WireGuard等
-- **监控服务** - 哪吒监控、Prometheus、Grafana等
+## 功能特性
 
-### 📈 统计分析
-- **使用统计** - 记录各功能使用次数和频率
-- **性能分析** - 追踪脚本执行时间和资源消耗
-- **可视化报告** - 生成直观的统计图表
-- **数据导出** - 支持导出JSON、CSV格式的统计数据
+### 系统工具
+- **系统信息查看** - 查看 CPU、内存、硬盘、网络、服务状态等信息
+- **系统更新** - 支持多种 Linux 发行版更新与基础清理
+- **系统清理** - 清理缓存、日志、临时文件、孤包与 Docker 垃圾
+- **系统优化** - 提供保守型内核参数、limits、swap 与 SSH 基线优化
+- **主机名管理** - 支持主机名修改、校验、备份、回滚
+- **时区管理** - 支持时区设置、NTP 配置与时间同步
 
-## 🔧 系统要求
+### 网络测试
+- **IP 质量检测** - 检测 IP 信息、可用性与基础网络表现
+- **流媒体解锁** - 测试 Netflix、YouTube、Disney+ 等平台
+- **三网测速** - 电信、联通、移动及国际节点测速
+- **回程路由** - 跟踪 VPS 到国内方向的回程路由
+- **响应测试** - 测试不同地区到 VPS 的连通与延迟
+
+### 性能测试
+- **YABS 测试** - 综合性能基准测试
+- **融合怪测试** - 多项能力集合测试
+- **超售测试** - 检测 CPU、内存、I/O 等超售迹象
+- **硬件性能测试** - CPU、内存、硬盘等基础性能检测
+
+### 服务部署
+- **Docker 环境** - Docker 与 Compose 一键安装
+- **Web 环境** - Nginx、Apache、PHP、MySQL 等常见组件
+- **开发环境** - Node.js、Python、Java、Go 等运行环境
+- **代理服务** - Shadowsocks、V2Ray、WireGuard 等相关部署
+- **监控服务** - 哪吒监控等常见 VPS 运维组件
+
+## 系统要求
 
 ### 支持的操作系统
-- **Ubuntu** 18.04 / 20.04 / 22.04 / 24.04
-- **Debian** 9 / 10 / 11 / 12
-- **CentOS** 7 / 8 / Stream 8 / Stream 9
-- **RHEL** 7 / 8 / 9
-- **Fedora** 35+
-- **Rocky Linux** 8 / 9
-- **AlmaLinux** 8 / 9
-- **Arch Linux** (最新版)
-- **Manjaro** (最新版)
-- **Alpine Linux** 3.12+
-- **openSUSE** Leap 15.3+
+- **Ubuntu** 18.04+
+- **Debian** 10+
+- **CentOS** 7+
+- **RHEL / Rocky / AlmaLinux** 8+
+- **Fedora**
+- **Arch / Manjaro**
+- **Alpine Linux** 3.10+
 
-### 硬件要求
-- **CPU**: 1核心及以上
-- **内存**: 512MB及以上
-- **硬盘**: 1GB可用空间
-- **网络**: 需要访问GitHub和测试服务器
+详细兼容信息以 [version.json](version.json) 为准。
 
-### 软件要求
-- **权限**: root或sudo权限
-- **Shell**: Bash 4.0+
-- **基础工具**: curl或wget
+### 基础要求
+- **CPU**：1 核及以上
+- **内存**：建议 512MB 及以上
+- **硬盘**：至少 1GB 可用空间
+- **权限**：大多数安装、清理、系统修改功能需要 root 或 sudo
+- **Shell**：Bash 4.0+
+- **网络**：需要访问 GitHub 与部分第三方检测/安装源
 
-## 🚀 快速开始
+## 快速开始
 
-### 一键安装
+### 推荐方式：模块化主入口
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
 ```
+
+如果没有 `curl`，也可以使用：
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
 ```
 
-### 本地安装
+### 兼容方式：旧入口
 
 ```bash
-# 克隆仓库
+bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
+```
+
+### 本地使用
+
+```bash
 git clone https://github.com/everett7623/vps_scripts.git
 cd vps_scripts
-
-# 添加执行权限
 chmod +x vps.sh
-
-# 运行脚本
 ./vps.sh
 ```
 
-### 设置快捷命令
+### 快捷命令
 
 ```bash
-# 方法1: 创建别名
 echo "alias vps='bash ~/vps_scripts/vps.sh'" >> ~/.bashrc
 source ~/.bashrc
-
-# 方法2: 添加到系统路径
-sudo ln -s ~/vps_scripts/vps.sh /usr/local/bin/vps
-
-# 现在可以直接使用
-vps
 ```
 
-## 📖 详细功能
+### 使用建议
+
+- 新环境优先使用 `vps.sh`
+- 老习惯或旧文档引用场景可继续使用 `vps_scripts.sh`
+- 涉及系统修改、软件安装、网络配置的功能建议先在可回滚环境中验证
+- 运行前尽量确认主机已具备 `bash`、`curl` 或 `wget`
+
+## 详细功能
 
 ### 系统工具模块
 
@@ -139,32 +156,28 @@ vps
 <summary>点击展开系统工具详细说明</summary>
 
 #### 系统信息查看
-- 硬件信息：CPU型号、核心数、架构
-- 内存信息：总量、已用、可用、缓存
-- 硬盘信息：分区、使用率、文件系统
-- 网络信息：IPv4/IPv6地址、网卡信息
-- 系统信息：发行版、内核版本、运行时间
+- 显示主机名、系统版本、内核、架构、运行时间
+- 显示 CPU、内存、Swap、硬盘、网络接口、公共 IP
+- 显示虚拟化环境、常见服务状态与基础登录信息
 
 #### 系统更新
-- 自动检测包管理器（apt/yum/dnf/pacman等）
-- 更新软件包列表
-- 升级已安装的软件包
-- 清理不需要的依赖
-- 更新内核（可选）
+- 自动识别 apt / yum / dnf / apk / pacman
+- 支持常规更新、安全更新、清理与重启检查
+- 已补充备份、日志和较稳的非交互流程
 
 #### 系统清理
-- 清理包管理器缓存
-- 清理系统日志（保留最近7天）
-- 清理临时文件
-- 清理用户缓存
-- 清理旧内核（保留最新2个）
+- 支持缓存、日志、临时文件、孤包、Docker 清理
+- 深度模式可选清理旧内核与用户缓存
+- 支持 `--dry-run` 和磁盘分析模式
 
 #### 系统优化
-- 启用BBR TCP拥塞控制
-- 优化内核参数
-- 调整文件描述符限制
-- 优化网络参数
-- 禁用不必要的服务
+- 保守启用 TCP/BBR、limits、swap 保护、SSH 基线
+- 以稳定优先，不再默认做过激调优
+- 关键配置会先备份再写入
+
+#### 主机名与时区
+- 主机名脚本支持校验、备份、报告、回滚
+- 时区脚本支持常用时区、搜索、NTP 配置与同步
 
 </details>
 
@@ -173,33 +186,12 @@ vps
 <details>
 <summary>点击展开网络测试详细说明</summary>
 
-#### IP质量检测
-- IP归属地查询
-- 黑名单检测（Spamhaus、Barracuda等）
-- 端口开放检测
-- MTU探测
-- DNS解析测试
-
-#### 流媒体解锁
-- Netflix（检测区域）
-- YouTube Premium
-- Disney+
-- HBO Max
-- Amazon Prime Video
-- 更多流媒体平台...
-
-#### 三网测速
-- 电信节点测速
-- 联通节点测速
-- 移动节点测速
-- 国际节点测速
-- 支持多线程/单线程模式
-
-#### 回程路由
-- 自动检测三网回程
-- 支持TCP/ICMP模式
-- 显示AS号和运营商信息
-- 地理位置可视化
+#### 常见能力
+- IP 检测与归属信息查看
+- 流媒体解锁检测
+- 三网测速与国际测速
+- 回程路由追踪
+- 网络响应与基础可达性测试
 
 </details>
 
@@ -208,27 +200,11 @@ vps
 <details>
 <summary>点击展开性能测试详细说明</summary>
 
-#### YABS综合测试
-- CPU性能测试（单核/多核）
-- 内存性能测试
-- 硬盘性能测试（fio）
-- 网络性能测试
-- Geekbench跑分（可选）
-
-#### 融合怪测试
-- 系统信息收集
-- CPU性能评估
-- 内存测试
-- 硬盘I/O测试
-- 网络质量测试
-- 综合评分
-
-#### 超售测试
-- CPU超售检测
-- 内存超售检测
-- 硬盘超售检测
-- 网络超售检测
-- 综合评估报告
+#### 常见能力
+- YABS 综合测试
+- 融合怪测试
+- 超售检测
+- CPU / 内存 / 硬盘基础性能测试
 
 </details>
 
@@ -237,174 +213,158 @@ vps
 <details>
 <summary>点击展开服务部署详细说明</summary>
 
-#### Docker环境
-```bash
-# 自动安装最新版Docker
-# 配置Docker加速器
-# 安装Docker Compose
-# 设置开机自启
-```
-
-#### Web环境
-```bash
-# Nginx + PHP + MySQL
-# Apache + PHP + MySQL
-# Caddy + PHP
-# 支持多版本PHP切换
-```
-
-#### 开发环境
-```bash
-# Node.js (支持nvm管理)
-# Python (支持pyenv管理)
-# Java (OpenJDK/Oracle JDK)
-# Go语言环境
-```
+#### 常见能力
+- Docker 环境部署
+- Web 服务栈部署
+- 多语言开发环境安装
+- 代理与监控类服务安装
 
 </details>
 
-## 🔍 高级用法
+## 项目结构
 
-### 配置文件
-
-创建 `~/.vps_scripts/config.conf` 自定义配置：
-
-```bash
-# 自动更新
-AUTO_UPDATE=true
-UPDATE_CHECK_INTERVAL=7
-
-# 界面设置
-USE_COLOR=true
-MENU_STYLE=advanced
-
-# 统计设置
-ENABLE_STATS=true
-STATS_SERVER=https://your-stats-server.com/api
-
-# 代理设置
-HTTP_PROXY=
-HTTPS_PROXY=
+```text
+config/                    项目配置
+lib/                       公共函数库
+scripts/
+  system_tools/            系统工具
+  network_test/            网络测试
+  performance_test/        性能测试
+  service_install/         服务安装
+  other_tools/             其他工具
+  uninstall_scripts/       卸载脚本
+  update_scripts/          旧更新脚本
+tests/                     仓库级校验脚本
+vps.sh                     主启动器
+vps_scripts.sh             兼容启动器
+version.json               版本与元数据
 ```
 
-### 命令行参数
+当前脚本分类数量：
+- `system_tools`: 7
+- `network_test`: 5
+- `performance_test`: 4
+- `service_install`: 20
+- `other_tools`: 4
+- `uninstall_scripts`: 4
+- `update_scripts`: 4
+
+## 验证与维护
+
+### 当前主框架状态
+- `vps.sh` 已作为主入口恢复可用
+- `vps_scripts.sh` 作为兼容入口保留
+- `lib/common_functions.sh`、`install_deps.sh`、`update_system.sh` 已完成一轮核心重构
+- `system_tools` 核心脚本已补上统一的语法校验链
+
+### 推荐验证命令
 
 ```bash
-# 直接执行指定功能
-vps.sh --sysinfo          # 显示系统信息
-vps.sh --update           # 更新系统
-vps.sh --speedtest        # 运行测速
-vps.sh --docker           # 安装Docker
-
-# 其他参数
-vps.sh --no-color         # 禁用彩色输出
-vps.sh --quiet            # 静默模式
-vps.sh --debug            # 调试模式
+bash -n vps.sh
+bash -n vps_scripts.sh
+LAUNCHER_OVERRIDE="$PWD/vps.sh" REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_launcher_paths.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools.sh
 ```
 
-### API接口
+如果本机装有 `shellcheck`，建议在提交前补跑。
 
-脚本提供JSON格式的统计数据输出：
+### 相关文档
+- [AGENTS.md](AGENTS.md)：协作规范与代理工作约束
+- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)：开发指南
+- [TASKS.md](TASKS.md)：待办与优先级
+- [PROGRESS.md](PROGRESS.md)：当前进展
+- [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)：发布前检查
+- [VERSIONING.md](VERSIONING.md)：版本策略
+- [PRIVACY.md](PRIVACY.md)：隐私与网络访问说明
+- [code_review.md](code_review.md)：代码审查记录
+- [SESSION.md](SESSION.md)：最近一次优化会话摘要
+- [CHANGELOG.md](CHANGELOG.md)：更新历史
 
-```bash
-# 获取统计数据
-vps.sh --stats-json > stats.json
+## 更新日志
 
-# 发送到远程服务器
-vps.sh --send-stats --server=https://api.example.com --key=YOUR_API_KEY
-```
+### 最近这一轮重点变化
+- 主启动器 `vps.sh` 已重建并对齐当前仓库真实脚本
+- 兼容启动器 `vps_scripts.sh` 已收口为兼容入口
+- `system_info.sh`、`change_hostname.sh`、`clean_system.sh`、`optimize_system.sh`、`set_timezone.sh` 已完成首轮框架化整理
+- 新增 `tests/validate_core_assets.sh`、`tests/validate_system_tools.sh` 等基础校验能力
+- 文档、版本元数据与发布检查流程已补齐一轮
 
-## 📅 更新日志
+### 查看完整历史
+- [CHANGELOG.md](CHANGELOG.md)：当前整理中的正式更新日志
+- [update_log.sh](update_log.sh)：兼容保留的旧更新记录查看脚本
 
-### v2.0.0 (2025-06-12)
-- 🎉 全新架构重构，模块化设计
-- ✨ 新增多系统支持（CentOS/RHEL/Arch等）
-- 🎨 全新分级菜单系统
-- 📊 新增统计分析功能
-- 🔧 优化错误处理机制
-- 📝 完善文档和注释
+## 开发与贡献
 
-### v1.2.4 (2025-05-19)
-- 添加哪吒agent清理脚本
-- 修复统计功能bug
-- 优化菜单显示
+欢迎继续完善这个项目。
 
-[查看完整更新日志](CHANGELOG.md)
+### 建议的开发方向
+- 继续优化 `network_test`、`performance_test`、`service_install` 分类
+- 进一步减少高风险远程执行模式
+- 提升 UTF-8 文档一致性与脚本可维护性
+- 增加更多 repo-local 验证脚本
 
-## 🤝 贡献指南
-
-我们欢迎所有形式的贡献！
-
-### 如何贡献
-
+### 贡献方式
 1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+2. 创建功能分支
+3. 提交变更
+4. 推送分支
+5. 发起 Pull Request
 
-### 开发规范
+### 提交前建议
+- 至少运行 README 中列出的基础验证命令
+- 用户可见行为变化要同步更新 `README.md` 与 `CHANGELOG.md`
+- 涉及系统脚本的改动，尽量说明风险、回滚方式和适用范围
 
-- 遵循Shell脚本最佳实践
-- 添加必要的注释和文档
-- 确保在多个系统上测试通过
-- 保持向后兼容性
+### 报告问题时建议附带
+- 发行版与版本号
+- 架构信息
+- 触发问题的脚本名称
+- 报错输出或复现步骤
 
-### 报告问题
-
-[提交Issue](https://github.com/everett7623/vps_scripts/issues/new)时请包含：
-- 系统版本信息
-- 错误信息截图
-- 复现步骤
-
-## ❓ 常见问题
+## 常见问题
 
 <details>
-<summary>Q: 脚本支持ARM架构的VPS吗？</summary>
+<summary>Q: 现在应该用哪个入口？</summary>
 
-A: 是的，脚本支持x86_64和ARM64架构。部分功能在ARM上可能有限制。
+A: 优先使用 `vps.sh`。`vps_scripts.sh` 主要用于兼容旧使用方式。
 </details>
 
 <details>
-<summary>Q: 如何卸载脚本？</summary>
+<summary>Q: 脚本支持 ARM 架构的 VPS 吗？</summary>
 
-A: 运行 `vps.sh` 选择 `99) 卸载脚本` 即可完全卸载。
+A: 支持 x86_64 和 arm64，具体能力仍取决于目标脚本和所依赖的第三方工具。
 </details>
 
 <details>
-<summary>Q: 统计数据存储在哪里？</summary>
+<summary>Q: 系统工具现在稳定吗？</summary>
 
-A: 统计数据存储在 `~/.vps_scripts/` 目录下，不会上传到任何服务器。
+A: 主框架和系统工具已经完成一轮集中优化，并增加了基础校验链；但服务安装、网络测试等分类仍在持续优化中。
 </details>
 
 <details>
-<summary>Q: 如何关闭自动更新？</summary>
+<summary>Q: 为什么有些功能仍会访问第三方源？</summary>
 
-A: 编辑 `~/.vps_scripts/config.conf`，设置 `AUTO_UPDATE=false`。
+A: 这类脚本本身就依赖软件源、测速节点、流媒体检测点或第三方项目，README 只做如实说明，不代表所有外部脚本都由本仓库维护。
 </details>
 
-[查看更多常见问题](docs/FAQ.md)
+## 免责声明
 
-## ⚠️ 免责声明
-
-1. 本脚本仅供学习和参考使用
-2. 使用本脚本产生的任何后果由使用者自行承担
-3. 请勿将本脚本用于任何违法违规用途
-4. 第三方脚本的安全性和稳定性由原作者负责
+1. 本项目仅供学习、运维参考与自动化辅助使用。
+2. 涉及系统修改、服务安装、网络测试的功能请自行评估风险。
+3. 第三方脚本、第三方软件源和第三方服务的稳定性与安全性不完全由本仓库控制。
+4. 使用本项目产生的后果由使用者自行承担。
 
 ## 鸣谢
-* [Eooce](https://github.com/eooce/ssh_tool)
-* [Netflixxp](https://github.com/Netflixxp/jcnf-box)
-* [科技lion]
-* [BlueSkyXN](https://github.com/BlueSkyXN/SKY-BOX)
-* [yonggekkk](https://github.com/yonggekkk/sing-box_hysteria2_tuic_argo_reality)
-* [Fscarmen](https://github.com/fscarmen/sba)
-* [mack-a](https://github.com/mack-a/v2ray-agent)
 
-## 广告
-[VPS，梯子等小工具推荐](https://github.com/everett7623/tool)
+- [Eooce](https://github.com/eooce/ssh_tool)
+- [Netflixxp](https://github.com/Netflixxp/jcnf-box)
+- [BlueSkyXN](https://github.com/BlueSkyXN/SKY-BOX)
+- [yonggekkk](https://github.com/yonggekkk/sing-box_hysteria2_tuic_argo_reality)
+- [Fscarmen](https://github.com/fscarmen/sba)
+- [mack-a](https://github.com/mack-a/v2ray-agent)
 
-## 📄 许可证
+## 许可证
 
 本项目采用 [AGPL-3.0](LICENSE) 许可证。
 
@@ -412,10 +372,10 @@ A: 编辑 `~/.vps_scripts/config.conf`，设置 `AUTO_UPDATE=false`。
 
 <div align="center">
 
-**如果这个项目对您有帮助，请给个 ⭐ Star 支持一下！**
+**如果这个项目对你有帮助，欢迎点个 Star 支持一下。**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=everett7623/vps_scripts&type=Date)](https://star-history.com/#everett7623/vps_scripts&Date)
 
-Made with ❤️ by [Jensfrank](https://github.com/everett7623)
+Made by [Jensfrank](https://github.com/Jensfrank)
 
 </div>

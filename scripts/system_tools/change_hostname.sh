@@ -1,353 +1,588 @@
 #!/bin/bash
 # ==============================================================================
-# 脚本名称: change_hostname.sh
-# 仓库地址: https://github.com/everett7623/vps_scripts
-# 脚本路径: scripts/system_tools/change_hostname.sh
-# 描述: VPS 主机名修改工具 (全功能版)
-#       包含交互菜单、修改验证、回滚机制、云配置适配及修改报告生成。
-# 作者: Jensfrank (Optimized by AI)
-# 版本: 1.2.0 (Full Feature)
-# 更新日期: 2026-01-20
+# Script: scripts/system_tools/change_hostname.sh
+# Purpose: Safer hostname management with backups, verification, and rollback.
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# 1. 环境初始化与依赖加载
-# ------------------------------------------------------------------------------
+set -u
+set -o pipefail
 
-# 获取脚本真实路径
 SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
 
-# 配置变量
+LIB_FILE="${PROJECT_ROOT}/lib/common_functions.sh"
+CONFIG_FILE="${PROJECT_ROOT}/config/vps_scripts.conf"
+
 LOG_DIR="/var/log/vps_scripts"
-LOG_FILE="$LOG_DIR/hostname_change.log"
+LOG_FILE="${LOG_DIR}/hostname_change.log"
 BACKUP_DIR="/var/backups/hostname_change"
-BACKUP_TIME=$(date +%Y%m%d_%H%M%S)
+SCRIPT_VERSION="2.0.0"
 
-# 确保目录存在
-mkdir -p "$LOG_DIR" "$BACKUP_DIR"
+AUTO_CONFIRM=false
+SHOW_HISTORY_ONLY=false
+SHOW_CURRENT_ONLY=false
+ROLLBACK_ONLY=false
 
-# 尝试加载公共函数库
-LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
-if [ -f "$LIB_FILE" ]; then
-    source "$LIB_FILE"
+if [ -f "${LIB_FILE}" ]; then
+    # shellcheck source=/dev/null
+    source "${LIB_FILE}"
+    [ -f "${CONFIG_FILE}" ] && source "${CONFIG_FILE}"
+    [ -n "${LOG_DIR:-}" ] && LOG_FILE="${LOG_DIR}/hostname_change.log"
 else
-    # [远程模式回退] 定义必需的 UI 和辅助函数
-    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; NC='\033[0m'
-    print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
-    print_success() { echo -e "${GREEN}[成功] $1${NC}"; }
-    print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
-    print_error() { echo -e "${RED}[错误] $1${NC}"; }
-    print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
-    print_separator() { echo -e "${BLUE}------------------------------------------------${NC}"; }
-    check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}需要 root 权限${NC}"; exit 1; }; }
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
+    print_msg() { echo -e "${1}${2}${NC}"; }
+    print_info() { print_msg "${CYAN}" "[INFO] $1"; }
+    print_success() { print_msg "${GREEN}" "[OK] $1"; }
+    print_warn() { print_msg "${YELLOW}" "[WARN] $1"; }
+    print_error() { print_msg "${RED}" "[ERROR] $1"; }
+    print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
+    print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 28 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
+    command_exists() { command -v "$1" >/dev/null 2>&1; }
+    safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
+    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "This script requires root privileges."; exit 1; }; }
+    ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
+    read_input() { local prompt="$1"; local default="${2:-}"; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " REPLY; REPLY=${REPLY:-$default}; else read -r -p "${prompt}: " REPLY; fi; }
 fi
 
-# ------------------------------------------------------------------------------
-# 2. 辅助功能函数
-# ------------------------------------------------------------------------------
-
-# 写入文件日志
-write_log() {
-    local level=$1
-    shift
-    local message="$@"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
+ensure_runtime_dirs() {
+    safe_mkdir "${LOG_DIR}"
+    safe_mkdir "${BACKUP_DIR}"
 }
 
-# 验证主机名格式
+log() {
+    local level="$1"
+    shift
+    ensure_runtime_dirs
+    printf '[%s] [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${level}" "$*" >> "${LOG_FILE}"
+}
+
+show_help() {
+    cat <<'EOF'
+Usage: bash change_hostname.sh [options] [new-hostname]
+
+Options:
+  --yes, -y        Skip confirmation prompts
+  --rollback       Roll back using the latest backup
+  --history        Show previous hostname backups
+  --show           Print current hostname and exit
+  --help, -h       Show this help message
+EOF
+}
+
+current_hostname() {
+    if command_exists hostnamectl; then
+        hostnamectl --static 2>/dev/null || hostname
+    else
+        hostname
+    fi
+}
+
 validate_hostname() {
-    local hostname=$1
-    if [ ${#hostname} -lt 1 ] || [ ${#hostname} -gt 63 ]; then
-        print_error "长度错误: 必须在 1-63 个字符之间"
+    local name="$1"
+
+    if [ -z "${name}" ]; then
+        print_error "Hostname cannot be empty."
         return 1
     fi
-    if ! [[ "$hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
-        print_error "格式错误: 只能包含字母、数字、连字符，且不能以连字符开头/结尾"
+
+    if [ "${#name}" -gt 63 ]; then
+        print_error "Hostname must be 63 characters or fewer."
         return 1
     fi
-    if [[ "$hostname" =~ ^[0-9]+$ ]]; then
-        print_error "格式错误: 主机名不能纯数字"
+
+    if [[ ! "${name}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
+        print_error "Hostname may only contain letters, digits, and hyphens."
         return 1
     fi
+
+    if [[ "${name}" =~ ^[0-9]+$ ]]; then
+        print_error "Hostname cannot be numeric only."
+        return 1
+    fi
+
     return 0
 }
 
-# ------------------------------------------------------------------------------
-# 3. 核心逻辑函数
-# ------------------------------------------------------------------------------
-
-# 备份配置
-backup_configs() {
-    print_info "正在备份配置文件..."
-    local backup_path="$BACKUP_DIR/backup_$BACKUP_TIME"
-    mkdir -p "$backup_path"
-    
+create_backup() {
+    local old_name="$1"
+    local backup_path="${BACKUP_DIR}/backup_$(date +%Y%m%d_%H%M%S)"
+    local file=""
     local files=(
-        "/etc/hostname" "/etc/hosts" "/etc/sysconfig/network"
-        "/etc/mailname" "/etc/postfix/main.cf" "/etc/cloud/cloud.cfg"
+        "/etc/hostname"
+        "/etc/hosts"
+        "/etc/sysconfig/network"
+        "/etc/mailname"
+        "/etc/postfix/main.cf"
+        "/etc/cloud/cloud.cfg"
     )
-    
+
+    ensure_runtime_dirs
+    mkdir -p "${backup_path}"
+
     for file in "${files[@]}"; do
-        if [ -f "$file" ]; then
-            cp -p "$file" "$backup_path/" 2>/dev/null
-            write_log "BACKUP" "Backed up $file"
+        if [ -f "${file}" ]; then
+            cp -a "${file}" "${backup_path}/$(basename "${file}")"
         fi
     done
-    
-    hostname > "$backup_path/old_hostname.txt"
-    print_success "备份已保存至: $backup_path"
-}
 
-# 修改主机名执行逻辑
-perform_change() {
-    local new_name=$1
-    local old_name=$(hostname)
-    
-    print_info "正在应用修改: $old_name -> $new_name"
-    write_log "INFO" "Changing hostname from $old_name to $new_name"
-    
-    # 1. Hostnamectl
-    if command -v hostnamectl &>/dev/null; then
-        hostnamectl set-hostname "$new_name"
-    fi
-    
-    # 2. Files
-    echo "$new_name" > /etc/hostname
-    
-    if [ -f /etc/hosts ]; then
-        cp /etc/hosts /etc/hosts.bak
-        # 修复 127.0.1.1
-        if grep -q "^127\.0\.1\.1" /etc/hosts; then
-            sed -i "s/^127\.0\.1\.1.*$/127.0.1.1\t$new_name/" /etc/hosts
-        else
-            sed -i "/^127\.0\.0\.1/a 127.0.1.1\t$new_name" /etc/hosts
-        fi
-        sed -i "s/\b$old_name\b/$new_name/g" /etc/hosts
-    fi
-    
-    # 3. Legacy / Cloud
-    if [ -f /etc/sysconfig/network ]; then
-        if grep -q "^HOSTNAME=" /etc/sysconfig/network; then
-            sed -i "s/^HOSTNAME=.*/HOSTNAME=$new_name/" /etc/sysconfig/network
-        else
-            echo "HOSTNAME=$new_name" >> /etc/sysconfig/network
-        fi
-    fi
-    
-    if [ -f /etc/cloud/cloud.cfg ]; then
-        if grep -q "preserve_hostname:" /etc/cloud/cloud.cfg; then
-            sed -i 's/preserve_hostname: false/preserve_hostname: true/' /etc/cloud/cloud.cfg
-        else
-            echo "preserve_hostname: true" >> /etc/cloud/cloud.cfg
-        fi
-    fi
-
-    # 4. Apply
-    hostname "$new_name"
-    
-    # 5. Services
-    if systemctl is-active systemd-hostnamed &>/dev/null; then systemctl restart systemd-hostnamed; fi
-    if systemctl is-active rsyslog &>/dev/null; then systemctl restart rsyslog; fi
-    if systemctl is-active postfix &>/dev/null; then 
-        postconf -e "myhostname = $new_name" 2>/dev/null
-        systemctl restart postfix
-    fi
-}
-
-# 验证修改结果 (还原原脚本的详细检查)
-verify_change() {
-    local target_name=$1
-    local current_name=$(hostname)
-    local success=true
-    
-    print_separator
-    echo -e "${CYAN}验证检查清单:${NC}"
-    
-    # Check 1: hostname command
-    if [ "$current_name" == "$target_name" ]; then
-        echo -e "  [${GREEN}√${NC}] Kernel Hostname"
-    else
-        echo -e "  [${RED}×${NC}] Kernel Hostname (当前: $current_name)"
-        success=false
-    fi
-    
-    # Check 2: /etc/hostname
-    if [ -f /etc/hostname ] && grep -q "$target_name" /etc/hostname; then
-        echo -e "  [${GREEN}√${NC}] /etc/hostname"
-    else
-        echo -e "  [${RED}×${NC}] /etc/hostname"
-        success=false
-    fi
-    
-    # Check 3: /etc/hosts
-    if grep -q "$target_name" /etc/hosts; then
-        echo -e "  [${GREEN}√${NC}] /etc/hosts"
-    else
-        echo -e "  [${RED}×${NC}] /etc/hosts"
-        success=false
-    fi
-    
-    echo ""
-    return $([ "$success" = true ] && echo 0 || echo 1)
-}
-
-# 生成修改报告 (还原原脚本功能)
-generate_report() {
-    local report_file="$LOG_DIR/change_report_$(date +%Y%m%d_%H%M%S).txt"
-    cat > "$report_file" << EOF
-==================================================
-           主机名修改报告
-==================================================
-时间: $(date)
-旧名称: $1
-新名称: $2
---------------------------------------------------
-[检查项]
-/etc/hostname: $([ -f /etc/hostname ] && echo "Updated" || echo "N/A")
-/etc/hosts: Updated
-Cloud-Init: $([ -f /etc/cloud/cloud.cfg ] && echo "Patched" || echo "N/A")
-
-备份路径: $BACKUP_DIR/backup_$BACKUP_TIME
-日志文件: $LOG_FILE
-==================================================
+    cat > "${backup_path}/metadata.env" <<EOF
+OLD_HOSTNAME='${old_name}'
+CREATED_AT='$(date '+%Y-%m-%d %H:%M:%S %Z')'
+SCRIPT_VERSION='${SCRIPT_VERSION}'
 EOF
-    print_success "详细报告已生成: $report_file"
+
+    printf '%s\n' "${old_name}" > "${backup_path}/old_hostname.txt"
+    log "BACKUP" "Created hostname backup at ${backup_path}"
+    echo "${backup_path}"
 }
 
-# 回滚功能
-rollback_hostname() {
-    local latest=$(ls -t "$BACKUP_DIR" 2>/dev/null | head -1)
-    if [ -z "$latest" ]; then
-        print_error "无备份记录，无法回滚。"
-        read -n 1 -s -r -p "按任意键返回..."
-        return
-    fi
-    
-    local backup_path="$BACKUP_DIR/$latest"
-    if [ -f "$backup_path/old_hostname.txt" ]; then
-        local old_name=$(cat "$backup_path/old_hostname.txt")
-        print_warn "准备回滚至: $old_name (备份时间: ${latest#backup_})"
-        
-        read -p "确认回滚? (y/N): " confirm
-        if [[ "$confirm" =~ ^[Yy]$ ]]; then
-            cp -f "$backup_path/hostname" /etc/hostname 2>/dev/null
-            cp -f "$backup_path/hosts" /etc/hosts 2>/dev/null
-            if [ -f "$backup_path/network" ]; then cp -f "$backup_path/network" /etc/sysconfig/network 2>/dev/null; fi
-            hostname "$old_name"
-            if command -v hostnamectl &>/dev/null; then hostnamectl set-hostname "$old_name"; fi
-            
-            write_log "ROLLBACK" "Rolled back to $old_name"
-            print_success "回滚成功！"
-        else
-            print_info "已取消回滚。"
-        fi
+update_hosts_file() {
+    local new_name="$1"
+    local temp_file=""
+
+    [ -f /etc/hosts ] || return 0
+
+    temp_file=$(mktemp "/tmp/vps_hosts.XXXXXX") || {
+        print_error "Unable to create a temporary hosts file."
+        return 1
+    }
+
+    awk -v new_name="${new_name}" '
+        BEGIN { inserted = 0 }
+        /^127\.0\.1\.1[[:space:]]+/ {
+            print "127.0.1.1\t" new_name
+            inserted = 1
+            next
+        }
+        {
+            print
+            if (!inserted && $0 ~ /^127\.0\.0\.1[[:space:]]+/) {
+                print "127.0.1.1\t" new_name
+                inserted = 1
+            }
+        }
+        END {
+            if (!inserted) {
+                print "127.0.1.1\t" new_name
+            }
+        }
+    ' /etc/hosts > "${temp_file}"
+
+    cat "${temp_file}" > /etc/hosts
+    rm -f "${temp_file}"
+}
+
+update_key_value_file() {
+    local file="$1"
+    local key="$2"
+    local value="$3"
+    local temp_file=""
+
+    temp_file=$(mktemp "/tmp/vps_hostname_cfg.XXXXXX") || return 1
+
+    if [ -f "${file}" ]; then
+        awk -F= -v target_key="${key}" -v target_value="${value}" '
+            BEGIN { updated = 0 }
+            $1 == target_key {
+                print target_key "=" target_value
+                updated = 1
+                next
+            }
+            { print }
+            END {
+                if (!updated) {
+                    print target_key "=" target_value
+                }
+            }
+        ' "${file}" > "${temp_file}"
     else
-        print_error "备份文件损坏。"
+        printf '%s=%s\n' "${key}" "${value}" > "${temp_file}"
     fi
-    read -n 1 -s -r -p "按任意键返回..."
+
+    cat "${temp_file}" > "${file}"
+    rm -f "${temp_file}"
 }
 
-# 查看历史记录
+update_cloud_init() {
+    local file="/etc/cloud/cloud.cfg"
+    local temp_file=""
+
+    [ -f "${file}" ] || return 0
+
+    temp_file=$(mktemp "/tmp/vps_cloudcfg.XXXXXX") || return 1
+
+    awk '
+        BEGIN { updated = 0 }
+        /^preserve_hostname:/ {
+            print "preserve_hostname: true"
+            updated = 1
+            next
+        }
+        { print }
+        END {
+            if (!updated) {
+                print "preserve_hostname: true"
+            }
+        }
+    ' "${file}" > "${temp_file}"
+
+    cat "${temp_file}" > "${file}"
+    rm -f "${temp_file}"
+}
+
+restart_related_services() {
+    if ! command_exists systemctl; then
+        return 0
+    fi
+
+    systemctl restart systemd-hostnamed >/dev/null 2>&1 || true
+    systemctl restart rsyslog >/dev/null 2>&1 || true
+
+    if systemctl is-active --quiet postfix; then
+        systemctl restart postfix >/dev/null 2>&1 || true
+    fi
+}
+
+perform_change() {
+    local new_name="$1"
+
+    printf '%s\n' "${new_name}" > /etc/hostname
+    update_hosts_file "${new_name}" || return 1
+
+    if [ -f /etc/sysconfig/network ] || [ -d /etc/sysconfig ]; then
+        update_key_value_file "/etc/sysconfig/network" "HOSTNAME" "${new_name}" || return 1
+    fi
+
+    if [ -f /etc/mailname ]; then
+        printf '%s\n' "${new_name}" > /etc/mailname
+    fi
+
+    update_cloud_init || return 1
+
+    if command_exists hostnamectl; then
+        hostnamectl set-hostname "${new_name}" >/dev/null 2>&1 || true
+    fi
+
+    hostname "${new_name}" >/dev/null 2>&1 || true
+
+    if command_exists postconf && [ -f /etc/postfix/main.cf ]; then
+        postconf -e "myhostname = ${new_name}" >/dev/null 2>&1 || true
+    fi
+
+    restart_related_services
+    log "INFO" "Applied hostname change to ${new_name}"
+}
+
+verify_change() {
+    local target_name="$1"
+    local verified=true
+    local live_name=""
+
+    print_separator
+    print_info "Verification results"
+
+    live_name=$(current_hostname)
+    if [ "${live_name}" = "${target_name}" ]; then
+        print_success "Current hostname matches target."
+    else
+        print_error "Current hostname is '${live_name}', expected '${target_name}'."
+        verified=false
+    fi
+
+    if [ -f /etc/hostname ] && [ "$(tr -d '[:space:]' </etc/hostname)" = "${target_name}" ]; then
+        print_success "/etc/hostname updated."
+    else
+        print_error "/etc/hostname does not contain the target hostname."
+        verified=false
+    fi
+
+    if [ -f /etc/hosts ] && grep -Eq "^127\.0\.1\.1[[:space:]]+${target_name}([[:space:]]|$)" /etc/hosts; then
+        print_success "/etc/hosts updated."
+    else
+        print_warn "/etc/hosts does not include a dedicated 127.0.1.1 mapping for ${target_name}."
+        verified=false
+    fi
+
+    [ "${verified}" = true ]
+}
+
+generate_report() {
+    local old_name="$1"
+    local new_name="$2"
+    local backup_path="$3"
+    local report_file="${LOG_DIR}/hostname_change_report_$(date +%Y%m%d_%H%M%S).txt"
+
+    ensure_runtime_dirs
+    cat > "${report_file}" <<EOF
+Hostname Change Report
+======================
+Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')
+Old hostname: ${old_name}
+New hostname: ${new_name}
+Backup path: ${backup_path}
+Log file: ${LOG_FILE}
+Script version: ${SCRIPT_VERSION}
+EOF
+
+    print_success "Report written to ${report_file}"
+    log "INFO" "Generated report ${report_file}"
+}
+
+restore_backup() {
+    local backup_path="$1"
+    local old_name=""
+
+    [ -d "${backup_path}" ] || {
+        print_error "Backup path not found: ${backup_path}"
+        return 1
+    }
+
+    if [ -f "${backup_path}/metadata.env" ]; then
+        # shellcheck disable=SC1090
+        . "${backup_path}/metadata.env"
+        old_name="${OLD_HOSTNAME:-}"
+    fi
+
+    [ -z "${old_name}" ] && [ -f "${backup_path}/old_hostname.txt" ] && old_name=$(cat "${backup_path}/old_hostname.txt")
+    [ -n "${old_name}" ] || {
+        print_error "Backup metadata is missing the original hostname."
+        return 1
+    }
+
+    [ -f "${backup_path}/hostname" ] && cp -a "${backup_path}/hostname" /etc/hostname
+    [ -f "${backup_path}/hosts" ] && cp -a "${backup_path}/hosts" /etc/hosts
+    [ -f "${backup_path}/network" ] && cp -a "${backup_path}/network" /etc/sysconfig/network
+    [ -f "${backup_path}/mailname" ] && cp -a "${backup_path}/mailname" /etc/mailname
+    [ -f "${backup_path}/main.cf" ] && cp -a "${backup_path}/main.cf" /etc/postfix/main.cf
+    [ -f "${backup_path}/cloud.cfg" ] && cp -a "${backup_path}/cloud.cfg" /etc/cloud/cloud.cfg
+
+    if command_exists hostnamectl; then
+        hostnamectl set-hostname "${old_name}" >/dev/null 2>&1 || true
+    fi
+    hostname "${old_name}" >/dev/null 2>&1 || true
+
+    restart_related_services
+    log "ROLLBACK" "Rolled back hostname using backup ${backup_path}"
+
+    if verify_change "${old_name}"; then
+        print_success "Rollback complete."
+        return 0
+    fi
+
+    print_warn "Rollback finished, but verification reported issues."
+    return 1
+}
+
 show_history() {
-    clear
-    print_header "修改历史记录"
-    if [ -d "$BACKUP_DIR" ]; then
-        ls -lh "$BACKUP_DIR" | grep "backup_" | awk '{print $9}' | while read backup_dir; do
-             local ts=${backup_dir#backup_}
-             local old_h="未知"
-             [ -f "$BACKUP_DIR/$backup_dir/old_hostname.txt" ] && old_h=$(cat "$BACKUP_DIR/$backup_dir/old_hostname.txt")
-             echo -e "${CYAN}● 时间:${NC} ${ts:0:4}-${ts:4:2}-${ts:6:2} ${ts:9:2}:${ts:11:2}  ${YELLOW}原主机名:${NC} $old_h"
-        done
-    else
-        echo "暂无历史记录。"
+    local backup_path=""
+    local metadata_file=""
+    local old_name=""
+
+    print_header "Hostname Backup History"
+
+    if ! ls -1 "${BACKUP_DIR}"/backup_* >/dev/null 2>&1; then
+        print_info "No hostname backups found."
+        return 0
     fi
-    echo ""
-    read -n 1 -s -r -p "按任意键返回..."
+
+    for backup_path in $(ls -1dt "${BACKUP_DIR}"/backup_* 2>/dev/null); do
+        metadata_file="${backup_path}/metadata.env"
+        old_name="unknown"
+        if [ -f "${metadata_file}" ]; then
+            # shellcheck disable=SC1090
+            . "${metadata_file}"
+            old_name="${OLD_HOSTNAME:-unknown}"
+        elif [ -f "${backup_path}/old_hostname.txt" ]; then
+            old_name=$(cat "${backup_path}/old_hostname.txt")
+        fi
+
+        printf "  %-28s %s\n" "$(basename "${backup_path}")" "${old_name}"
+    done
 }
 
-# ------------------------------------------------------------------------------
-# 4. 交互菜单 (还原原脚本菜单)
-# ------------------------------------------------------------------------------
+rollback_latest() {
+    local latest_backup=""
+
+    latest_backup=$(ls -1dt "${BACKUP_DIR}"/backup_* 2>/dev/null | head -n1 || true)
+    [ -n "${latest_backup}" ] || {
+        print_error "No backup was found to roll back."
+        return 1
+    }
+
+    print_warn "Latest backup: $(basename "${latest_backup}")"
+    if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Roll back hostname using the latest backup?"; then
+        print_info "Rollback cancelled."
+        return 0
+    fi
+
+    restore_backup "${latest_backup}"
+}
+
+show_current_hostname() {
+    print_header "Current Hostname"
+    printf "%b%-18s%b %s\n" "${CYAN}" "Hostname:" "${NC}" "$(current_hostname)"
+    printf "%b%-18s%b %s\n" "${CYAN}" "Primary IP:" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
+}
+
+change_hostname_flow() {
+    local new_name="$1"
+    local old_name=""
+    local backup_path=""
+
+    old_name=$(current_hostname)
+
+    validate_hostname "${new_name}" || return 1
+
+    if [ "${new_name}" = "${old_name}" ]; then
+        print_warn "Hostname is already set to ${new_name}."
+        return 0
+    fi
+
+    if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Change hostname from ${old_name} to ${new_name}?"; then
+        print_info "Hostname change cancelled."
+        return 0
+    fi
+
+    backup_path=$(create_backup "${old_name}") || return 1
+    print_info "Backup created at ${backup_path}"
+
+    if ! perform_change "${new_name}"; then
+        print_error "Hostname change failed while applying updates."
+        return 1
+    fi
+
+    if verify_change "${new_name}"; then
+        generate_report "${old_name}" "${new_name}" "${backup_path}"
+        print_success "Hostname updated successfully."
+        print_info "Reconnect your SSH session if the shell prompt does not refresh."
+        return 0
+    fi
+
+    print_warn "Hostname change completed with validation warnings. Review ${LOG_FILE}."
+    return 1
+}
 
 interactive_menu() {
+    local selection=""
+    local new_name=""
+
     while true; do
-        clear
-        print_header "VPS 主机名管理工具"
-        echo -e "${CYAN}当前主机名:${NC} $(hostname)"
-        echo -e "${CYAN}当前 IP   :${NC} $(hostname -I | awk '{print $1}')"
+        clear 2>/dev/null || true
+        print_header "VPS Hostname Manager"
+        printf "%bCurrent hostname:%b %s\n" "${CYAN}" "${NC}" "$(current_hostname)"
+        printf "%bPrimary IP:%b       %s\n" "${CYAN}" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
         print_separator
-        
-        echo -e "${GREEN}1)${NC} 修改主机名"
-        echo -e "${GREEN}2)${NC} 回滚上次修改"
-        echo -e "${GREEN}3)${NC} 查看修改历史"
-        echo -e "${GREEN}0)${NC} 退出"
+        echo "1) Change hostname"
+        echo "2) Roll back latest change"
+        echo "3) Show backup history"
+        echo "4) Show current hostname"
+        echo "0) Exit"
         echo ""
-        read -p "请输入选项 [0-3]: " choice
-        
-        case $choice in
+        read -r -p "Select an option [0-4]: " selection
+
+        case "${selection}" in
             1)
+                read_input "Enter the new hostname"
+                new_name="${REPLY}"
+                [ -n "${new_name}" ] && change_hostname_flow "${new_name}"
                 echo ""
-                read -p "请输入新主机名: " new_name
-                if [ -z "$new_name" ]; then continue; fi
-                
-                if validate_hostname "$new_name"; then
-                    if [ "$new_name" == "$(hostname)" ]; then
-                        print_warn "新名称与当前相同。"
-                        sleep 1
-                        continue
-                    fi
-                    
-                    local old_name=$(hostname)
-                    backup_configs
-                    perform_change "$new_name"
-                    
-                    if verify_change "$new_name"; then
-                        generate_report "$old_name" "$new_name"
-                        print_success "修改成功！建议重新连接 SSH。"
-                    else
-                        print_error "部分验证失败，请检查日志。"
-                    fi
-                    read -n 1 -s -r -p "按任意键继续..."
-                else
-                    read -n 1 -s -r -p "按任意键继续..."
-                fi
+                read -r -n 1 -s -p "Press any key to continue..."
                 ;;
-            2) rollback_hostname ;;
-            3) show_history ;;
-            0) exit 0 ;;
-            *) print_error "无效输入"; sleep 1 ;;
+            2)
+                rollback_latest
+                echo ""
+                read -r -n 1 -s -p "Press any key to continue..."
+                ;;
+            3)
+                show_history
+                echo ""
+                read -r -n 1 -s -p "Press any key to continue..."
+                ;;
+            4)
+                show_current_hostname
+                echo ""
+                read -r -n 1 -s -p "Press any key to continue..."
+                ;;
+            0)
+                exit 0
+                ;;
+            *)
+                print_error "Invalid selection."
+                sleep 1
+                ;;
         esac
     done
 }
 
-# ------------------------------------------------------------------------------
-# 5. 主程序入口
-# ------------------------------------------------------------------------------
+parse_args() {
+    NEW_HOSTNAME=""
 
-main() {
-    check_root
-    
-    # 命令行模式支持
-    if [ -n "$1" ]; then
+    while [ $# -gt 0 ]; do
         case "$1" in
-            --rollback) rollback_hostname; exit ;;
-            --help) echo "Usage: bash change_hostname.sh [new_hostname | --rollback]"; exit ;;
-            *) 
-                # 直接修改模式
-                if validate_hostname "$1"; then
-                    backup_configs
-                    perform_change "$1"
-                    verify_change "$1"
+            --yes|-y)
+                AUTO_CONFIRM=true
+                ;;
+            --rollback)
+                ROLLBACK_ONLY=true
+                ;;
+            --history)
+                SHOW_HISTORY_ONLY=true
+                ;;
+            --show)
+                SHOW_CURRENT_ONLY=true
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            --*)
+                print_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                if [ -n "${NEW_HOSTNAME}" ]; then
+                    print_error "Only one hostname argument is supported."
+                    exit 1
                 fi
-                exit
+                NEW_HOSTNAME="$1"
                 ;;
         esac
-    else
-        # 默认进入交互菜单
-        interactive_menu
+        shift
+    done
+}
+
+main() {
+    parse_args "$@"
+
+    if [ "${SHOW_CURRENT_ONLY}" = true ]; then
+        show_current_hostname
+        exit 0
     fi
+
+    if [ "${SHOW_HISTORY_ONLY}" = true ]; then
+        show_history
+        exit 0
+    fi
+
+    if [ "${ROLLBACK_ONLY}" = true ]; then
+        check_root
+        ensure_runtime_dirs
+        rollback_latest
+        exit $?
+    fi
+
+    if [ -n "${NEW_HOSTNAME:-}" ]; then
+        check_root
+        ensure_runtime_dirs
+        change_hostname_flow "${NEW_HOSTNAME}"
+        exit $?
+    fi
+
+    check_root
+    ensure_runtime_dirs
+    interactive_menu
 }
 
 main "$@"

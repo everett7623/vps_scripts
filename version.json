@@ -1,18 +1,26 @@
 {
   "project": {
     "name": "VPS Scripts",
-    "description": "VPS Comprehensive Management Toolkit",
+    "description": "Modular VPS operations and deployment toolkit",
     "version": "2.6.0",
     "release_date": "2026-01-20",
     "author": "Jensfrank",
-    "repository": "https://github.com/everett7623/vps_scripts"
+    "repository": "https://github.com/everett7623/vps_scripts",
+    "maintenance_state": "active-modernization"
+  },
+  "launchers": {
+    "primary": "vps.sh",
+    "legacy_compat": "vps_scripts.sh",
+    "style_version": "2026.06",
+    "primary_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
+    "legacy_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
   },
   "update": {
     "check_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/version.json",
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "v2.6.0: Refactored for stateless remote execution. Optimized dashboard and dependency handling."
+    "message": "Framework modernization in progress: launcher hardening, cleaner shared helpers, stronger validation."
   },
   "compatibility": {
     "min_bash_version": "4.0",
@@ -36,14 +44,29 @@
     "sudo"
   ],
   "features": [
-    "Remote Module Launcher",
-    "Real-time System Dashboard",
-    "Automated Dependency Resolution",
-    "Integrated 3rd-party Tools",
-    "Modular Design"
+    "Modular remote launcher",
+    "Legacy compatibility handoff",
+    "System maintenance scripts",
+    "Benchmark and network diagnostics",
+    "Service installation modules",
+    "Validation-oriented repository layout"
   ],
+  "documentation": {
+    "readme": "README.md",
+    "agents": "AGENTS.md",
+    "development_guide": "DEVELOPMENT_GUIDE.md",
+    "changelog": "CHANGELOG.md",
+    "release_checklist": "RELEASE_CHECKLIST.md",
+    "tasks": "TASKS.md"
+  },
+  "validation": {
+    "launcher_paths": "tests/validate_launcher_paths.sh",
+    "core_assets": "tests/validate_core_assets.sh",
+    "system_tools": "tests/validate_system_tools.sh"
+  },
   "checksums": {
     "vps.sh": "auto-generated-on-release",
+    "vps_scripts.sh": "auto-generated-on-release",
     "common_functions.sh": "auto-generated-on-release"
   }
 }
