@@ -9,6 +9,8 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
+PROJECT_VERSION="2.6.0"
+PROJECT_AUTHOR="Jensfrank"
 LAUNCHER_STYLE_VERSION="2026.06"
 REPO_DOWNLOAD_BASES=(
     "https://raw.githubusercontent.com/everett7623/vps_scripts/main"
@@ -26,6 +28,13 @@ CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 BOLD='\033[1m'
 DIM='\033[2m'
+GRADIENT_COLORS=(
+    '\033[38;2;0;255;0m'
+    '\033[38;2;64;255;0m'
+    '\033[38;2;128;255;0m'
+    '\033[38;2;192;255;0m'
+    '\033[38;2;255;255;0m'
+)
 
 DOWNLOAD_TOOL=""
 INSTALL_PREFIX="${VPS_INSTALL_PREFIX:-/usr/local}"
@@ -58,12 +67,34 @@ draw_rule() {
 }
 
 print_header() {
+    local terminal_width=80
+
     clear_screen
-    draw_rule 74 "$CYAN"
-    echo -e "${BOLD}${WHITE}  VPS 综合管理脚本${RESET}${DIM}  模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}${RESET}"
-    echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
-    echo -e "${CYAN}  模式:${RESET} 安全下载官方模块 | 菜单校验 | 第三方脚本执行确认"
-    draw_rule 74 "$CYAN"
+    terminal_width=$(tput cols 2>/dev/null || printf '80')
+
+    if [ "${terminal_width}" -ge 80 ]; then
+        echo -e "${YELLOW}---------------------------------By'${PROJECT_AUTHOR}---------------------------------${RESET}"
+        echo ""
+        echo -e "${BOLD}${WHITE}VPS 脚本集合 ${PROJECT_VERSION}${RESET}  ${DIM}| 模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}${RESET}"
+        echo -e "${CYAN}GitHub 地址:${RESET} ${PROJECT_URL}"
+        echo ""
+        echo -e "${GRADIENT_COLORS[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${RESET}"
+        echo -e "${GRADIENT_COLORS[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${RESET}"
+        echo -e "${GRADIENT_COLORS[2]} #     # #    # #           #       #       #    #   #  #    #   #   #       ${RESET}"
+        echo -e "${GRADIENT_COLORS[3]} #     # #####   #####       #####  #       #####    #  #####    #    #####  ${RESET}"
+        echo -e "${GRADIENT_COLORS[4]}  #   #  #            #           # #       #   #    #  #        #         # ${RESET}"
+        echo -e "${GRADIENT_COLORS[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${RESET}"
+        echo -e "${GRADIENT_COLORS[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${RESET}"
+        echo ""
+        echo -e "${GREEN}支持主流 Linux 发行版${RESET}  ${DIM}| 安全下载 | 语法校验 | 临时隔离运行${RESET}"
+        echo -e "${YELLOW}---------------------------------By'${PROJECT_AUTHOR}---------------------------------${RESET}"
+    else
+        draw_rule 74 "$CYAN"
+        echo -e "${BOLD}${WHITE}  VPS 脚本集合 ${PROJECT_VERSION}${RESET}"
+        echo -e "${CYAN}  作者:${RESET} ${PROJECT_AUTHOR}  ${DIM}| 模块化启动器 ${LAUNCHER_STYLE_VERSION}${RESET}"
+        echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
+        draw_rule 74 "$CYAN"
+    fi
     echo ""
 }
 

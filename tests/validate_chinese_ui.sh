@@ -16,6 +16,10 @@ require_text() {
 }
 
 require_text "vps.sh" "VPS 综合管理脚本"
+require_text "vps.sh" "VPS 脚本集合"
+require_text "vps.sh" "By'"
+require_text "vps.sh" "GitHub 地址"
+require_text "vps.sh" "#####"
 require_text "vps.sh" "主菜单"
 require_text "vps.sh" "系统工具"
 require_text "vps.sh" "快捷命令管理"
