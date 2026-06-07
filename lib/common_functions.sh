@@ -27,19 +27,19 @@ print_msg() {
 }
 
 print_info() {
-    [ "${CURRENT_LOG_LEVEL}" -le "${LOG_LEVEL_INFO}" ] && print_msg "${CYAN}" "[INFO] $1"
+    [ "${CURRENT_LOG_LEVEL}" -le "${LOG_LEVEL_INFO}" ] && print_msg "${CYAN}" "[信息] $1"
 }
 
 print_success() {
-    [ "${CURRENT_LOG_LEVEL}" -le "${LOG_LEVEL_INFO}" ] && print_msg "${GREEN}" "[OK] $1"
+    [ "${CURRENT_LOG_LEVEL}" -le "${LOG_LEVEL_INFO}" ] && print_msg "${GREEN}" "[完成] $1"
 }
 
 print_warn() {
-    [ "${CURRENT_LOG_LEVEL}" -le "${LOG_LEVEL_WARN}" ] && print_msg "${YELLOW}" "[WARN] $1"
+    [ "${CURRENT_LOG_LEVEL}" -le "${LOG_LEVEL_WARN}" ] && print_msg "${YELLOW}" "[警告] $1"
 }
 
 print_error() {
-    print_msg "${RED}" "[ERROR] $1"
+    print_msg "${RED}" "[错误] $1"
 }
 
 print_separator() {
@@ -115,8 +115,8 @@ wait_with_animation() {
 
 check_root() {
     if [[ ${EUID} -ne 0 ]]; then
-        print_error "This script requires root privileges."
-        print_info "Switch to root or run with sudo."
+        print_error "此脚本需要 root 权限。"
+        print_info "请切换到 root 用户或使用 sudo 运行。"
         return 1
     fi
     return 0
@@ -134,11 +134,11 @@ ensure_command() {
         return 0
     fi
 
-    print_warn "Command '${cmd}' was not found. Attempting to install '${package}'."
+    print_warn "未找到命令 '${cmd}'，正在尝试安装软件包 '${package}'。"
 
     if command_exists apt-get; then
         apt-get update -qq >/dev/null 2>&1 || {
-            print_error "apt-get update failed."
+            print_error "apt-get update 执行失败。"
             return 1
         }
         apt-get install -y "${package}" >/dev/null 2>&1
@@ -151,16 +151,16 @@ ensure_command() {
     elif command_exists pacman; then
         pacman -S --noconfirm "${package}" >/dev/null 2>&1
     else
-        print_error "No supported package manager found. Install '${package}' manually."
+        print_error "未找到受支持的软件包管理器，请手动安装 '${package}'。"
         return 1
     fi
 
     if command_exists "${cmd}"; then
-        print_success "Installed '${package}'."
+        print_success "已安装 '${package}'。"
         return 0
     fi
 
-    print_error "Failed to install '${package}'."
+    print_error "安装 '${package}' 失败。"
     return 1
 }
 
@@ -246,7 +246,7 @@ backup_file() {
     local backup_suffix="${2:-$(date +%Y%m%d_%H%M%S)}"
 
     if [ -f "${file}" ]; then
-        cp "${file}" "${file}.${backup_suffix}" && print_success "Backed up ${file} to ${file}.${backup_suffix}"
+        cp "${file}" "${file}.${backup_suffix}" && print_success "已将 ${file} 备份到 ${file}.${backup_suffix}"
     fi
 }
 
@@ -259,15 +259,15 @@ download_file() {
 
     while [ "${i}" -le "${retries}" ]; do
         if curl -fsSL --max-time "${timeout}" "${url}" -o "${output}"; then
-            print_success "Downloaded $(basename "${output}")"
+            print_success "已下载 $(basename "${output}")"
             return 0
         fi
-        print_warn "Download failed (${i}/${retries}): ${url}"
+        print_warn "下载失败（${i}/${retries}）：${url}"
         sleep 2
         i=$((i + 1))
     done
 
-    print_error "Download failed: ${url}"
+    print_error "下载失败：${url}"
     return 1
 }
 
@@ -298,7 +298,7 @@ write_config() {
     [ -f "${config_file}" ] || touch "${config_file}"
 
     temp_file=$(mktemp "/tmp/vps_config.XXXXXX") || {
-        print_error "Failed to create temporary config file."
+        print_error "创建临时配置文件失败。"
         return 1
     }
 
@@ -326,7 +326,7 @@ ask_yes_no() {
         case "${answer,,}" in
             y|yes) return 0 ;;
             n|no) return 1 ;;
-            *) print_warn "Please enter y or n." ;;
+            *) print_warn "请输入 y 或 n。" ;;
         esac
     done
 }
@@ -341,7 +341,7 @@ select_option() {
             echo "${REPLY}"
             return 0
         fi
-        print_warn "Invalid choice. Try again."
+        print_warn "无效选项，请重新输入。"
     done
 }
 
@@ -364,7 +364,7 @@ read_input() {
 
     if [ -n "${variable_name}" ]; then
         if ! is_valid_identifier "${variable_name}"; then
-            print_error "Invalid variable name: ${variable_name}"
+            print_error "无效变量名：${variable_name}"
             return 1
         fi
         printf -v "${variable_name}" '%s' "${input}"
@@ -378,15 +378,15 @@ check_service_status() {
 }
 
 start_service() {
-    systemctl start "$1" && print_success "Service $1 started." || print_error "Failed to start service $1."
+    systemctl start "$1" && print_success "服务 $1 已启动。" || print_error "启动服务 $1 失败。"
 }
 
 stop_service() {
-    systemctl stop "$1" && print_success "Service $1 stopped." || print_error "Failed to stop service $1."
+    systemctl stop "$1" && print_success "服务 $1 已停止。" || print_error "停止服务 $1 失败。"
 }
 
 restart_service() {
-    systemctl restart "$1" && print_success "Service $1 restarted." || print_error "Failed to restart service $1."
+    systemctl restart "$1" && print_success "服务 $1 已重启。" || print_error "重启服务 $1 失败。"
 }
 
 cleanup_temp_files() {
@@ -397,7 +397,7 @@ cleanup_temp_files() {
             [ -d "${temp_dir}" ] && rm -rf -- "${temp_dir}"
             ;;
         *)
-            print_warn "Skipping cleanup for unexpected temp path: ${temp_dir}"
+            print_warn "跳过非预期临时目录的清理：${temp_dir}"
             ;;
     esac
 }

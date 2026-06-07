@@ -32,15 +32,15 @@ if [ -f "${LIB_FILE}" ]; then
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
     print_msg() { echo -e "${1}${2}${NC}"; }
-    print_info() { print_msg "${CYAN}" "[INFO] $1"; }
-    print_success() { print_msg "${GREEN}" "[OK] $1"; }
-    print_warn() { print_msg "${YELLOW}" "[WARN] $1"; }
-    print_error() { print_msg "${RED}" "[ERROR] $1"; }
+    print_info() { print_msg "${CYAN}" "[信息] $1"; }
+    print_success() { print_msg "${GREEN}" "[完成] $1"; }
+    print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
+    print_error() { print_msg "${RED}" "[错误] $1"; }
     print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
     print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 28 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "This script requires root privileges."; exit 1; }; }
+    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     read_input() { local prompt="$1"; local default="${2:-}"; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " REPLY; REPLY=${REPLY:-$default}; else read -r -p "${prompt}: " REPLY; fi; }
 fi
@@ -82,22 +82,22 @@ validate_hostname() {
     local name="$1"
 
     if [ -z "${name}" ]; then
-        print_error "Hostname cannot be empty."
+        print_error "主机名不能为空。"
         return 1
     fi
 
     if [ "${#name}" -gt 63 ]; then
-        print_error "Hostname must be 63 characters or fewer."
+        print_error "主机名长度不能超过 63 个字符。"
         return 1
     fi
 
     if [[ ! "${name}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
-        print_error "Hostname may only contain letters, digits, and hyphens."
+        print_error "主机名只能包含字母、数字和连字符。"
         return 1
     fi
 
     if [[ "${name}" =~ ^[0-9]+$ ]]; then
-        print_error "Hostname cannot be numeric only."
+        print_error "主机名不能全部为数字。"
         return 1
     fi
 
@@ -144,7 +144,7 @@ update_hosts_file() {
     [ -f /etc/hosts ] || return 0
 
     temp_file=$(mktemp "/tmp/vps_hosts.XXXXXX") || {
-        print_error "Unable to create a temporary hosts file."
+        print_error "无法创建临时 hosts 文件。"
         return 1
     }
 
@@ -280,27 +280,27 @@ verify_change() {
     local live_name=""
 
     print_separator
-    print_info "Verification results"
+    print_info "验证结果"
 
     live_name=$(current_hostname)
     if [ "${live_name}" = "${target_name}" ]; then
-        print_success "Current hostname matches target."
+        print_success "当前主机名与目标一致。"
     else
-        print_error "Current hostname is '${live_name}', expected '${target_name}'."
+        print_error "当前主机名为 '${live_name}'，预期为 '${target_name}'。"
         verified=false
     fi
 
     if [ -f /etc/hostname ] && [ "$(tr -d '[:space:]' </etc/hostname)" = "${target_name}" ]; then
-        print_success "/etc/hostname updated."
+        print_success "/etc/hostname 已更新。"
     else
-        print_error "/etc/hostname does not contain the target hostname."
+        print_error "/etc/hostname 中未找到目标主机名。"
         verified=false
     fi
 
     if [ -f /etc/hosts ] && grep -Eq "^127\.0\.1\.1[[:space:]]+${target_name}([[:space:]]|$)" /etc/hosts; then
-        print_success "/etc/hosts updated."
+        print_success "/etc/hosts 已更新。"
     else
-        print_warn "/etc/hosts does not include a dedicated 127.0.1.1 mapping for ${target_name}."
+        print_warn "/etc/hosts 未包含 ${target_name} 对应的独立 127.0.1.1 映射。"
         verified=false
     fi
 
@@ -325,7 +325,7 @@ Log file: ${LOG_FILE}
 Script version: ${SCRIPT_VERSION}
 EOF
 
-    print_success "Report written to ${report_file}"
+    print_success "主机名变更报告已写入：${report_file}"
     log "INFO" "Generated report ${report_file}"
 }
 
@@ -334,7 +334,7 @@ restore_backup() {
     local old_name=""
 
     [ -d "${backup_path}" ] || {
-        print_error "Backup path not found: ${backup_path}"
+        print_error "找不到备份路径：${backup_path}"
         return 1
     }
 
@@ -346,7 +346,7 @@ restore_backup() {
 
     [ -z "${old_name}" ] && [ -f "${backup_path}/old_hostname.txt" ] && old_name=$(cat "${backup_path}/old_hostname.txt")
     [ -n "${old_name}" ] || {
-        print_error "Backup metadata is missing the original hostname."
+        print_error "备份元数据中缺少原主机名。"
         return 1
     }
 
@@ -366,11 +366,11 @@ restore_backup() {
     log "ROLLBACK" "Rolled back hostname using backup ${backup_path}"
 
     if verify_change "${old_name}"; then
-        print_success "Rollback complete."
+        print_success "主机名回滚完成。"
         return 0
     fi
 
-    print_warn "Rollback finished, but verification reported issues."
+    print_warn "回滚已完成，但验证发现问题。"
     return 1
 }
 
@@ -379,10 +379,10 @@ show_history() {
     local metadata_file=""
     local old_name=""
 
-    print_header "Hostname Backup History"
+    print_header "主机名备份历史"
 
     if ! ls -1 "${BACKUP_DIR}"/backup_* >/dev/null 2>&1; then
-        print_info "No hostname backups found."
+        print_info "未找到主机名备份。"
         return 0
     fi
 
@@ -406,13 +406,13 @@ rollback_latest() {
 
     latest_backup=$(ls -1dt "${BACKUP_DIR}"/backup_* 2>/dev/null | head -n1 || true)
     [ -n "${latest_backup}" ] || {
-        print_error "No backup was found to roll back."
+        print_error "没有可用于回滚的备份。"
         return 1
     }
 
-    print_warn "Latest backup: $(basename "${latest_backup}")"
+    print_warn "最近备份：$(basename "${latest_backup}")"
     if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Roll back hostname using the latest backup?"; then
-        print_info "Rollback cancelled."
+        print_info "已取消回滚。"
         return 0
     fi
 
@@ -420,9 +420,9 @@ rollback_latest() {
 }
 
 show_current_hostname() {
-    print_header "Current Hostname"
-    printf "%b%-18s%b %s\n" "${CYAN}" "Hostname:" "${NC}" "$(current_hostname)"
-    printf "%b%-18s%b %s\n" "${CYAN}" "Primary IP:" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
+    print_header "当前主机名"
+    printf "%b%-18s%b %s\n" "${CYAN}" "主机名:" "${NC}" "$(current_hostname)"
+    printf "%b%-18s%b %s\n" "${CYAN}" "主要 IP:" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
 }
 
 change_hostname_flow() {
@@ -435,31 +435,31 @@ change_hostname_flow() {
     validate_hostname "${new_name}" || return 1
 
     if [ "${new_name}" = "${old_name}" ]; then
-        print_warn "Hostname is already set to ${new_name}."
+        print_warn "主机名已经是 ${new_name}。"
         return 0
     fi
 
     if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Change hostname from ${old_name} to ${new_name}?"; then
-        print_info "Hostname change cancelled."
+        print_info "已取消主机名修改。"
         return 0
     fi
 
     backup_path=$(create_backup "${old_name}") || return 1
-    print_info "Backup created at ${backup_path}"
+    print_info "备份已创建：${backup_path}"
 
     if ! perform_change "${new_name}"; then
-        print_error "Hostname change failed while applying updates."
+        print_error "应用更新时修改主机名失败。"
         return 1
     fi
 
     if verify_change "${new_name}"; then
         generate_report "${old_name}" "${new_name}" "${backup_path}"
-        print_success "Hostname updated successfully."
-        print_info "Reconnect your SSH session if the shell prompt does not refresh."
+        print_success "主机名修改成功。"
+        print_info "如果终端提示符未刷新，请重新连接 SSH。"
         return 0
     fi
 
-    print_warn "Hostname change completed with validation warnings. Review ${LOG_FILE}."
+    print_warn "主机名修改完成，但验证存在警告，请查看 ${LOG_FILE}。"
     return 1
 }
 

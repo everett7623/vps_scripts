@@ -97,16 +97,16 @@ if [ -f "${LIB_FILE}" ]; then
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
     print_msg() { echo -e "${1}${2}${NC}"; }
-    print_info() { print_msg "${CYAN}" "[INFO] $1"; }
-    print_success() { print_msg "${GREEN}" "[OK] $1"; }
-    print_warn() { print_msg "${YELLOW}" "[WARN] $1"; }
-    print_error() { print_msg "${RED}" "[ERROR] $1"; }
+    print_info() { print_msg "${CYAN}" "[信息] $1"; }
+    print_success() { print_msg "${GREEN}" "[完成] $1"; }
+    print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
+    print_error() { print_msg "${RED}" "[错误] $1"; }
     print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
     print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 27 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "This script requires root privileges."; exit 1; }; }
+    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     read_input() { local prompt="$1"; local default="${2:-}"; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " REPLY; REPLY=${REPLY:-$default}; else read -r -p "${prompt}: " REPLY; fi; }
 fi
@@ -189,18 +189,18 @@ get_current_timezone() {
 }
 
 show_time_info() {
-    print_header "Timezone Information"
-    printf "%bCurrent timezone:%b %s\n" "${CYAN}" "${NC}" "${CURRENT_TIMEZONE}"
-    printf "%bLocal time:%b       %s\n" "${CYAN}" "${NC}" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
-    printf "%bUTC time:%b         %s\n" "${CYAN}" "${NC}" "$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-    printf "%bUTC offset:%b       %s\n" "${CYAN}" "${NC}" "$(date '+%z')"
+    print_header "时区与时间信息"
+    printf "%b当前时区:%b %s\n" "${CYAN}" "${NC}" "${CURRENT_TIMEZONE}"
+    printf "%b本地时间:%b %s\n" "${CYAN}" "${NC}" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
+    printf "%bUTC 时间:%b  %s\n" "${CYAN}" "${NC}" "$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+    printf "%bUTC 偏移:%b  %s\n" "${CYAN}" "${NC}" "$(date '+%z')"
 
     if [ "${USE_TIMEDATECTL}" = true ]; then
-        printf "%bNTP sync:%b         %s\n" "${CYAN}" "${NC}" "$(timedatectl show -p NTPSynchronized --value 2>/dev/null || echo "unknown")"
+        printf "%bNTP 同步:%b  %s\n" "${CYAN}" "${NC}" "$(timedatectl show -p NTPSynchronized --value 2>/dev/null || echo "未知")"
     fi
 
     if command_exists hwclock; then
-        printf "%bHardware clock:%b   %s\n" "${CYAN}" "${NC}" "$(hwclock -r 2>/dev/null || echo "unavailable")"
+        printf "%b硬件时钟:%b %s\n" "${CYAN}" "${NC}" "$(hwclock -r 2>/dev/null || echo "不可用")"
     fi
 }
 
@@ -215,8 +215,8 @@ get_all_timezones() {
 }
 
 show_common_timezones() {
-    print_header "Common Timezones"
-    printf "%-6s %-32s %s\n" "Code" "Timezone" "City"
+    print_header "常用时区"
+    printf "%-6s %-32s %s\n" "编号" "时区" "城市"
     print_separator "-" 80
 
     local row=""
@@ -257,7 +257,7 @@ validate_timezone() {
     if [ -f "/usr/share/zoneinfo/${timezone}" ]; then
         return 0
     fi
-    print_error "Invalid timezone: ${timezone}"
+    print_error "无效时区：${timezone}"
     return 1
 }
 
@@ -317,7 +317,7 @@ set_timezone_value() {
     local timezone="$1"
     local temp_file=""
 
-    print_title "Apply Timezone"
+    print_title "应用时区设置"
 
     if [ "${USE_TIMEDATECTL}" = true ]; then
         log "INFO" "Using timedatectl to set timezone ${timezone}"
@@ -350,7 +350,7 @@ configure_ntp() {
     local temp_file=""
     local server=""
 
-    print_title "Configure NTP"
+    print_title "配置 NTP"
 
     if [ "${USE_TIMEDATECTL}" = true ] && [ -f /etc/systemd/timesyncd.conf ]; then
         temp_file=$(mktemp "/tmp/vps_timesyncd.XXXXXX") || return 1
@@ -366,7 +366,7 @@ EOF
         systemctl restart systemd-timesyncd >> "${LOG_FILE}" 2>&1 || true
         systemctl enable systemd-timesyncd >> "${LOG_FILE}" 2>&1 || true
         timedatectl set-ntp true >> "${LOG_FILE}" 2>&1 || true
-        print_success "Configured systemd-timesyncd."
+        print_success "systemd-timesyncd 配置完成。"
         return 0
     fi
 
@@ -378,7 +378,7 @@ EOF
         done
         systemctl restart chronyd >> "${LOG_FILE}" 2>&1 || true
         systemctl enable chronyd >> "${LOG_FILE}" 2>&1 || true
-        print_success "Configured chrony."
+        print_success "chrony 配置完成。"
         return 0
     fi
 
@@ -390,17 +390,17 @@ EOF
         done
         systemctl restart ntpd >> "${LOG_FILE}" 2>&1 || true
         systemctl enable ntpd >> "${LOG_FILE}" 2>&1 || true
-        print_success "Configured ntpd."
+        print_success "ntpd 配置完成。"
         return 0
     fi
 
     if [ "${USE_TIMEDATECTL}" = true ]; then
         timedatectl set-ntp true >> "${LOG_FILE}" 2>&1 || true
-        print_success "Enabled timedatectl NTP support."
+        print_success "已启用 timedatectl NTP 支持。"
         return 0
     fi
 
-    print_warn "No supported NTP service was detected."
+    print_warn "未检测到受支持的 NTP 服务。"
     return 0
 }
 
@@ -411,27 +411,27 @@ sync_time_manual() {
         return 0
     fi
 
-    print_title "Time Sync"
+    print_title "时间同步"
 
     if command_exists ntpdate; then
         for server in "${NTP_SERVERS[@]}"; do
             if ntpdate -u "${server}" >> "${LOG_FILE}" 2>&1; then
-                print_success "Synchronized time from ${server}."
+                print_success "已从 ${server} 同步时间。"
                 return 0
             fi
         done
     elif command_exists chronyc; then
         chronyc makestep >> "${LOG_FILE}" 2>&1 || true
-        print_success "Requested chrony time step."
+        print_success "已请求 chrony 立即校正时间。"
         return 0
     elif [ "${USE_TIMEDATECTL}" = true ]; then
         timedatectl set-ntp false >> "${LOG_FILE}" 2>&1 || true
         timedatectl set-ntp true >> "${LOG_FILE}" 2>&1 || true
-        print_success "Requested timedatectl NTP resync."
+        print_success "已请求 timedatectl 重新同步时间。"
         return 0
     fi
 
-    print_warn "Automatic time sync is unavailable on this host."
+    print_warn "当前主机无法使用自动时间同步。"
     return 0
 }
 
@@ -443,11 +443,11 @@ verify_timezone() {
     actual_timezone="${CURRENT_TIMEZONE}"
 
     if [ "${actual_timezone}" = "${expected_timezone}" ]; then
-        print_success "Timezone verification passed."
+        print_success "时区验证通过。"
         return 0
     fi
 
-    print_error "Timezone verification failed. Expected ${expected_timezone}, got ${actual_timezone}."
+    print_error "时区验证失败，预期 ${expected_timezone}，实际 ${actual_timezone}。"
     return 1
 }
 
@@ -470,7 +470,7 @@ Current local time: $(date '+%Y-%m-%d %H:%M:%S %Z')
 Current UTC time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 EOF
 
-    print_success "Report written to ${report_file}"
+    print_success "时区变更报告已写入：${report_file}"
 }
 
 confirm_change() {
@@ -479,9 +479,9 @@ confirm_change() {
     fi
 
     echo ""
-    printf "%bCurrent timezone:%b %s\n" "${CYAN}" "${NC}" "${CURRENT_TIMEZONE}"
-    printf "%bNew timezone:%b     %s\n" "${CYAN}" "${NC}" "${NEW_TIMEZONE}"
-    ask_yes_no "Apply this timezone change?"
+    printf "%b当前时区:%b %s\n" "${CYAN}" "${NC}" "${CURRENT_TIMEZONE}"
+    printf "%b目标时区:%b %s\n" "${CYAN}" "${NC}" "${NEW_TIMEZONE}"
+    ask_yes_no "是否应用此时区修改？"
 }
 
 update_ntp_choice() {
@@ -503,12 +503,12 @@ apply_timezone_flow() {
     validate_timezone "${NEW_TIMEZONE}" || return 1
 
     if [ "${NEW_TIMEZONE}" = "${CURRENT_TIMEZONE}" ]; then
-        print_warn "Timezone is already set to ${NEW_TIMEZONE}."
+        print_warn "当前时区已经是 ${NEW_TIMEZONE}。"
         return 0
     fi
 
     confirm_change || {
-        print_info "Timezone change cancelled."
+        print_info "已取消时区修改。"
         return 0
     }
 
@@ -524,11 +524,11 @@ apply_timezone_flow() {
     if verify_timezone "${NEW_TIMEZONE}"; then
         generate_report "${backup_path}"
         show_time_info
-        print_success "Timezone updated successfully."
+        print_success "时区修改成功。"
         return 0
     fi
 
-    print_warn "Timezone change finished with verification warnings. Review ${LOG_FILE}."
+    print_warn "时区修改完成，但验证存在警告，请查看 ${LOG_FILE}。"
     return 1
 }
 

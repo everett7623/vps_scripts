@@ -38,16 +38,16 @@ if [ -f "${LIB_FILE}" ]; then
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
     print_msg() { echo -e "${1}${2}${NC}"; }
-    print_info() { print_msg "${CYAN}" "[INFO] $1"; }
-    print_success() { print_msg "${GREEN}" "[OK] $1"; }
-    print_warn() { print_msg "${YELLOW}" "[WARN] $1"; }
-    print_error() { print_msg "${RED}" "[ERROR] $1"; }
+    print_info() { print_msg "${CYAN}" "[信息] $1"; }
+    print_success() { print_msg "${GREEN}" "[完成] $1"; }
+    print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
+    print_error() { print_msg "${RED}" "[错误] $1"; }
     print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
     print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 27 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "This script requires root privileges."; exit 1; }; }
+    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "${ID}" || echo "unknown"; }
 fi
@@ -171,7 +171,7 @@ safe_remove_glob_contents() {
         /root/.cache|/home/*/.cache|/var/cache/man)
             ;;
         *)
-            print_warn "Refusing to remove unexpected path: ${dir}"
+            print_warn "拒绝清理非预期路径：${dir}"
             return 1
             ;;
     esac
@@ -180,7 +180,7 @@ safe_remove_glob_contents() {
     before=$(get_dir_size "${dir}")
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would clean ${dir}"
+        print_info "试运行：将清理 ${dir}"
         after="${before}"
     else
         find "${dir}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + 2>>"${LOG_FILE}" || true
@@ -201,7 +201,7 @@ safe_delete_old_files() {
         /tmp|/var/tmp|/var/log)
             ;;
         *)
-            print_warn "Refusing to delete old files from unexpected path: ${dir}"
+            print_warn "拒绝从非预期路径删除旧文件：${dir}"
             return 1
             ;;
     esac
@@ -210,7 +210,7 @@ safe_delete_old_files() {
     before=$(get_dir_size "${dir}")
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would delete files matching ${file_pattern} older than ${days} day(s) in ${dir}"
+        print_info "试运行：将删除 ${dir} 中超过 ${days} 天且匹配 ${file_pattern} 的文件"
         after="${before}"
     else
         find "${dir}" -type f -name "${file_pattern}" -mtime +"${days}" -delete 2>>"${LOG_FILE}" || true
@@ -226,7 +226,7 @@ clean_package_cache() {
     local after=0
     local freed=0
 
-    print_title "Package Cache"
+    print_title "软件包缓存"
 
     case "${PKG_MANAGER}" in
         apt)
@@ -235,7 +235,7 @@ clean_package_cache() {
         yum|dnf|apk|pacman)
             ;;
         *)
-            print_warn "Unsupported package manager for cache cleanup: ${PKG_MANAGER}"
+            print_warn "暂不支持清理此软件包管理器的缓存：${PKG_MANAGER}"
             return 0
             ;;
     esac
@@ -243,7 +243,7 @@ clean_package_cache() {
     before=$(get_dir_size "${cache_path}")
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would clean package caches for ${PKG_MANAGER}"
+        print_info "试运行：将清理 ${PKG_MANAGER} 软件包缓存"
         after="${before}"
     else
         case "${PKG_MANAGER}" in
@@ -265,15 +265,15 @@ clean_package_cache() {
     fi
 
     freed=$(add_freed_bytes "${before}" "${after}")
-    print_success "Freed $(human_readable "${freed}") from package cache."
+    print_success "软件包缓存已释放 $(human_readable "${freed}")。"
 }
 
 clean_temp_files() {
-    print_title "Temporary Files"
+    print_title "临时文件"
     safe_delete_old_files "/tmp" 7 "*" || true
     safe_delete_old_files "/var/tmp" 7 "*" || true
     [ "${DRY_RUN}" = false ] && find /tmp /var/tmp -type d -empty -delete 2>>"${LOG_FILE}" || true
-    print_success "Temporary file cleanup finished."
+    print_success "临时文件清理完成。"
 }
 
 clean_log_files() {
@@ -282,11 +282,11 @@ clean_log_files() {
     local freed=0
     local large_log=""
 
-    print_title "Logs"
+    print_title "系统日志"
     before=$(get_dir_size "/var/log")
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would purge old compressed logs and vacuum journal data."
+        print_info "试运行：将清理旧压缩日志并收缩 journal 数据。"
         after="${before}"
     else
         safe_delete_old_files "/var/log" 30 "*.gz" || true
@@ -310,16 +310,16 @@ clean_log_files() {
     fi
 
     freed=$(add_freed_bytes "${before}" "${after}")
-    print_success "Freed $(human_readable "${freed}") from log cleanup."
+    print_success "日志清理已释放 $(human_readable "${freed}")。"
 }
 
 clean_orphans() {
     local -a pacman_orphans=()
 
-    print_title "Orphaned Packages"
+    print_title "孤立软件包"
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would remove orphaned packages via ${PKG_MANAGER}"
+        print_info "试运行：将通过 ${PKG_MANAGER} 移除孤立软件包"
         return 0
     fi
 
@@ -335,15 +335,15 @@ clean_orphans() {
             if [ "${#pacman_orphans[@]}" -gt 0 ]; then
                 run_logged_command "pacman remove orphaned packages" pacman -Rns --noconfirm "${pacman_orphans[@]}" || true
             else
-                print_info "No orphaned pacman packages were detected."
+                print_info "未检测到 pacman 孤立软件包。"
             fi
             ;;
         *)
-            print_warn "Orphan cleanup is not supported on ${PKG_MANAGER}."
+            print_warn "${PKG_MANAGER} 暂不支持孤立软件包清理。"
             ;;
     esac
 
-    print_success "Orphan package cleanup finished."
+    print_success "孤立软件包清理完成。"
 }
 
 clean_old_kernels() {
@@ -351,15 +351,15 @@ clean_old_kernels() {
     local -a apt_images=()
     local -a apt_headers=()
 
-    print_title "Old Kernels"
+    print_title "旧内核"
 
     if [ "${DEEP_CLEAN}" = false ]; then
-        print_info "Deep clean is disabled; skipping old kernel cleanup."
+        print_info "未启用深度清理，跳过旧内核清理。"
         return 0
     fi
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would remove old kernel packages when supported."
+        print_info "试运行：将在系统支持时移除旧内核软件包。"
         return 0
     fi
 
@@ -381,29 +381,29 @@ clean_old_kernels() {
             if command_exists package-cleanup; then
                 run_logged_command "remove old kernels" package-cleanup --oldkernels --count=2 -y || true
             else
-                print_warn "package-cleanup is not available; skipping old kernel cleanup."
+                print_warn "未找到 package-cleanup，跳过旧内核清理。"
             fi
             ;;
         *)
-            print_warn "Old kernel cleanup is not supported on ${PKG_MANAGER}."
+            print_warn "${PKG_MANAGER} 暂不支持旧内核清理。"
             ;;
     esac
 
-    print_success "Old kernel cleanup finished."
+    print_success "旧内核清理完成。"
 }
 
 clean_docker() {
     print_title "Docker"
 
     if ! command_exists docker; then
-        print_info "Docker is not installed."
+        print_info "系统未安装 Docker。"
         return 0
     fi
 
     if [ "${DRY_RUN}" = true ]; then
-        print_info "DRY RUN: would prune stopped containers, dangling images, and unused volumes."
+        print_info "试运行：将清理已停止容器、悬空镜像和未使用卷。"
         if [ "${DEEP_CLEAN}" = true ]; then
-            print_info "DRY RUN: would also run docker system prune -a."
+            print_info "试运行：还将执行 docker system prune -a。"
         fi
         return 0
     fi
@@ -416,16 +416,16 @@ clean_docker() {
         run_logged_command "docker system prune -a -f" docker system prune -a -f || true
     fi
 
-    print_success "Docker cleanup finished."
+    print_success "Docker 清理完成。"
 }
 
 clean_user_cache() {
     local home_dir=""
 
-    print_title "User Cache"
+    print_title "用户缓存"
 
     if [ "${DEEP_CLEAN}" = false ]; then
-        print_info "Deep clean is disabled; skipping user cache cleanup."
+        print_info "未启用深度清理，跳过用户缓存清理。"
         return 0
     fi
 
@@ -434,17 +434,17 @@ clean_user_cache() {
         safe_remove_glob_contents "${home_dir}/.cache" || true
     done
 
-    print_success "User cache cleanup finished."
+    print_success "用户缓存清理完成。"
 }
 
 analyze_disk() {
-    print_header "Disk Analysis"
-    printf "%bCurrent usage:%b %s\n" "${CYAN}" "${NC}" "$(get_disk_usage)"
+    print_header "磁盘空间分析"
+    printf "%b当前使用情况:%b %s\n" "${CYAN}" "${NC}" "$(get_disk_usage)"
     echo ""
-    printf "%bTop 10 directories on /:%b\n" "${CYAN}" "${NC}"
+    printf "%b根目录占用最大的 10 个目录:%b\n" "${CYAN}" "${NC}"
     du -xh --max-depth=1 / 2>/dev/null | sort -rh | head -10
     echo ""
-    printf "%bTop 10 files/directories overall:%b\n" "${CYAN}" "${NC}"
+    printf "%b整体占用最大的 10 个文件或目录:%b\n" "${CYAN}" "${NC}"
     du -ahx / 2>/dev/null | sort -rh | head -10
 }
 
@@ -467,7 +467,7 @@ Estimated freed: $(human_readable "${TOTAL_BYTES_FREED}")
 Log file: ${LOG_FILE}
 EOF
 
-    print_success "Report written to ${report_file}"
+    print_success "清理报告已写入：${report_file}"
 }
 
 run_standard_profile() {

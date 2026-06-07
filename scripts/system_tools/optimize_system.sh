@@ -34,16 +34,16 @@ if [ -f "${LIB_FILE}" ]; then
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
     print_msg() { echo -e "${1}${2}${NC}"; }
-    print_info() { print_msg "${CYAN}" "[INFO] $1"; }
-    print_success() { print_msg "${GREEN}" "[OK] $1"; }
-    print_warn() { print_msg "${YELLOW}" "[WARN] $1"; }
-    print_error() { print_msg "${RED}" "[ERROR] $1"; }
+    print_info() { print_msg "${CYAN}" "[信息] $1"; }
+    print_success() { print_msg "${GREEN}" "[完成] $1"; }
+    print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
+    print_error() { print_msg "${RED}" "[错误] $1"; }
     print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
     print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 28 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "This script requires root privileges."; exit 1; }; }
+    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     get_total_memory() { free -m | awk '/^Mem:/ {print $2}'; }
 fi
@@ -108,13 +108,13 @@ apply_kernel_tuning() {
     local sysctl_file="/etc/sysctl.d/99-vps-optimize.conf"
     local temp_file=""
 
-    print_title "Kernel Tuning"
+    print_title "内核参数优化"
     ensure_runtime_dirs
     backup_target "${sysctl_file}"
     [ -f /etc/sysctl.conf ] && backup_target "/etc/sysctl.conf"
 
     temp_file=$(mktemp "/tmp/vps_sysctl.XXXXXX") || {
-        print_error "Unable to create a temporary sysctl file."
+        print_error "无法创建临时 sysctl 文件。"
         return 1
     }
 
@@ -136,11 +136,11 @@ EOF
     write_file_atomically "${sysctl_file}" "${temp_file}"
 
     if run_logged_command "apply sysctl tuning" sysctl -p "${sysctl_file}"; then
-        print_success "Kernel tuning applied."
+        print_success "内核参数优化已应用。"
         return 0
     fi
 
-    print_warn "Kernel tuning file was written, but sysctl reload reported issues."
+    print_warn "内核优化文件已写入，但重新加载 sysctl 时出现问题。"
     return 1
 }
 
@@ -150,13 +150,13 @@ apply_limits_tuning() {
     local systemd_file="${systemd_dir}/99-vps-scripts.conf"
     local temp_file=""
 
-    print_title "Limits Tuning"
+    print_title "系统限制优化"
     ensure_runtime_dirs
     backup_target "${limits_file}"
     backup_target "${systemd_file}"
 
     temp_file=$(mktemp "/tmp/vps_limits.XXXXXX") || {
-        print_error "Unable to create a temporary limits file."
+        print_error "无法创建临时 limits 文件。"
         return 1
     }
 
@@ -176,7 +176,7 @@ EOF
 
     if [ -d "${systemd_dir}" ]; then
         temp_file=$(mktemp "/tmp/vps_systemd_limits.XXXXXX") || {
-            print_error "Unable to create a temporary systemd limits file."
+            print_error "无法创建临时 systemd limits 文件。"
             return 1
         }
 
@@ -190,7 +190,7 @@ EOF
         run_logged_command "reload systemd manager" systemctl daemon-reexec || true
     fi
 
-    print_success "Limits tuning applied."
+    print_success "系统限制优化已应用。"
 }
 
 recommended_swap_size_mb() {
@@ -210,7 +210,7 @@ ensure_swap_protection() {
     local total_memory_mb
     local new_swap_mb
 
-    print_title "Memory Protection"
+    print_title "内存保护"
 
     current_swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/ {print $2}')
     current_swap_mb=${current_swap_mb:-0}
@@ -221,47 +221,47 @@ ensure_swap_protection() {
     new_swap_mb=$(recommended_swap_size_mb "${total_memory_mb:-0}")
 
     if [ "${current_swap_mb}" -gt 0 ]; then
-        print_success "Swap is already enabled (${current_swap_mb}MB)."
+        print_success "Swap 已启用（${current_swap_mb}MB）。"
         return 0
     fi
 
     if [ "${new_swap_mb}" -eq 0 ]; then
-        print_info "Swap is not enabled, but RAM size is large enough that no automatic swap file will be created."
+        print_info "当前未启用 Swap，但内存充足，不自动创建 Swap 文件。"
         return 0
     fi
 
-    print_warn "Swap is disabled on a low-memory host (${total_memory_mb}MB RAM)."
+    print_warn "低内存主机未启用 Swap（内存 ${total_memory_mb}MB）。"
     if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Create a ${new_swap_mb}MB swap file at /swapfile?"; then
-        print_info "Swap creation skipped."
+        print_info "已跳过 Swap 创建。"
         return 0
     fi
 
     if [ -f /swapfile ]; then
-        print_warn "/swapfile already exists. Skipping automatic swap creation."
+        print_warn "/swapfile 已存在，跳过自动创建。"
         return 0
     fi
 
     run_logged_command "allocate swap file" dd if=/dev/zero of=/swapfile bs=1M count="${new_swap_mb}" status=none || {
-        print_error "Swap allocation failed."
+        print_error "分配 Swap 文件失败。"
         return 1
     }
     run_logged_command "lock down swap file permissions" chmod 600 /swapfile || {
-        print_error "Setting swap file permissions failed."
+        print_error "设置 Swap 文件权限失败。"
         return 1
     }
     run_logged_command "initialize swap file" mkswap /swapfile || {
-        print_error "mkswap failed."
+        print_error "执行 mkswap 失败。"
         return 1
     }
     run_logged_command "enable swap file" swapon /swapfile || {
-        print_error "swapon failed."
+        print_error "执行 swapon 失败。"
         return 1
     }
 
     if ! grep -q '^/swapfile ' /etc/fstab 2>/dev/null; then
         printf '%s\n' '/swapfile none swap sw 0 0' >> /etc/fstab
     fi
-    print_success "Swap file created and enabled."
+    print_success "Swap 文件已创建并启用。"
     return 0
 }
 
@@ -269,10 +269,10 @@ disable_low_value_services() {
     local services=("bluetooth" "cups" "avahi-daemon")
     local service=""
 
-    print_title "Service Cleanup"
+    print_title "低价值服务清理"
 
     if ! command_exists systemctl; then
-        print_warn "systemctl is not available; skipping service cleanup."
+        print_warn "systemctl 不可用，跳过服务清理。"
         return 0
     fi
 
@@ -281,9 +281,9 @@ disable_low_value_services() {
             if systemctl is-enabled "${service}" >/dev/null 2>&1 || systemctl is-active "${service}" >/dev/null 2>&1; then
                 run_logged_command "stop ${service}" systemctl stop "${service}" || true
                 run_logged_command "disable ${service}" systemctl disable "${service}" || true
-                print_success "Disabled ${service}."
+                print_success "已禁用服务 ${service}。"
             else
-                print_info "${service} is already inactive."
+                print_info "服务 ${service} 已处于非活动状态。"
             fi
         fi
     done
@@ -295,12 +295,12 @@ apply_ssh_baseline() {
     local sshd_dropin_file="${sshd_dropin_dir}/99-vps-scripts.conf"
     local temp_file=""
 
-    print_title "SSH Baseline"
+    print_title "SSH 安全基线"
 
     if [ -d "${sshd_dropin_dir}" ]; then
         backup_target "${sshd_dropin_file}"
         temp_file=$(mktemp "/tmp/vps_sshd_dropin.XXXXXX") || {
-            print_error "Unable to create a temporary SSH config file."
+            print_error "无法创建临时 SSH 配置文件。"
             return 1
         }
 
@@ -318,7 +318,7 @@ EOF
             printf '\nUseDNS no\n' >> "${sshd_main}"
         fi
     else
-        print_warn "SSH configuration file not found; skipping SSH tuning."
+        print_warn "未找到 SSH 配置文件，跳过 SSH 优化。"
         return 0
     fi
 
@@ -326,7 +326,7 @@ EOF
         run_logged_command "reload sshd" systemctl reload sshd || run_logged_command "reload ssh" systemctl reload ssh || true
     fi
 
-    print_success "SSH baseline applied."
+    print_success "SSH 安全基线已应用。"
 }
 
 run_selected_modules() {

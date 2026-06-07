@@ -19,12 +19,12 @@ if [ -f "$LIB_FILE" ]; then
     [ -n "${LOG_DIR:-}" ] && LOG_FILE="${LOG_DIR}/install_deps.log"
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; PURPLE='\033[0;35m'; NC='\033[0m'
-    print_info() { echo -e "${CYAN}[INFO] $1${NC}"; }
-    print_success() { echo -e "${GREEN}[OK] $1${NC}"; }
-    print_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
-    print_error() { echo -e "${RED}[ERROR] $1${NC}"; }
+    print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
+    print_success() { echo -e "${GREEN}[完成] $1${NC}"; }
+    print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
+    print_error() { echo -e "${RED}[错误] $1${NC}"; }
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
-    check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}Root is required.${NC}"; exit 1; }; }
+    check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
 fi
 
@@ -64,12 +64,12 @@ detect_package_manager() {
             INSTALL_CMD=(apk add)
             ;;
         *)
-            print_error "Unsupported OS: $OS_TYPE"
+            print_error "不支持的操作系统：$OS_TYPE"
             exit 1
             ;;
     esac
 
-    print_info "Detected OS: $OS_TYPE (package manager: $PKG_MANAGER)"
+    print_info "检测到系统：$OS_TYPE（软件包管理器：$PKG_MANAGER）"
 }
 
 adjust_package_names() {
@@ -132,11 +132,11 @@ normalize_package_list() {
 }
 
 run_update_cache() {
-    print_info "Refreshing package metadata..."
+    print_info "正在刷新软件包元数据..."
     if env DEBIAN_FRONTEND=noninteractive "${UPDATE_CMD[@]}" >> "$LOG_FILE" 2>&1; then
-        print_success "Package metadata refreshed."
+        print_success "软件包元数据刷新完成。"
     else
-        print_warn "Package metadata refresh reported issues. Continuing."
+        print_warn "软件包元数据刷新出现问题，将继续执行。"
     fi
 }
 
@@ -146,7 +146,7 @@ install_one_package() {
 }
 
 configure_extra_repos() {
-    print_info "Configuring extra repositories when needed..."
+    print_info "正在按需配置附加软件源..."
 
     case "$OS_TYPE" in
         ubuntu|debian)
@@ -162,22 +162,22 @@ configure_extra_repos() {
                     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/${OS_TYPE} $(lsb_release -cs) stable" \
                         > /etc/apt/sources.list.d/docker.list
                 else
-                    print_warn "Docker repository key setup failed."
+                    print_warn "Docker 软件源密钥配置失败。"
                 fi
             fi
 
             if ! command -v node >/dev/null 2>&1; then
                 curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - >> "$LOG_FILE" 2>&1 || \
-                    print_warn "NodeSource bootstrap failed."
+                    print_warn "NodeSource 初始化失败。"
             fi
             ;;
         centos|rhel|rocky|almalinux)
             if ! rpm -q epel-release >/dev/null 2>&1; then
-                install_one_package epel-release || print_warn "Failed to install epel-release."
+                install_one_package epel-release || print_warn "安装 epel-release 失败。"
             fi
             if ! command -v docker >/dev/null 2>&1 && command -v yum-config-manager >/dev/null 2>&1; then
                 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo >> "$LOG_FILE" 2>&1 || \
-                    print_warn "Failed to add Docker CE repository."
+                    print_warn "添加 Docker CE 软件源失败。"
             fi
             ;;
     esac
@@ -209,25 +209,25 @@ install_pkg_list() {
     done
 
     if [ ${#installed[@]} -gt 0 ]; then
-        print_info "Skipping already installed packages (${#installed[@]}): ${installed[*]}"
+        print_info "跳过已安装的软件包（${#installed[@]} 个）：${installed[*]}"
     fi
 
     total=${#to_install[@]}
     if [ "$total" -eq 0 ]; then
-        print_success "All requested packages are already installed."
+        print_success "所需软件包均已安装。"
         return 0
     fi
 
-    print_info "Installing $total package(s)..."
+    print_info "正在安装 $total 个软件包..."
 
     for package in "${to_install[@]}"; do
         current=$((current + 1))
-        echo -ne "\r${CYAN}[${current}/${total}]${NC} Installing ${package} ..."
+        echo -ne "\r${CYAN}[${current}/${total}]${NC} 正在安装 ${package} ..."
         if install_one_package "$package"; then
             :
         else
             echo ""
-            print_error "Failed to install: $package"
+            print_error "安装失败：$package"
             failed+=("$package")
         fi
     done
@@ -235,11 +235,11 @@ install_pkg_list() {
     echo ""
 
     if [ ${#failed[@]} -eq 0 ]; then
-        print_success "Requested packages installed successfully."
+        print_success "所需软件包安装完成。"
         return 0
     fi
 
-    print_warn "Some packages failed to install. See log: $LOG_FILE"
+    print_warn "部分软件包安装失败，请查看日志：$LOG_FILE"
     echo "${failed[*]}"
     return 1
 }
@@ -248,7 +248,7 @@ post_install_setup() {
     local service=""
     local services=("ssh" "sshd" "cron" "crond" "docker")
 
-    print_info "Running post-install service setup..."
+    print_info "正在执行安装后的服务配置..."
 
     if command -v systemctl >/dev/null 2>&1; then
         for service in "${services[@]}"; do

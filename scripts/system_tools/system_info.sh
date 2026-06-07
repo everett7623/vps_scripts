@@ -21,10 +21,10 @@ if [ -f "${LIB_FILE}" ]; then
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
     print_msg() { echo -e "${1}${2}${NC}"; }
-    print_info() { print_msg "${CYAN}" "[INFO] $1"; }
-    print_success() { print_msg "${GREEN}" "[OK] $1"; }
-    print_warn() { print_msg "${YELLOW}" "[WARN] $1"; }
-    print_error() { print_msg "${RED}" "[ERROR] $1"; }
+    print_info() { print_msg "${CYAN}" "[信息] $1"; }
+    print_success() { print_msg "${GREEN}" "[完成] $1"; }
+    print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
+    print_error() { print_msg "${RED}" "[错误] $1"; }
     print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
     print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 30 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
@@ -137,14 +137,14 @@ to_mb() {
 }
 
 get_system_overview() {
-    print_title "System Overview"
-    print_kv "Hostname" "$(hostname)"
-    print_kv "OS" "$(read_os_name)"
-    print_kv "Kernel" "$(uname -r)"
-    print_kv "Architecture" "$(uname -m)"
-    print_kv "Uptime" "$(uptime -p 2>/dev/null | sed 's/^up //')"
-    print_kv "System Time" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
-    print_kv "Timezone" "$(read_timezone)"
+    print_title "系统概览"
+    print_kv "主机名" "$(hostname)"
+    print_kv "操作系统" "$(read_os_name)"
+    print_kv "内核版本" "$(uname -r)"
+    print_kv "系统架构" "$(uname -m)"
+    print_kv "运行时间" "$(uptime -p 2>/dev/null | sed 's/^up //')"
+    print_kv "系统时间" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
+    print_kv "系统时区" "$(read_timezone)"
 }
 
 get_cpu_details() {
@@ -160,15 +160,15 @@ get_cpu_details() {
     cpu_freq=$(awk -F': *' '/cpu MHz/ {print $2; exit}' /proc/cpuinfo 2>/dev/null || true)
     cpu_usage=$(read_cpu_usage)
 
-    print_kv "Model" "${cpu_model:-unknown}"
-    print_kv "Cores" "${cpu_cores:-unknown}"
-    [ -n "${cpu_freq}" ] && print_kv "Frequency" "${cpu_freq} MHz"
+    print_kv "型号" "${cpu_model:-未知}"
+    print_kv "核心数" "${cpu_cores:-未知}"
+    [ -n "${cpu_freq}" ] && print_kv "频率" "${cpu_freq} MHz"
     if [ "${cpu_usage}" = "unavailable" ]; then
-        print_kv "Usage" "unavailable"
+        print_kv "使用率" "不可用"
     else
-        print_kv "Usage" "${cpu_usage}%"
+        print_kv "使用率" "${cpu_usage}%"
     fi
-    print_kv "Load Avg" "$(read_load_average)"
+    print_kv "平均负载" "$(read_load_average)"
 }
 
 get_memory_details() {
@@ -183,7 +183,7 @@ get_memory_details() {
     local swap_used_mb=0
     local swap_usage_pct=0
 
-    print_title "Memory"
+    print_title "内存"
 
     mem_total_kb=$(read_memory_stat "MemTotal")
     mem_available_kb=$(read_memory_stat "MemAvailable")
@@ -197,7 +197,7 @@ get_memory_details() {
     fi
 
     print_kv "RAM" "${mem_used_mb}MB / ${mem_total_mb}MB (${mem_usage_pct}%)"
-    print_kv "Available" "$(to_mb "${mem_available_kb:-0}")MB"
+    print_kv "可用内存" "$(to_mb "${mem_available_kb:-0}")MB"
 
     if [ "${swap_total_kb:-0}" -gt 0 ]; then
         swap_total_mb=$(to_mb "${swap_total_kb}")
@@ -207,15 +207,15 @@ get_memory_details() {
         fi
         print_kv "Swap" "${swap_used_mb}MB / ${swap_total_mb}MB (${swap_usage_pct}%)"
     else
-        print_kv "Swap" "disabled"
+        print_kv "Swap" "未启用"
     fi
 }
 
 get_disk_details() {
     local total_line=""
 
-    print_title "Disk"
-    printf "%b%-16s %-10s %-10s %-10s %-7s %s%b\n" "${CYAN}" "Mount" "Size" "Used" "Avail" "Use%" "Device" "${NC}"
+    print_title "磁盘"
+    printf "%b%-16s %-10s %-10s %-10s %-7s %s%b\n" "${CYAN}" "挂载点" "容量" "已用" "可用" "使用率" "设备" "${NC}"
 
     df -hP 2>/dev/null | awk '$1 ~ "^/dev/" {printf "%-16s %-10s %-10s %-10s %-7s %s\n", $6, $2, $3, $4, $5, $1}'
 
@@ -223,7 +223,7 @@ get_disk_details() {
         total_line=$(df -hP --total 2>/dev/null | awk '$1 == "total" {print $2 "|" $3 "|" $5}')
         if [ -n "${total_line}" ]; then
             echo ""
-            print_kv "Aggregate" "$(cut -d'|' -f1 <<<"${total_line}") total, $(cut -d'|' -f2 <<<"${total_line}") used, $(cut -d'|' -f3 <<<"${total_line}")"
+            print_kv "总计" "容量 $(cut -d'|' -f1 <<<"${total_line}")，已用 $(cut -d'|' -f2 <<<"${total_line}")，使用率 $(cut -d'|' -f3 <<<"${total_line}")"
         fi
     fi
 }
@@ -239,7 +239,7 @@ get_network_details() {
     local public_ipv6=""
     local region=""
 
-    print_title "Network"
+    print_title "网络"
 
     if command_exists ip; then
         interfaces=$(ip -o link show 2>/dev/null | awk -F': ' '$2 != "lo" {print $2}' | cut -d'@' -f1)
@@ -250,7 +250,7 @@ get_network_details() {
             state=$(ip link show "${iface}" 2>/dev/null | awk '/state/ {for (i=1; i<=NF; i++) if ($i == "state") {print $(i+1); exit}}')
 
             if [ -n "${ipv4}" ] || [ "${state:-DOWN}" = "UP" ]; then
-                print_kv "Interface" "${iface} (${state:-unknown})"
+                print_kv "网卡" "${iface} (${state:-未知})"
                 [ -n "${ipv4}" ] && print_kv "IPv4" "${ipv4}"
                 [ -n "${ipv6}" ] && print_kv "IPv6" "${ipv6}"
                 [ -n "${mac}" ] && print_kv "MAC" "${mac}"
@@ -258,19 +258,19 @@ get_network_details() {
             fi
         done
     else
-        print_warn "The 'ip' command is not available; skipping interface details."
+        print_warn "系统没有 ip 命令，跳过网卡详情。"
     fi
 
     public_ipv4=$(get_public_ip 4 3 2>/dev/null || echo "unavailable")
     public_ipv6=$(get_public_ip 6 3 2>/dev/null || echo "unavailable")
-    print_kv "Public IPv4" "${public_ipv4:-unavailable}"
+    print_kv "公网 IPv4" "${public_ipv4:-不可用}"
     if [ "${public_ipv6:-unavailable}" != "unavailable" ]; then
-        print_kv "Public IPv6" "${public_ipv6}"
+        print_kv "公网 IPv6" "${public_ipv6}"
     fi
 
     if command_exists curl && [ -n "${public_ipv4}" ] && [ "${public_ipv4}" != "unavailable" ]; then
         region=$(curl -fsS --max-time 3 "https://ipapi.co/${public_ipv4}/country_name/" 2>/dev/null || true)
-        [ -n "${region}" ] && print_kv "Region" "${region}"
+        [ -n "${region}" ] && print_kv "地区" "${region}"
     fi
 
     if [ -f /etc/resolv.conf ]; then
@@ -282,7 +282,7 @@ get_virtualization_details() {
     local virt_type="physical"
     local product=""
 
-    print_title "Virtualization"
+    print_title "虚拟化"
 
     if command_exists systemd-detect-virt; then
         product=$(systemd-detect-virt 2>/dev/null || true)
@@ -302,14 +302,14 @@ get_virtualization_details() {
         esac
     fi
 
-    print_kv "Platform" "${virt_type}"
+    print_kv "平台" "${virt_type}"
 
     if [ -f /.dockerenv ]; then
-        print_kv "Container" "docker"
+        print_kv "容器" "docker"
     elif [ -f /run/.containerenv ]; then
-        print_kv "Container" "podman"
+        print_kv "容器" "podman"
     elif grep -q "lxc" /proc/1/cgroup 2>/dev/null; then
-        print_kv "Container" "lxc"
+        print_kv "容器" "lxc"
     fi
 }
 
@@ -318,10 +318,10 @@ get_service_status() {
     local service=""
     local found_any=false
 
-    print_title "Service Status"
+    print_title "服务状态"
 
     if ! command_exists systemctl; then
-        print_warn "systemctl is not available on this host."
+        print_warn "当前主机无法使用 systemctl。"
         return 0
     fi
 
@@ -329,14 +329,14 @@ get_service_status() {
         if systemctl list-unit-files "${service}.service" >/dev/null 2>&1; then
             found_any=true
             if systemctl is-active --quiet "${service}"; then
-                printf "  [%bRUNNING%b] %s\n" "${GREEN}" "${NC}" "${service}"
+                printf "  [%b运行中%b] %s\n" "${GREEN}" "${NC}" "${service}"
             else
-                printf "  [%bSTOPPED%b] %s\n" "${YELLOW}" "${NC}" "${service}"
+                printf "  [%b已停止%b] %s\n" "${YELLOW}" "${NC}" "${service}"
             fi
         fi
     done
 
-    [ "${found_any}" = false ] && print_warn "No known services from the watch list were detected."
+    [ "${found_any}" = false ] && print_warn "未检测到监控列表中的常见服务。"
 }
 
 get_user_details() {

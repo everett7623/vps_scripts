@@ -36,12 +36,12 @@ if [ -f "${LIB_FILE}" ]; then
     [ -n "${LOG_DIR:-}" ] && LOG_FILE="${LOG_DIR}/system_update.log"
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; PURPLE='\033[0;35m'; NC='\033[0m'
-    print_info() { echo -e "${CYAN}[INFO] $1${NC}"; }
-    print_success() { echo -e "${GREEN}[OK] $1${NC}"; }
-    print_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
-    print_error() { echo -e "${RED}[ERROR] $1${NC}"; }
+    print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
+    print_success() { echo -e "${GREEN}[完成] $1${NC}"; }
+    print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
+    print_error() { echo -e "${RED}[错误] $1${NC}"; }
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
-    check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}Root is required.${NC}"; exit 1; }; }
+    check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
 fi
 
@@ -98,12 +98,12 @@ detect_system() {
             CLEANUP_CMD=(pacman -Sc --noconfirm)
             ;;
         *)
-            print_error "Unsupported OS: ${OS_TYPE}"
+            print_error "不支持的操作系统：${OS_TYPE}"
             exit 1
             ;;
     esac
 
-    print_info "Detected OS: ${OS_TYPE} (${PKG_MANAGER})"
+    print_info "检测到系统：${OS_TYPE}（${PKG_MANAGER}）"
 }
 
 show_help() {
@@ -148,7 +148,7 @@ backup_configs() {
         "/etc/netplan"
     )
 
-    print_info "Backing up key configuration files..."
+    print_info "正在备份关键配置文件..."
     mkdir -p "${backup_path}"
 
     for file in "${files[@]}"; do
@@ -171,28 +171,28 @@ backup_configs() {
     esac
 
     log "Backup created at ${backup_path}"
-    print_success "Backup created: ${backup_path}"
+    print_success "备份已创建：${backup_path}"
 }
 
 refresh_cache() {
     local last_update=0
     local now=0
 
-    print_info "Refreshing package metadata..."
+    print_info "正在刷新软件包元数据..."
 
     if [ "${PKG_MANAGER}" = "apt" ] && [ -f /var/cache/apt/pkgcache.bin ]; then
         last_update=$(stat -c %Y /var/cache/apt/pkgcache.bin 2>/dev/null || echo 0)
         now=$(date +%s)
         if [ $((now - last_update)) -lt "${UPDATE_CACHE_AGE}" ]; then
-            print_info "Skipping cache refresh because apt metadata is still fresh."
+            print_info "apt 元数据仍然较新，跳过缓存刷新。"
             return 0
         fi
     fi
 
     if run_logged_command "refresh package metadata" "${UPDATE_CMD[@]}"; then
-        print_success "Package metadata refreshed."
+        print_success "软件包元数据刷新完成。"
     else
-        print_warn "Package metadata refresh encountered issues."
+        print_warn "软件包元数据刷新出现问题。"
     fi
 }
 
@@ -239,7 +239,7 @@ perform_update() {
 
     if [ "${SECURITY_ONLY}" = "true" ]; then
         if [ ${#SECURITY_UPDATE_CMD[@]} -eq 0 ]; then
-            print_warn "Security-only mode is not supported on ${PKG_MANAGER}. Falling back to full update."
+            print_warn "${PKG_MANAGER} 不支持仅安全更新，将改为完整更新。"
             selected_cmd=("${FULL_UPDATE_CMD[@]}")
         else
             description="security-only update"
@@ -252,7 +252,7 @@ perform_update() {
         selected_cmd=("${FULL_UPDATE_CMD[@]}")
     fi
 
-    print_info "Mode: ${description}"
+    print_info "更新模式：${description}"
     log "Selected update mode: ${description}"
 
     if [ "${AUTO_CONFIRM}" = "false" ]; then
@@ -272,12 +272,12 @@ perform_update() {
 }
 
 cleanup_system() {
-    print_info "Cleaning package residue..."
+    print_info "正在清理软件包残留..."
 
     if run_logged_command "cleanup packages" "${CLEANUP_CMD[@]}"; then
-        print_success "Cleanup completed."
+        print_success "软件包残留清理完成。"
     else
-        print_warn "Cleanup encountered issues. Check log: ${LOG_FILE}"
+        print_warn "清理过程出现问题，请查看日志：${LOG_FILE}"
     fi
 
     if [ "${PKG_MANAGER}" = "apt" ]; then
@@ -295,14 +295,14 @@ check_reboot_needed() {
     fi
 
     if [ "${REBOOT_REQUIRED}" != "true" ]; then
-        print_success "No reboot required."
+        print_success "无需重启系统。"
         return 0
     fi
 
-    print_warn "A reboot is required to complete this update."
+    print_warn "需要重启系统才能完成本次更新。"
 
     if [ "${AUTO_CONFIRM}" = "true" ]; then
-        print_warn "Auto mode enabled. Rebooting in 5 seconds..."
+        print_warn "已启用自动模式，系统将在 5 秒后重启..."
         sleep 5
         reboot
     else
@@ -328,7 +328,7 @@ Log File: ${LOG_FILE}
 ==================================================
 EOF
 
-    print_info "Report written to ${report_file}"
+    print_info "更新报告已写入：${report_file}"
 }
 
 main() {
