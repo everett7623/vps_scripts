@@ -484,8 +484,10 @@ confirm_change() {
     ask_yes_no "Apply this timezone change?"
 }
 
-update_ntp_choice_from_reply() {
-    case "${REPLY,,}" in
+update_ntp_choice() {
+    local answer="${1:-y}"
+
+    case "${answer,,}" in
         n|no)
             NTP_ENABLED=false
             ;;
@@ -551,38 +553,34 @@ interactive_menu() {
             1)
                 show_common_timezones
                 echo ""
-                read_input "请输入时区编号或完整时区名称"
-                selection="${REPLY}"
+                read_input "请输入时区编号或完整时区名称" "" selection
                 if [[ "${selection}" =~ ^[0-9]+$ ]] && get_timezone_by_number "${selection}" >/dev/null 2>&1; then
                     NEW_TIMEZONE=$(get_timezone_by_number "${selection}")
                 else
                     NEW_TIMEZONE="${selection}"
                 fi
-                read_input "是否同时配置 NTP？" "y"
-                update_ntp_choice_from_reply
+                read_input "是否同时配置 NTP？" "y" selection
+                update_ntp_choice "${selection}"
                 apply_timezone_flow
                 echo ""
                 read -r -n 1 -s -p "按任意键继续..."
                 ;;
             2)
-                read_input "请输入时区名称（例如：Asia/Shanghai）"
-                NEW_TIMEZONE="${REPLY}"
-                read_input "是否同时配置 NTP？" "y"
-                update_ntp_choice_from_reply
+                read_input "请输入时区名称（例如：Asia/Shanghai）" "" NEW_TIMEZONE
+                read_input "是否同时配置 NTP？" "y" selection
+                update_ntp_choice "${selection}"
                 apply_timezone_flow
                 echo ""
                 read -r -n 1 -s -p "按任意键继续..."
                 ;;
             3)
-                read_input "请输入搜索关键词"
-                selection="${REPLY}"
+                read_input "请输入搜索关键词" "" selection
                 echo ""
                 search_timezones "${selection}"
                 echo ""
-                read_input "请输入完整时区名称"
-                NEW_TIMEZONE="${REPLY}"
-                read_input "是否同时配置 NTP？" "y"
-                update_ntp_choice_from_reply
+                read_input "请输入完整时区名称" "" NEW_TIMEZONE
+                read_input "是否同时配置 NTP？" "y" selection
+                update_ntp_choice "${selection}"
                 apply_timezone_flow
                 echo ""
                 read -r -n 1 -s -p "按任意键继续..."

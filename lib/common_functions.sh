@@ -369,7 +369,7 @@ read_input() {
         fi
         printf -v "${variable_name}" '%s' "${input}"
     else
-        echo "${input}"
+        printf -v REPLY '%s' "${input}"
     fi
 }
 

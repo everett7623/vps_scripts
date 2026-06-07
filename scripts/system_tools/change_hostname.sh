@@ -483,8 +483,7 @@ interactive_menu() {
 
         case "${selection}" in
             1)
-                read_input "请输入新的主机名"
-                new_name="${REPLY}"
+                read_input "请输入新的主机名" "" new_name
                 [ -n "${new_name}" ] && change_hostname_flow "${new_name}"
                 echo ""
                 read -r -n 1 -s -p "按任意键继续..."

@@ -83,6 +83,7 @@ main() {
     require_file "tests/validate_launcher_paths.sh"
     require_file "tests/validate_command_install.sh"
     require_file "tests/validate_remote_module_runtime.sh"
+    require_file "tests/validate_input_contract.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"
