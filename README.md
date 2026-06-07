@@ -137,9 +137,13 @@ chmod +x vps.sh
 ### 快捷命令
 
 ```bash
-echo "alias vps='bash ~/vps_scripts/vps.sh'" >> ~/.bashrc
-source ~/.bashrc
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh
+bash /tmp/vps.sh --install
+vps
 ```
+
+请使用 root 用户执行安装；普通用户可在命令前加 `sudo`。该命令会安装到 `/usr/local/bin/vps`，重新登录或切换目录后仍可直接运行。
+再次执行 `vps --install` 可更新启动器，执行 `vps --uninstall-command` 可移除快捷命令。
 
 ### 使用建议
 

@@ -23,6 +23,11 @@ BOLD='\033[1m'
 DIM='\033[2m'
 
 DOWNLOAD_TOOL=""
+INSTALL_PREFIX="${VPS_INSTALL_PREFIX:-/usr/local}"
+INSTALL_BIN_DIR="${INSTALL_PREFIX}/bin"
+INSTALL_LIB_DIR="${INSTALL_PREFIX}/lib/vps-scripts"
+INSTALL_LAUNCHER="${INSTALL_LIB_DIR}/vps.sh"
+INSTALL_COMMAND="${INSTALL_BIN_DIR}/vps"
 
 check_environment() {
     if command -v curl >/dev/null 2>&1; then
@@ -107,6 +112,98 @@ download_file_with_tool() {
             return 1
             ;;
     esac
+}
+
+require_install_permission() {
+    if [ -n "${VPS_INSTALL_PREFIX:-}" ]; then
+        return 0
+    fi
+
+    if [ -w "${INSTALL_PREFIX}" ] || { [ -d "${INSTALL_BIN_DIR}" ] && [ -w "${INSTALL_BIN_DIR}" ]; }; then
+        return 0
+    fi
+
+    if [ "${EUID}" -ne 0 ]; then
+        echo -e "${RED}[ERROR] Installing to ${INSTALL_PREFIX} requires root privileges.${RESET}"
+        echo -e "${DIM}Run again with sudo, or set VPS_INSTALL_PREFIX to a writable prefix.${RESET}"
+        return 1
+    fi
+}
+
+install_vps_command() {
+    local launcher_temp=""
+    local command_temp=""
+    local source_override="${VPS_INSTALL_SOURCE_OVERRIDE:-}"
+
+    check_environment
+    require_install_permission || return 1
+
+    launcher_temp=$(mktemp "/tmp/vps_launcher.XXXXXX") || return 1
+    command_temp=$(mktemp "/tmp/vps_command.XXXXXX") || {
+        rm -f "${launcher_temp}"
+        return 1
+    }
+
+    if [ -n "${source_override}" ]; then
+        if [ ! -f "${source_override}" ]; then
+            echo -e "${RED}[ERROR] Install source not found: ${source_override}${RESET}"
+            rm -f "${launcher_temp}" "${command_temp}"
+            return 1
+        fi
+        cp "${source_override}" "${launcher_temp}"
+    elif ! download_file_with_tool "${GITHUB_RAW_URL}/vps.sh" "${launcher_temp}"; then
+        echo -e "${RED}[ERROR] Failed to download the current launcher.${RESET}"
+        rm -f "${launcher_temp}" "${command_temp}"
+        return 1
+    fi
+
+    if [ ! -s "${launcher_temp}" ] || ! bash -n "${launcher_temp}"; then
+        echo -e "${RED}[ERROR] Refusing to install an empty or invalid launcher.${RESET}"
+        rm -f "${launcher_temp}" "${command_temp}"
+        return 1
+    fi
+
+    printf '%s\n' \
+        '#!/bin/bash' \
+        "exec bash \"${INSTALL_LAUNCHER}\" \"\$@\"" > "${command_temp}"
+
+    if ! mkdir -p "${INSTALL_BIN_DIR}" "${INSTALL_LIB_DIR}" ||
+       ! install -m 0755 "${launcher_temp}" "${INSTALL_LAUNCHER}" ||
+       ! install -m 0755 "${command_temp}" "${INSTALL_COMMAND}"; then
+        echo -e "${RED}[ERROR] Failed to install the vps command.${RESET}"
+        rm -f "${launcher_temp}" "${command_temp}"
+        return 1
+    fi
+
+    rm -f "${launcher_temp}" "${command_temp}"
+    echo -e "${GREEN}[OK] Command installed: ${INSTALL_COMMAND}${RESET}"
+    echo -e "${WHITE}Run ${CYAN}vps${WHITE} from any directory to reopen the launcher.${RESET}"
+
+    case ":${PATH}:" in
+        *":${INSTALL_BIN_DIR}:"*) ;;
+        *)
+            echo -e "${YELLOW}[WARN] ${INSTALL_BIN_DIR} is not currently in PATH.${RESET}"
+            echo -e "${DIM}Start a new login shell or add it to your shell PATH.${RESET}"
+            ;;
+    esac
+}
+
+uninstall_vps_command() {
+    require_install_permission || return 1
+
+    rm -f "${INSTALL_COMMAND}" "${INSTALL_LAUNCHER}"
+    rmdir "${INSTALL_LIB_DIR}" 2>/dev/null || true
+    echo -e "${GREEN}[OK] Removed the vps command.${RESET}"
+}
+
+show_help() {
+    printf '%s\n' \
+        "Usage: bash vps.sh [option]" \
+        "" \
+        "Options:" \
+        "  --install            Install or update the persistent 'vps' command" \
+        "  --uninstall-command  Remove the persistent 'vps' command" \
+        "  --help               Show this help message"
 }
 
 run_repo_script() {
@@ -453,6 +550,28 @@ update_info_menu() {
     pause_for_menu
 }
 
+command_setup_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "Command Setup"
+        echo -e "${DIM}Persistent command:${RESET} ${INSTALL_COMMAND}"
+        echo ""
+        print_menu_item 1 "Install / update command" "run vps from any directory"
+        print_menu_item 2 "Remove command" "remove only the launcher shortcut"
+        print_menu_item 0 "Back"
+        echo ""
+        read -r -p "Select [0-2]: " choice
+
+        case "${choice}" in
+            1) install_vps_command; pause_for_menu ;;
+            2) uninstall_vps_command; pause_for_menu ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
 uninstall_menu() {
     while true; do
         print_header
@@ -491,13 +610,14 @@ main_menu() {
         print_menu_item 5 "Community Scripts" "popular external tools"
         print_menu_item 6 "Proxy Tools" "sing-box and x-ui family"
         print_menu_item 7 "Other Tools" "bbr, fail2ban, swap"
-        print_menu_item 8 "Update Info" "launcher refresh usage"
-        print_menu_item 9 "Cleanup / Uninstall" "residue removal"
+        print_menu_item 8 "Command Setup" "install persistent vps command"
+        print_menu_item 9 "Update Info" "launcher refresh usage"
+        print_menu_item 10 "Cleanup / Uninstall" "residue removal"
         print_menu_item 0 "Exit"
         echo ""
         echo -e "${DIM}First-party modules download safely into temp files before execution.${RESET}"
         echo ""
-        read -r -p "Select [0-9]: " choice
+        read -r -p "Select [0-10]: " choice
 
         case "${choice}" in
             1) system_tools_menu ;;
@@ -507,8 +627,9 @@ main_menu() {
             5) community_menu ;;
             6) proxy_tools_menu ;;
             7) other_tools_menu ;;
-            8) update_info_menu ;;
-            9) uninstall_menu ;;
+            8) command_setup_menu ;;
+            9) update_info_menu ;;
+            10) uninstall_menu ;;
             0)
                 echo ""
                 echo -e "${GREEN}Session closed. See you next deploy.${RESET}"
@@ -521,4 +642,22 @@ main_menu() {
 
 trap 'echo -e "\n${GREEN}Interrupted by user.${RESET}"; exit 0' INT TERM
 
-main_menu
+case "${1:-}" in
+    --install)
+        install_vps_command
+        ;;
+    --uninstall-command)
+        uninstall_vps_command
+        ;;
+    --help|-h)
+        show_help
+        ;;
+    "")
+        main_menu
+        ;;
+    *)
+        echo -e "${RED}[ERROR] Unknown option: $1${RESET}" >&2
+        show_help
+        exit 1
+        ;;
+esac

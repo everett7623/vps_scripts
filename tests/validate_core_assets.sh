@@ -81,6 +81,7 @@ main() {
     require_file "vps.sh"
     require_file "vps_scripts.sh"
     require_file "tests/validate_launcher_paths.sh"
+    require_file "tests/validate_command_install.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"
