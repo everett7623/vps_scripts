@@ -35,7 +35,7 @@ check_environment() {
     elif command -v wget >/dev/null 2>&1; then
         DOWNLOAD_TOOL="wget"
     else
-        echo -e "${RED}[ERROR] curl or wget is required.${RESET}"
+        echo -e "${RED}[错误] 系统需要 curl 或 wget 才能下载脚本。${RESET}"
         exit 1
     fi
 }
@@ -55,9 +55,9 @@ draw_rule() {
 print_header() {
     clear_screen
     draw_rule 74 "$CYAN"
-    echo -e "${BOLD}${WHITE}  VPS Scripts${RESET}${DIM}  modular launcher | style ${LAUNCHER_STYLE_VERSION}${RESET}"
-    echo -e "${CYAN}  repo:${RESET} ${PROJECT_URL}"
-    echo -e "${CYAN}  mode:${RESET} safer first-party downloads | reviewed menus | guided third-party runs"
+    echo -e "${BOLD}${WHITE}  VPS 综合管理脚本${RESET}${DIM}  模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}${RESET}"
+    echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
+    echo -e "${CYAN}  模式:${RESET} 安全下载官方模块 | 菜单校验 | 第三方脚本执行确认"
     draw_rule 74 "$CYAN"
     echo ""
 }
@@ -68,18 +68,18 @@ print_panel_title() {
 }
 
 print_status_line() {
-    echo -e "${DIM}download:${RESET} ${DOWNLOAD_TOOL}  ${DIM}| launcher:${RESET} modular  ${DIM}| theme:${RESET} neon-shell"
+    echo -e "${DIM}下载工具:${RESET} ${DOWNLOAD_TOOL}  ${DIM}| 启动器:${RESET} 模块化  ${DIM}| 主题:${RESET} neon-shell"
     echo ""
 }
 
 pause_for_menu() {
     echo ""
-    echo -e "${CYAN}[Press any key to return]${RESET}"
+    echo -e "${CYAN}[按任意键返回]${RESET}"
     read -n 1 -s -r
 }
 
 invalid_choice() {
-    echo -e "${RED}Invalid choice.${RESET}"
+    echo -e "${RED}无效选项，请重新输入。${RESET}"
     sleep 1
 }
 
@@ -124,8 +124,8 @@ require_install_permission() {
     fi
 
     if [ "${EUID}" -ne 0 ]; then
-        echo -e "${RED}[ERROR] Installing to ${INSTALL_PREFIX} requires root privileges.${RESET}"
-        echo -e "${DIM}Run again with sudo, or set VPS_INSTALL_PREFIX to a writable prefix.${RESET}"
+        echo -e "${RED}[错误] 安装到 ${INSTALL_PREFIX} 需要 root 权限。${RESET}"
+        echo -e "${DIM}请使用 sudo 重新运行，或将 VPS_INSTALL_PREFIX 设置为可写目录。${RESET}"
         return 1
     fi
 }
@@ -146,19 +146,19 @@ install_vps_command() {
 
     if [ -n "${source_override}" ]; then
         if [ ! -f "${source_override}" ]; then
-            echo -e "${RED}[ERROR] Install source not found: ${source_override}${RESET}"
+            echo -e "${RED}[错误] 找不到安装源文件：${source_override}${RESET}"
             rm -f "${launcher_temp}" "${command_temp}"
             return 1
         fi
         cp "${source_override}" "${launcher_temp}"
     elif ! download_file_with_tool "${GITHUB_RAW_URL}/vps.sh" "${launcher_temp}"; then
-        echo -e "${RED}[ERROR] Failed to download the current launcher.${RESET}"
+        echo -e "${RED}[错误] 下载最新版启动器失败。${RESET}"
         rm -f "${launcher_temp}" "${command_temp}"
         return 1
     fi
 
     if [ ! -s "${launcher_temp}" ] || ! bash -n "${launcher_temp}"; then
-        echo -e "${RED}[ERROR] Refusing to install an empty or invalid launcher.${RESET}"
+        echo -e "${RED}[错误] 下载内容为空或语法无效，已拒绝安装。${RESET}"
         rm -f "${launcher_temp}" "${command_temp}"
         return 1
     fi
@@ -170,20 +170,20 @@ install_vps_command() {
     if ! mkdir -p "${INSTALL_BIN_DIR}" "${INSTALL_LIB_DIR}" ||
        ! install -m 0755 "${launcher_temp}" "${INSTALL_LAUNCHER}" ||
        ! install -m 0755 "${command_temp}" "${INSTALL_COMMAND}"; then
-        echo -e "${RED}[ERROR] Failed to install the vps command.${RESET}"
+        echo -e "${RED}[错误] 安装 vps 快捷命令失败。${RESET}"
         rm -f "${launcher_temp}" "${command_temp}"
         return 1
     fi
 
     rm -f "${launcher_temp}" "${command_temp}"
-    echo -e "${GREEN}[OK] Command installed: ${INSTALL_COMMAND}${RESET}"
-    echo -e "${WHITE}Run ${CYAN}vps${WHITE} from any directory to reopen the launcher.${RESET}"
+    echo -e "${GREEN}[完成] 快捷命令已安装：${INSTALL_COMMAND}${RESET}"
+    echo -e "${WHITE}现在可在任意目录输入 ${CYAN}vps${WHITE} 重新打开脚本。${RESET}"
 
     case ":${PATH}:" in
         *":${INSTALL_BIN_DIR}:"*) ;;
         *)
-            echo -e "${YELLOW}[WARN] ${INSTALL_BIN_DIR} is not currently in PATH.${RESET}"
-            echo -e "${DIM}Start a new login shell or add it to your shell PATH.${RESET}"
+            echo -e "${YELLOW}[提示] ${INSTALL_BIN_DIR} 当前不在 PATH 中。${RESET}"
+            echo -e "${DIM}请重新登录终端，或将该目录加入 shell 的 PATH。${RESET}"
             ;;
     esac
 }
@@ -193,17 +193,17 @@ uninstall_vps_command() {
 
     rm -f "${INSTALL_COMMAND}" "${INSTALL_LAUNCHER}"
     rmdir "${INSTALL_LIB_DIR}" 2>/dev/null || true
-    echo -e "${GREEN}[OK] Removed the vps command.${RESET}"
+    echo -e "${GREEN}[完成] vps 快捷命令已移除。${RESET}"
 }
 
 show_help() {
     printf '%s\n' \
-        "Usage: bash vps.sh [option]" \
+        "用法：bash vps.sh [选项]" \
         "" \
-        "Options:" \
-        "  --install            Install or update the persistent 'vps' command" \
-        "  --uninstall-command  Remove the persistent 'vps' command" \
-        "  --help               Show this help message"
+        "选项：" \
+        "  --install            安装或更新持久化 vps 快捷命令" \
+        "  --uninstall-command  移除持久化 vps 快捷命令" \
+        "  --help               显示此帮助信息"
 }
 
 run_repo_script() {
@@ -212,25 +212,25 @@ run_repo_script() {
     local temp_file=""
 
     print_header
-    print_panel_title "First-party module"
+    print_panel_title "官方模块"
     echo -e "${WHITE}> ${script_rel_path}${RESET}"
     echo ""
 
     if ! is_safe_repo_path "${script_rel_path}"; then
-        echo -e "${RED}[ERROR] Invalid repository path.${RESET}"
+        echo -e "${RED}[错误] 仓库脚本路径无效。${RESET}"
         pause_for_menu
         return 1
     fi
 
     temp_file=$(mktemp "/tmp/vps_repo_script.XXXXXX") || {
-        echo -e "${RED}[ERROR] Failed to create a temporary file.${RESET}"
+        echo -e "${RED}[错误] 创建临时文件失败。${RESET}"
         pause_for_menu
         return 1
     }
 
     if ! download_file_with_tool "${full_url}" "${temp_file}" || [ ! -s "${temp_file}" ]; then
         rm -f "${temp_file}"
-        echo -e "${RED}[ERROR] Failed to download module.${RESET}"
+        echo -e "${RED}[错误] 下载模块失败。${RESET}"
         echo -e "${DIM}URL:${RESET} ${full_url}"
         pause_for_menu
         return 1
@@ -238,7 +238,7 @@ run_repo_script() {
 
     if ! bash "${temp_file}"; then
         echo ""
-        echo -e "${RED}[ERROR] Module execution failed.${RESET}"
+        echo -e "${RED}[错误] 模块执行失败。${RESET}"
         echo -e "${DIM}URL:${RESET} ${full_url}"
     fi
 
@@ -252,26 +252,26 @@ run_remote_script_url() {
     local temp_file=""
 
     print_header
-    print_panel_title "Third-party script"
+    print_panel_title "第三方脚本"
     echo -e "${WHITE}> ${label}${RESET}"
     echo -e "${DIM}URL:${RESET} ${url}"
     echo ""
-    read -r -p "Download and run this third-party script? [y/N]: " confirm
+    read -r -p "是否下载并运行此第三方脚本？[y/N]: " confirm
     if [[ ! "${confirm}" =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Cancelled.${RESET}"
+        echo -e "${YELLOW}已取消。${RESET}"
         pause_for_menu
         return 0
     fi
 
     temp_file=$(mktemp "/tmp/vps_remote_script.XXXXXX") || {
-        echo -e "${RED}[ERROR] Failed to create a temporary file.${RESET}"
+        echo -e "${RED}[错误] 创建临时文件失败。${RESET}"
         pause_for_menu
         return 1
     }
 
     if ! download_file_with_tool "${url}" "${temp_file}" || [ ! -s "${temp_file}" ]; then
         rm -f "${temp_file}"
-        echo -e "${RED}[ERROR] Failed to download third-party script.${RESET}"
+        echo -e "${RED}[错误] 下载第三方脚本失败。${RESET}"
         pause_for_menu
         return 1
     fi
@@ -279,7 +279,7 @@ run_remote_script_url() {
     chmod +x "${temp_file}" 2>/dev/null || true
     if ! bash "${temp_file}"; then
         echo ""
-        echo -e "${RED}[ERROR] Third-party script execution failed.${RESET}"
+        echo -e "${RED}[错误] 第三方脚本执行失败。${RESET}"
     fi
 
     rm -f "${temp_file}"
@@ -291,13 +291,13 @@ run_remote_command() {
     local description="${2:-third-party command}"
 
     print_header
-    print_panel_title "Third-party command"
+    print_panel_title "第三方命令"
     echo -e "${WHITE}> ${description}${RESET}"
     echo -e "${DIM}${command_to_run}${RESET}"
     echo ""
-    read -r -p "Run this command? [y/N]: " confirm
+    read -r -p "是否运行此命令？[y/N]: " confirm
     if [[ ! "${confirm}" =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Cancelled.${RESET}"
+        echo -e "${YELLOW}已取消。${RESET}"
         pause_for_menu
         return 0
     fi
@@ -310,17 +310,17 @@ system_tools_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "System Tools"
-        print_menu_item 1 "System info" "hardware, kernel, network"
-        print_menu_item 2 "Install dependencies" "baseline runtime packages"
-        print_menu_item 3 "Update system" "safe package update flow"
-        print_menu_item 4 "Clean system" "cache and residue cleanup"
-        print_menu_item 5 "Optimize system" "sysctl and runtime tuning"
-        print_menu_item 6 "Change hostname" "rename server identity"
-        print_menu_item 7 "Set timezone" "clock and locale alignment"
-        print_menu_item 0 "Back"
+        print_panel_title "系统工具"
+        print_menu_item 1 "查看系统信息" "硬件、内核与网络"
+        print_menu_item 2 "安装常用依赖" "基础运行环境软件包"
+        print_menu_item 3 "更新系统软件包" "安全的软件包更新流程"
+        print_menu_item 4 "清理系统垃圾" "缓存与残留文件清理"
+        print_menu_item 5 "优化系统参数" "内核与运行参数调优"
+        print_menu_item 6 "修改主机名" "更新服务器名称"
+        print_menu_item 7 "设置系统时区" "时钟与时区同步"
+        print_menu_item 0 "返回"
         echo ""
-        read -r -p "Select [0-7]: " choice
+        read -r -p "请选择 [0-7]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/system_tools/system_info.sh" ;;
@@ -340,17 +340,17 @@ network_test_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Network Tests"
-        print_menu_item 1 "Backhaul route" "return path visibility"
-        print_menu_item 2 "Bandwidth test" "speedtest and links"
-        print_menu_item 3 "IP quality" "asn, region, blacklist hints"
-        print_menu_item 4 "Network quality" "combined route + latency"
-        print_menu_item 5 "Streaming unlock" "media region checks"
-        print_menu_item 0 "Back"
+        print_panel_title "网络测试"
+        print_menu_item 1 "回程路由测试" "查看网络返回路径"
+        print_menu_item 2 "带宽测速" "测速节点与链路"
+        print_menu_item 3 "IP 质量检测" "ASN、地区与黑名单提示"
+        print_menu_item 4 "网络质量检测" "路由与延迟综合检查"
+        print_menu_item 5 "流媒体解锁测试" "媒体服务地区检测"
+        print_menu_item 0 "返回"
         echo ""
-        echo -e "${DIM}More ad-hoc checks remain available from the Community menu.${RESET}"
+        echo -e "${DIM}更多第三方检测工具可在“社区脚本”菜单中使用。${RESET}"
         echo ""
-        read -r -p "Select [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/network_test/backhaul_route_test.sh" ;;
@@ -368,14 +368,14 @@ performance_test_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Performance Tests"
-        print_menu_item 1 "CPU benchmark" "single and multi-core"
-        print_menu_item 2 "Disk I/O" "fio and storage checks"
-        print_menu_item 3 "Memory benchmark" "throughput and latency"
-        print_menu_item 4 "Network throughput" "iperf style checks"
-        print_menu_item 0 "Back"
+        print_panel_title "性能测试"
+        print_menu_item 1 "CPU 基准测试" "单核与多核性能"
+        print_menu_item 2 "磁盘 I/O 测试" "fio 与存储检查"
+        print_menu_item 3 "内存基准测试" "吞吐量与延迟"
+        print_menu_item 4 "网络吞吐测试" "iperf 类检测"
+        print_menu_item 0 "返回"
         echo ""
-        read -r -p "Select [0-4]: " choice
+        read -r -p "请选择 [0-4]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/performance_test/cpu_benchmark.sh" ;;
@@ -392,30 +392,30 @@ service_install_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Service Install"
-        print_menu_item 1  "Docker" "container runtime"
-        print_menu_item 2  "LDNMP" "lightweight web stack"
-        print_menu_item 3  "Nginx" "web server"
-        print_menu_item 4  "MySQL" "database server"
-        print_menu_item 5  "PostgreSQL" "database server"
-        print_menu_item 6  "Node.js" "javascript runtime"
-        print_menu_item 7  "Python" "python runtime"
-        print_menu_item 8  "Redis" "cache and queue"
-        print_menu_item 9  "Go" "golang runtime"
-        print_menu_item 10 "Java" "jdk and tooling"
-        print_menu_item 11 "Ruby" "ruby runtime"
-        print_menu_item 12 "Rust" "cargo toolchain"
-        print_menu_item 13 "WordPress" "cms deploy"
-        print_menu_item 14 "aaPanel" "control panel"
-        print_menu_item 15 "BTPanel" "control panel"
-        print_menu_item 16 "1Panel" "control panel"
-        print_menu_item 17 "AMH" "control panel"
-        print_menu_item 18 "CyberPanel" "control panel"
-        print_menu_item 19 "Jenkins" "automation server"
-        print_menu_item 20 "Kubernetes" "cluster stack"
-        print_menu_item 0  "Back"
+        print_panel_title "服务安装"
+        print_menu_item 1  "Docker" "容器运行环境"
+        print_menu_item 2  "LDNMP" "轻量网站环境"
+        print_menu_item 3  "Nginx" "Web 服务器"
+        print_menu_item 4  "MySQL" "数据库服务器"
+        print_menu_item 5  "PostgreSQL" "数据库服务器"
+        print_menu_item 6  "Node.js" "JavaScript 运行环境"
+        print_menu_item 7  "Python" "Python 运行环境"
+        print_menu_item 8  "Redis" "缓存与队列"
+        print_menu_item 9  "Go" "Go 运行环境"
+        print_menu_item 10 "Java" "JDK 与开发工具"
+        print_menu_item 11 "Ruby" "Ruby 运行环境"
+        print_menu_item 12 "Rust" "Cargo 工具链"
+        print_menu_item 13 "WordPress" "CMS 部署"
+        print_menu_item 14 "aaPanel" "服务器控制面板"
+        print_menu_item 15 "宝塔面板" "服务器控制面板"
+        print_menu_item 16 "1Panel" "服务器控制面板"
+        print_menu_item 17 "AMH" "服务器控制面板"
+        print_menu_item 18 "CyberPanel" "服务器控制面板"
+        print_menu_item 19 "Jenkins" "自动化服务"
+        print_menu_item 20 "Kubernetes" "集群环境"
+        print_menu_item 0  "返回"
         echo ""
-        read -r -p "Select [0-20]: " choice
+        read -r -p "请选择 [0-20]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/service_install/docker.sh" ;;
@@ -448,24 +448,24 @@ community_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Community Scripts"
-        print_menu_item 1  "YABS benchmark" "yet another bench script"
-        print_menu_item 2  "XY-IP quality" "ip inspection"
-        print_menu_item 3  "XY network quality" "route and quality"
-        print_menu_item 4  "NodeLoc benchmark" "multi-test script"
-        print_menu_item 5  "spiritLHLS ecs" "combined benchmark"
-        print_menu_item 6  "Media unlock test" "streaming services"
-        print_menu_item 7  "Response time test" "curl timing"
-        print_menu_item 8  "SSH tool" "remote access helper"
-        print_menu_item 9  "JCNF toolbox" "community toolbox"
-        print_menu_item 10 "KejiLion toolbox" "community toolbox"
-        print_menu_item 11 "BlueSkyXN toolbox" "community toolbox"
-        print_menu_item 12 "Multi-line speedtest" "speed nodes"
-        print_menu_item 13 "AutoTrace" "trace route utility"
-        print_menu_item 14 "Oversell check" "memory pressure test"
-        print_menu_item 0  "Back"
+        print_panel_title "社区脚本"
+        print_menu_item 1  "YABS 性能测试" "综合基准脚本"
+        print_menu_item 2  "XY-IP 质量检测" "IP 综合检查"
+        print_menu_item 3  "XY 网络质量检测" "路由与质量"
+        print_menu_item 4  "NodeLoc 综合测试" "多项目测试脚本"
+        print_menu_item 5  "spiritLHLS ecs" "综合性能测试"
+        print_menu_item 6  "流媒体解锁测试" "流媒体服务检测"
+        print_menu_item 7  "响应时间测试" "curl 请求耗时"
+        print_menu_item 8  "SSH 工具" "远程访问辅助"
+        print_menu_item 9  "JCNF 工具箱" "社区综合工具箱"
+        print_menu_item 10 "科技 Lion 工具箱" "社区综合工具箱"
+        print_menu_item 11 "BlueSkyXN 工具箱" "社区综合工具箱"
+        print_menu_item 12 "多线路测速" "多节点网络测速"
+        print_menu_item 13 "AutoTrace" "路由追踪工具"
+        print_menu_item 14 "超售检测" "内存压力测试"
+        print_menu_item 0  "返回"
         echo ""
-        read -r -p "Select [0-14]: " choice
+        read -r -p "请选择 [0-14]: " choice
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
@@ -492,15 +492,15 @@ proxy_tools_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Proxy Tools"
-        print_menu_item 1 "yonggekkk sing-box" "community script"
-        print_menu_item 2 "fscarmen sing-box" "community script"
-        print_menu_item 3 "yonggekkk x-ui" "community script"
-        print_menu_item 4 "Official 3x-ui" "community script"
-        print_menu_item 5 "xeefei 3x-ui" "community script"
-        print_menu_item 0 "Back"
+        print_panel_title "代理工具"
+        print_menu_item 1 "勇哥 sing-box" "第三方社区脚本"
+        print_menu_item 2 "fscarmen sing-box" "第三方社区脚本"
+        print_menu_item 3 "勇哥 x-ui" "第三方社区脚本"
+        print_menu_item 4 "官方 3x-ui" "第三方社区脚本"
+        print_menu_item 5 "xeefei 3x-ui" "第三方社区脚本"
+        print_menu_item 0 "返回"
         echo ""
-        read -r -p "Select [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh" "yonggekkk sing-box" ;;
@@ -518,15 +518,15 @@ other_tools_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Other Tools"
-        print_menu_item 1 "BBR" "network acceleration"
-        print_menu_item 2 "Fail2ban" "basic protection"
-        print_menu_item 3 "Nezha agent" "monitoring helper"
-        print_menu_item 4 "Swap" "virtual memory"
-        print_menu_item 5 "Nezha cleaner" "third-party cleanup"
-        print_menu_item 0 "Back"
+        print_panel_title "其他工具"
+        print_menu_item 1 "BBR" "网络加速"
+        print_menu_item 2 "Fail2ban" "基础安全防护"
+        print_menu_item 3 "哪吒探针" "服务器监控"
+        print_menu_item 4 "Swap" "虚拟内存管理"
+        print_menu_item 5 "哪吒清理工具" "第三方清理脚本"
+        print_menu_item 0 "返回"
         echo ""
-        read -r -p "Select [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/other_tools/bbr.sh" ;;
@@ -542,9 +542,9 @@ other_tools_menu() {
 
 update_info_menu() {
     print_header
-    print_panel_title "Update Info"
-    echo -e "${WHITE}This launcher pulls first-party modules at runtime.${RESET}"
-    echo -e "${DIM}To refresh the experience, run the launcher again:${RESET}"
+    print_panel_title "更新说明"
+    echo -e "${WHITE}启动器会在运行时获取最新的官方模块。${RESET}"
+    echo -e "${DIM}如需刷新主界面，可重新运行以下命令：${RESET}"
     echo ""
     echo -e "${CYAN}bash <(curl -fsSL ${GITHUB_RAW_URL}/vps.sh)${RESET}"
     pause_for_menu
@@ -554,14 +554,14 @@ command_setup_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Command Setup"
-        echo -e "${DIM}Persistent command:${RESET} ${INSTALL_COMMAND}"
+        print_panel_title "快捷命令管理"
+        echo -e "${DIM}持久化命令:${RESET} ${INSTALL_COMMAND}"
         echo ""
-        print_menu_item 1 "Install / update command" "run vps from any directory"
-        print_menu_item 2 "Remove command" "remove only the launcher shortcut"
-        print_menu_item 0 "Back"
+        print_menu_item 1 "安装或更新命令" "可在任意目录输入 vps"
+        print_menu_item 2 "移除快捷命令" "仅删除启动快捷方式"
+        print_menu_item 0 "返回"
         echo ""
-        read -r -p "Select [0-2]: " choice
+        read -r -p "请选择 [0-2]: " choice
 
         case "${choice}" in
             1) install_vps_command; pause_for_menu ;;
@@ -576,14 +576,14 @@ uninstall_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Cleanup / Uninstall"
-        print_menu_item 1 "Clean service residue" "remove leftovers"
-        print_menu_item 2 "Roll back environment" "undo runtime changes"
-        print_menu_item 3 "Clear config files" "clean repository settings"
-        print_menu_item 4 "Full uninstall" "aggressive cleanup path"
-        print_menu_item 0 "Back"
+        print_panel_title "清理与卸载"
+        print_menu_item 1 "清理服务残留" "移除遗留文件"
+        print_menu_item 2 "回滚系统环境" "撤销运行环境变更"
+        print_menu_item 3 "清理配置文件" "移除项目配置"
+        print_menu_item 4 "完整卸载" "深度清理流程"
+        print_menu_item 0 "返回"
         echo ""
-        read -r -p "Select [0-4]: " choice
+        read -r -p "请选择 [0-4]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/uninstall_scripts/clean_service_residues.sh" ;;
@@ -602,22 +602,22 @@ main_menu() {
     while true; do
         print_header
         print_status_line
-        print_panel_title "Main Menu"
-        print_menu_item 1 "System Tools" "inspect, tune, update"
-        print_menu_item 2 "Network Tests" "quality, route, streaming"
-        print_menu_item 3 "Performance Tests" "cpu, disk, memory"
-        print_menu_item 4 "Service Install" "language and stack setup"
-        print_menu_item 5 "Community Scripts" "popular external tools"
-        print_menu_item 6 "Proxy Tools" "sing-box and x-ui family"
-        print_menu_item 7 "Other Tools" "bbr, fail2ban, swap"
-        print_menu_item 8 "Command Setup" "install persistent vps command"
-        print_menu_item 9 "Update Info" "launcher refresh usage"
-        print_menu_item 10 "Cleanup / Uninstall" "residue removal"
-        print_menu_item 0 "Exit"
+        print_panel_title "主菜单"
+        print_menu_item 1 "系统工具" "信息、优化与更新"
+        print_menu_item 2 "网络测试" "质量、路由与流媒体"
+        print_menu_item 3 "性能测试" "CPU、磁盘与内存"
+        print_menu_item 4 "服务安装" "语言与应用环境"
+        print_menu_item 5 "社区脚本" "常用第三方工具"
+        print_menu_item 6 "代理工具" "sing-box 与 x-ui 系列"
+        print_menu_item 7 "其他工具" "BBR、Fail2ban、Swap"
+        print_menu_item 8 "快捷命令管理" "安装持久化 vps 命令"
+        print_menu_item 9 "更新说明" "启动器更新方式"
+        print_menu_item 10 "清理与卸载" "残留清理"
+        print_menu_item 0 "退出"
         echo ""
-        echo -e "${DIM}First-party modules download safely into temp files before execution.${RESET}"
+        echo -e "${DIM}官方模块会先安全下载到临时文件，通过检查后再执行。${RESET}"
         echo ""
-        read -r -p "Select [0-10]: " choice
+        read -r -p "请选择 [0-10]: " choice
 
         case "${choice}" in
             1) system_tools_menu ;;
@@ -632,7 +632,7 @@ main_menu() {
             10) uninstall_menu ;;
             0)
                 echo ""
-                echo -e "${GREEN}Session closed. See you next deploy.${RESET}"
+                echo -e "${GREEN}已退出 VPS 综合管理脚本。${RESET}"
                 exit 0
                 ;;
             *) invalid_choice ;;
@@ -640,7 +640,7 @@ main_menu() {
     done
 }
 
-trap 'echo -e "\n${GREEN}Interrupted by user.${RESET}"; exit 0' INT TERM
+trap 'echo -e "\n${GREEN}用户已中断操作。${RESET}"; exit 0' INT TERM
 
 case "${1:-}" in
     --install)
@@ -656,7 +656,7 @@ case "${1:-}" in
         main_menu
         ;;
     *)
-        echo -e "${RED}[ERROR] Unknown option: $1${RESET}" >&2
+        echo -e "${RED}[错误] 未知选项：$1${RESET}" >&2
         show_help
         exit 1
         ;;

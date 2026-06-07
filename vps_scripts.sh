@@ -30,7 +30,7 @@ detect_download_tool() {
     elif command -v wget >/dev/null 2>&1; then
         DOWNLOAD_TOOL="wget"
     else
-        echo -e "${RED}[ERROR] curl or wget is required.${RESET}"
+        echo -e "${RED}[错误] 系统需要 curl 或 wget 才能下载脚本。${RESET}"
         exit 1
     fi
 }
@@ -67,17 +67,17 @@ draw_rule() {
 print_header() {
     clear_screen
     draw_rule 74 "$CYAN"
-    echo -e "${BOLD}${WHITE}  VPS Scripts compatibility launcher${RESET}"
-    echo -e "${CYAN}  version:${RESET} ${VERSION}"
-    echo -e "${CYAN}  repo:${RESET} ${PROJECT_URL}"
-    echo -e "${DIM}Legacy entrypoint detected. The maintained experience now lives in vps.sh.${RESET}"
+    echo -e "${BOLD}${WHITE}  VPS 综合管理脚本兼容入口${RESET}"
+    echo -e "${CYAN}  版本:${RESET} ${VERSION}"
+    echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
+    echo -e "${DIM}当前为旧版兼容入口，将转交给持续维护的 vps.sh。${RESET}"
     draw_rule 74 "$CYAN"
     echo ""
 }
 
 pause_for_menu() {
     echo ""
-    echo -e "${CYAN}[Press any key to continue]${RESET}"
+    echo -e "${CYAN}[按任意键继续]${RESET}"
     read -n 1 -s -r
 }
 
@@ -89,7 +89,7 @@ launch_local_vps() {
     local_launcher="${script_dir}/vps.sh"
 
     if [ ! -f "${local_launcher}" ]; then
-        echo -e "${RED}[ERROR] Local vps.sh not found next to this script.${RESET}"
+        echo -e "${RED}[错误] 当前脚本目录中找不到 vps.sh。${RESET}"
         return 1
     fi
 
@@ -100,13 +100,13 @@ launch_remote_vps() {
     local temp_file=""
 
     temp_file=$(mktemp "/tmp/vps_compat_remote.XXXXXX") || {
-        echo -e "${RED}[ERROR] Failed to create a temporary file.${RESET}"
+        echo -e "${RED}[错误] 创建临时文件失败。${RESET}"
         return 1
     }
 
     if ! download_file "${SCRIPT_URL}" "${temp_file}" || [ ! -s "${temp_file}" ]; then
         rm -f "${temp_file}"
-        echo -e "${RED}[ERROR] Failed to download the modular launcher.${RESET}"
+        echo -e "${RED}[错误] 下载模块化启动器失败。${RESET}"
         echo -e "${DIM}URL:${RESET} ${SCRIPT_URL}"
         return 1
     fi
@@ -116,25 +116,25 @@ launch_remote_vps() {
 
 show_help() {
     printf '%s\n' \
-        "Usage: bash vps_scripts.sh [option]" \
+        "用法：bash vps_scripts.sh [选项]" \
         "" \
-        "Options:" \
-        "  --local     Launch sibling ./vps.sh directly" \
-        "  --remote    Download the latest remote vps.sh and launch it" \
-        "  --help      Show this help message"
+        "选项：" \
+        "  --local     直接运行同目录下的 vps.sh" \
+        "  --remote    下载并运行最新版远程 vps.sh" \
+        "  --help      显示此帮助信息"
 }
 
 main_menu() {
     while true; do
         print_header
-        echo -e "${BOLD}${PURPLE}Choose a handoff mode${RESET}"
+        echo -e "${BOLD}${PURPLE}请选择启动方式${RESET}"
         draw_rule 74 "$PURPLE"
-        echo -e "${YELLOW} 1${RESET}. Launch local modular experience    ${DIM}use the checked-out vps.sh${RESET}"
-        echo -e "${YELLOW} 2${RESET}. Launch latest remote experience    ${DIM}download current vps.sh${RESET}"
-        echo -e "${YELLOW} 3${RESET}. Show quick-start command           ${DIM}copy/paste bootstrap${RESET}"
-        echo -e "${YELLOW} 0${RESET}. Exit"
+        echo -e "${YELLOW} 1${RESET}. 启动本地模块化脚本              ${DIM}使用同目录 vps.sh${RESET}"
+        echo -e "${YELLOW} 2${RESET}. 启动最新远程脚本                ${DIM}下载最新版 vps.sh${RESET}"
+        echo -e "${YELLOW} 3${RESET}. 显示快速启动命令                ${DIM}便于复制使用${RESET}"
+        echo -e "${YELLOW} 0${RESET}. 退出"
         echo ""
-        read -r -p "Select [0-3]: " choice
+        read -r -p "请选择 [0-3]: " choice
 
         case "${choice}" in
             1) launch_local_vps ;;
@@ -146,11 +146,11 @@ main_menu() {
                 ;;
             0)
                 echo ""
-                echo -e "${GREEN}Compatibility launcher closed.${RESET}"
+                echo -e "${GREEN}兼容启动器已退出。${RESET}"
                 exit 0
                 ;;
             *)
-                echo -e "${RED}Invalid choice.${RESET}"
+                echo -e "${RED}无效选项，请重新输入。${RESET}"
                 sleep 1
                 ;;
         esac
@@ -174,13 +174,13 @@ main() {
             main_menu
             ;;
         *)
-            echo -e "${RED}[ERROR] Unknown option: $1${RESET}"
+            echo -e "${RED}[错误] 未知选项：$1${RESET}"
             show_help
             exit 1
             ;;
     esac
 }
 
-trap 'echo -e "\n${GREEN}Interrupted by user.${RESET}"; exit 0' INT TERM
+trap 'echo -e "\n${GREEN}用户已中断操作。${RESET}"; exit 0' INT TERM
 
 main "$@"
