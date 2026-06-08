@@ -18,6 +18,7 @@ All notable changes to this repository should be documented here.
 - Added shared UI helpers and a runtime context display for modernized modules
 - Added `tests/validate_ui_framework.sh` to keep the shared UI helper layer present
 - Added `tests/validate_loader_performance.sh` to protect loader speed optimizations
+- Added `tests/validate_active_category_coverage.sh` to protect active launcher category coverage
 - Refreshed core project documentation and contributor guidance
 
 ### Fixed

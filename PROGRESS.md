@@ -26,6 +26,7 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Added launcher local-file fast path for cloned-repo runs and parallel loading for module dependencies
 - Tuned download and public-IP probe timeouts so network failures return faster
 - Added `tests/validate_loader_performance.sh` to prevent loader-speed regressions
+- Added active-category launcher coverage for network, performance, other-tools, and uninstall menus
 - Created baseline project documentation set
 
 ## In Progress
@@ -36,6 +37,7 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Reviewing remaining service-install scripts in priority order from `TASKS.md`
 - Expanding shared UI conventions across remaining script categories
 - Improving module startup speed and slow-network behavior
+- Auditing framework guardrails before deeper category rewrites
 
 ## Not Started
 

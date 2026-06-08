@@ -13,6 +13,7 @@
 - Review `scripts/service_install/kubernetes.sh`
 - Add a validation script for service-install launcher coverage (done: `tests/validate_service_install_launcher.sh`)
 - Add a validation script for launcher/update execution safety (done: `tests/validate_execution_safety.sh`)
+- Add launcher coverage for active non-system categories (done: `tests/validate_active_category_coverage.sh`)
 - Migrate useful history from `update_log.sh` into `CHANGELOG.md`
 
 ## P2

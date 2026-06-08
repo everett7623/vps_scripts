@@ -7,7 +7,7 @@ This file captures the current high-priority review findings and follow-up direc
 ### High
 
 - `vps_scripts.sh` still contains many direct third-party `curl | bash` and `wget ... | bash` flows without a first-party safety wrapper.
-- Several installer and update scripts still rely on `eval` for command execution, especially in system update and large service installation flows.
+- Several large service installation flows still rely on `eval` or remote installer one-liners; system update and the primary launcher path have been reduced.
 - Some legacy scripts use predictable `/tmp` filenames and cleanup paths that would benefit from stricter temp-file handling.
 
 ### Medium
@@ -28,6 +28,8 @@ This file captures the current high-priority review findings and follow-up direc
 - Reworked dependency installer structure and reporting
 - Added launcher path validation test
 - Added baseline project documentation
+- Added launcher coverage tests for system tools, service installs, and active non-system categories
+- Added execution-safety, UI-framework, and loader-performance regression tests
 
 ## Next Recommended Review Targets
 
