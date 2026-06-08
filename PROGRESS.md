@@ -27,6 +27,7 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Tuned download and public-IP probe timeouts so network failures return faster
 - Added `tests/validate_loader_performance.sh` to prevent loader-speed regressions
 - Added active-category launcher coverage for network, performance, other-tools, and uninstall menus
+- Tightened launcher header links, menu detail columns, and system-info tables for cleaner terminal alignment
 - Created baseline project documentation set
 
 ## In Progress
@@ -38,6 +39,7 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Expanding shared UI conventions across remaining script categories
 - Improving module startup speed and slow-network behavior
 - Auditing framework guardrails before deeper category rewrites
+- Refining terminal layout consistency across launcher and system reports
 
 ## Not Started
 

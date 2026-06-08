@@ -75,9 +75,10 @@ draw_rule() {
 print_recommended_links() {
     local indent="${1:-}"
 
-    echo -e "${CYAN}${indent}论坛推荐:${RESET} ${COMMUNITY_URL}"
-    echo -e "${CYAN}${indent}VPS 推荐:${RESET} ${VPS_RECOMMEND_URL}"
-    echo -e "${CYAN}${indent}博客推荐:${RESET} ${BLOG_URL}"
+    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "GitHub 地址:" "${RESET}" "${PROJECT_URL}"
+    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "论坛推荐:" "${RESET}" "${COMMUNITY_URL}"
+    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "VPS 推荐:" "${RESET}" "${VPS_RECOMMEND_URL}"
+    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "博客推荐:" "${RESET}" "${BLOG_URL}"
 }
 
 print_header() {
@@ -90,7 +91,6 @@ print_header() {
         echo -e "${YELLOW}---------------------------------By'${PROJECT_AUTHOR}---------------------------------${RESET}"
         echo ""
         echo -e "${BOLD}${WHITE}VPS 脚本集合 ${PROJECT_VERSION}${RESET}  ${DIM}| 模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}${RESET}"
-        echo -e "${CYAN}GitHub 地址:${RESET} ${PROJECT_URL}"
         print_recommended_links
         echo ""
         echo -e "${GRADIENT_COLORS[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${RESET}"
@@ -107,7 +107,6 @@ print_header() {
         draw_rule 74 "$CYAN"
         echo -e "${BOLD}${WHITE}  VPS 脚本集合 ${PROJECT_VERSION}${RESET}"
         echo -e "${CYAN}  作者:${RESET} ${PROJECT_AUTHOR}  ${DIM}| 模块化启动器 ${LAUNCHER_STYLE_VERSION}${RESET}"
-        echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
         print_recommended_links "  "
         draw_rule 74 "$CYAN"
     fi
@@ -152,8 +151,8 @@ print_menu_item() {
     local key="${1}"
     local label="${2}"
     local detail="${3:-}"
-    printf "%b%2s%b. %-24s" "${YELLOW}" "${key}" "${RESET}" "${label}"
-    [ -n "${detail}" ] && printf "%b%s%b" "${DIM}" "${detail}" "${RESET}"
+    printf "%b%2s%b. %-18s" "${YELLOW}" "${key}" "${RESET}" "${label}"
+    [ -n "${detail}" ] && printf "%b│ %s%b" "${DIM}" "${detail}" "${RESET}"
     printf "\n"
 }
 

@@ -26,8 +26,9 @@ else
     print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
     print_error() { print_msg "${RED}" "[错误] $1"; }
     print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
-    print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 30 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
+    print_header() { echo ""; print_separator "=" 80; printf "%b%-80s%b\n" "${BOLD}${WHITE}" "  $1" "${NC}"; printf "%b%-80s%b\n" "${CYAN}" "  系统盘点 | 只读检查 | 对齐输出" "${NC}"; print_separator "=" 80; echo ""; }
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
+    print_key_value() { printf "%b  %-12s%b %s\n" "${CYAN}" "${1}:" "${NC}" "${2:-}"; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     get_public_ip() { echo "unavailable"; }
 fi
@@ -88,7 +89,12 @@ run_section() {
 print_kv() {
     local key="$1"
     local value="$2"
-    printf "%b%-18s%b %s\n" "${CYAN}" "${key}:" "${NC}" "${value}"
+
+    if command_exists print_key_value 2>/dev/null; then
+        print_key_value "${key}" "${value}"
+    else
+        printf "%b  %-12s%b %s\n" "${CYAN}" "${key}:" "${NC}" "${value}"
+    fi
 }
 
 read_os_name() {
@@ -215,9 +221,9 @@ get_disk_details() {
     local total_line=""
 
     print_title "磁盘"
-    printf "%b%-16s %-10s %-10s %-10s %-7s %s%b\n" "${CYAN}" "挂载点" "容量" "已用" "可用" "使用率" "设备" "${NC}"
+    printf "%b  %-14s %-8s %-8s %-8s %-7s %s%b\n" "${CYAN}" "挂载点" "容量" "已用" "可用" "使用率" "设备" "${NC}"
 
-    df -hP 2>/dev/null | awk '$1 ~ "^/dev/" {printf "%-16s %-10s %-10s %-10s %-7s %s\n", $6, $2, $3, $4, $5, $1}'
+    df -hP 2>/dev/null | awk '$1 ~ "^/dev/" {printf "  %-14s %-8s %-8s %-8s %-7s %s\n", $6, $2, $3, $4, $5, $1}'
 
     if df --help 2>&1 | grep -q -- "--total"; then
         total_line=$(df -hP --total 2>/dev/null | awk '$1 == "total" {print $2 "|" $3 "|" $5}')
@@ -329,9 +335,9 @@ get_service_status() {
         if systemctl list-unit-files "${service}.service" >/dev/null 2>&1; then
             found_any=true
             if systemctl is-active --quiet "${service}"; then
-                printf "  [%b运行中%b] %s\n" "${GREEN}" "${NC}" "${service}"
+                printf "  %b%-10s%b %s\n" "${GREEN}" "[运行中]" "${NC}" "${service}"
             else
-                printf "  [%b已停止%b] %s\n" "${YELLOW}" "${NC}" "${service}"
+                printf "  %b%-10s%b %s\n" "${YELLOW}" "[已停止]" "${NC}" "${service}"
             fi
         fi
     done
@@ -347,7 +353,7 @@ get_user_details() {
     if command_exists last; then
         echo ""
         printf "%b最近登录:%b\n" "${CYAN}" "${NC}"
-        last -n 5 2>/dev/null | head -n 5 | awk 'NF >= 6 {printf "  %-12s %-18s %s %s %s\n", $1, $3, $4, $5, $6}'
+        last -n 5 2>/dev/null | head -n 5 | awk 'NF >= 6 {printf "  %-10s %-17s %-4s %-3s %s\n", $1, $3, $4, $5, $6}'
     fi
 }
 
