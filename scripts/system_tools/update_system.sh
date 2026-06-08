@@ -41,6 +41,8 @@ else
     print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
     print_error() { echo -e "${RED}[错误] $1${NC}"; }
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
+    print_key_value() { printf "%b%-14s%b %s\n" "${CYAN}" "${1}:" "${NC}" "${2:-}"; }
+    print_runtime_context() { print_key_value "脚本" "$1"; print_key_value "模式" "${2:-交互模式}"; [ -n "${3:-}" ] && print_key_value "日志" "$3"; echo ""; }
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
 fi
@@ -89,7 +91,7 @@ detect_system() {
             PKG_MANAGER="apk"
             UPDATE_CMD=(apk update)
             FULL_UPDATE_CMD=(apk upgrade)
-            CLEANUP_CMD=(sh -c 'rm -rf /var/cache/apk/*')
+            CLEANUP_CMD=()
             ;;
         arch|manjaro)
             PKG_MANAGER="pacman"
@@ -274,16 +276,24 @@ perform_update() {
 cleanup_system() {
     print_info "正在清理软件包残留..."
 
-    if run_logged_command "cleanup packages" "${CLEANUP_CMD[@]}"; then
-        print_success "软件包残留清理完成。"
-    else
-        print_warn "清理过程出现问题，请查看日志：${LOG_FILE}"
+    if [ ${#CLEANUP_CMD[@]} -gt 0 ]; then
+        if run_logged_command "cleanup packages" "${CLEANUP_CMD[@]}"; then
+            print_success "软件包残留清理完成。"
+        else
+            print_warn "清理过程出现问题，请查看日志：${LOG_FILE}"
+        fi
     fi
 
     if [ "${PKG_MANAGER}" = "apt" ]; then
         run_logged_command "apt autoclean" apt-get autoclean || true
     elif [ "${PKG_MANAGER}" = "yum" ] || [ "${PKG_MANAGER}" = "dnf" ]; then
         run_logged_command "${PKG_MANAGER} clean all" "${PKG_MANAGER}" clean all || true
+    elif [ "${PKG_MANAGER}" = "apk" ]; then
+        if find /var/cache/apk -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + 2>> "${LOG_FILE}"; then
+            print_success "apk 缓存清理完成。"
+        else
+            print_warn "apk 缓存清理出现问题，请查看日志：${LOG_FILE}"
+        fi
     fi
 }
 
@@ -345,6 +355,7 @@ main() {
 
     check_root
     print_header "系统更新工具"
+    print_runtime_context "update_system.sh" "系统更新" "${LOG_FILE}"
     detect_system
     check_network
     backup_configs

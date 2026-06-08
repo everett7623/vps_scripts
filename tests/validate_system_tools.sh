@@ -18,6 +18,8 @@ FILES=(
     "scripts/system_tools/set_timezone.sh"
     "scripts/system_tools/install_deps.sh"
     "scripts/system_tools/update_system.sh"
+    "scripts/system_tools/health_check.sh"
+    "scripts/system_tools/security_audit.sh"
 )
 
 for relative_path in "${FILES[@]}"; do

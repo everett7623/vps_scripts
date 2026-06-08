@@ -63,6 +63,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 - **系统优化** - 提供保守型内核参数、limits、swap 与 SSH 基线优化
 - **主机名管理** - 支持主机名修改、校验、备份、回滚
 - **时区管理** - 支持时区设置、NTP 配置与时间同步
+- **系统健康巡检** - 只读检查负载、内存、磁盘、服务、重启标记与网络连通
+- **安全基线巡检** - 只读检查 SSH、防火墙、Fail2ban、监听端口、账号与关键权限
 
 ### 网络测试
 - **IP 质量检测** - 检测 IP 信息、可用性与基础网络表现
@@ -245,7 +247,7 @@ version.json               版本与元数据
 ```
 
 当前脚本分类数量：
-- `system_tools`: 7
+- `system_tools`: 9
 - `network_test`: 5
 - `performance_test`: 4
 - `service_install`: 20
@@ -269,6 +271,7 @@ bash -n vps_scripts.sh
 LAUNCHER_OVERRIDE="$PWD/vps.sh" REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_launcher_paths.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 ```
 
 如果本机装有 `shellcheck`，建议在提交前补跑。

@@ -19,6 +19,8 @@ export LOG_LEVEL_INFO=1
 export LOG_LEVEL_WARN=2
 export LOG_LEVEL_ERROR=3
 export CURRENT_LOG_LEVEL=${CURRENT_LOG_LEVEL:-$LOG_LEVEL_INFO}
+export UI_WIDTH=${UI_WIDTH:-80}
+export UI_THEME=${UI_THEME:-neon-shell}
 
 print_msg() {
     local color="${1}"
@@ -44,17 +46,19 @@ print_error() {
 
 print_separator() {
     local char="${1:--}"
-    local width="${2:-80}"
+    local width="${2:-$UI_WIDTH}"
     local color="${3:-$BLUE}"
     echo -e "${color}$(printf '%*s' "$width" '' | tr ' ' "$char")${NC}"
 }
 
 print_header() {
-    local title=" $1 "
-    local width=80
+    local title="${1}"
+    local subtitle="${2:-模块化执行 | 安全校验 | ${UI_THEME}}"
+    local width="${3:-$UI_WIDTH}"
     echo ""
     print_separator "=" "$width" "$CYAN"
-    printf "%b%*s%s%b\n" "${BOLD}${WHITE}" $(( (width - ${#title}) / 2 )) "" "${title}" "${NC}"
+    printf "%b%-*s%b\n" "${BOLD}${WHITE}" "$width" "  ${title}" "${NC}"
+    printf "%b%-*s%b\n" "${CYAN}" "$width" "  ${subtitle}" "${NC}"
     print_separator "=" "$width" "$CYAN"
     echo ""
 }
@@ -62,7 +66,43 @@ print_header() {
 print_title() {
     echo ""
     echo -e "${BOLD}${YELLOW}>> $1${NC}"
-    print_separator "-" 80 "$BLUE"
+    print_separator "-" "$UI_WIDTH" "$BLUE"
+}
+
+print_key_value() {
+    local key="${1}"
+    local value="${2:-}"
+    printf "%b%-14s%b %s\n" "${CYAN}" "${key}:" "${NC}" "${value}"
+}
+
+print_step() {
+    local current="${1}"
+    local total="${2}"
+    local message="${3}"
+    printf "%b[%s/%s]%b %s\n" "${PURPLE}" "${current}" "${total}" "${NC}" "${message}"
+}
+
+print_status() {
+    local status="${1}"
+    local message="${2}"
+
+    case "${status}" in
+        ok|success) print_success "${message}" ;;
+        warn|warning) print_warn "${message}" ;;
+        error|fail) print_error "${message}" ;;
+        *) print_info "${message}" ;;
+    esac
+}
+
+print_runtime_context() {
+    local script_name="${1}"
+    local mode="${2:-交互模式}"
+    local log_file="${3:-}"
+
+    print_key_value "脚本" "${script_name}"
+    print_key_value "模式" "${mode}"
+    [ -n "${log_file}" ] && print_key_value "日志" "${log_file}"
+    echo ""
 }
 
 show_progress() {
@@ -422,6 +462,7 @@ trap 'graceful_exit 1 "Script interrupted."' INT TERM
 
 export -f print_msg print_info print_success print_warn print_error
 export -f print_separator print_header print_title
+export -f print_key_value print_step print_status print_runtime_context
 export -f show_progress wait_with_animation
 export -f check_root command_exists ensure_command
 export -f get_os_release get_os_version get_arch get_cpu_cores get_total_memory

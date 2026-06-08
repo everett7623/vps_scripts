@@ -31,6 +31,37 @@ INSTALL_PNPM=false
 INSTALL_PM2=false
 NVM_DIR="$HOME/.nvm"
 
+validate_node_version() {
+    if [[ ! "${NODE_VERSION}" =~ ^[0-9]+$ ]]; then
+        log_error "Node.js version must be a major version number, for example: 18, 20, or 22"
+        exit 1
+    fi
+
+    if [ "${NODE_VERSION}" -lt 10 ] || [ "${NODE_VERSION}" -gt 30 ]; then
+        log_error "Unsupported Node.js major version: ${NODE_VERSION}"
+        exit 1
+    fi
+}
+
+run_remote_installer() {
+    local url="${1}"
+    local installer=""
+
+    installer=$(mktemp "/tmp/nodejs-installer.XXXXXX") || {
+        log_error "无法创建临时安装脚本"
+        exit 1
+    }
+
+    if ! curl -fsSL "${url}" -o "${installer}"; then
+        rm -f -- "${installer}"
+        log_error "下载安装脚本失败: ${url}"
+        exit 1
+    fi
+
+    bash "${installer}"
+    rm -f -- "${installer}"
+}
+
 # 日志函数
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -141,7 +172,7 @@ install_nvm() {
     NVM_VERSION=$(curl -s https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
     
     # 下载并安装nvm
-    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
+    run_remote_installer "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh"
     
     # 添加nvm到环境变量
     export NVM_DIR="$HOME/.nvm"
@@ -189,13 +220,13 @@ install_nodejs_nodesource() {
     case $OS in
         ubuntu|debian)
             # 添加NodeSource仓库
-            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+            run_remote_installer "https://deb.nodesource.com/setup_${NODE_VERSION}.x"
             apt-get install -y nodejs
             ;;
             
         centos|rhel|fedora|almalinux|rocky)
             # 添加NodeSource仓库
-            curl -fsSL https://rpm.nodesource.com/setup_${NODE_VERSION}.x | bash -
+            run_remote_installer "https://rpm.nodesource.com/setup_${NODE_VERSION}.x"
             yum install -y nodejs
             ;;
     esac
@@ -224,7 +255,7 @@ install_nodejs_binary() {
     
     # 解压并安装
     tar -xf nodejs.tar.xz
-    cp -r ${FULL_VERSION}-linux-${ARCH}/* /usr/local/
+    cp -r "${FULL_VERSION}-linux-${ARCH}/"* /usr/local/
     
     # 创建软链接
     ln -sf /usr/local/bin/node /usr/bin/node
@@ -232,7 +263,8 @@ install_nodejs_binary() {
     ln -sf /usr/local/bin/npx /usr/bin/npx
     
     # 清理
-    rm -rf nodejs.tar.xz ${FULL_VERSION}-linux-${ARCH}
+    rm -f -- nodejs.tar.xz
+    rm -rf -- "${FULL_VERSION}-linux-${ARCH}"
     
     log_success "Node.js ${NODE_VERSION} 通过二进制文件安装完成"
 }
@@ -660,6 +692,8 @@ main() {
                 ;;
         esac
     done
+
+    validate_node_version
     
     # 显示脚本信息
     echo -e "${PURPLE}======================================${NC}"

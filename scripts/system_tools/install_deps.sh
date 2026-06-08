@@ -24,6 +24,9 @@ else
     print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
     print_error() { echo -e "${RED}[错误] $1${NC}"; }
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
+    print_key_value() { printf "%b%-14s%b %s\n" "${CYAN}" "${1}:" "${NC}" "${2:-}"; }
+    print_step() { printf "%b[%s/%s]%b %s\n" "${PURPLE}" "${1}" "${2}" "${NC}" "${3}"; }
+    print_runtime_context() { print_key_value "脚本" "$1"; print_key_value "模式" "${2:-交互模式}"; [ -n "${3:-}" ] && print_key_value "日志" "$3"; echo ""; }
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
 fi
@@ -222,16 +225,14 @@ install_pkg_list() {
 
     for package in "${to_install[@]}"; do
         current=$((current + 1))
-        echo -ne "\r${CYAN}[${current}/${total}]${NC} 正在安装 ${package} ..."
+        print_step "${current}" "${total}" "正在安装 ${package}"
         if install_one_package "$package"; then
             :
         else
-            echo ""
             print_error "安装失败：$package"
             failed+=("$package")
         fi
     done
-    echo ""
     echo ""
 
     if [ ${#failed[@]} -eq 0 ]; then
@@ -312,8 +313,8 @@ interactive_menu() {
     while true; do
         clear
         print_header "常用依赖安装向导"
-        echo -e "${CYAN}当前系统:${NC} $OS_TYPE ($PKG_MANAGER)"
-        echo -e "${CYAN}日志文件:${NC} $LOG_FILE"
+        print_runtime_context "install_deps.sh" "软件包安装" "${LOG_FILE}"
+        print_key_value "当前系统" "$OS_TYPE ($PKG_MANAGER)"
         echo ""
         echo "1. 安装基础工具"
         echo "2. 安装开发工具"
@@ -355,6 +356,12 @@ main() {
 
     check_root
     detect_package_manager
+    if [ -n "${1:-}" ]; then
+        print_header "常用依赖安装向导"
+        print_runtime_context "install_deps.sh" "软件包安装" "${LOG_FILE}"
+        print_key_value "当前系统" "$OS_TYPE ($PKG_MANAGER)"
+        echo ""
+    fi
 
     case "${1:-}" in
         --basic)

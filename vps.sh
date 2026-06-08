@@ -116,6 +116,19 @@ print_panel_title() {
     draw_rule 74 "$PURPLE"
 }
 
+print_runtime_kv() {
+    local key="${1}"
+    local value="${2:-}"
+    printf "%b%-12s%b %s\n" "${CYAN}" "${key}:" "${RESET}" "${value}"
+}
+
+print_runtime_step() {
+    local current="${1}"
+    local total="${2}"
+    local message="${3}"
+    printf "%b[%s/%s]%b %s\n" "${PURPLE}" "${current}" "${total}" "${RESET}" "${message}"
+}
+
 print_status_line() {
     echo -e "${DIM}下载工具:${RESET} ${DOWNLOAD_TOOL}  ${DIM}| 启动器:${RESET} 模块化  ${DIM}| 主题:${RESET} neon-shell"
     echo ""
@@ -284,9 +297,12 @@ run_repo_script() {
 
     print_header
     print_panel_title "官方模块"
-    echo -e "${WHITE}> ${script_rel_path}${RESET}"
+    print_runtime_kv "模块路径" "${script_rel_path}"
+    print_runtime_kv "运行模式" "临时隔离目录"
+    print_runtime_kv "安全校验" "路径校验 + bash -n"
     echo ""
 
+    print_runtime_step 1 4 "校验模块路径"
     if ! is_safe_repo_path "${script_rel_path}"; then
         echo -e "${RED}[错误] 仓库脚本路径无效。${RESET}"
         pause_for_menu
@@ -300,6 +316,7 @@ run_repo_script() {
     }
     script_file="${temp_root}/${script_rel_path}"
 
+    print_runtime_step 2 4 "初始化运行目录"
     if ! mkdir -p "$(dirname "${script_file}")" "${temp_root}/lib" "${temp_root}/config"; then
         rm -rf "${temp_root}"
         echo -e "${RED}[错误] 初始化模块运行目录失败。${RESET}"
@@ -307,6 +324,7 @@ run_repo_script() {
         return 1
     fi
 
+    print_runtime_step 3 4 "下载模块与公共依赖"
     if ! download_repo_file "${script_rel_path}" "${script_file}" ||
        ! download_repo_file "lib/common_functions.sh" "${temp_root}/lib/common_functions.sh" ||
        ! download_repo_file "config/vps_scripts.conf" "${temp_root}/config/vps_scripts.conf"; then
@@ -317,11 +335,16 @@ run_repo_script() {
         return 1
     fi
 
+    print_runtime_step 4 4 "执行模块"
+    echo ""
     bash "${script_file}" || exit_code=$?
     if [ "${exit_code}" -ne 0 ]; then
         echo ""
         echo -e "${RED}[错误] 模块执行失败。${RESET}"
         echo -e "${DIM}退出码: ${exit_code} | 模块: ${script_rel_path}${RESET}"
+    else
+        echo ""
+        echo -e "${GREEN}[完成] 模块执行结束。${RESET}"
     fi
 
     rm -rf "${temp_root}"
@@ -372,6 +395,7 @@ run_remote_script_url() {
 run_remote_command() {
     local command_to_run="${1}"
     local description="${2:-third-party command}"
+    local temp_file=""
 
     print_header
     print_panel_title "第三方命令"
@@ -385,7 +409,24 @@ run_remote_command() {
         return 0
     fi
 
-    eval "${command_to_run}"
+    temp_file=$(mktemp "/tmp/vps_remote_command.XXXXXX") || {
+        echo -e "${RED}[错误] 创建临时命令文件失败。${RESET}"
+        pause_for_menu
+        return 1
+    }
+
+    {
+        printf '%s\n' '#!/bin/bash'
+        printf '%s\n' 'set -e'
+        printf '%s\n' "${command_to_run}"
+    } > "${temp_file}"
+
+    if ! bash "${temp_file}"; then
+        echo ""
+        echo -e "${RED}[错误] 第三方命令执行失败。${RESET}"
+    fi
+
+    rm -f "${temp_file}"
     pause_for_menu
 }
 
@@ -401,9 +442,11 @@ system_tools_menu() {
         print_menu_item 5 "优化系统参数" "内核与运行参数调优"
         print_menu_item 6 "修改主机名" "更新服务器名称"
         print_menu_item 7 "设置系统时区" "时钟与时区同步"
+        print_menu_item 8 "系统健康巡检" "负载、磁盘、内存与服务"
+        print_menu_item 9 "安全基线巡检" "SSH、防火墙、端口与账号"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-7]: " choice
+        read -r -p "请选择 [0-9]: " choice
 
         case "${choice}" in
             1) run_repo_script "scripts/system_tools/system_info.sh" ;;
@@ -413,6 +456,8 @@ system_tools_menu() {
             5) run_repo_script "scripts/system_tools/optimize_system.sh" ;;
             6) run_repo_script "scripts/system_tools/change_hostname.sh" ;;
             7) run_repo_script "scripts/system_tools/set_timezone.sh" ;;
+            8) run_repo_script "scripts/system_tools/health_check.sh" ;;
+            9) run_repo_script "scripts/system_tools/security_audit.sh" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
