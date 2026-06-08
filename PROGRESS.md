@@ -23,6 +23,9 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Added shared UI helpers for key-value rows, step display, status output, and runtime context
 - Updated the launcher module runtime panel to show path validation, isolated runtime, dependency download, and execution stages
 - Aligned `install_deps.sh` and `update_system.sh` with the shared runtime context display while preserving existing behavior
+- Added launcher local-file fast path for cloned-repo runs and parallel loading for module dependencies
+- Tuned download and public-IP probe timeouts so network failures return faster
+- Added `tests/validate_loader_performance.sh` to prevent loader-speed regressions
 - Created baseline project documentation set
 
 ## In Progress
@@ -32,6 +35,7 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Defining follow-up targets for update, install, and shared library hardening
 - Reviewing remaining service-install scripts in priority order from `TASKS.md`
 - Expanding shared UI conventions across remaining script categories
+- Improving module startup speed and slow-network behavior
 
 ## Not Started
 

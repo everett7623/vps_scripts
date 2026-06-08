@@ -15,6 +15,9 @@ COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
 BLOG_URL="https://seedloc.com"
 LAUNCHER_STYLE_VERSION="2026.06"
+LOCAL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')"
+DOWNLOAD_CONNECT_TIMEOUT="${VPS_DOWNLOAD_CONNECT_TIMEOUT:-6}"
+DOWNLOAD_MAX_TIME="${VPS_DOWNLOAD_MAX_TIME:-60}"
 REPO_DOWNLOAD_BASES=(
     "https://raw.githubusercontent.com/everett7623/vps_scripts/main"
     "https://github.com/everett7623/vps_scripts/raw/refs/heads/main"
@@ -165,10 +168,10 @@ download_file_with_tool() {
 
     case "${DOWNLOAD_TOOL}" in
         curl)
-            curl -fsSL --connect-timeout 10 --max-time 120 "${url}" -o "${output}"
+            curl -fsSL --connect-timeout "${DOWNLOAD_CONNECT_TIMEOUT}" --max-time "${DOWNLOAD_MAX_TIME}" "${url}" -o "${output}"
             ;;
         wget)
-            wget -q --timeout=120 -O "${output}" "${url}"
+            wget -q --timeout="${DOWNLOAD_MAX_TIME}" -O "${output}" "${url}"
             ;;
         *)
             return 1
@@ -176,11 +179,30 @@ download_file_with_tool() {
     esac
 }
 
+copy_local_repo_file() {
+    local relative_path="${1}"
+    local output="${2}"
+    local source_file=""
+
+    [ -n "${LOCAL_REPO_ROOT}" ] || return 1
+    source_file="${LOCAL_REPO_ROOT}/${relative_path}"
+
+    if [ -f "${source_file}" ] && cp "${source_file}" "${output}" && bash -n "${output}" 2>/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
 download_repo_file() {
     local relative_path="${1}"
     local output="${2}"
     local base_url=""
     local attempt=0
+
+    if copy_local_repo_file "${relative_path}" "${output}"; then
+        return 0
+    fi
 
     for base_url in "${REPO_DOWNLOAD_BASES[@]}"; do
         for attempt in 1 2; do
@@ -190,10 +212,40 @@ download_repo_file() {
                bash -n "${output}" 2>/dev/null; then
                 return 0
             fi
-            sleep "${attempt}"
+            [ "${attempt}" -lt 2 ] && sleep 1
         done
     done
 
+    return 1
+}
+
+download_repo_bundle() {
+    local script_rel_path="${1}"
+    local script_file="${2}"
+    local runtime_root="${3}"
+    local status_dir=""
+    local script_status=""
+    local lib_status=""
+    local config_status=""
+
+    status_dir=$(mktemp -d "/tmp/vps_download_status.XXXXXX") || return 1
+    script_status="${status_dir}/script"
+    lib_status="${status_dir}/lib"
+    config_status="${status_dir}/config"
+
+    (download_repo_file "${script_rel_path}" "${script_file}"; echo $? > "${script_status}") &
+    (download_repo_file "lib/common_functions.sh" "${runtime_root}/lib/common_functions.sh"; echo $? > "${lib_status}") &
+    (download_repo_file "config/vps_scripts.conf" "${runtime_root}/config/vps_scripts.conf"; echo $? > "${config_status}") &
+    wait
+
+    if [ "$(cat "${script_status}" 2>/dev/null || echo 1)" -eq 0 ] &&
+       [ "$(cat "${lib_status}" 2>/dev/null || echo 1)" -eq 0 ] &&
+       [ "$(cat "${config_status}" 2>/dev/null || echo 1)" -eq 0 ]; then
+        rm -rf "${status_dir}"
+        return 0
+    fi
+
+    rm -rf "${status_dir}"
     return 1
 }
 
@@ -300,6 +352,8 @@ run_repo_script() {
     print_runtime_kv "模块路径" "${script_rel_path}"
     print_runtime_kv "运行模式" "临时隔离目录"
     print_runtime_kv "安全校验" "路径校验 + bash -n"
+    [ -n "${LOCAL_REPO_ROOT}" ] && [ -f "${LOCAL_REPO_ROOT}/${script_rel_path}" ] &&
+        print_runtime_kv "加载来源" "本地仓库优先，远程备用"
     echo ""
 
     print_runtime_step 1 4 "校验模块路径"
@@ -324,10 +378,8 @@ run_repo_script() {
         return 1
     fi
 
-    print_runtime_step 3 4 "下载模块与公共依赖"
-    if ! download_repo_file "${script_rel_path}" "${script_file}" ||
-       ! download_repo_file "lib/common_functions.sh" "${temp_root}/lib/common_functions.sh" ||
-       ! download_repo_file "config/vps_scripts.conf" "${temp_root}/config/vps_scripts.conf"; then
+    print_runtime_step 3 4 "并发加载模块与公共依赖"
+    if ! download_repo_bundle "${script_rel_path}" "${script_file}" "${temp_root}"; then
         rm -rf "${temp_root}"
         echo -e "${RED}[错误] 下载模块失败。${RESET}"
         echo -e "${DIM}已尝试 GitHub Raw、GitHub 备用路径与 jsDelivr。${RESET}"

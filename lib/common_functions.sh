@@ -238,7 +238,8 @@ get_total_memory() {
 
 get_public_ip() {
     local ip_version="${1:-4}"
-    local timeout="${2:-5}"
+    local timeout="${2:-3}"
+    local connect_timeout="${VPS_CONNECT_TIMEOUT:-2}"
     local ip=""
 
     command_exists curl || {
@@ -247,13 +248,13 @@ get_public_ip() {
     }
 
     if [ "${ip_version}" = "4" ]; then
-        ip=$(curl -fsS -4 --max-time "${timeout}" ifconfig.me 2>/dev/null || \
-             curl -fsS -4 --max-time "${timeout}" ip.sb 2>/dev/null || \
-             curl -fsS -4 --max-time "${timeout}" icanhazip.com 2>/dev/null)
+        ip=$(curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ifconfig.me 2>/dev/null || \
+             curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ip.sb 2>/dev/null || \
+             curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" icanhazip.com 2>/dev/null)
     else
-        ip=$(curl -fsS -6 --max-time "${timeout}" ifconfig.me 2>/dev/null || \
-             curl -fsS -6 --max-time "${timeout}" ip.sb 2>/dev/null || \
-             curl -fsS -6 --max-time "${timeout}" icanhazip.com 2>/dev/null)
+        ip=$(curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ifconfig.me 2>/dev/null || \
+             curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ip.sb 2>/dev/null || \
+             curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" icanhazip.com 2>/dev/null)
     fi
 
     echo "${ip:-unavailable}"
@@ -273,7 +274,8 @@ check_port() {
 test_url() {
     local url="${1}"
     local timeout="${2:-5}"
-    curl -fsSIL --max-time "${timeout}" "${url}" >/dev/null 2>&1
+    local connect_timeout="${VPS_CONNECT_TIMEOUT:-2}"
+    curl -fsSIL --connect-timeout "${connect_timeout}" --max-time "${timeout}" "${url}" >/dev/null 2>&1
 }
 
 safe_mkdir() {
@@ -298,12 +300,12 @@ download_file() {
     local i=1
 
     while [ "${i}" -le "${retries}" ]; do
-        if curl -fsSL --max-time "${timeout}" "${url}" -o "${output}"; then
+        if curl -fsSL --connect-timeout "${VPS_CONNECT_TIMEOUT:-2}" --max-time "${timeout}" "${url}" -o "${output}"; then
             print_success "已下载 $(basename "${output}")"
             return 0
         fi
         print_warn "下载失败（${i}/${retries}）：${url}"
-        sleep 2
+        [ "${i}" -lt "${retries}" ] && sleep 1
         i=$((i + 1))
     done
 

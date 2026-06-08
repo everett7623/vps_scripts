@@ -17,6 +17,7 @@ All notable changes to this repository should be documented here.
 - Added `tests/validate_execution_safety.sh` to guard launcher and system-update execution patterns
 - Added shared UI helpers and a runtime context display for modernized modules
 - Added `tests/validate_ui_framework.sh` to keep the shared UI helper layer present
+- Added `tests/validate_loader_performance.sh` to protect loader speed optimizations
 - Refreshed core project documentation and contributor guidance
 
 ### Fixed
@@ -26,6 +27,7 @@ All notable changes to this repository should be documented here.
 - Hardened `scripts/service_install/nodejs.sh` by validating the Node.js major version and downloading remote installer scripts to temporary files before execution
 - Removed avoidable `eval` usage from third-party launcher command execution and avoided `sh -c` in Alpine update cleanup
 - Improved official module launch output with staged status lines while preserving the classic header and recommended links
+- Improved module startup speed with local cloned-repo loading, parallel dependency downloads, and shorter failed-network waits
 
 ## 2.6.0 - 2026-01-20
 

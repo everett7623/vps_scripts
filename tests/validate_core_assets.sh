@@ -87,6 +87,7 @@ main() {
     require_file "tests/validate_system_tools_launcher.sh"
     require_file "tests/validate_execution_safety.sh"
     require_file "tests/validate_ui_framework.sh"
+    require_file "tests/validate_loader_performance.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"

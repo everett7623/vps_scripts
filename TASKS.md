@@ -18,6 +18,7 @@
 ## P2
 
 - Normalize logging conventions across modules (in progress: shared UI/runtime helpers added)
+- Optimize module loading speed and slow-network behavior (in progress: local fast path and parallel module bundle loading added)
 - Standardize script headers and encoding
 - Add more non-interactive safety flags where appropriate
 - Review `update_scripts/` and determine whether those scripts still belong in the active architecture
