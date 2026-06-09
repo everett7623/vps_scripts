@@ -30,6 +30,7 @@ All notable changes to this repository should be documented here.
 - Improved official module launch output with staged status lines while preserving the classic header and recommended links
 - Improved module startup speed with local cloned-repo loading, parallel dependency downloads, and shorter failed-network waits
 - Improved launcher link/menu alignment and system-info report table spacing
+- Fixed launcher menu handling when stdin reaches EOF in non-interactive runs
 
 ## 2.6.0 - 2026-01-20
 

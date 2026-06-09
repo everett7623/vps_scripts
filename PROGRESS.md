@@ -28,6 +28,8 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Added `tests/validate_loader_performance.sh` to prevent loader-speed regressions
 - Added active-category launcher coverage for network, performance, other-tools, and uninstall menus
 - Tightened launcher header links, menu detail columns, and system-info tables for cleaner terminal alignment
+- Fixed launcher menu EOF handling so non-interactive runs do not loop on invalid choices
+- Added `tests/validate_menu_eof.sh` to prevent stdin EOF regressions
 - Created baseline project documentation set
 
 ## In Progress

@@ -147,6 +147,20 @@ invalid_choice() {
     sleep 1
 }
 
+read_menu_choice() {
+    local prompt="${1}"
+
+    MENU_CHOICE=""
+    if ! read -r -p "${prompt}" MENU_CHOICE; then
+        echo ""
+        echo -e "${YELLOW}[提示] 输入已结束，返回上级菜单。${RESET}"
+        sleep 1
+        return 1
+    fi
+
+    return 0
+}
+
 print_menu_item() {
     local key="${1}"
     local label="${2}"
@@ -497,7 +511,8 @@ system_tools_menu() {
         print_menu_item 9 "安全基线巡检" "SSH、防火墙、端口与账号"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-9]: " choice
+        read_menu_choice "请选择 [0-9]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/system_tools/system_info.sh" ;;
@@ -529,7 +544,8 @@ network_test_menu() {
         echo ""
         echo -e "${DIM}更多第三方检测工具可在“社区脚本”菜单中使用。${RESET}"
         echo ""
-        read -r -p "请选择 [0-5]: " choice
+        read_menu_choice "请选择 [0-5]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/network_test/backhaul_route_test.sh" ;;
@@ -554,7 +570,8 @@ performance_test_menu() {
         print_menu_item 4 "网络吞吐测试" "iperf 类检测"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-4]: " choice
+        read_menu_choice "请选择 [0-4]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/performance_test/cpu_benchmark.sh" ;;
@@ -594,7 +611,8 @@ service_install_menu() {
         print_menu_item 20 "Kubernetes" "集群环境"
         print_menu_item 0  "返回"
         echo ""
-        read -r -p "请选择 [0-20]: " choice
+        read_menu_choice "请选择 [0-20]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/service_install/docker.sh" ;;
@@ -644,7 +662,8 @@ community_menu() {
         print_menu_item 14 "超售检测" "内存压力测试"
         print_menu_item 0  "返回"
         echo ""
-        read -r -p "请选择 [0-14]: " choice
+        read_menu_choice "请选择 [0-14]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
@@ -679,7 +698,8 @@ proxy_tools_menu() {
         print_menu_item 5 "xeefei 3x-ui" "第三方社区脚本"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-5]: " choice
+        read_menu_choice "请选择 [0-5]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh" "yonggekkk sing-box" ;;
@@ -705,7 +725,8 @@ other_tools_menu() {
         print_menu_item 5 "哪吒清理工具" "第三方清理脚本"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-5]: " choice
+        read_menu_choice "请选择 [0-5]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/other_tools/bbr.sh" ;;
@@ -740,7 +761,8 @@ command_setup_menu() {
         print_menu_item 2 "移除快捷命令" "仅删除启动快捷方式"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-2]: " choice
+        read_menu_choice "请选择 [0-2]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) install_vps_command; pause_for_menu ;;
@@ -762,7 +784,8 @@ uninstall_menu() {
         print_menu_item 4 "完整卸载" "深度清理流程"
         print_menu_item 0 "返回"
         echo ""
-        read -r -p "请选择 [0-4]: " choice
+        read_menu_choice "请选择 [0-4]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/uninstall_scripts/clean_service_residues.sh" ;;
@@ -796,7 +819,8 @@ main_menu() {
         echo ""
         echo -e "${DIM}官方模块会先安全下载到临时文件，通过检查后再执行。${RESET}"
         echo ""
-        read -r -p "请选择 [0-10]: " choice
+        read_menu_choice "请选择 [0-10]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) system_tools_menu ;;
