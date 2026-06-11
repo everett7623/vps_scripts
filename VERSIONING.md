@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `2.6.0`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `2.7.0`.
 
 ## Recommended Policy
 

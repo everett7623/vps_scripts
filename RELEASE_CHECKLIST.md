@@ -24,8 +24,16 @@
 
 ## Packaging And Metadata
 
-- Update `version.json`
-- Verify release date and changelog URL
+Bump the version number in ALL of these files (grep `2\.[0-9]\.[0-9]` to find every occurrence):
+
+- `version.json` — `version` + `release_date`
+- `config/vps_scripts.conf` — `SCRIPT_VERSION`
+- `vps.sh` — `PROJECT_VERSION`
+- `README.md` — version badge URL
+- `CLAUDE.md` — version reference in "Version metadata" section
+- `VERSIONING.md` — active version listed in "Current State"
+
+Then verify: `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh` (enforces version.json ↔ config match)
 - Regenerate any checksums if release workflow uses them
 
 ## Final Sanity Check
