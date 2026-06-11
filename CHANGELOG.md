@@ -4,6 +4,8 @@ All notable changes to this repository should be documented here.
 
 ## Unreleased
 
+## 2.7.0 - 2026-06-12
+
 ### Added
 
 - Added **Hysteria2** installer to Proxy Tools menu (`vps.sh` menu item 6) via `run_remote_script_url`
