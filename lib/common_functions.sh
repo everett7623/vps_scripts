@@ -319,12 +319,21 @@ read_config() {
     local default="${3}"
     local value=""
 
+    if ! is_valid_identifier "${key}"; then
+        print_error "Invalid config key: ${key}"
+        return 1
+    fi
+
     if [ ! -f "${config_file}" ]; then
         echo "${default}"
         return 0
     fi
 
-    value=$(grep -m1 "^${key}=" "${config_file}" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+    value=$(awk -F= -v k="${key}" '$1 == k {sub(/^[^=]*=/, ""); print; exit}' "${config_file}")
+    case "${value}" in
+        \"*\") value="${value#\"}"; value="${value%\"}" ;;
+        \'*\') value="${value#\'}"; value="${value%\'}" ;;
+    esac
     echo "${value:-$default}"
 }
 
@@ -335,22 +344,39 @@ write_config() {
     local config_dir=""
     local temp_file=""
 
+    if ! is_valid_identifier "${key}"; then
+        print_error "Invalid config key: ${key}"
+        return 1
+    fi
+
     config_dir=$(dirname "${config_file}")
     safe_mkdir "${config_dir}"
     [ -f "${config_file}" ] || touch "${config_file}"
 
-    temp_file=$(mktemp "/tmp/vps_config.XXXXXX") || {
+    temp_file=$(mktemp "${config_dir}/.vps_config.XXXXXX") || {
         print_error "创建临时配置文件失败。"
         return 1
     }
 
-    if grep -q "^${key}=" "${config_file}"; then
-        awk -v k="${key}" -v v="${value}" 'BEGIN { updated=0 } $0 ~ ("^" k "=") { print k "=" v; updated=1; next } { print } END { if (!updated) print k "=" v }' \
-            "${config_file}" > "${temp_file}" && mv "${temp_file}" "${config_file}"
+    if ! awk -F= -v k="${key}" -v v="${value}" '
+        BEGIN { updated=0 }
+        $1 == k { print k "=" v; updated=1; next }
+        { print }
+        END { if (!updated) print k "=" v }
+    ' "${config_file}" > "${temp_file}"; then
+        rm -f -- "${temp_file}"
+        return 1
+    fi
+
+    if command_exists chmod && chmod --reference="${config_file}" "${temp_file}" 2>/dev/null; then
+        :
     else
-        cat "${config_file}" > "${temp_file}"
-        printf '%s=%s\n' "${key}" "${value}" >> "${temp_file}"
-        mv "${temp_file}" "${config_file}"
+        chmod 600 "${temp_file}" 2>/dev/null || true
+    fi
+
+    if ! mv -f -- "${temp_file}" "${config_file}"; then
+        rm -f -- "${temp_file}"
+        return 1
     fi
 }
 
@@ -436,10 +462,15 @@ cleanup_temp_files() {
 
     case "${temp_dir}" in
         /tmp/*|/var/tmp/*)
+            if [ -L "${temp_dir}" ]; then
+                print_warn "Refusing to clean a symbolic-link temp path: ${temp_dir}"
+                return 1
+            fi
             [ -d "${temp_dir}" ] && rm -rf -- "${temp_dir}"
             ;;
         *)
             print_warn "跳过非预期临时目录的清理：${temp_dir}"
+            return 1
             ;;
     esac
 }

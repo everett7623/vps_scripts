@@ -15,6 +15,8 @@
 # 更新日期: 2025-06-22
 #==============================================================================
 
+set -euo pipefail
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -41,6 +43,74 @@ GOPATH="$HOME/go"
 # 记录日志
 log() {
     echo -e "${1}" | tee -a "${LOG_FILE}"
+}
+
+error_exit() {
+    log "${RED}错误: $1${NC}"
+    exit 1
+}
+
+download_to_temp() {
+    local url="$1"
+    local temp_file=""
+
+    temp_file=$(mktemp "/tmp/go-download.XXXXXX")
+    if ! curl -fsSL "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+
+    printf '%s\n' "$temp_file"
+}
+
+validate_go_version() {
+    local version="$1"
+
+    [[ "$version" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]
+}
+
+validate_install_path() {
+    local path="$1"
+
+    [[ "$path" == /* ]] || return 1
+    [[ "$path" != "/" ]] || return 1
+    [[ "$path" != *".."* ]] || return 1
+    [[ "$path" =~ ^/[A-Za-z0-9._/-]+$ ]]
+}
+
+validate_inputs() {
+    if [[ -n "$GO_VERSION" ]] && ! validate_go_version "$GO_VERSION"; then
+        error_exit "Go版本格式无效: $GO_VERSION"
+    fi
+
+    if ! validate_install_path "$INSTALL_PATH"; then
+        error_exit "安装路径必须是安全的绝对路径: $INSTALL_PATH"
+    fi
+}
+
+safe_remove_go_tree() {
+    local target="${INSTALL_PATH%/}/go"
+
+    if [[ "$target" == "/go" ]] || [[ "$target" != /*/go ]]; then
+        error_exit "拒绝删除异常Go目录: $target"
+    fi
+
+    if [[ -d "$target" ]]; then
+        rm -rf -- "$target"
+    fi
+}
+
+run_remote_installer() {
+    local url="$1"
+    shift
+    local installer_file=""
+
+    installer_file=$(download_to_temp "$url") || return 1
+    if ! sh "$installer_file" "$@"; then
+        rm -f -- "$installer_file"
+        return 1
+    fi
+    rm -f -- "$installer_file"
 }
 
 # 显示标题
@@ -82,8 +152,7 @@ show_help() {
 # 检查是否为root用户
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        log "${RED}错误: 此脚本需要root权限运行${NC}"
-        exit 1
+        error_exit "此脚本需要root权限运行"
     fi
 }
 
@@ -97,8 +166,7 @@ detect_system() {
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)
     else
-        log "${RED}错误: 无法检测系统类型${NC}"
-        exit 1
+        error_exit "无法检测系统类型"
     fi
     
     # 检测系统架构
@@ -117,8 +185,7 @@ detect_system() {
             GO_ARCH="armv6l"
             ;;
         *)
-            log "${RED}错误: 不支持的系统架构 ${ARCH}${NC}"
-            exit 1
+            error_exit "不支持的系统架构 ${ARCH}"
             ;;
     esac
     
@@ -138,8 +205,7 @@ install_dependencies() {
             yum install -y wget curl git gcc make
             ;;
         *)
-            log "${RED}错误: 不支持的系统类型 ${OS}${NC}"
-            exit 1
+            error_exit "不支持的系统类型 ${OS}"
             ;;
     esac
     
@@ -152,7 +218,7 @@ check_go_installed() {
         local current_version=$(go version | awk '{print $3}' | sed 's/go//')
         if [[ "$FORCE_INSTALL" = false ]]; then
             log "${YELLOW}检测到已安装的Go版本: ${current_version}${NC}"
-            read -p "是否继续安装? (y/n): " -n 1 -r
+            read -r -p "是否继续安装? (y/n): " -n 1
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
                 log "${YELLOW}安装已取消${NC}"
@@ -167,7 +233,8 @@ get_latest_go_version() {
     log "${CYAN}获取最新Go版本...${NC}"
     
     # 从官方API获取最新版本
-    local latest_version=$(curl -s https://go.dev/VERSION?m=text | head -1)
+    local latest_version
+    latest_version=$(curl -fsSL https://go.dev/VERSION?m=text | head -1 || true)
     
     if [[ -z "$latest_version" ]]; then
         # 如果获取失败，使用默认版本
@@ -185,6 +252,7 @@ install_go() {
     if [[ -z "$GO_VERSION" ]]; then
         get_latest_go_version
     fi
+    validate_inputs
     
     log "${CYAN}开始安装 Go ${GO_VERSION}...${NC}"
     
@@ -197,37 +265,42 @@ install_go() {
         "https://mirrors.aliyun.com/golang/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
     )
     
-    # 下载Go
-    cd /tmp
+    local work_dir=""
+    local archive_file=""
+    work_dir=$(mktemp -d "/tmp/go-install.XXXXXX")
+    archive_file="${work_dir}/go.tar.gz"
+
     log "${YELLOW}正在下载 Go ${GO_VERSION}...${NC}"
     
-    if ! wget -O go.tar.gz "$GO_DOWNLOAD_URL" 2>/dev/null; then
+    if ! wget -O "$archive_file" "$GO_DOWNLOAD_URL" 2>/dev/null; then
         log "${YELLOW}官方源下载失败，尝试镜像站点...${NC}"
         for mirror in "${MIRROR_URLS[@]}"; do
-            if wget -O go.tar.gz "$mirror" 2>/dev/null; then
+            if wget -O "$archive_file" "$mirror" 2>/dev/null; then
                 log "${GREEN}从镜像站点下载成功${NC}"
                 break
             fi
         done
     fi
     
-    if [[ ! -f go.tar.gz ]]; then
-        log "${RED}错误: Go下载失败${NC}"
-        exit 1
+    if [[ ! -s "$archive_file" ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "Go下载失败"
     fi
     
     # 清理旧版本
     if [[ -d "${INSTALL_PATH}/go" ]]; then
         log "${YELLOW}删除旧版本Go...${NC}"
-        rm -rf "${INSTALL_PATH}/go"
+        safe_remove_go_tree
     fi
     
     # 解压安装
     log "${YELLOW}正在安装 Go...${NC}"
-    tar -xzf go.tar.gz -C "${INSTALL_PATH}"
-    
-    # 清理下载文件
-    rm -f go.tar.gz
+    mkdir -p "$INSTALL_PATH"
+    if ! tar -xzf "$archive_file" -C "${INSTALL_PATH}"; then
+        rm -rf -- "$work_dir"
+        error_exit "Go解压安装失败"
+    fi
+    rm -rf -- "$work_dir"
     
     log "${GREEN}Go ${GO_VERSION} 安装完成${NC}"
 }
@@ -308,7 +381,7 @@ install_go_tools() {
     
     # 特殊处理golangci-lint（使用官方安装脚本）
     log "${YELLOW}使用官方脚本安装 golangci-lint...${NC}"
-    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" 2>/dev/null || true
+    run_remote_installer "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" -b "${GOPATH}/bin" 2>/dev/null || true
     
     log "${GREEN}Go开发工具安装完成${NC}"
 }
@@ -323,7 +396,9 @@ create_test_project() {
     cd "$TEST_DIR"
     
     # 创建go.mod
-    go mod init hello
+    if [[ ! -f go.mod ]]; then
+        go mod init hello
+    fi
     
     # 创建main.go
     cat > main.go << 'EOF'
@@ -379,8 +454,7 @@ verify_installation() {
             done
         fi
     else
-        log "${RED}错误: Go安装验证失败${NC}"
-        exit 1
+        error_exit "Go安装验证失败"
     fi
 }
 
@@ -452,6 +526,9 @@ main() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --version)
+                if [[ $# -lt 2 ]]; then
+                    error_exit "--version 需要版本参数"
+                fi
                 GO_VERSION="$2"
                 shift 2
                 ;;
@@ -464,6 +541,9 @@ main() {
                 shift
                 ;;
             --install-path)
+                if [[ $# -lt 2 ]]; then
+                    error_exit "--install-path 需要路径参数"
+                fi
                 INSTALL_PATH="$2"
                 shift 2
                 ;;
@@ -485,6 +565,7 @@ main() {
     
     # 显示标题
     show_title
+    validate_inputs
     
     # 检查root权限
     check_root

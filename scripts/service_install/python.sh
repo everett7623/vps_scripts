@@ -14,6 +14,9 @@
 #==============================================================================
 
 # 颜色定义
+set -u
+set -o pipefail
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -29,6 +32,52 @@ PYTHON_VERSION=""
 FORCE_INSTALL=false
 SCRIPT_VERSION="1.0.0"
 LOG_FILE="/tmp/python_install_$(date +%Y%m%d_%H%M%S).log"
+WORK_DIR=""
+
+cleanup_work_dir() {
+    if [[ -n "${WORK_DIR}" && -d "${WORK_DIR}" && ! -L "${WORK_DIR}" ]]; then
+        rm -rf -- "${WORK_DIR}"
+    fi
+}
+
+validate_inputs() {
+    case "${INSTALL_METHOD}" in
+        system|pyenv|source) ;;
+        *)
+            log "${RED}Error: invalid install method ${INSTALL_METHOD}${NC}"
+            exit 1
+            ;;
+    esac
+
+    if [[ -n "${PYTHON_VERSION}" && ! "${PYTHON_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        log "${RED}Error: Python version must use a full numeric form such as 3.11.7${NC}"
+        exit 1
+    fi
+}
+
+run_remote_installer() {
+    local url="${1}"
+    local installer=""
+
+    installer=$(mktemp "/tmp/python-installer.XXXXXX") || {
+        log "${RED}Error: unable to create a temporary installer${NC}"
+        return 1
+    }
+
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "${url}" -o "${installer}"; then
+        rm -f -- "${installer}"
+        log "${RED}Error: failed to download installer: ${url}${NC}"
+        return 1
+    fi
+
+    bash "${installer}"
+    rm -f -- "${installer}"
+}
+
+initialize_pyenv_path() {
+    export PYENV_ROOT="${HOME}/.pyenv"
+    export PATH="${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:${PATH}"
+}
 
 # 记录日志
 log() {
@@ -185,16 +234,13 @@ install_pyenv() {
     # 检查是否已安装pyenv
     if [[ -d "$HOME/.pyenv" ]] && [[ "$FORCE_INSTALL" = false ]]; then
         log "${YELLOW}pyenv已安装${NC}"
-        export PYENV_ROOT="$HOME/.pyenv"
-        export PATH="$PYENV_ROOT/bin:$PATH"
-        eval "$(pyenv init -)"
+        initialize_pyenv_path
     else
         # 安装pyenv
-        curl https://pyenv.run | bash
+        run_remote_installer "https://pyenv.run"
         
         # 配置环境变量
-        export PYENV_ROOT="$HOME/.pyenv"
-        export PATH="$PYENV_ROOT/bin:$PATH"
+        initialize_pyenv_path
         
         # 添加到shell配置文件
         for shell_rc in ~/.bashrc ~/.zshrc; do
@@ -202,12 +248,11 @@ install_pyenv() {
                 if ! grep -q 'pyenv init' "$shell_rc"; then
                     echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$shell_rc"
                     echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$shell_rc"
-                    echo 'eval "$(pyenv init -)"' >> "$shell_rc"
+                    echo 'export PATH="$PYENV_ROOT/shims:$PATH"' >> "$shell_rc"
                 fi
             fi
         done
         
-        eval "$(pyenv init -)"
     fi
     
     # 使用pyenv安装指定版本
@@ -236,8 +281,14 @@ install_from_source() {
     fi
     
     # 下载源码
-    cd /tmp
-    wget "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz"
+    WORK_DIR=$(mktemp -d "/tmp/python-build.XXXXXX") || {
+        log "${RED}Error: unable to create source build directory${NC}"
+        exit 1
+    }
+
+    cd "${WORK_DIR}"
+    wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" \
+        -O "Python-${PYTHON_VERSION}.tgz"
     
     if [[ ! -f "Python-${PYTHON_VERSION}.tgz" ]]; then
         log "${RED}错误: 下载Python源码失败${NC}"
@@ -256,13 +307,13 @@ install_from_source() {
                 --prefix=/usr/local
     
     # 编译并安装
-    make -j$(nproc)
+    make -j"$(nproc)"
     make altinstall
     
     # 创建软链接
-    major_version=$(echo $PYTHON_VERSION | cut -d. -f1,2)
-    ln -sf /usr/local/bin/python${major_version} /usr/local/bin/python3
-    ln -sf /usr/local/bin/pip${major_version} /usr/local/bin/pip3
+    major_version=$(echo "${PYTHON_VERSION}" | cut -d. -f1,2)
+    ln -sf "/usr/local/bin/python${major_version}" /usr/local/bin/python3
+    ln -sf "/usr/local/bin/pip${major_version}" /usr/local/bin/pip3
     
     # 更新动态链接库缓存
     echo "/usr/local/lib" > /etc/ld.so.conf.d/python.conf
@@ -270,7 +321,8 @@ install_from_source() {
     
     # 清理临时文件
     cd /
-    rm -rf /tmp/Python-${PYTHON_VERSION}*
+    cleanup_work_dir
+    WORK_DIR=""
 }
 
 # 安装Python包管理工具
@@ -348,10 +400,12 @@ main() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --method)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --method requires a value${NC}"; exit 1; }
                 INSTALL_METHOD="$2"
                 shift 2
                 ;;
             --version)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --version requires a value${NC}"; exit 1; }
                 PYTHON_VERSION="$2"
                 shift 2
                 ;;
@@ -370,6 +424,8 @@ main() {
                 ;;
         esac
     done
+
+    validate_inputs
     
     # 显示标题
     show_title
@@ -415,4 +471,5 @@ main() {
 }
 
 # 执行主函数
+trap cleanup_work_dir EXIT
 main "$@"

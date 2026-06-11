@@ -30,13 +30,38 @@ Repository stabilization and documentation alignment for the modular launcher pa
 - Tightened launcher header links, menu detail columns, and system-info tables for cleaner terminal alignment
 - Fixed launcher menu EOF handling so non-interactive runs do not loop on invalid choices
 - Added `tests/validate_menu_eof.sh` to prevent stdin EOF regressions
+- Hardened shared config helpers against regex-like keys and cross-filesystem replacement
+- Added symbolic-link protection to shared temporary-directory cleanup
+- Added `tests/validate_common_helpers.sh` for config and cleanup helper regression coverage
+- Defined `vps_scripts.sh` as a supported legacy-only compatibility handoff
+- Added `tests/validate_legacy_launcher_policy.sh` and legacy menu EOF handling
+- Hardened `scripts/service_install/python.sh` input, pyenv, and source-build execution paths
+- Added `tests/validate_python_installer_safety.sh`
+- Hardened `scripts/service_install/kubernetes.sh` input and worker join execution
+- Added `tests/validate_kubernetes_installer_safety.sh`
+- Hardened `scripts/service_install/docker.sh` download and removal paths
+- Added `tests/validate_docker_installer_safety.sh`
+- Hardened `scripts/service_install/go.sh` input validation, archive handling, and remote tool installation
+- Added `tests/validate_go_installer_safety.sh`
+- Hardened `scripts/service_install/java.sh` parameter validation and archive download handling
+- Added `tests/validate_java_installer_safety.sh`
+- Hardened `scripts/service_install/nginx.sh` repository key handling and source-build cleanup
+- Added `tests/validate_nginx_installer_safety.sh`
+- Completed `update_log.sh` handoff to canonical `CHANGELOG.md`
+- Added `tests/validate_update_log_handoff.sh`
+- Classified `scripts/update_scripts/` as inactive legacy/reference only
+- Added `tests/validate_update_scripts_legacy.sh`
+- Added repository line-ending policy for shell scripts, docs, metadata, and config files
+- Added `tests/validate_line_endings_policy.sh`
+- Added shell header, CRLF, and BOM validation for repository shell scripts
+- Completed the current script header and encoding guardrail pass
 - Created baseline project documentation set
 
 ## In Progress
 
 - Standardizing docs and release workflow around the modular path
 - Deepening system-tools diagnostics and launcher validation
-- Defining follow-up targets for update, install, and shared library hardening
+- Defining follow-up targets for update and install hardening
 - Reviewing remaining service-install scripts in priority order from `TASKS.md`
 - Expanding shared UI conventions across remaining script categories
 - Improving module startup speed and slow-network behavior
@@ -45,9 +70,7 @@ Repository stabilization and documentation alignment for the modular launcher pa
 
 ## Not Started
 
-- Review `common_functions.sh` helper safety and portability
-- Refresh `update_log.sh` or retire it in favor of `CHANGELOG.md`
-- Decide long-term status of `vps_scripts.sh`
+- Define the next high-risk install/update script review batch
 
 ## Success Criteria For Next Round
 

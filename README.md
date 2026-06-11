@@ -1,7 +1,7 @@
 # VPS Scripts - 多功能 VPS 脚本工具集
 
 > 当前主入口已恢复可用，推荐使用模块化启动器 `vps.sh`。
-> 兼容入口 `vps_scripts.sh` 仍然保留，方便老用户继续使用。
+> 兼容入口 `vps_scripts.sh` 以 legacy-only 状态保留，仅维护旧命令转交能力；新功能统一进入 `vps.sh` 和模块脚本。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
@@ -37,7 +37,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 
 ### 当前主线
 - `vps.sh` 已恢复为当前推荐主入口
-- `vps_scripts.sh` 作为兼容入口保留
+- `vps_scripts.sh` 作为受支持的 legacy-only 兼容入口保留，不再新增独立功能
 - 主框架、公共函数库和系统工具已完成一轮集中优化
 - 仓库已补充基础验证脚本，便于后续逐分类继续升级
 
@@ -150,7 +150,7 @@ vps
 ### 使用建议
 
 - 新环境优先使用 `vps.sh`
-- 老习惯或旧文档引用场景可继续使用 `vps_scripts.sh`
+- 老习惯或旧文档引用场景可继续使用 `vps_scripts.sh`，但新功能与修复优先进入 `vps.sh`
 - 涉及系统修改、软件安装、网络配置的功能建议先在可回滚环境中验证
 - 运行前尽量确认主机已具备 `bash`、`curl` 或 `wget`
 
@@ -239,10 +239,10 @@ scripts/
   service_install/         服务安装
   other_tools/             其他工具
   uninstall_scripts/       卸载脚本
-  update_scripts/          旧更新脚本
+  update_scripts/          旧更新脚本（仅历史参考，不在主入口启用）
 tests/                     仓库级校验脚本
 vps.sh                     主启动器
-vps_scripts.sh             兼容启动器
+vps_scripts.sh             legacy-only 兼容启动器
 version.json               版本与元数据
 ```
 
@@ -253,13 +253,13 @@ version.json               版本与元数据
 - `service_install`: 20
 - `other_tools`: 4
 - `uninstall_scripts`: 4
-- `update_scripts`: 4
+- `update_scripts`: 4 legacy scripts + 1 policy note
 
 ## 验证与维护
 
 ### 当前主框架状态
 - `vps.sh` 已作为主入口恢复可用
-- `vps_scripts.sh` 作为兼容入口保留
+- `vps_scripts.sh` 仅作为 legacy-only 转交入口保留
 - `lib/common_functions.sh`、`install_deps.sh`、`update_system.sh` 已完成一轮核心重构
 - `system_tools` 核心脚本已补上统一的语法校验链
 
@@ -298,8 +298,8 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 - 文档、版本元数据与发布检查流程已补齐一轮
 
 ### 查看完整历史
-- [CHANGELOG.md](CHANGELOG.md)：当前整理中的正式更新日志
-- [update_log.sh](update_log.sh)：兼容保留的旧更新记录查看脚本
+- [CHANGELOG.md](CHANGELOG.md)：正式更新日志
+- [update_log.sh](update_log.sh)：兼容查看器，会读取版本元数据并显示 `CHANGELOG.md` 摘要
 
 ## 开发与贡献
 
@@ -310,6 +310,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 - 进一步减少高风险远程执行模式
 - 提升 UTF-8 文档一致性与脚本可维护性
 - 增加更多 repo-local 验证脚本
+- 不再恢复 `update_scripts/` 到主菜单；如需复用其中逻辑，应迁移为新的窄范围模块并配套测试
 
 ### 贡献方式
 1. Fork 本仓库
@@ -334,7 +335,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 <details>
 <summary>Q: 现在应该用哪个入口？</summary>
 
-A: 优先使用 `vps.sh`。`vps_scripts.sh` 主要用于兼容旧使用方式。
+A: 优先使用 `vps.sh`。`vps_scripts.sh` 是受支持的 legacy-only 转交入口，不再承载独立功能。
 </details>
 
 <details>

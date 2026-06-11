@@ -39,11 +39,25 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+error_exit() {
+    log_error "$1"
+    exit 1
+}
+
+download_to_file() {
+    local url="$1"
+    local output="$2"
+
+    if ! curl -fsSL "$url" -o "$output"; then
+        rm -f -- "$output"
+        return 1
+    fi
+}
+
 # 检查是否为root用户
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "此脚本必须以root用户运行"
-        exit 1
+        error_exit "此脚本必须以root用户运行"
     fi
 }
 
@@ -57,8 +71,7 @@ check_system() {
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)
     else
-        log_error "无法检测系统类型"
-        exit 1
+        error_exit "无法检测系统类型"
     fi
     
     log_info "检测到系统: $OS $VER"
@@ -75,8 +88,7 @@ check_arch() {
             ARCH="aarch64"
             ;;
         *)
-            log_error "不支持的架构: $ARCH"
-            exit 1
+            error_exit "不支持的架构: $ARCH"
             ;;
     esac
     log_info "系统架构: $ARCH"
@@ -95,8 +107,7 @@ update_package_manager() {
             yum install -y curl wget yum-utils
             ;;
         *)
-            log_error "不支持的操作系统: $OS"
-            exit 1
+            error_exit "不支持的操作系统: $OS"
             ;;
     esac
 }
@@ -106,7 +117,7 @@ check_nginx_installed() {
     if command -v nginx >/dev/null 2>&1; then
         NGINX_VERSION=$(nginx -v 2>&1 | cut -d' ' -f3 | cut -d'/' -f2)
         log_warning "Nginx已安装，版本: $NGINX_VERSION"
-        read -p "是否要重新安装？(y/n): " -n 1 -r
+        read -r -p "是否要重新安装？(y/n): " -n 1
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             log_info "退出安装"
@@ -128,12 +139,16 @@ check_nginx_installed() {
 # 从官方仓库安装Nginx
 install_nginx_repo() {
     local version_type=$1
+    local key_file=""
     log_info "从官方仓库安装Nginx $version_type 版本..."
     
     case $OS in
         ubuntu|debian)
             # 添加Nginx官方仓库
-            curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add -
+            key_file=$(mktemp "/tmp/nginx-key.XXXXXX")
+            download_to_file "https://nginx.org/keys/nginx_signing.key" "$key_file" || error_exit "Nginx signing key download failed"
+            apt-key add "$key_file"
+            rm -f -- "$key_file"
             
             if [[ "$version_type" == "stable" ]]; then
                 echo "deb https://nginx.org/packages/$OS/ $(lsb_release -cs) nginx" > /etc/apt/sources.list.d/nginx.list
@@ -166,6 +181,8 @@ EOF
 # 从源码编译安装Nginx
 install_nginx_source() {
     log_info "从源码编译安装Nginx..."
+    local work_dir=""
+    local archive_file=""
     
     # 安装编译依赖
     case $OS in
@@ -181,13 +198,24 @@ install_nginx_source() {
     esac
     
     # 获取最新版本号
-    NGINX_VERSION=$(curl -s https://nginx.org/en/download.html | grep -oP 'nginx-\K[0-9.]+(?=\.tar\.gz)' | head -1)
+    NGINX_VERSION=$(curl -fsSL https://nginx.org/en/download.html | sed -n 's/.*nginx-\([0-9][0-9.]*\)\.tar\.gz.*/\1/p' | head -1 || true)
+    if [[ -z "$NGINX_VERSION" ]]; then
+        error_exit "无法获取Nginx源码版本"
+    fi
     log_info "下载Nginx $NGINX_VERSION 源码..."
     
-    cd /tmp
-    wget -q https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
-    tar -xzf nginx-${NGINX_VERSION}.tar.gz
-    cd nginx-${NGINX_VERSION}
+    work_dir=$(mktemp -d "/tmp/nginx-build.XXXXXX")
+    archive_file="${work_dir}/nginx-${NGINX_VERSION}.tar.gz"
+    download_to_file "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" "$archive_file" || {
+        rm -rf -- "$work_dir"
+        error_exit "Nginx源码下载失败"
+    }
+
+    if ! tar -xzf "$archive_file" -C "$work_dir"; then
+        rm -rf -- "$work_dir"
+        error_exit "Nginx源码解压失败"
+    fi
+    cd "${work_dir}/nginx-${NGINX_VERSION}"
     
     # 配置编译选项
     ./configure \
@@ -232,7 +260,7 @@ install_nginx_source() {
         --with-stream_ssl_preread_module
     
     # 编译安装
-    make -j$(nproc)
+    make -j"$(nproc)"
     make install
     
     # 创建nginx用户和目录
@@ -242,7 +270,7 @@ install_nginx_source() {
     
     # 清理
     cd /
-    rm -rf /tmp/nginx-${NGINX_VERSION}*
+    rm -rf -- "$work_dir"
 }
 
 # 创建systemd服务文件
@@ -548,7 +576,7 @@ main() {
     # 根据安装类型执行不同的安装方法
     case $install_type in
         stable|mainline)
-            install_nginx_repo $install_type
+            install_nginx_repo "$install_type"
             ;;
         source)
             install_nginx_source

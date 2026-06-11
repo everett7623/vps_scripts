@@ -15,6 +15,8 @@
 # 更新日期: 2025-06-22
 #==============================================================================
 
+set -euo pipefail
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -41,6 +43,41 @@ GRADLE_VERSION="8.5"
 # 记录日志
 log() {
     echo -e "${1}" | tee -a "${LOG_FILE}"
+}
+
+error_exit() {
+    log "${RED}错误: $1${NC}"
+    exit 1
+}
+
+validate_inputs() {
+    case "$JDK_TYPE" in
+        openjdk|oracle|graalvm) ;;
+        *) error_exit "无效的JDK类型 ${JDK_TYPE}" ;;
+    esac
+
+    case "$JAVA_VERSION" in
+        8|11|17|21) ;;
+        *) error_exit "不支持的Java版本 ${JAVA_VERSION}" ;;
+    esac
+
+    if [[ "$JDK_TYPE" == "graalvm" ]]; then
+        case "$JAVA_VERSION" in
+            17|21) ;;
+            *) error_exit "GraalVM 仅支持 Java 17 和 21" ;;
+        esac
+    fi
+}
+
+download_to_file() {
+    local url="$1"
+    local output="$2"
+    shift 2
+
+    if ! wget "$@" -O "$output" "$url"; then
+        rm -f -- "$output"
+        return 1
+    fi
 }
 
 # 显示标题
@@ -79,8 +116,7 @@ show_help() {
 # 检查是否为root用户
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        log "${RED}错误: 此脚本需要root权限运行${NC}"
-        exit 1
+        error_exit "此脚本需要root权限运行"
     fi
 }
 
@@ -94,10 +130,9 @@ detect_system() {
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)
     else
-        log "${RED}错误: 无法检测系统类型${NC}"
-        exit 1
+        error_exit "无法检测系统类型"
     fi
-    
+
     # 检测系统架构
     ARCH=$(uname -m)
     case $ARCH in
@@ -108,18 +143,17 @@ detect_system() {
             ARCH_TYPE="aarch64"
             ;;
         *)
-            log "${RED}错误: 不支持的系统架构 ${ARCH}${NC}"
-            exit 1
+            error_exit "不支持的系统架构 ${ARCH}"
             ;;
     esac
-    
+
     log "${GREEN}检测到系统: ${OS} ${VER} (${ARCH})${NC}"
 }
 
 # 安装基础依赖
 install_dependencies() {
     log "${YELLOW}正在安装基础依赖...${NC}"
-    
+
     case $OS in
         ubuntu|debian)
             apt-get update
@@ -129,11 +163,10 @@ install_dependencies() {
             yum install -y wget curl tar gzip unzip
             ;;
         *)
-            log "${RED}错误: 不支持的系统类型 ${OS}${NC}"
-            exit 1
+            error_exit "不支持的系统类型 ${OS}"
             ;;
     esac
-    
+
     log "${GREEN}基础依赖安装完成${NC}"
 }
 
@@ -144,7 +177,7 @@ check_java_installed() {
         if [[ "$FORCE_INSTALL" = false ]]; then
             log "${YELLOW}检测到已安装的Java:${NC}"
             log "${YELLOW}${current_version}${NC}"
-            read -p "是否继续安装? (y/n): " -n 1 -r
+            read -r -p "是否继续安装? (y/n): " -n 1
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
                 log "${YELLOW}安装已取消${NC}"
@@ -157,7 +190,7 @@ check_java_installed() {
 # 清理旧版本
 clean_old_java() {
     log "${YELLOW}清理旧版本Java...${NC}"
-    
+
     case $OS in
         ubuntu|debian)
             apt-get remove -y openjdk-* oracle-java* || true
@@ -172,7 +205,7 @@ clean_old_java() {
 # 安装OpenJDK
 install_openjdk() {
     log "${CYAN}安装 OpenJDK ${JAVA_VERSION}...${NC}"
-    
+
     case $OS in
         ubuntu|debian)
             apt-get update
@@ -191,7 +224,7 @@ install_openjdk() {
 # 安装Oracle JDK
 install_oracle_jdk() {
     log "${CYAN}安装 Oracle JDK ${JAVA_VERSION}...${NC}"
-    
+
     # Oracle JDK 下载地址（需要根据实际情况更新）
     case $JAVA_VERSION in
         8)
@@ -211,45 +244,53 @@ install_oracle_jdk() {
             JDK_FOLDER="jdk-21"
             ;;
         *)
-            log "${RED}错误: 不支持的Oracle JDK版本 ${JAVA_VERSION}${NC}"
-            exit 1
+            error_exit "不支持的Oracle JDK版本 ${JAVA_VERSION}"
             ;;
     esac
-    
-    # 下载并安装
-    cd /tmp
+
+    local work_dir=""
+    local archive_file=""
+    work_dir=$(mktemp -d "/tmp/java-oracle.XXXXXX")
+    archive_file="${work_dir}/oracle-jdk.tar.gz"
+
     log "${YELLOW}正在下载 Oracle JDK...${NC}"
-    wget --no-check-certificate -c --header "Cookie: oraclelicense=accept-securebackup-cookie" -O oracle-jdk.tar.gz "$JDK_URL"
-    
-    if [[ ! -f oracle-jdk.tar.gz ]]; then
-        log "${RED}错误: Oracle JDK 下载失败${NC}"
+    if ! download_to_file "$JDK_URL" "$archive_file" --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie"; then
+        rm -rf -- "$work_dir"
         log "${YELLOW}提示: Oracle JDK 需要接受许可协议，建议使用 OpenJDK${NC}"
-        exit 1
+        error_exit "Oracle JDK 下载失败"
     fi
-    
+
+    if [[ ! -s "$archive_file" ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "Oracle JDK 下载文件为空"
+    fi
+
     # 解压到 /opt
-    tar -xzf oracle-jdk.tar.gz -C /opt/
-    
+    if ! tar -xzf "$archive_file" -C /opt/; then
+        rm -rf -- "$work_dir"
+        error_exit "Oracle JDK 解压失败"
+    fi
+
     # 查找实际的JDK目录名
     JDK_DIR=$(find /opt -maxdepth 1 -type d -name "jdk*" | head -1)
-    
+
     # 设置环境变量
     echo "export JAVA_HOME=${JDK_DIR}" > /etc/profile.d/java.sh
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile.d/java.sh
-    
+
     # 创建软链接
-    ln -sf ${JDK_DIR}/bin/java /usr/bin/java
-    ln -sf ${JDK_DIR}/bin/javac /usr/bin/javac
-    ln -sf ${JDK_DIR}/bin/jar /usr/bin/jar
-    
+    ln -sf "${JDK_DIR}/bin/java" /usr/bin/java
+    ln -sf "${JDK_DIR}/bin/javac" /usr/bin/javac
+    ln -sf "${JDK_DIR}/bin/jar" /usr/bin/jar
+
     # 清理
-    rm -f /tmp/oracle-jdk.tar.gz
+    rm -rf -- "$work_dir"
 }
 
 # 安装GraalVM
 install_graalvm() {
     log "${CYAN}安装 GraalVM ${JAVA_VERSION}...${NC}"
-    
+
     # GraalVM 版本映射
     case $JAVA_VERSION in
         17)
@@ -259,76 +300,95 @@ install_graalvm() {
             GRAALVM_VERSION="23.1.2"
             ;;
         *)
-            log "${RED}错误: GraalVM 不支持 Java ${JAVA_VERSION}${NC}"
-            log "${YELLOW}GraalVM 仅支持 Java 17 和 21${NC}"
-            exit 1
+            error_exit "GraalVM 仅支持 Java 17 和 21"
             ;;
     esac
-    
+
     # 下载URL
     GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_VERSION}.0.2/graalvm-community-jdk-${JAVA_VERSION}.0.2_linux-${ARCH_TYPE}_bin.tar.gz"
-    
-    # 下载并安装
-    cd /tmp
+
+    local work_dir=""
+    local archive_file=""
+    work_dir=$(mktemp -d "/tmp/java-graalvm.XXXXXX")
+    archive_file="${work_dir}/graalvm.tar.gz"
+
     log "${YELLOW}正在下载 GraalVM...${NC}"
-    wget -O graalvm.tar.gz "$GRAALVM_URL"
-    
-    if [[ ! -f graalvm.tar.gz ]]; then
-        log "${RED}错误: GraalVM 下载失败${NC}"
-        exit 1
+    if ! download_to_file "$GRAALVM_URL" "$archive_file"; then
+        rm -rf -- "$work_dir"
+        error_exit "GraalVM 下载失败"
     fi
-    
+
+    if [[ ! -s "$archive_file" ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "GraalVM 下载文件为空"
+    fi
+
     # 解压到 /opt
-    tar -xzf graalvm.tar.gz -C /opt/
-    
+    if ! tar -xzf "$archive_file" -C /opt/; then
+        rm -rf -- "$work_dir"
+        error_exit "GraalVM 解压失败"
+    fi
+
     # 查找实际的GraalVM目录名
     GRAALVM_DIR=$(find /opt -maxdepth 1 -type d -name "graalvm*" | head -1)
-    
+
     # 设置环境变量
     echo "export JAVA_HOME=${GRAALVM_DIR}" > /etc/profile.d/graalvm.sh
     echo "export GRAALVM_HOME=${GRAALVM_DIR}" >> /etc/profile.d/graalvm.sh
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile.d/graalvm.sh
-    
+
     # 创建软链接
-    ln -sf ${GRAALVM_DIR}/bin/java /usr/bin/java
-    ln -sf ${GRAALVM_DIR}/bin/javac /usr/bin/javac
-    ln -sf ${GRAALVM_DIR}/bin/jar /usr/bin/jar
-    ln -sf ${GRAALVM_DIR}/bin/gu /usr/bin/gu
-    
+    ln -sf "${GRAALVM_DIR}/bin/java" /usr/bin/java
+    ln -sf "${GRAALVM_DIR}/bin/javac" /usr/bin/javac
+    ln -sf "${GRAALVM_DIR}/bin/jar" /usr/bin/jar
+    ln -sf "${GRAALVM_DIR}/bin/gu" /usr/bin/gu
+
     # 安装native-image
     log "${CYAN}安装 GraalVM native-image...${NC}"
-    ${GRAALVM_DIR}/bin/gu install native-image
-    
+    "${GRAALVM_DIR}/bin/gu" install native-image
+
     # 清理
-    rm -f /tmp/graalvm.tar.gz
+    rm -rf -- "$work_dir"
 }
 
 # 安装Maven
 install_maven() {
     log "${CYAN}安装 Apache Maven ${MAVEN_VERSION}...${NC}"
-    
-    # 下载Maven
-    cd /tmp
-    wget "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
-    
-    if [[ ! -f "apache-maven-${MAVEN_VERSION}-bin.tar.gz" ]]; then
+
+    local work_dir=""
+    local archive_file=""
+    work_dir=$(mktemp -d "/tmp/java-maven.XXXXXX")
+    archive_file="${work_dir}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+
+    if ! download_to_file "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" "$archive_file"; then
+        rm -rf -- "$work_dir"
         log "${RED}错误: Maven 下载失败${NC}"
         return 1
     fi
-    
+
+    if [[ ! -s "$archive_file" ]]; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Maven 下载失败${NC}"
+        return 1
+    fi
+
     # 解压到 /opt
-    tar -xzf "apache-maven-${MAVEN_VERSION}-bin.tar.gz" -C /opt/
-    
+    if ! tar -xzf "$archive_file" -C /opt/; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Maven 解压失败${NC}"
+        return 1
+    fi
+
     # 创建软链接
     ln -sf /opt/apache-maven-${MAVEN_VERSION} /opt/maven
-    
+
     # 设置环境变量
     echo "export MAVEN_HOME=/opt/maven" > /etc/profile.d/maven.sh
     echo "export PATH=\$MAVEN_HOME/bin:\$PATH" >> /etc/profile.d/maven.sh
-    
+
     # 创建软链接到 /usr/bin
     ln -sf /opt/maven/bin/mvn /usr/bin/mvn
-    
+
     # 配置Maven镜像（使用阿里云镜像加速）
     mkdir -p /opt/maven/conf
     cat > /opt/maven/conf/settings.xml <<EOF
@@ -347,59 +407,71 @@ install_maven() {
     </mirrors>
 </settings>
 EOF
-    
+
     # 清理
-    rm -f /tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz
-    
+    rm -rf -- "$work_dir"
+
     log "${GREEN}Maven ${MAVEN_VERSION} 安装完成${NC}"
 }
 
 # 安装Gradle
 install_gradle() {
     log "${CYAN}安装 Gradle ${GRADLE_VERSION}...${NC}"
-    
-    # 下载Gradle
-    cd /tmp
-    wget "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
-    
-    if [[ ! -f "gradle-${GRADLE_VERSION}-bin.zip" ]]; then
+
+    local work_dir=""
+    local archive_file=""
+    work_dir=$(mktemp -d "/tmp/java-gradle.XXXXXX")
+    archive_file="${work_dir}/gradle-${GRADLE_VERSION}-bin.zip"
+
+    if ! download_to_file "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" "$archive_file"; then
+        rm -rf -- "$work_dir"
         log "${RED}错误: Gradle 下载失败${NC}"
         return 1
     fi
-    
+
+    if [[ ! -s "$archive_file" ]]; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Gradle 下载失败${NC}"
+        return 1
+    fi
+
     # 解压到 /opt
-    unzip -q "gradle-${GRADLE_VERSION}-bin.zip" -d /opt/
-    
+    if ! unzip -q "$archive_file" -d /opt/; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Gradle 解压失败${NC}"
+        return 1
+    fi
+
     # 创建软链接
     ln -sf /opt/gradle-${GRADLE_VERSION} /opt/gradle
-    
+
     # 设置环境变量
     echo "export GRADLE_HOME=/opt/gradle" > /etc/profile.d/gradle.sh
     echo "export PATH=\$GRADLE_HOME/bin:\$PATH" >> /etc/profile.d/gradle.sh
-    
+
     # 创建软链接到 /usr/bin
     ln -sf /opt/gradle/bin/gradle /usr/bin/gradle
-    
+
     # 清理
-    rm -f /tmp/gradle-${GRADLE_VERSION}-bin.zip
-    
+    rm -rf -- "$work_dir"
+
     log "${GREEN}Gradle ${GRADLE_VERSION} 安装完成${NC}"
 }
 
 # 配置JAVA_HOME
 configure_java_home() {
     log "${CYAN}配置 JAVA_HOME 环境变量...${NC}"
-    
+
     # 查找Java安装路径
     if [[ "$JDK_TYPE" == "openjdk" ]]; then
-        JAVA_PATH=$(readlink -f $(which java))
-        JAVA_HOME=$(dirname $(dirname $JAVA_PATH))
-        
+        JAVA_PATH=$(readlink -f "$(command -v java)")
+        JAVA_HOME=$(dirname "$(dirname "$JAVA_PATH")")
+
         # 设置环境变量
         echo "export JAVA_HOME=${JAVA_HOME}" > /etc/profile.d/java.sh
         echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile.d/java.sh
     fi
-    
+
     # 重新加载环境变量
     source /etc/profile.d/java.sh 2>/dev/null || true
 }
@@ -407,12 +479,12 @@ configure_java_home() {
 # 验证安装
 verify_installation() {
     log "${CYAN}验证安装...${NC}"
-    
+
     # 重新加载所有环境变量
     for profile in /etc/profile.d/*.sh; do
         source "$profile" 2>/dev/null || true
     done
-    
+
     # 验证Java
     if command -v java &> /dev/null; then
         java_version=$(java -version 2>&1 | head -n 1)
@@ -420,17 +492,16 @@ verify_installation() {
         log "${GREEN}${java_version}${NC}"
         log "${GREEN}JAVA_HOME: ${JAVA_HOME:-未设置}${NC}"
     else
-        log "${RED}错误: Java 安装验证失败${NC}"
-        exit 1
+        error_exit "Java 安装验证失败"
     fi
-    
+
     # 验证Maven
     if [[ "$INSTALL_MAVEN" = true ]] && command -v mvn &> /dev/null; then
         mvn_version=$(mvn -version 2>&1 | head -n 1)
         log "${GREEN}Maven 安装成功:${NC}"
         log "${GREEN}${mvn_version}${NC}"
     fi
-    
+
     # 验证Gradle
     if [[ "$INSTALL_GRADLE" = true ]] && command -v gradle &> /dev/null; then
         gradle_version=$(gradle -version 2>&1 | grep "Gradle" | head -n 1)
@@ -449,21 +520,21 @@ show_post_install_info() {
     echo -e "${CYAN}环境信息:${NC}"
     echo "- JDK类型: ${JDK_TYPE}"
     echo "- Java版本: ${JAVA_VERSION}"
-    
+
     if [[ "$INSTALL_MAVEN" = true ]]; then
         echo "- Maven版本: ${MAVEN_VERSION}"
     fi
-    
+
     if [[ "$INSTALL_GRADLE" = true ]]; then
         echo "- Gradle版本: ${GRADLE_VERSION}"
     fi
-    
+
     echo
     echo -e "${CYAN}使用说明:${NC}"
     echo "1. 编译Java程序: javac HelloWorld.java"
     echo "2. 运行Java程序: java HelloWorld"
     echo "3. 查看Java版本: java -version"
-    
+
     if [[ "$INSTALL_MAVEN" = true ]]; then
         echo
         echo -e "${CYAN}Maven使用:${NC}"
@@ -472,7 +543,7 @@ show_post_install_info() {
         echo "- 打包项目: mvn package"
         echo "- 运行测试: mvn test"
     fi
-    
+
     if [[ "$INSTALL_GRADLE" = true ]]; then
         echo
         echo -e "${CYAN}Gradle使用:${NC}"
@@ -481,7 +552,7 @@ show_post_install_info() {
         echo "- 运行测试: gradle test"
         echo "- 查看任务: gradle tasks"
     fi
-    
+
     if [[ "$JDK_TYPE" == "graalvm" ]]; then
         echo
         echo -e "${CYAN}GraalVM特性:${NC}"
@@ -489,7 +560,7 @@ show_post_install_info() {
         echo "- 安装语言支持: gu install python/ruby/nodejs"
         echo "- 查看已安装组件: gu list"
     fi
-    
+
     echo
     echo -e "${YELLOW}注意: 某些更改可能需要重新登录或执行 source /etc/profile 才能生效${NC}"
     echo -e "${YELLOW}日志文件: ${LOG_FILE}${NC}"
@@ -501,10 +572,16 @@ main() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --type)
+                if [[ $# -lt 2 ]]; then
+                    error_exit "--type 需要类型参数"
+                fi
                 JDK_TYPE="$2"
                 shift 2
                 ;;
             --version)
+                if [[ $# -lt 2 ]]; then
+                    error_exit "--version 需要版本参数"
+                fi
                 JAVA_VERSION="$2"
                 shift 2
                 ;;
@@ -531,27 +608,28 @@ main() {
                 ;;
         esac
     done
-    
+
     # 显示标题
     show_title
-    
+    validate_inputs
+
     # 检查root权限
     check_root
-    
+
     # 检测系统
     detect_system
-    
+
     # 检查是否已安装
     check_java_installed
-    
+
     # 安装依赖
     install_dependencies
-    
+
     # 如果强制安装，先清理旧版本
     if [[ "$FORCE_INSTALL" = true ]]; then
         clean_old_java
     fi
-    
+
     # 根据类型安装
     case $JDK_TYPE in
         openjdk)
@@ -563,28 +641,23 @@ main() {
         graalvm)
             install_graalvm
             ;;
-        *)
-            log "${RED}错误: 无效的JDK类型 ${JDK_TYPE}${NC}"
-            show_help
-            exit 1
-            ;;
     esac
-    
+
     # 配置JAVA_HOME
     configure_java_home
-    
+
     # 安装构建工具
     if [[ "$INSTALL_MAVEN" = true ]]; then
         install_maven
     fi
-    
+
     if [[ "$INSTALL_GRADLE" = true ]]; then
         install_gradle
     fi
-    
+
     # 验证安装
     verify_installation
-    
+
     # 显示安装后信息
     show_post_install_info
 }

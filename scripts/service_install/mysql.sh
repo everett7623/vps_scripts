@@ -22,15 +22,17 @@
 # 更新日期: 2025-06-22
 #==============================================================================
 
+set -euo pipefail
+
 # 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[0;37m'
-NC='\033[0m' # No Color
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly PURPLE='\033[0;35m'
+readonly CYAN='\033[0;36m'
+readonly WHITE='\033[0;37m'
+readonly NC='\033[0m'
 
 # 全局变量
 DB_TYPE="mariadb"
@@ -45,18 +47,103 @@ MAX_CONNECTIONS="1000"
 INNODB_BUFFER_SIZE=""
 SECURE_INSTALL=false
 FORCE_INSTALL=false
-SCRIPT_VERSION="1.0.0"
-LOG_FILE="/tmp/mysql_install_$(date +%Y%m%d_%H%M%S).log"
+readonly SCRIPT_VERSION="1.1.0"
+readonly LOG_FILE="/tmp/mysql_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置
-DATA_DIR="/var/lib/mysql"
-CONFIG_DIR="/etc/mysql"
-LOG_DIR="/var/log/mysql"
-MYSQL_USER="mysql"
+readonly DATA_DIR="/var/lib/mysql"
+readonly CONFIG_DIR="/etc/mysql"
+readonly LOG_DIR="/var/log/mysql"
+readonly MYSQL_USER="mysql"
 
 # 记录日志
 log() {
     echo -e "${1}" | tee -a "${LOG_FILE}"
+}
+
+error_exit() {
+    log "${RED}错误: $1${NC}"
+    exit 1
+}
+
+download_to_temp() {
+    local url="$1"
+    local temp_file=""
+    temp_file=$(mktemp "/tmp/mysql-download.XXXXXX") || return 1
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+    printf '%s\n' "$temp_file"
+}
+
+download_rpm_to_temp() {
+    local url="$1"
+    local temp_file=""
+    temp_file=$(mktemp "/tmp/mysql-download.XXXXXX") || return 1
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+    printf '%s\n' "$temp_file"
+}
+
+safe_remove_dir() {
+    local target="$1"
+    case "$target" in
+        /var/lib/mysql|/var/lib/mysql.bak|/etc/mysql|/etc/mysql.bak|/var/log/mysql)
+            if [ -d "$target" ]; then
+                rm -rf -- "$target"
+            fi
+            ;;
+        *)
+            error_exit "Refusing to remove unexpected directory: $target"
+            ;;
+    esac
+}
+
+validate_db_type() {
+    [[ "$1" =~ ^(mysql|mariadb)$ ]]
+}
+
+validate_db_version() {
+    [[ "$1" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]
+}
+
+validate_port() {
+    [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+validate_server_id() {
+    [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ]
+}
+
+validate_deploy_mode() {
+    [[ "$1" =~ ^(standalone|master|slave)$ ]]
+}
+
+validate_inputs() {
+    if ! validate_db_type "$DB_TYPE"; then
+        error_exit "数据库类型无效: $DB_TYPE (必须是 mysql 或 mariadb)"
+    fi
+    if [[ -n "$DB_VERSION" ]] && ! validate_db_version "$DB_VERSION"; then
+        error_exit "数据库版本格式无效: $DB_VERSION"
+    fi
+    if ! validate_port "$DB_PORT"; then
+        error_exit "端口号无效: $DB_PORT"
+    fi
+    if ! validate_deploy_mode "$DEPLOY_MODE"; then
+        error_exit "部署模式无效: $DEPLOY_MODE (必须是 standalone, master 或 slave)"
+    fi
+    if [[ "$DEPLOY_MODE" != "standalone" ]] && ! validate_server_id "${SERVER_ID:-0}"; then
+        error_exit "主从复制模式需要有效的 --server-id"
+    fi
+    if [[ "$DEPLOY_MODE" == "slave" ]] && [[ -z "$MASTER_HOST" ]]; then
+        error_exit "slave模式需要指定 --master-host"
+    fi
+    if [[ -n "$MAX_CONNECTIONS" ]] && ! [[ "$MAX_CONNECTIONS" =~ ^[0-9]+$ ]]; then
+        error_exit "最大连接数必须是整数: $MAX_CONNECTIONS"
+    fi
 }
 
 # 显示标题
@@ -157,27 +244,31 @@ check_mysql_installed() {
 # 添加MySQL官方仓库
 add_mysql_repo() {
     log "${CYAN}添加MySQL官方仓库...${NC}"
-    
+    local deb_file=""
+    local rpm_file=""
+
     case $OS in
         ubuntu|debian)
-            # 安装依赖
             apt-get update
             apt-get install -y software-properties-common gnupg
-            
-            # 添加MySQL APT仓库
-            cd /tmp
-            wget https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
-            DEBIAN_FRONTEND=noninteractive dpkg -i mysql-apt-config_0.8.29-1_all.deb
+            deb_file=$(download_to_temp "https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb") || \
+                error_exit "MySQL APT配置包下载失败"
+            DEBIAN_FRONTEND=noninteractive dpkg -i "$deb_file"
+            rm -f -- "$deb_file"
             apt-get update
-            rm -f mysql-apt-config_0.8.29-1_all.deb
             ;;
         centos|rhel|fedora|rocky|almalinux)
-            # 添加MySQL YUM仓库
             if [[ "$VER_MAJOR" == "7" ]]; then
-                rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+                rpm_file=$(download_rpm_to_temp "https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm") || \
+                    error_exit "MySQL RPM仓库包下载失败"
             elif [[ "$VER_MAJOR" == "8" ]] || [[ "$VER_MAJOR" == "9" ]]; then
-                rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+                rpm_file=$(download_rpm_to_temp "https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm") || \
+                    error_exit "MySQL RPM仓库包下载失败"
+            else
+                error_exit "不支持的RHEL版本: $VER_MAJOR"
             fi
+            rpm -Uvh "$rpm_file"
+            rm -f -- "$rpm_file"
             ;;
     esac
 }
@@ -185,34 +276,32 @@ add_mysql_repo() {
 # 添加MariaDB仓库
 add_mariadb_repo() {
     log "${CYAN}添加MariaDB官方仓库...${NC}"
-    
-    # 确定MariaDB版本
+    local key_file=""
+    local repo_codename=""
+
     if [[ -z "$DB_VERSION" ]]; then
         DB_VERSION="10.11"
     fi
-    
+
     case $OS in
         ubuntu|debian)
-            # 添加MariaDB APT仓库
             apt-get install -y software-properties-common gnupg
-            curl -fsSL https://mariadb.org/mariadb_release_signing_key.asc | apt-key add -
-            
+            key_file=$(download_to_temp "https://mariadb.org/mariadb_release_signing_key.asc") || \
+                error_exit "MariaDB签名密钥下载失败"
+            apt-key add "$key_file"
+            rm -f -- "$key_file"
+
+            repo_codename=$(lsb_release -cs)
             if [[ "$OS" == "ubuntu" ]]; then
-                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/ubuntu $(lsb_release -cs) main"
+                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/ubuntu ${repo_codename} main"
             else
-                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/debian $(lsb_release -cs) main"
+                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/debian ${repo_codename} main"
             fi
             apt-get update
             ;;
         centos|rhel|fedora|rocky|almalinux)
-            # 创建MariaDB YUM仓库
-            cat > /etc/yum.repos.d/MariaDB.repo << EOF
-[mariadb]
-name = MariaDB
-baseurl = https://mirrors.aliyun.com/mariadb/yum/${DB_VERSION}/centos${VER_MAJOR}-amd64
-gpgkey = https://mirrors.aliyun.com/mariadb/yum/RPM-GPG-KEY-MariaDB
-gpgcheck = 1
-EOF
+            printf '[mariadb]\nname = MariaDB\nbaseurl = https://mirrors.aliyun.com/mariadb/yum/%s/centos%s-amd64\ngpgkey = https://mirrors.aliyun.com/mariadb/yum/RPM-GPG-KEY-MariaDB\ngpgcheck = 1\n' \
+                "$DB_VERSION" "$VER_MAJOR" > /etc/yum.repos.d/MariaDB.repo
             yum clean all
             yum makecache
             ;;
@@ -363,138 +452,126 @@ EOF
 # 初始化数据库
 initialize_database() {
     log "${CYAN}初始化数据库...${NC}"
-    
-    # 创建必要的目录
-    mkdir -p $DATA_DIR $LOG_DIR
-    chown -R $MYSQL_USER:$MYSQL_USER $DATA_DIR $LOG_DIR
-    
-    # 启动服务
+    local temp_my_cnf=""
+
+    mkdir -p "$DATA_DIR" "$LOG_DIR"
+    chown -R $MYSQL_USER:$MYSQL_USER "$DATA_DIR" "$LOG_DIR"
+
     systemctl enable --now mysql 2>/dev/null || systemctl enable --now mariadb
-    
-    # 等待服务启动
     sleep 5
-    
-    # 设置root密码（如果提供）
-    if [[ -n "$ROOT_PASSWORD" ]]; then
-        if [[ "$DB_TYPE" == "mysql" ]]; then
-            mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$ROOT_PASSWORD';"
-        else
-            mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$ROOT_PASSWORD');"
-        fi
-    else
-        # 生成随机密码
+
+    # 如果没有设置密码，生成随机密码
+    if [[ -z "$ROOT_PASSWORD" ]]; then
         ROOT_PASSWORD=$(generate_password)
         log "${YELLOW}生成的root密码: $ROOT_PASSWORD${NC}"
-        
-        if [[ "$DB_TYPE" == "mysql" ]]; then
-            mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$ROOT_PASSWORD';"
-        else
-            mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$ROOT_PASSWORD');"
-        fi
     fi
-    
-    # 保存密码到文件
-    echo "[client]" > ~/.my.cnf
-    echo "user=root" >> ~/.my.cnf
-    echo "password=$ROOT_PASSWORD" >> ~/.my.cnf
+
+    # 使用临时配置文件传递密码，避免命令行暴露
+    temp_my_cnf=$(mktemp "/tmp/mysql-init.XXXXXX") || error_exit "创建临时配置文件失败"
+    printf '[client]\nuser=root\npassword=\n' > "$temp_my_cnf"
+    chmod 600 "$temp_my_cnf"
+
+    if [[ "$DB_TYPE" == "mysql" ]]; then
+        mysql --defaults-extra-file="$temp_my_cnf" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$ROOT_PASSWORD';" 2>/dev/null || true
+    else
+        mysql --defaults-extra-file="$temp_my_cnf" -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$ROOT_PASSWORD');" 2>/dev/null || true
+    fi
+
+    rm -f -- "$temp_my_cnf"
+
+    # 保存密码到受保护的文件
+    printf '[client]\nuser=root\npassword=%s\n' "$ROOT_PASSWORD" > ~/.my.cnf
     chmod 600 ~/.my.cnf
 }
 
 # 安全加固
 secure_installation() {
     log "${CYAN}执行安全加固...${NC}"
-    
-    # 删除匿名用户
-    mysql -e "DELETE FROM mysql.user WHERE User='';"
-    
-    # 禁止root远程登录（可选）
-    # mysql -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
-    
-    # 删除test数据库
-    mysql -e "DROP DATABASE IF EXISTS test;"
-    mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-    
-    # 创建管理员用户（允许远程连接）
+    local temp_my_cnf=""
+
+    temp_my_cnf=$(mktemp "/tmp/mysql-secure.XXXXXX") || error_exit "创建临时配置文件失败"
+    printf '[client]\nuser=root\npassword=%s\n' "$ROOT_PASSWORD" > "$temp_my_cnf"
+    chmod 600 "$temp_my_cnf"
+
+    mysql --defaults-extra-file="$temp_my_cnf" -e "DELETE FROM mysql.user WHERE User='';"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "DROP DATABASE IF EXISTS test;"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+
     ADMIN_USER="admin"
     ADMIN_PASS=$(generate_password)
-    mysql -e "CREATE USER '$ADMIN_USER'@'%' IDENTIFIED BY '$ADMIN_PASS';"
-    mysql -e "GRANT ALL PRIVILEGES ON *.* TO '$ADMIN_USER'@'%' WITH GRANT OPTION;"
-    
+    mysql --defaults-extra-file="$temp_my_cnf" -e "CREATE USER '$ADMIN_USER'@'%' IDENTIFIED BY '$ADMIN_PASS';"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "GRANT ALL PRIVILEGES ON *.* TO '$ADMIN_USER'@'%' WITH GRANT OPTION;"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "FLUSH PRIVILEGES;"
+
+    rm -f -- "$temp_my_cnf"
     log "${GREEN}创建管理员用户: $ADMIN_USER / $ADMIN_PASS${NC}"
-    
-    # 刷新权限
-    mysql -e "FLUSH PRIVILEGES;"
 }
 
 # 配置主服务器
 configure_master() {
     log "${CYAN}配置主服务器...${NC}"
-    
-    # 创建复制用户
+    local temp_my_cnf=""
+    local master_ip=""
+
+    temp_my_cnf=$(mktemp "/tmp/mysql-master.XXXXXX") || error_exit "创建临时配置文件失败"
+    printf '[client]\nuser=root\npassword=%s\n' "$ROOT_PASSWORD" > "$temp_my_cnf"
+    chmod 600 "$temp_my_cnf"
+
     REPL_USER="replication"
     REPL_PASS=$(generate_password)
-    
-    mysql -e "CREATE USER '$REPL_USER'@'%' IDENTIFIED BY '$REPL_PASS';"
-    mysql -e "GRANT REPLICATION SLAVE ON *.* TO '$REPL_USER'@'%';"
-    mysql -e "FLUSH PRIVILEGES;"
-    
-    # 获取主服务器状态
-    MASTER_STATUS=$(mysql -e "SHOW MASTER STATUS\G")
+
+    mysql --defaults-extra-file="$temp_my_cnf" -e "CREATE USER '$REPL_USER'@'%' IDENTIFIED BY '$REPL_PASS';"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "GRANT REPLICATION SLAVE ON *.* TO '$REPL_USER'@'%';"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "FLUSH PRIVILEGES;"
+
+    MASTER_STATUS=$(mysql --defaults-extra-file="$temp_my_cnf" -e "SHOW MASTER STATUS\G")
     MASTER_FILE=$(echo "$MASTER_STATUS" | grep File | awk '{print $2}')
     MASTER_POS=$(echo "$MASTER_STATUS" | grep Position | awk '{print $2}')
-    
+
+    rm -f -- "$temp_my_cnf"
+
+    master_ip=$(hostname -I | awk '{print $1}')
     log "${GREEN}主服务器配置完成${NC}"
     log "${YELLOW}复制用户: $REPL_USER / $REPL_PASS${NC}"
     log "${YELLOW}Master File: $MASTER_FILE${NC}"
     log "${YELLOW}Master Position: $MASTER_POS${NC}"
-    
-    # 保存信息到文件
-    cat > /root/.mysql_master_info << EOF
-MASTER_HOST=$(hostname -I | awk '{print $1}')
-MASTER_USER=$REPL_USER
-MASTER_PASSWORD=$REPL_PASS
-MASTER_LOG_FILE=$MASTER_FILE
-MASTER_LOG_POS=$MASTER_POS
-EOF
+
+    printf 'MASTER_HOST=%s\nMASTER_USER=%s\nMASTER_PASSWORD=%s\nMASTER_LOG_FILE=%s\nMASTER_LOG_POS=%s\n' \
+        "$master_ip" "$REPL_USER" "$REPL_PASS" "$MASTER_FILE" "$MASTER_POS" > /root/.mysql_master_info
     chmod 600 /root/.mysql_master_info
 }
 
 # 配置从服务器
 configure_slave() {
     log "${CYAN}配置从服务器...${NC}"
-    
+    local temp_my_cnf=""
+
     if [[ -z "$MASTER_HOST" ]]; then
-        log "${RED}错误: 未指定主服务器地址${NC}"
-        return 1
+        error_exit "未指定主服务器地址"
     fi
-    
-    # 获取复制信息
-    read -p "请输入主服务器的复制用户名: " REPL_USER
-    read -s -p "请输入主服务器的复制密码: " REPL_PASS
+
+    temp_my_cnf=$(mktemp "/tmp/mysql-slave.XXXXXX") || error_exit "创建临时配置文件失败"
+    printf '[client]\nuser=root\npassword=%s\n' "$ROOT_PASSWORD" > "$temp_my_cnf"
+    chmod 600 "$temp_my_cnf"
+
+    read -r -p "请输入主服务器的复制用户名: " REPL_USER
+    read -r -s -p "请输入主服务器的复制密码: " REPL_PASS
     echo
-    read -p "请输入主服务器的binlog文件名: " MASTER_FILE
-    read -p "请输入主服务器的binlog位置: " MASTER_POS
-    
-    # 停止从服务器
-    mysql -e "STOP SLAVE;"
-    
-    # 配置主服务器信息
-    mysql -e "CHANGE MASTER TO
-        MASTER_HOST='$MASTER_HOST',
-        MASTER_USER='$REPL_USER',
-        MASTER_PASSWORD='$REPL_PASS',
-        MASTER_LOG_FILE='$MASTER_FILE',
-        MASTER_LOG_POS=$MASTER_POS;"
-    
-    # 启动从服务器
-    mysql -e "START SLAVE;"
-    
-    # 检查复制状态
+    read -r -p "请输入主服务器的binlog文件名: " MASTER_FILE
+    read -r -p "请输入主服务器的binlog位置: " MASTER_POS
+
+    mysql --defaults-extra-file="$temp_my_cnf" -e "STOP SLAVE;"
+    mysql --defaults-extra-file="$temp_my_cnf" -e \
+        "CHANGE MASTER TO MASTER_HOST='$MASTER_HOST', MASTER_USER='$REPL_USER', MASTER_PASSWORD='$REPL_PASS', MASTER_LOG_FILE='$MASTER_FILE', MASTER_LOG_POS=$MASTER_POS;"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "START SLAVE;"
+
     sleep 2
-    SLAVE_STATUS=$(mysql -e "SHOW SLAVE STATUS\G")
+    SLAVE_STATUS=$(mysql --defaults-extra-file="$temp_my_cnf" -e "SHOW SLAVE STATUS\G")
     IO_RUNNING=$(echo "$SLAVE_STATUS" | grep "Slave_IO_Running" | awk '{print $2}')
     SQL_RUNNING=$(echo "$SLAVE_STATUS" | grep "Slave_SQL_Running" | awk '{print $2}')
-    
+
+    rm -f -- "$temp_my_cnf"
+
     if [[ "$IO_RUNNING" == "Yes" ]] && [[ "$SQL_RUNNING" == "Yes" ]]; then
         log "${GREEN}从服务器配置成功，复制正在运行${NC}"
     else
@@ -506,8 +583,13 @@ configure_slave() {
 # 创建示例数据库
 create_sample_database() {
     log "${CYAN}创建示例数据库...${NC}"
-    
-    mysql << EOF
+    local temp_my_cnf=""
+
+    temp_my_cnf=$(mktemp "/tmp/mysql-sample.XXXXXX") || error_exit "创建临时配置文件失败"
+    printf '[client]\nuser=root\npassword=%s\n' "$ROOT_PASSWORD" > "$temp_my_cnf"
+    chmod 600 "$temp_my_cnf"
+
+    mysql --defaults-extra-file="$temp_my_cnf" << EOF
 CREATE DATABASE IF NOT EXISTS testdb CHARACTER SET $CHARSET COLLATE ${CHARSET}_general_ci;
 USE testdb;
 
@@ -525,33 +607,33 @@ INSERT INTO users (username, email) VALUES
     ('user1', 'user1@example.com'),
     ('user2', 'user2@example.com');
 EOF
-    
+
+    rm -f -- "$temp_my_cnf"
     log "${GREEN}示例数据库创建完成${NC}"
 }
 
 # 验证安装
 verify_installation() {
     log "${CYAN}验证数据库安装...${NC}"
-    
-    # 检查服务状态
+    local temp_my_cnf=""
+
     if systemctl is-active --quiet mysql 2>/dev/null || systemctl is-active --quiet mariadb 2>/dev/null; then
         log "${GREEN}数据库服务运行正常${NC}"
     else
         log "${RED}数据库服务未运行${NC}"
         return 1
     fi
-    
-    # 显示版本信息
-    mysql -e "SELECT VERSION();"
-    
-    # 显示数据库列表
-    mysql -e "SHOW DATABASES;"
-    
-    # 显示当前连接数
-    mysql -e "SHOW STATUS LIKE 'Threads_connected';"
-    
-    # 检查字符集
-    mysql -e "SHOW VARIABLES LIKE 'character_set_%';"
+
+    temp_my_cnf=$(mktemp "/tmp/mysql-verify.XXXXXX") || error_exit "创建临时配置文件失败"
+    printf '[client]\nuser=root\npassword=%s\n' "$ROOT_PASSWORD" > "$temp_my_cnf"
+    chmod 600 "$temp_my_cnf"
+
+    mysql --defaults-extra-file="$temp_my_cnf" -e "SELECT VERSION();"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "SHOW DATABASES;"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "SHOW STATUS LIKE 'Threads_connected';"
+    mysql --defaults-extra-file="$temp_my_cnf" -e "SHOW VARIABLES LIKE 'character_set_%';"
+
+    rm -f -- "$temp_my_cnf"
 }
 
 # 显示安装后说明
@@ -698,7 +780,10 @@ main() {
     
     # 显示标题
     show_title
-    
+
+    # 验证输入参数
+    validate_inputs
+
     # 检查root权限
     check_root
     

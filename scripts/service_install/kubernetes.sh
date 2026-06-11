@@ -58,6 +58,56 @@ KUBECONFIG="/etc/kubernetes/admin.conf"
 JOIN_TOKEN=""
 JOIN_COMMAND_FILE="/root/kubeadm_join_command.sh"
 
+is_valid_ipv4() {
+    local ip="${1}"
+    local octet=""
+    local -a octets=()
+
+    [[ "${ip}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
+    IFS='.' read -r -a octets <<< "${ip}"
+    for octet in "${octets[@]}"; do
+        [[ "${octet}" =~ ^[0-9]+$ ]] || return 1
+        [ "${octet}" -le 255 ] || return 1
+    done
+}
+
+validate_inputs() {
+    case "${DEPLOY_MODE}" in
+        single|master|worker) ;;
+        *) log "${RED}Error: invalid deployment mode ${DEPLOY_MODE}${NC}"; exit 1 ;;
+    esac
+
+    case "${POD_NETWORK}" in
+        calico|flannel|weave) ;;
+        *) log "${RED}Error: invalid pod network ${POD_NETWORK}${NC}"; exit 1 ;;
+    esac
+
+    case "${CONTAINER_RUNTIME}" in
+        docker|containerd|cri-o) ;;
+        *) log "${RED}Error: invalid container runtime ${CONTAINER_RUNTIME}${NC}"; exit 1 ;;
+    esac
+
+    if [[ -n "${K8S_VERSION}" && ! "${K8S_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        log "${RED}Error: Kubernetes version must use a full numeric form such as 1.28.4${NC}"
+        exit 1
+    fi
+
+    if [[ ! "${API_SERVER_PORT}" =~ ^[0-9]+$ ]] || [ "${API_SERVER_PORT}" -lt 1 ] || [ "${API_SERVER_PORT}" -gt 65535 ]; then
+        log "${RED}Error: API server port must be between 1 and 65535${NC}"
+        exit 1
+    fi
+
+    if [[ "${DEPLOY_MODE}" == "worker" ]]; then
+        if [[ -z "${MASTER_IP}" ]] || ! is_valid_ipv4 "${MASTER_IP}"; then
+            log "${RED}Error: worker mode requires a valid IPv4 --master-ip${NC}"
+            exit 1
+        fi
+    elif [[ -n "${MASTER_IP}" ]] && ! is_valid_ipv4 "${MASTER_IP}"; then
+        log "${RED}Error: invalid master IPv4 address ${MASTER_IP}${NC}"
+        exit 1
+    fi
+}
+
 # 记录日志
 log() {
     echo -e "${1}" | tee -a "${LOG_FILE}"
@@ -559,6 +609,8 @@ EOF
 
 # 加入工作节点
 join_worker() {
+    local -a join_args=()
+
     log "${CYAN}将节点加入Kubernetes集群...${NC}"
     
     if [[ -z "$MASTER_IP" ]]; then
@@ -570,12 +622,16 @@ join_worker() {
     log "${YELLOW}请在主节点执行以下命令获取join命令:${NC}"
     log "${YELLOW}kubeadm token create --print-join-command${NC}"
     echo
-    read -p "请输入完整的join命令: " JOIN_CMD
+    read -r -p "请输入完整的join命令: " JOIN_CMD
+    read -r -a join_args <<< "${JOIN_CMD}"
+
+    if [[ "${#join_args[@]}" -lt 3 || "${join_args[0]}" != "kubeadm" || "${join_args[1]}" != "join" ]]; then
+        log "${RED}Error: only a complete kubeadm join command is accepted${NC}"
+        exit 1
+    fi
     
     # 执行join命令
-    eval "$JOIN_CMD"
-    
-    if [[ $? -eq 0 ]]; then
+    if "${join_args[@]}"; then
         log "${GREEN}节点成功加入集群${NC}"
     else
         log "${RED}错误: 节点加入集群失败${NC}"
@@ -965,34 +1021,42 @@ main() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --version)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --version requires a value${NC}"; exit 1; }
                 K8S_VERSION="$2"
                 shift 2
                 ;;
             --mode)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --mode requires a value${NC}"; exit 1; }
                 DEPLOY_MODE="$2"
                 shift 2
                 ;;
             --master-ip)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --master-ip requires a value${NC}"; exit 1; }
                 MASTER_IP="$2"
                 shift 2
                 ;;
             --pod-network)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --pod-network requires a value${NC}"; exit 1; }
                 POD_NETWORK="$2"
                 shift 2
                 ;;
             --container-runtime)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --container-runtime requires a value${NC}"; exit 1; }
                 CONTAINER_RUNTIME="$2"
                 shift 2
                 ;;
             --api-server-port)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --api-server-port requires a value${NC}"; exit 1; }
                 API_SERVER_PORT="$2"
                 shift 2
                 ;;
             --service-cidr)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --service-cidr requires a value${NC}"; exit 1; }
                 SERVICE_CIDR="$2"
                 shift 2
                 ;;
             --pod-cidr)
+                [[ $# -ge 2 ]] || { echo -e "${RED}Error: --pod-cidr requires a value${NC}"; exit 1; }
                 POD_CIDR="$2"
                 shift 2
                 ;;
@@ -1031,6 +1095,8 @@ main() {
                 ;;
         esac
     done
+
+    validate_inputs
     
     # 验证参数
     if [[ "$DEPLOY_MODE" == "worker" ]] && [[ -z "$MASTER_IP" ]]; then

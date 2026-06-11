@@ -24,15 +24,17 @@
 # 更新日期: 2025-06-22
 #==============================================================================
 
+set -euo pipefail
+
 # 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[0;37m'
-NC='\033[0m' # No Color
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly PURPLE='\033[0;35m'
+readonly CYAN='\033[0;36m'
+readonly WHITE='\033[0;37m'
+readonly NC='\033[0m'
 
 # 全局变量
 PG_VERSION=""
@@ -50,18 +52,64 @@ EXTENSIONS=""
 ENABLE_SSL=false
 BACKUP_SCHEDULE=false
 FORCE_INSTALL=false
-SCRIPT_VERSION="1.0.0"
-LOG_FILE="/tmp/postgresql_install_$(date +%Y%m%d_%H%M%S).log"
+readonly SCRIPT_VERSION="1.1.0"
+readonly LOG_FILE="/tmp/postgresql_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置
-DEFAULT_PG_VERSION="15"
-CONFIG_DIR="/etc/postgresql"
-LOG_DIR="/var/log/postgresql"
-BACKUP_DIR="/var/backups/postgresql"
+readonly DEFAULT_PG_VERSION="15"
+readonly CONFIG_DIR="/etc/postgresql"
+readonly LOG_DIR="/var/log/postgresql"
+readonly BACKUP_DIR="/var/backups/postgresql"
 
 # 记录日志
 log() {
     echo -e "${1}" | tee -a "${LOG_FILE}"
+}
+
+error_exit() {
+    log "${RED}错误: $1${NC}"
+    exit 1
+}
+
+download_to_temp() {
+    local url="$1"
+    local temp_file=""
+    temp_file=$(mktemp "/tmp/pg-download.XXXXXX") || return 1
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+    printf '%s\n' "$temp_file"
+}
+
+validate_pg_version() {
+    [[ "$1" =~ ^(12|13|14|15|16)$ ]]
+}
+
+validate_port() {
+    [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+validate_deploy_mode() {
+    [[ "$1" =~ ^(standalone|primary|standby)$ ]]
+}
+
+validate_inputs() {
+    if [[ -n "$PG_VERSION" ]] && ! validate_pg_version "$PG_VERSION"; then
+        error_exit "PostgreSQL版本无效: $PG_VERSION (支持: 12, 13, 14, 15, 16)"
+    fi
+    if ! validate_port "$PG_PORT"; then
+        error_exit "端口号无效: $PG_PORT"
+    fi
+    if ! validate_deploy_mode "$DEPLOY_MODE"; then
+        error_exit "部署模式无效: $DEPLOY_MODE (必须是 standalone, primary 或 standby)"
+    fi
+    if [[ "$DEPLOY_MODE" == "standby" ]] && [[ -z "$PRIMARY_HOST" ]]; then
+        error_exit "standby模式需要指定 --primary-host"
+    fi
+    if [[ -n "$MAX_CONNECTIONS" ]] && ! [[ "$MAX_CONNECTIONS" =~ ^[0-9]+$ ]]; then
+        error_exit "最大连接数必须是整数: $MAX_CONNECTIONS"
+    fi
 }
 
 # 显示标题
@@ -157,32 +205,43 @@ check_postgresql_installed() {
         fi
         
         # 停止现有服务
-        systemctl stop postgresql* 2>/dev/null || true
+        systemctl stop postgresql 2>/dev/null || systemctl stop "postgresql-${PG_VERSION}" 2>/dev/null || true
     fi
 }
 
 # 添加PostgreSQL官方仓库
 add_postgresql_repo() {
     log "${CYAN}添加PostgreSQL官方仓库...${NC}"
-    
+    local key_file=""
+    local rpm_file=""
+    local repo_codename=""
+
     case $OS in
         ubuntu|debian)
-            # 安装依赖
             apt-get update
             apt-get install -y wget ca-certificates
-            
-            # 添加PostgreSQL APT仓库
-            wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-            echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+            key_file=$(download_to_temp "https://www.postgresql.org/media/keys/ACCC4CF8.asc") || \
+                error_exit "PostgreSQL签名密钥下载失败"
+            apt-key add "$key_file"
+            rm -f -- "$key_file"
+            repo_codename=$(lsb_release -cs)
+            printf 'deb http://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$repo_codename" \
+                > /etc/apt/sources.list.d/pgdg.list
             apt-get update
             ;;
         centos|rhel|fedora|rocky|almalinux)
-            # 安装PostgreSQL YUM仓库
             if [[ "$VER_MAJOR" == "7" ]]; then
-                yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+                rpm_file=$(download_to_temp "https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm") || \
+                    error_exit "PostgreSQL RPM仓库包下载失败"
+                yum install -y "$rpm_file"
             elif [[ "$VER_MAJOR" == "8" ]] || [[ "$VER_MAJOR" == "9" ]]; then
-                dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+                rpm_file=$(download_to_temp "https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm") || \
+                    error_exit "PostgreSQL RPM仓库包下载失败"
+                dnf install -y "$rpm_file"
+            else
+                error_exit "不支持的RHEL版本: $VER_MAJOR"
             fi
+            rm -f -- "$rpm_file"
             ;;
     esac
 }
@@ -431,80 +490,72 @@ start_postgresql_service() {
         log "${GREEN}PostgreSQL服务启动成功${NC}"
     else
         log "${RED}PostgreSQL服务启动失败${NC}"
-        systemctl status postgresql* | head -20
-        exit 1
+        systemctl status postgresql 2>/dev/null || systemctl status "postgresql-${PG_VERSION}" 2>/dev/null || true
+        error_exit "PostgreSQL服务启动失败"
     fi
 }
 
 # 设置postgres用户密码
 set_postgres_password() {
     log "${CYAN}设置postgres用户密码...${NC}"
-    
+
     if [[ -z "$PG_PASSWORD" ]]; then
         PG_PASSWORD=$(generate_password)
         log "${YELLOW}生成的postgres密码: $PG_PASSWORD${NC}"
     fi
-    
-    # 设置密码
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$PG_PASSWORD';"
-    
-    # 保存密码到文件
-    echo "localhost:$PG_PORT:*:postgres:$PG_PASSWORD" > /root/.pgpass
+
+    # 使用 PGPASSWORD 环境变量代替命令行参数，避免密码泄露
+    PGPASSWORD="$PG_PASSWORD" sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$PG_PASSWORD';"
+    unset PGPASSWORD
+
+    printf 'localhost:%s:*:postgres:%s\n' "$PG_PORT" "$PG_PASSWORD" > /root/.pgpass
     chmod 600 /root/.pgpass
 }
 
 # 配置主服务器
 configure_primary() {
     log "${CYAN}配置主服务器...${NC}"
-    
-    # 生成复制用户密码
+    local primary_ip=""
+
     if [[ -z "$REPL_PASSWORD" ]]; then
         REPL_PASSWORD=$(generate_password)
     fi
-    
-    # 创建复制用户
-    sudo -u postgres psql -c "CREATE USER $REPL_USER WITH REPLICATION ENCRYPTED PASSWORD '$REPL_PASSWORD';"
-    
-    # 创建复制槽 (PG 9.4+)
-    sudo -u postgres psql -c "SELECT pg_create_physical_replication_slot('standby_slot');"
-    
+
+    PGPASSWORD="$PG_PASSWORD" sudo -u postgres psql -c "CREATE USER $REPL_USER WITH REPLICATION ENCRYPTED PASSWORD '$REPL_PASSWORD';"
+    PGPASSWORD="$PG_PASSWORD" sudo -u postgres psql -c "SELECT pg_create_physical_replication_slot('standby_slot');"
+    unset PGPASSWORD
+
+    primary_ip=$(hostname -I | awk '{print $1}')
     log "${GREEN}主服务器配置完成${NC}"
     log "${YELLOW}复制用户: $REPL_USER / $REPL_PASSWORD${NC}"
-    
-    # 保存复制信息
-    cat > /root/.pg_replication_info << EOF
-PRIMARY_HOST=$(hostname -I | awk '{print $1}')
-PRIMARY_PORT=$PG_PORT
-REPLICATION_USER=$REPL_USER
-REPLICATION_PASSWORD=$REPL_PASSWORD
-REPLICATION_SLOT=standby_slot
-EOF
+
+    printf 'PRIMARY_HOST=%s\nPRIMARY_PORT=%s\nREPLICATION_USER=%s\nREPLICATION_PASSWORD=%s\nREPLICATION_SLOT=standby_slot\n' \
+        "$primary_ip" "$PG_PORT" "$REPL_USER" "$REPL_PASSWORD" > /root/.pg_replication_info
     chmod 600 /root/.pg_replication_info
 }
 
 # 配置备用服务器
 configure_standby() {
     log "${CYAN}配置备用服务器...${NC}"
-    
+
     if [[ -z "$PRIMARY_HOST" ]]; then
-        log "${RED}错误: 未指定主服务器地址${NC}"
-        return 1
+        error_exit "未指定主服务器地址"
     fi
-    
-    # 停止PostgreSQL
-    systemctl stop postgresql* 2>/dev/null || true
-    
-    # 清空数据目录
-    rm -rf "$DATA_DIR"/*
-    
-    # 获取复制凭据
-    read -p "请输入主服务器的复制用户名 [replicator]: " REPL_USER
+
+    # 停止PostgreSQL（使用确切的服务名）
+    systemctl stop postgresql 2>/dev/null || systemctl stop "postgresql-${PG_VERSION}" 2>/dev/null || true
+
+    # 清空数据目录（仅清理已知模式的文件）
+    if [[ -d "$DATA_DIR" ]]; then
+        find "$DATA_DIR" -mindepth 1 -maxdepth 1 -delete 2>/dev/null || true
+    fi
+
+    read -r -p "请输入主服务器的复制用户名 [replicator]: " REPL_USER
     REPL_USER=${REPL_USER:-replicator}
-    read -s -p "请输入主服务器的复制密码: " REPL_PASSWORD
+    read -r -s -p "请输入主服务器的复制密码: " REPL_PASS
     echo
-    
-    # 创建.pgpass文件
-    echo "$PRIMARY_HOST:$PG_PORT:*:$REPL_USER:$REPL_PASSWORD" >> /var/lib/postgresql/.pgpass
+
+    printf '%s:%s:*:%s:%s\n' "$PRIMARY_HOST" "$PG_PORT" "$REPL_USER" "$REPL_PASS" >> /var/lib/postgresql/.pgpass
     chown postgres:postgres /var/lib/postgresql/.pgpass
     chmod 600 /var/lib/postgresql/.pgpass
     
@@ -617,9 +668,9 @@ EOF
     sed -i "s/__PG_VERSION__/$PG_VERSION/g" /usr/local/bin/pg_backup.sh
     chmod +x /usr/local/bin/pg_backup.sh
     
-    # 添加cron任务
-    echo "0 2 * * * /usr/local/bin/pg_backup.sh" | crontab -
-    
+    # 添加cron任务（追加到现有crontab，不覆盖）
+    (crontab -l 2>/dev/null || true; echo "0 2 * * * /usr/local/bin/pg_backup.sh") | crontab -
+
     log "${GREEN}自动备份配置完成 (每天凌晨2点执行)${NC}"
 }
 
@@ -676,13 +727,16 @@ EOF
 # 配置监控
 configure_monitoring() {
     log "${CYAN}配置PostgreSQL监控...${NC}"
-    
+    local mon_pass=""
+    mon_pass=$(generate_password)
+
     # 创建监控用户
     sudo -u postgres psql << EOF
-CREATE USER monitor WITH PASSWORD 'monitor123';
+CREATE USER monitor WITH PASSWORD '$mon_pass';
 GRANT pg_monitor TO monitor;
 GRANT CONNECT ON DATABASE postgres TO monitor;
 EOF
+    log "${YELLOW}监控用户: monitor / $mon_pass${NC}"
     
     # 创建监控视图
     sudo -u postgres psql << 'EOF'
@@ -754,7 +808,7 @@ PostgreSQL 连接信息
 - Python: postgresql://postgres:${PG_PASSWORD}@${SERVER_IP}:${PG_PORT}/postgres
 
 示例数据库: sampledb
-监控用户: monitor / monitor123
+监控用户: monitor（密码已在安装过程中生成并显示）
 
 配置文件位置: ${PG_CONFIG_DIR}
 数据目录: ${DATA_DIR}
@@ -954,14 +1008,12 @@ main() {
     done
     
     # 验证参数
-    if [[ "$DEPLOY_MODE" == "standby" ]] && [[ -z "$PRIMARY_HOST" ]]; then
-        log "${RED}错误: standby模式需要指定 --primary-host${NC}"
-        exit 1
-    fi
-    
     # 显示标题
     show_title
-    
+
+    # 验证输入参数
+    validate_inputs
+
     # 检查root权限
     check_root
     

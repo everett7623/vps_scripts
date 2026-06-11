@@ -16,7 +16,7 @@ Use semantic versioning for code releases:
 
 - `version.json` is the machine-readable source for launcher metadata
 - `CHANGELOG.md` is the human-readable change log
-- `update_log.sh` should be treated as legacy historical output until migrated or retired
+- `update_log.sh` is a legacy compatibility viewer; `CHANGELOG.md` is the canonical historical record
 
 ## Release Rule Of Thumb
 

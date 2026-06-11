@@ -93,6 +93,47 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+download_to_temp() {
+    local url="$1"
+    local temp_file=""
+
+    temp_file=$(mktemp "/tmp/docker-download.XXXXXX")
+    if ! curl -fsSL "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+
+    printf '%s\n' "$temp_file"
+}
+
+safe_remove_dir() {
+    local target="$1"
+
+    case "$target" in
+        "$DOCKER_DATA_DIR"|"$DOCKER_CONFIG_DIR")
+            if [ -d "$target" ]; then
+                rm -rf -- "$target"
+            fi
+            ;;
+        *)
+            error_exit "Refusing to remove unexpected directory: $target"
+            ;;
+    esac
+}
+
+safe_remove_file() {
+    local target="$1"
+
+    case "$target" in
+        /usr/local/bin/docker-compose|/usr/bin/docker-compose)
+            rm -f -- "$target"
+            ;;
+        *)
+            error_exit "Refusing to remove unexpected file: $target"
+            ;;
+    esac
+}
+
 # 检查root权限
 check_root() {
     if [[ $EUID -ne 0 ]]; then
@@ -226,6 +267,8 @@ setup_docker_repo() {
     log INFO "配置Docker仓库..."
     
     local docker_repo_url
+    local key_file=""
+    local repo_codename=""
     if [[ $USE_CN_MIRROR == true ]]; then
         docker_repo_url="https://mirrors.aliyun.com/docker-ce"
     else
@@ -236,12 +279,17 @@ setup_docker_repo() {
         ubuntu|debian)
             # 添加Docker GPG密钥
             mkdir -p /etc/apt/keyrings
-            curl -fsSL "$docker_repo_url/linux/$OS/gpg" | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            key_file=$(download_to_temp "$docker_repo_url/linux/$OS/gpg") || error_exit "Docker GPG key download failed"
+            gpg --dearmor -o /etc/apt/keyrings/docker.gpg "$key_file"
+            rm -f -- "$key_file"
             
             # 添加Docker仓库
-            echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] $docker_repo_url/linux/$OS \
-                $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+            repo_codename=$(lsb_release -cs)
+            printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.gpg] %s/linux/%s %s stable\n' \
+                "$(dpkg --print-architecture)" \
+                "$docker_repo_url" \
+                "$OS" \
+                "$repo_codename" > /etc/apt/sources.list.d/docker.list
             
             apt-get update -qq
             ;;
@@ -293,7 +341,8 @@ install_docker_compose() {
     log INFO "安装Docker Compose..."
     
     local compose_version
-    compose_version=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    local compose_file=""
+    compose_version=$(curl -fsSL https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || true)
     
     if [[ -z $compose_version ]]; then
         compose_version="v2.24.0"  # 默认版本
@@ -308,8 +357,9 @@ install_docker_compose() {
     fi
     
     # 下载并安装
-    curl -L "$download_url" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
+    compose_file=$(download_to_temp "$download_url") || error_exit "Docker Compose download failed"
+    install -m 0755 "$compose_file" /usr/local/bin/docker-compose
+    rm -f -- "$compose_file"
     
     # 创建软链接
     ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
@@ -408,10 +458,10 @@ remove_docker() {
     esac
     
     # 删除Docker数据和配置
-    rm -rf "$DOCKER_DATA_DIR"
-    rm -rf "$DOCKER_CONFIG_DIR"
-    rm -f /usr/local/bin/docker-compose
-    rm -f /usr/bin/docker-compose
+    safe_remove_dir "$DOCKER_DATA_DIR"
+    safe_remove_dir "$DOCKER_CONFIG_DIR"
+    safe_remove_file /usr/local/bin/docker-compose
+    safe_remove_file /usr/bin/docker-compose
     
     log SUCCESS "Docker卸载完成"
 }

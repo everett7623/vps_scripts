@@ -1,0 +1,18 @@
+# Keep shell scripts executable on Linux/WSL by avoiding CRLF checkouts.
+*.sh text eol=lf
+
+# Keep repo metadata and documentation stable across Windows/NAS sync clients.
+*.md text eol=lf
+*.json text eol=lf
+*.conf text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Preserve binary assets if they are added later.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.tar.gz binary

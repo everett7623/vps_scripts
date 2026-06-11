@@ -19,15 +19,17 @@
 # 更新日期: 2025-06-22
 #==============================================================================
 
+set -euo pipefail
+
 # 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[0;37m'
-NC='\033[0m' # No Color
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly PURPLE='\033[0;35m'
+readonly CYAN='\033[0;36m'
+readonly WHITE='\033[0;37m'
+readonly NC='\033[0m'
 
 # 全局变量
 REDIS_VERSION=""
@@ -39,19 +41,72 @@ DATA_DIR="/var/lib/redis"
 MAX_MEMORY=""
 ENABLE_AOF=false
 FORCE_INSTALL=false
-SCRIPT_VERSION="1.0.0"
-LOG_FILE="/tmp/redis_install_$(date +%Y%m%d_%H%M%S).log"
+readonly SCRIPT_VERSION="1.1.0"
+readonly LOG_FILE="/tmp/redis_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置
-DEFAULT_REDIS_VERSION="7.2.3"
-REDIS_USER="redis"
-CONFIG_DIR="/etc/redis"
-LOG_DIR="/var/log/redis"
-PID_FILE="/var/run/redis/redis-server.pid"
+readonly DEFAULT_REDIS_VERSION="7.2.3"
+readonly REDIS_USER="redis"
+readonly CONFIG_DIR="/etc/redis"
+readonly LOG_DIR="/var/log/redis"
+readonly PID_FILE="/var/run/redis/redis-server.pid"
 
 # 记录日志
 log() {
     echo -e "${1}" | tee -a "${LOG_FILE}"
+}
+
+error_exit() {
+    log "${RED}错误: $1${NC}"
+    exit 1
+}
+
+download_to_temp() {
+    local url="$1"
+    local temp_file=""
+    temp_file=$(mktemp "/tmp/redis-download.XXXXXX") || return 1
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+    printf '%s\n' "$temp_file"
+}
+
+validate_port() {
+    [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+validate_deploy_mode() {
+    [[ "$1" =~ ^(standalone|master|slave|sentinel)$ ]]
+}
+
+validate_redis_version() {
+    [[ "$1" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]
+}
+
+validate_max_memory() {
+    [[ "$1" =~ ^[0-9]+[KMGkmg]?$ ]]
+}
+
+validate_inputs() {
+    if [[ -n "$REDIS_VERSION" ]] && ! validate_redis_version "$REDIS_VERSION"; then
+        error_exit "Redis版本格式无效: $REDIS_VERSION"
+    fi
+    if ! validate_port "$REDIS_PORT"; then
+        error_exit "端口号无效: $REDIS_PORT"
+    fi
+    if ! validate_deploy_mode "$DEPLOY_MODE"; then
+        error_exit "部署模式无效: $DEPLOY_MODE (必须是 standalone, master, slave 或 sentinel)"
+    fi
+    if [[ "$DEPLOY_MODE" == "slave" ]] && [[ -z "$MASTER_HOST" ]]; then
+        error_exit "slave模式需要指定 --master-host"
+    fi
+    if [[ -n "$MAX_MEMORY" ]] && ! validate_max_memory "$MAX_MEMORY"; then
+        error_exit "内存限制格式无效: $MAX_MEMORY (例如: 1G, 512M)"
+    fi
+    if [[ -n "$REDIS_PASSWORD" ]] && [[ ${#REDIS_PASSWORD} -lt 8 ]]; then
+        log "${YELLOW}警告: Redis密码长度少于8个字符，建议使用更安全的密码${NC}"
+    fi
 }
 
 # 显示标题
@@ -170,58 +225,58 @@ create_redis_user() {
 # 获取最新Redis版本
 get_latest_redis_version() {
     log "${CYAN}获取最新Redis版本...${NC}"
-    
-    # 从Redis下载页面获取最新稳定版本
-    local latest=$(curl -s http://download.redis.io/redis-stable/VERSION | head -1)
-    
+    local latest=""
+    latest=$(curl -fsSL --connect-timeout 10 --max-time 30 http://download.redis.io/redis-stable/VERSION 2>/dev/null | head -1 || true)
     if [[ -n "$latest" ]]; then
         REDIS_VERSION="$latest"
     else
         REDIS_VERSION="$DEFAULT_REDIS_VERSION"
     fi
-    
     log "${GREEN}将安装Redis版本: ${REDIS_VERSION}${NC}"
 }
 
 # 编译安装Redis
 install_redis() {
-    # 如果没有指定版本，获取最新版本
+    local work_dir=""
+    local archive_file=""
+    local make_jobs=""
+
     if [[ -z "$REDIS_VERSION" ]]; then
         get_latest_redis_version
     fi
-    
+
     log "${CYAN}开始安装 Redis ${REDIS_VERSION}...${NC}"
-    
-    # 下载Redis源码
-    cd /tmp
-    wget "http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz"
-    
-    if [[ ! -f "redis-${REDIS_VERSION}.tar.gz" ]]; then
-        log "${RED}错误: Redis下载失败${NC}"
-        exit 1
+
+    work_dir=$(mktemp -d "/tmp/redis-build.XXXXXX") || error_exit "创建构建目录失败"
+    archive_file="${work_dir}/redis-${REDIS_VERSION}.tar.gz"
+
+    if ! wget -O "$archive_file" "http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" 2>/dev/null; then
+        rm -rf -- "$work_dir"
+        error_exit "Redis源码下载失败"
     fi
-    
-    # 解压并编译
-    tar -xzf "redis-${REDIS_VERSION}.tar.gz"
-    cd "redis-${REDIS_VERSION}"
-    
+
+    if [[ ! -s "$archive_file" ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "Redis源码下载为空"
+    fi
+
+    tar -xzf "$archive_file" -C "$work_dir"
+    cd "${work_dir}/redis-${REDIS_VERSION}"
+
     log "${YELLOW}编译Redis...${NC}"
-    make
-    make test
+    make_jobs=$(nproc 2>/dev/null || echo 2)
+    make -j"$make_jobs"
+    # Skip make test in non-interactive mode — it can hang
     make install PREFIX=/usr/local
-    
-    # 创建软链接
-    ln -sf /usr/local/bin/redis-server /usr/bin/redis-server
-    ln -sf /usr/local/bin/redis-cli /usr/bin/redis-cli
-    ln -sf /usr/local/bin/redis-sentinel /usr/bin/redis-sentinel
-    ln -sf /usr/local/bin/redis-benchmark /usr/bin/redis-benchmark
-    ln -sf /usr/local/bin/redis-check-aof /usr/bin/redis-check-aof
-    ln -sf /usr/local/bin/redis-check-rdb /usr/bin/redis-check-rdb
-    
-    # 清理临时文件
+
+    # 创建软链接（幂等）
+    for bin in redis-server redis-cli redis-sentinel redis-benchmark redis-check-aof redis-check-rdb; do
+        ln -sf "/usr/local/bin/${bin}" "/usr/bin/${bin}"
+    done
+
     cd /
-    rm -rf /tmp/redis-${REDIS_VERSION}*
-    
+    rm -rf -- "$work_dir"
+
     log "${GREEN}Redis ${REDIS_VERSION} 安装完成${NC}"
 }
 
@@ -450,33 +505,33 @@ EOF
 # 配置内核参数
 configure_kernel_params() {
     log "${CYAN}优化内核参数...${NC}"
-    
-    # 备份原有配置
-    cp /etc/sysctl.conf /etc/sysctl.conf.bak.$(date +%Y%m%d_%H%M%S)
-    
-    # Redis推荐的内核参数
-    cat >> /etc/sysctl.conf << EOF
+    local sysctl_conf="/etc/sysctl.conf"
 
-# Redis优化参数
-vm.overcommit_memory = 1
-net.core.somaxconn = 1024
-EOF
-    
-    # 应用参数
-    sysctl -p
-    
-    # 禁用透明大页
-    echo never > /sys/kernel/mm/transparent_hugepage/enabled
-    echo never > /sys/kernel/mm/transparent_hugepage/defrag
-    
-    # 持久化设置
-    cat > /etc/rc.local << EOF
-#!/bin/bash
-echo never > /sys/kernel/mm/transparent_hugepage/enabled
-echo never > /sys/kernel/mm/transparent_hugepage/defrag
-exit 0
-EOF
-    chmod +x /etc/rc.local
+    # 备份原有配置
+    cp "$sysctl_conf" "${sysctl_conf}.bak.$(date +%Y%m%d_%H%M%S)"
+
+    # Redis推荐的内核参数（避免重复添加）
+    if ! grep -q '^vm.overcommit_memory = 1' "$sysctl_conf" 2>/dev/null; then
+        printf '\n# Redis优化参数\nvm.overcommit_memory = 1\n' >> "$sysctl_conf"
+    fi
+    if ! grep -q '^net.core.somaxconn = 1024' "$sysctl_conf" 2>/dev/null; then
+        printf 'net.core.somaxconn = 1024\n' >> "$sysctl_conf"
+    fi
+
+    sysctl -p 2>/dev/null || true
+
+    # 禁用透明大页（运行时）
+    if [[ -f /sys/kernel/mm/transparent_hugepage/enabled ]]; then
+        echo never > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+    fi
+    if [[ -f /sys/kernel/mm/transparent_hugepage/defrag ]]; then
+        echo never > /sys/kernel/mm/transparent_hugepage/defrag 2>/dev/null || true
+    fi
+
+    # 持久化透明大页设置（仅追加，不覆盖已有rc.local）
+    if [[ -f /etc/rc.local ]] && ! grep -q 'transparent_hugepage' /etc/rc.local 2>/dev/null; then
+        sed -i '/^exit 0$/i echo never > /sys/kernel/mm/transparent_hugepage/enabled\necho never > /sys/kernel/mm/transparent_hugepage/defrag' /etc/rc.local 2>/dev/null || true
+    fi
 }
 
 # 启动Redis服务
@@ -513,33 +568,28 @@ start_redis_service() {
 # 验证安装
 verify_installation() {
     log "${CYAN}验证Redis安装...${NC}"
-    
-    # 检查Redis版本
+    local redis_auth=""
+
     redis_version=$(redis-server --version)
     log "${GREEN}${redis_version}${NC}"
-    
-    # 测试Redis连接
+
     if [[ "$DEPLOY_MODE" != "sentinel" ]]; then
         log "${CYAN}测试Redis连接...${NC}"
-        
+
+        # 使用 REDISCLI_AUTH 环境变量代替 -a 参数，避免密码出现在进程列表中
         if [[ -n "$REDIS_PASSWORD" ]]; then
-            echo "AUTH $REDIS_PASSWORD" | redis-cli -p $REDIS_PORT
+            export REDISCLI_AUTH="$REDIS_PASSWORD"
         fi
-        
-        # 测试基本操作
-        test_result=$(redis-cli -p $REDIS_PORT ping)
+
+        test_result=$(redis-cli -p "$REDIS_PORT" ping 2>/dev/null || echo "FAILED")
         if [[ "$test_result" == "PONG" ]]; then
             log "${GREEN}Redis连接测试成功${NC}"
-            
-            # 显示Redis信息
-            if [[ -n "$REDIS_PASSWORD" ]]; then
-                redis-cli -p $REDIS_PORT -a "$REDIS_PASSWORD" INFO server | grep -E "redis_version|tcp_port|config_file"
-            else
-                redis-cli -p $REDIS_PORT INFO server | grep -E "redis_version|tcp_port|config_file"
-            fi
+            redis-cli -p "$REDIS_PORT" INFO server 2>/dev/null | grep -E "redis_version|tcp_port|config_file" || true
         else
             log "${RED}Redis连接测试失败${NC}"
         fi
+
+        unset REDISCLI_AUTH 2>/dev/null || true
     fi
 }
 
@@ -680,7 +730,10 @@ main() {
     
     # 显示标题
     show_title
-    
+
+    # 验证输入参数
+    validate_inputs
+
     # 检查root权限
     check_root
     

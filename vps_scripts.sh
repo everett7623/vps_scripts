@@ -1,13 +1,14 @@
 #!/bin/bash
 # ==============================================================================
 # Script: vps_scripts.sh
-# Purpose: Legacy compatibility launcher that hands off to the maintained modular
-#          launcher experience in vps.sh.
+# Purpose: Supported legacy-only compatibility launcher. New features belong in
+#          vps.sh and modular repository scripts.
 # ==============================================================================
 
 set -u
 
 VERSION="2026-06-07 compat-1.0"
+SUPPORT_STATUS="legacy-only"
 SCRIPT_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
 
@@ -69,8 +70,9 @@ print_header() {
     draw_rule 74 "$CYAN"
     echo -e "${BOLD}${WHITE}  VPS 综合管理脚本兼容入口${RESET}"
     echo -e "${CYAN}  版本:${RESET} ${VERSION}"
+    echo -e "${CYAN}  状态:${RESET} ${SUPPORT_STATUS}"
     echo -e "${CYAN}  项目:${RESET} ${PROJECT_URL}"
-    echo -e "${DIM}当前为旧版兼容入口，将转交给持续维护的 vps.sh。${RESET}"
+    echo -e "${DIM}此入口仅维护兼容性；新功能只在 vps.sh 与模块脚本中开发。${RESET}"
     draw_rule 74 "$CYAN"
     echo ""
 }
@@ -121,6 +123,7 @@ show_help() {
         "选项：" \
         "  --local     直接运行同目录下的 vps.sh" \
         "  --remote    下载并运行最新版远程 vps.sh" \
+        "  --version   显示兼容入口版本与支持状态" \
         "  --help      显示此帮助信息"
 }
 
@@ -134,7 +137,11 @@ main_menu() {
         echo -e "${YELLOW} 3${RESET}. 显示快速启动命令                ${DIM}便于复制使用${RESET}"
         echo -e "${YELLOW} 0${RESET}. 退出"
         echo ""
-        read -r -p "请选择 [0-3]: " choice
+        if ! read -r -p "请选择 [0-3]: " choice; then
+            echo ""
+            echo -e "${YELLOW}输入已结束，兼容启动器退出。${RESET}"
+            return 0
+        fi
 
         case "${choice}" in
             1) launch_local_vps ;;
@@ -169,6 +176,9 @@ main() {
             ;;
         --help|-h)
             show_help
+            ;;
+        --version)
+            printf '%s (%s)\n' "${VERSION}" "${SUPPORT_STATUS}"
             ;;
         "")
             main_menu
