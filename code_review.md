@@ -2,9 +2,9 @@
 
 This file captures the current high-priority review findings and follow-up direction.
 
-## Current State (2026-06-11)
+## Current State (2026-06-12)
 
-All 11 core service installers have been hardened with safety tests, `set -euo pipefail`, and guarded execution paths. A max-effort 9-angle code review found and fixed 13 bugs across 12 files. 29-pass test suite is green.
+All 11 core service installers have been hardened with safety tests, `set -euo pipefail`, and guarded execution paths. The launcher and shared UI now use responsive widths, display-width-aware CJK alignment, and compact narrow-terminal layouts. The 30-test validation suite is green.
 
 ## Findings
 
@@ -24,6 +24,7 @@ All 11 core service installers have been hardened with safety tests, `set -euo p
 
 - Some scripts use predictable `/tmp` log file paths (`LOG_FILE="/tmp/xxx_$(date ...).log"`) rather than `mktemp`.
 - Test coverage is syntax/path/pattern-based — no behavioral or integration tests.
+- Several legacy category scripts still use independent fixed-width banners; migrate them to shared UI helpers when those categories are modernized.
 
 ## Completed In This Optimization Round (2026-06-11)
 
@@ -45,9 +46,10 @@ All 11 core service installers have been hardened with safety tests, `set -euo p
 - Hardened config helpers: exact keys, same-directory atomic writes, symlink guards
 
 ### Test suite
-- 29 tests, all pass
+- 30 tests, all pass
 - Per-installer safety tests for all 11 core installers
 - Cross-category coverage for launcher paths, execution safety, UI, loader, EOF handling
+- Responsive layout coverage for wide/narrow terminals and `LC_ALL=C` CJK width handling
 
 ### Documentation
 - `CLAUDE.md`: accurate architecture, distro/arch, test commands

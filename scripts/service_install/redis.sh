@@ -41,7 +41,7 @@ DATA_DIR="/var/lib/redis"
 MAX_MEMORY=""
 ENABLE_AOF=false
 FORCE_INSTALL=false
-readonly SCRIPT_VERSION="1.1.0"
+readonly SCRIPT_VERSION="1.0.0"
 readonly LOG_FILE="/tmp/redis_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置

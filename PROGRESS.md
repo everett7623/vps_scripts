@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Service-installer hardening completed. All 11 core installers now have safety tests, `set -euo pipefail`, and guarded execution paths. Menu expanded to 22 items (WP Panel added). Proxy tools now include Hysteria2. Documentation refresh and cross-script bug-fix sweep completed.
+Version 1.0.0 is the initialized stable baseline, with a responsive launcher UI, CJK-aware alignment, narrow-terminal layouts, and 30 repository validation tests. Service-installer hardening remains complete for all 11 core installers.
 
 ## Completed
 
@@ -15,6 +15,7 @@ Service-installer hardening completed. All 11 core installers now have safety te
 - Added launcher local-file fast path and parallel module-bundle loading
 - Tuned download and public-IP probe timeouts
 - Fixed launcher menu EOF handling for non-interactive runs
+- Added responsive terminal widths, CJK-aware menu alignment, compact narrow-screen rows, and clearer visual hierarchy
 - Added `bash -n` validation to `run_remote_script_url()` and `run_remote_command()`
 - Fixed wget missing `--connect-timeout`; added `pipefail` to `run_remote_command`
 
@@ -55,12 +56,12 @@ Service-installer hardening completed. All 11 core installers now have safety te
 - Defined as supported legacy-only compatibility handoff
 - Fixed EOF handling and quoting in error messages
 
-### Tests (29 validation scripts)
+### Tests (30 validation scripts)
 - Launcher coverage: `validate_launcher_paths`, `validate_system_tools_launcher`, `validate_service_install_launcher`, `validate_active_category_coverage`
 - Core assets: `validate_core_assets`, `validate_script_headers`, `validate_line_endings_policy`
 - Policy: `validate_execution_safety`, `validate_legacy_launcher_policy`, `validate_update_scripts_legacy`, `validate_update_log_handoff`
 - Per-installer safety: `docker`, `python`, `kubernetes`, `go`, `java`, `nginx`, `mysql`, `postgresql`, `redis`
-- UI/misc: `validate_ui_framework`, `validate_chinese_ui`, `validate_loader_performance`, `validate_menu_eof`, `validate_command_install`, `validate_input_contract`, `validate_remote_module_runtime`, `validate_common_helpers`
+- UI/misc: `validate_ui_framework`, `validate_ui_layout`, `validate_chinese_ui`, `validate_loader_performance`, `validate_menu_eof`, `validate_command_install`, `validate_input_contract`, `validate_remote_module_runtime`, `validate_common_helpers`
 
 ### Documentation
 - `CLAUDE.md`: accurate distro/arch/version metadata, architecture sections for `version.json`/`update_log.sh`/`.gitattributes`

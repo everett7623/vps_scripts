@@ -33,6 +33,8 @@
 
 ## P2 (in progress)
 
+- [x] Refresh launcher/shared UI alignment, hierarchy, and narrow-terminal layout
+- [x] Add CJK display-width handling and responsive UI regression coverage
 - [x] Normalize logging conventions across system_tools modules
 - [x] Optimize module loading speed and slow-network behavior
 - [x] Standardize script headers and encoding (LF, no BOM, `#!/bin/bash`)

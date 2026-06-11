@@ -2,7 +2,7 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "2.7.0",
+    "version": "1.0.0",
     "release_date": "2026-06-12",
     "author": "Jensfrank",
     "repository": "https://github.com/everett7623/vps_scripts",
@@ -13,7 +13,7 @@
     "legacy_compat": "vps_scripts.sh",
     "legacy_support_status": "legacy-only",
     "legacy_policy": "compatibility handoff only; no new features",
-    "style_version": "2026.06",
+    "style_version": "1.0.0",
     "primary_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "legacy_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
   },
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Framework modernization in progress: launcher hardening, cleaner shared helpers, stronger validation."
+    "message": "Initial stable release with modular tooling, responsive terminal UI, and repository validation."
   },
   "compatibility": {
     "min_bash_version": "4.0",
@@ -51,7 +51,8 @@
     "System maintenance scripts",
     "Benchmark and network diagnostics",
     "Service installation modules",
-    "Validation-oriented repository layout"
+    "Validation-oriented repository layout",
+    "Responsive terminal UI"
   ],
   "documentation": {
     "readme": "README.md",
@@ -64,7 +65,8 @@
   "validation": {
     "launcher_paths": "tests/validate_launcher_paths.sh",
     "core_assets": "tests/validate_core_assets.sh",
-    "system_tools": "tests/validate_system_tools.sh"
+    "system_tools": "tests/validate_system_tools.sh",
+    "ui_layout": "tests/validate_ui_layout.sh"
   },
   "checksums": {
     "vps.sh": "auto-generated-on-release",

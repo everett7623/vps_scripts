@@ -9,15 +9,18 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="2.7.0"
+PROJECT_VERSION="1.0.0"
 PROJECT_AUTHOR="Jensfrank"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
 BLOG_URL="https://seedloc.com"
-LAUNCHER_STYLE_VERSION="2026.06"
+LAUNCHER_STYLE_VERSION="1.0.0"
 LOCAL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')"
 DOWNLOAD_CONNECT_TIMEOUT="${VPS_DOWNLOAD_CONNECT_TIMEOUT:-6}"
 DOWNLOAD_MAX_TIME="${VPS_DOWNLOAD_MAX_TIME:-60}"
+UI_WIDTH=80
+UI_MAX_WIDTH=88
+MENU_LABEL_WIDTH=20
 REPO_DOWNLOAD_BASES=(
     "https://raw.githubusercontent.com/everett7623/vps_scripts/main"
     "https://github.com/everett7623/vps_scripts/raw/refs/heads/main"
@@ -61,11 +64,97 @@ check_environment() {
 }
 
 clear_screen() {
-    command -v clear >/dev/null 2>&1 && clear
+    if [ -t 1 ] && [ -n "${TERM:-}" ] && [ "${TERM}" != "dumb" ] && command -v clear >/dev/null 2>&1; then
+        clear
+    fi
+}
+
+get_ui_width() {
+    local terminal_width="${VPS_UI_WIDTH:-${COLUMNS:-}}"
+
+    if ! [[ "${terminal_width}" =~ ^[0-9]+$ ]]; then
+        if [ -n "${TERM:-}" ] && command -v tput >/dev/null 2>&1; then
+            terminal_width=$(tput cols 2>/dev/null || printf '80')
+        else
+            terminal_width=80
+        fi
+    fi
+
+    [[ "${terminal_width}" =~ ^[0-9]+$ ]] || terminal_width=80
+    [ "${terminal_width}" -gt "${UI_MAX_WIDTH}" ] && terminal_width="${UI_MAX_WIDTH}"
+    [ "${terminal_width}" -lt 24 ] && terminal_width=24
+    printf '%s\n' "${terminal_width}"
+}
+
+text_display_width() {
+    local text="${1:-}"
+    local width=""
+    local locale_name=""
+
+    [ -z "${text}" ] && {
+        printf '0\n'
+        return
+    }
+
+    if command -v wc >/dev/null 2>&1; then
+        width=$(printf '%s\n' "${text}" | wc -L 2>/dev/null || true)
+        if ! [[ "${width}" =~ ^[1-9][0-9]*$ ]]; then
+            for locale_name in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
+                width=$(printf '%s\n' "${text}" | LC_ALL="${locale_name}" wc -L 2>/dev/null || true)
+                [[ "${width}" =~ ^[1-9][0-9]*$ ]] && break
+            done
+        fi
+    fi
+
+    [[ "${width}" =~ ^[1-9][0-9]*$ ]] || width="${#text}"
+    printf '%s\n' "${width}"
+}
+
+print_spaces() {
+    local count="${1:-0}"
+    [ "${count}" -gt 0 ] && printf '%*s' "${count}" ''
+}
+
+print_centered_line() {
+    local text="${1}"
+    local color="${2:-$WHITE}"
+    local width="${3:-$UI_WIDTH}"
+    local text_width=0
+    local left_padding=0
+
+    text_width=$(text_display_width "${text}")
+    [ "${text_width}" -lt "${width}" ] && left_padding=$(((width - text_width) / 2))
+    printf '%b' "${color}"
+    print_spaces "${left_padding}"
+    printf '%s%b\n' "${text}" "${RESET}"
+}
+
+print_labeled_value() {
+    local indent="${1:-}"
+    local label="${2}"
+    local value="${3:-}"
+    local label_width="${4:-12}"
+    local current_width=0
+    local value_width=0
+    local total_width=0
+
+    current_width=$(text_display_width "${label}")
+    value_width=$(text_display_width "${value}")
+    total_width=$(text_display_width "${indent}${label}")
+
+    if [ $((total_width + label_width - current_width + value_width)) -gt "${UI_WIDTH}" ]; then
+        printf '%b%s%s%b\n' "${CYAN}" "${indent}" "${label}" "${RESET}"
+        printf '%s    %s\n' "${indent}" "${value}"
+        return
+    fi
+
+    printf '%b%s%s%b' "${CYAN}" "${indent}" "${label}" "${RESET}"
+    print_spaces "$((label_width > current_width ? label_width - current_width : 1))"
+    printf '%s\n' "${value}"
 }
 
 draw_rule() {
-    local width="${1:-74}"
+    local width="${1:-$UI_WIDTH}"
     local color="${2:-$BLUE}"
     printf '%b' "${color}"
     printf '%*s' "${width}" '' | tr ' ' '='
@@ -75,23 +164,21 @@ draw_rule() {
 print_recommended_links() {
     local indent="${1:-}"
 
-    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "GitHub 地址:" "${RESET}" "${PROJECT_URL}"
-    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "论坛推荐:" "${RESET}" "${COMMUNITY_URL}"
-    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "VPS 推荐:" "${RESET}" "${VPS_RECOMMEND_URL}"
-    printf "%b%s%-11s%b %s\n" "${CYAN}" "${indent}" "博客推荐:" "${RESET}" "${BLOG_URL}"
+    print_labeled_value "${indent}" "GitHub 地址:" "${PROJECT_URL}"
+    print_labeled_value "${indent}" "论坛推荐:" "${COMMUNITY_URL}"
+    print_labeled_value "${indent}" "VPS 推荐:" "${VPS_RECOMMEND_URL}"
+    print_labeled_value "${indent}" "博客推荐:" "${BLOG_URL}"
 }
 
 print_header() {
-    local terminal_width=80
-
     clear_screen
-    terminal_width=$(tput cols 2>/dev/null || printf '80')
+    UI_WIDTH=$(get_ui_width)
 
-    if [ "${terminal_width}" -ge 80 ]; then
-        echo -e "${YELLOW}---------------------------------By'${PROJECT_AUTHOR}---------------------------------${RESET}"
-        echo ""
-        echo -e "${BOLD}${WHITE}VPS 脚本集合 ${PROJECT_VERSION}${RESET}  ${DIM}| 模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}${RESET}"
-        print_recommended_links
+    draw_rule "${UI_WIDTH}" "${YELLOW}"
+    print_centered_line "VPS 脚本集合 ${PROJECT_VERSION}" "${BOLD}${WHITE}"
+    print_centered_line "模块化启动器 | 界面 ${LAUNCHER_STYLE_VERSION}" "${CYAN}"
+
+    if [ "${UI_WIDTH}" -ge 82 ]; then
         echo ""
         echo -e "${GRADIENT_COLORS[0]} #     # #####   #####       #####   #####  #####   ### #####  #####  #####  ${RESET}"
         echo -e "${GRADIENT_COLORS[1]} #     # #    # #     #     #     # #     # #    #   #  #    #   #   #     # ${RESET}"
@@ -100,28 +187,26 @@ print_header() {
         echo -e "${GRADIENT_COLORS[4]}  #   #  #            #           # #       #   #    #  #        #         # ${RESET}"
         echo -e "${GRADIENT_COLORS[3]}   # #   #      #     #     #     # #     # #    #   #  #        #   #     # ${RESET}"
         echo -e "${GRADIENT_COLORS[2]}    #    #       #####       #####   #####  #     # ### #        #    #####  ${RESET}"
-        echo ""
-        echo -e "${GREEN}支持主流 Linux 发行版${RESET}  ${DIM}| 安全下载 | 语法校验 | 临时隔离运行${RESET}"
-        echo -e "${YELLOW}---------------------------------By'${PROJECT_AUTHOR}---------------------------------${RESET}"
-    else
-        draw_rule 74 "$CYAN"
-        echo -e "${BOLD}${WHITE}  VPS 脚本集合 ${PROJECT_VERSION}${RESET}"
-        echo -e "${CYAN}  作者:${RESET} ${PROJECT_AUTHOR}  ${DIM}| 模块化启动器 ${LAUNCHER_STYLE_VERSION}${RESET}"
-        print_recommended_links "  "
-        draw_rule 74 "$CYAN"
     fi
+
+    echo ""
+    print_recommended_links "  "
+    echo ""
+    print_centered_line "安全下载 | 语法校验 | 临时隔离运行" "${GREEN}"
+    print_centered_line "By'${PROJECT_AUTHOR}" "${DIM}"
+    draw_rule "${UI_WIDTH}" "${YELLOW}"
     echo ""
 }
 
 print_panel_title() {
-    echo -e "${BOLD}${PURPLE}$1${RESET}"
-    draw_rule 74 "$PURPLE"
+    printf '%b  [ %s ]%b\n' "${BOLD}${WHITE}" "$1" "${RESET}"
+    draw_rule "${UI_WIDTH}" "${PURPLE}"
 }
 
 print_runtime_kv() {
     local key="${1}"
     local value="${2:-}"
-    printf "%b%-12s%b %s\n" "${CYAN}" "${key}:" "${RESET}" "${value}"
+    print_labeled_value "" "${key}:" "${value}" 14
 }
 
 print_runtime_step() {
@@ -132,7 +217,15 @@ print_runtime_step() {
 }
 
 print_status_line() {
-    echo -e "${DIM}下载工具:${RESET} ${DOWNLOAD_TOOL}  ${DIM}| 启动器:${RESET} 模块化  ${DIM}| 主题:${RESET} neon-shell"
+    if [ "${UI_WIDTH}" -ge 64 ]; then
+        printf '%b下载工具:%b %s  %b|%b  %b启动器:%b 模块化  %b|%b  %b主题:%b neon-shell\n' \
+            "${DIM}" "${RESET}" "${DOWNLOAD_TOOL}" "${DIM}" "${RESET}" \
+            "${DIM}" "${RESET}" "${DIM}" "${RESET}" "${DIM}" "${RESET}"
+    else
+        print_labeled_value "" "下载工具:" "${DOWNLOAD_TOOL}" 12
+        print_labeled_value "" "启动器:" "模块化" 12
+        print_labeled_value "" "主题:" "neon-shell" 12
+    fi
     echo ""
 }
 
@@ -165,8 +258,24 @@ print_menu_item() {
     local key="${1}"
     local label="${2}"
     local detail="${3:-}"
-    printf "%b%2s%b. %-18s" "${YELLOW}" "${key}" "${RESET}" "${label}"
-    [ -n "${detail}" ] && printf "%b│ %s%b" "${DIM}" "${detail}" "${RESET}"
+    local label_width=0
+    local padding=0
+
+    printf "%b%2s%b. %b%s%b" "${YELLOW}" "${key}" "${RESET}" "${BOLD}" "${label}" "${RESET}"
+    [ -z "${detail}" ] && {
+        printf "\n"
+        return
+    }
+
+    if [ "${UI_WIDTH}" -lt 64 ]; then
+        printf "\n%b     └─ %s%b\n" "${DIM}" "${detail}" "${RESET}"
+        return
+    fi
+
+    label_width=$(text_display_width "${label}")
+    padding=$((MENU_LABEL_WIDTH > label_width ? MENU_LABEL_WIDTH - label_width : 1))
+    print_spaces "${padding}"
+    printf "%b│ %s%b" "${DIM}" "${detail}" "${RESET}"
     printf "\n"
 }
 

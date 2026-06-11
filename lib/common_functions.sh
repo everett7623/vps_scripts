@@ -20,6 +20,7 @@ export LOG_LEVEL_WARN=2
 export LOG_LEVEL_ERROR=3
 export CURRENT_LOG_LEVEL=${CURRENT_LOG_LEVEL:-$LOG_LEVEL_INFO}
 export UI_WIDTH=${UI_WIDTH:-80}
+export UI_MAX_WIDTH=${UI_MAX_WIDTH:-88}
 export UI_THEME=${UI_THEME:-neon-shell}
 
 print_msg() {
@@ -44,6 +45,86 @@ print_error() {
     print_msg "${RED}" "[错误] $1"
 }
 
+detect_ui_width() {
+    local terminal_width="${VPS_UI_WIDTH:-${COLUMNS:-}}"
+
+    if ! [[ "${terminal_width}" =~ ^[0-9]+$ ]]; then
+        if [ -n "${TERM:-}" ] && command -v tput >/dev/null 2>&1; then
+            terminal_width=$(tput cols 2>/dev/null || printf '%s' "${UI_WIDTH}")
+        else
+            terminal_width="${UI_WIDTH}"
+        fi
+    fi
+
+    [[ "${terminal_width}" =~ ^[0-9]+$ ]] || terminal_width=80
+    [ "${terminal_width}" -gt "${UI_MAX_WIDTH}" ] && terminal_width="${UI_MAX_WIDTH}"
+    [ "${terminal_width}" -lt 24 ] && terminal_width=24
+    printf '%s\n' "${terminal_width}"
+}
+
+text_display_width() {
+    local text="${1:-}"
+    local width=""
+    local locale_name=""
+
+    [ -z "${text}" ] && {
+        printf '0\n'
+        return
+    }
+
+    if command -v wc >/dev/null 2>&1; then
+        width=$(printf '%s\n' "${text}" | wc -L 2>/dev/null || true)
+        if ! [[ "${width}" =~ ^[1-9][0-9]*$ ]]; then
+            for locale_name in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
+                width=$(printf '%s\n' "${text}" | LC_ALL="${locale_name}" wc -L 2>/dev/null || true)
+                [[ "${width}" =~ ^[1-9][0-9]*$ ]] && break
+            done
+        fi
+    fi
+
+    [[ "${width}" =~ ^[1-9][0-9]*$ ]] || width="${#text}"
+    printf '%s\n' "${width}"
+}
+
+print_spaces() {
+    local count="${1:-0}"
+    [ "${count}" -gt 0 ] && printf '%*s' "${count}" ''
+}
+
+print_centered_line() {
+    local text="${1}"
+    local color="${2:-$WHITE}"
+    local width="${3:-$UI_WIDTH}"
+    local text_width=0
+    local left_padding=0
+
+    text_width=$(text_display_width "${text}")
+    [ "${text_width}" -lt "${width}" ] && left_padding=$(((width - text_width) / 2))
+    printf '%b' "${color}"
+    print_spaces "${left_padding}"
+    printf '%s%b\n' "${text}" "${NC}"
+}
+
+print_aligned_value() {
+    local key="${1}"
+    local value="${2:-}"
+    local key_width="${3:-14}"
+    local current_width=0
+    local value_width=0
+
+    current_width=$(text_display_width "${key}:")
+    value_width=$(text_display_width "${value}")
+
+    if [ $((key_width + value_width)) -gt "${UI_WIDTH}" ]; then
+        printf '%b%s:%b\n    %s\n' "${CYAN}" "${key}" "${NC}" "${value}"
+        return
+    fi
+
+    printf '%b%s%b' "${CYAN}" "${key}:" "${NC}"
+    print_spaces "$((key_width > current_width ? key_width - current_width : 1))"
+    printf '%s\n' "${value}"
+}
+
 print_separator() {
     local char="${1:--}"
     local width="${2:-$UI_WIDTH}"
@@ -54,25 +135,28 @@ print_separator() {
 print_header() {
     local title="${1}"
     local subtitle="${2:-模块化执行 | 安全校验 | ${UI_THEME}}"
-    local width="${3:-$UI_WIDTH}"
+    local width="${3:-}"
+
+    [ -n "${width}" ] || width=$(detect_ui_width)
+    UI_WIDTH="${width}"
     echo ""
     print_separator "=" "$width" "$CYAN"
-    printf "%b%-*s%b\n" "${BOLD}${WHITE}" "$width" "  ${title}" "${NC}"
-    printf "%b%-*s%b\n" "${CYAN}" "$width" "  ${subtitle}" "${NC}"
+    print_centered_line "${title}" "${BOLD}${WHITE}" "${width}"
+    print_centered_line "${subtitle}" "${CYAN}" "${width}"
     print_separator "=" "$width" "$CYAN"
     echo ""
 }
 
 print_title() {
     echo ""
-    echo -e "${BOLD}${YELLOW}>> $1${NC}"
+    echo -e "${BOLD}${WHITE}  [ $1 ]${NC}"
     print_separator "-" "$UI_WIDTH" "$BLUE"
 }
 
 print_key_value() {
     local key="${1}"
     local value="${2:-}"
-    printf "%b%-14s%b %s\n" "${CYAN}" "${key}:" "${NC}" "${value}"
+    print_aligned_value "${key}" "${value}" 14
 }
 
 print_step() {
@@ -494,6 +578,7 @@ graceful_exit() {
 trap 'graceful_exit 1 "Script interrupted."' INT TERM
 
 export -f print_msg print_info print_success print_warn print_error
+export -f detect_ui_width text_display_width print_spaces print_centered_line print_aligned_value
 export -f print_separator print_header print_title
 export -f print_key_value print_step print_status print_runtime_context
 export -f show_progress wait_with_animation

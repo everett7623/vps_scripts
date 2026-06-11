@@ -2,7 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `2.7.0`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.0.0`.
+
+The public release history is initialized at `v1.0.0`. Earlier internal development numbers are not part of the public version sequence.
 
 ## Recommended Policy
 

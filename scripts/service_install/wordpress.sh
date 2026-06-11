@@ -57,7 +57,7 @@ PHP_VERSION=""
 MYSQL_ROOT_PASS=""
 
 # 脚本信息
-SCRIPT_VERSION="1.1"
+SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 日志函数

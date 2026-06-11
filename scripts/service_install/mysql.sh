@@ -47,7 +47,7 @@ MAX_CONNECTIONS="1000"
 INNODB_BUFFER_SIZE=""
 SECURE_INSTALL=false
 FORCE_INSTALL=false
-readonly SCRIPT_VERSION="1.1.0"
+readonly SCRIPT_VERSION="1.0.0"
 readonly LOG_FILE="/tmp/mysql_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置

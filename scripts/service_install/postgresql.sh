@@ -52,7 +52,7 @@ EXTENSIONS=""
 ENABLE_SSL=false
 BACKUP_SCHEDULE=false
 FORCE_INSTALL=false
-readonly SCRIPT_VERSION="1.1.0"
+readonly SCRIPT_VERSION="1.0.0"
 readonly LOG_FILE="/tmp/postgresql_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置

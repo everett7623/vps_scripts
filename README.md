@@ -9,7 +9,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20CentOS%20%7C%20RHEL%20%7C%20Fedora%20%7C%20Arch-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -39,13 +39,15 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 - `vps.sh` 已恢复为当前推荐主入口
 - `vps_scripts.sh` 作为受支持的 legacy-only 兼容入口保留，不再新增独立功能
 - 主框架、公共函数库和系统工具已完成一轮集中优化
-- 仓库已补充基础验证脚本，便于后续逐分类继续升级
+- 主启动器支持宽窄终端自适应、中文对齐和更清晰的视觉层级
+- 仓库现有 30 个验证脚本，便于后续逐分类继续升级
 
 ### 已完成的重点
 - 启动器安全性与菜单映射修正
 - 公共函数库清理与高风险 `eval` 移除
 - 依赖安装与系统更新脚本幂等性增强
 - 系统工具核心脚本统一到新的日志、校验、备份风格
+- 启动器与共享 UI 已统一响应式宽度、中文显示宽度和窄屏布局
 - README、CHANGELOG、开发/发布文档补齐
 
 ### 当前优化阶段
@@ -291,11 +293,11 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
-- 主启动器 `vps.sh` 已重建并对齐当前仓库真实脚本
-- 兼容启动器 `vps_scripts.sh` 已收口为兼容入口
-- `system_info.sh`、`change_hostname.sh`、`clean_system.sh`、`optimize_system.sh`、`set_timezone.sh` 已完成首轮框架化整理
-- 新增 `tests/validate_core_assets.sh`、`tests/validate_system_tools.sh` 等基础校验能力
-- 文档、版本元数据与发布检查流程已补齐一轮
+- 发布 `1.0.0`：项目版本体系正式初始化，主启动器与模块进入首个稳定版本
+- 中文与英文混排菜单改为按终端显示宽度对齐
+- 24-88 列终端可响应式显示，窄屏详情自动换行
+- 修复非交互终端清屏、异常宽度值和 `LC_ALL=C` 中文宽度问题
+- 新增 `tests/validate_ui_layout.sh`，完整验证套件增至 30 项
 
 ### 查看完整历史
 - [CHANGELOG.md](CHANGELOG.md)：正式更新日志

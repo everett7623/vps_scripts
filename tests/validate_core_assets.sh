@@ -62,6 +62,10 @@ extract_shell_value() {
 main() {
     local json_version=""
     local conf_version=""
+    local launcher_version=""
+    local json_style_version=""
+    local conf_style_version=""
+    local launcher_style_version=""
     local line=""
     local required_docs=(
         "README.md"
@@ -98,6 +102,7 @@ main() {
     require_file "tests/validate_execution_safety.sh"
     require_file "tests/validate_go_installer_safety.sh"
     require_file "tests/validate_ui_framework.sh"
+    require_file "tests/validate_ui_layout.sh"
     require_file "tests/validate_loader_performance.sh"
     require_file "tests/validate_active_category_coverage.sh"
     require_file "tests/validate_menu_eof.sh"
@@ -109,14 +114,28 @@ main() {
 
     json_version=$(extract_json_value "${REPO_ROOT}/version.json" "version" || true)
     conf_version=$(extract_shell_value "${REPO_ROOT}/config/vps_scripts.conf" "SCRIPT_VERSION" || true)
+    launcher_version=$(extract_shell_value "${REPO_ROOT}/vps.sh" "PROJECT_VERSION" || true)
+    json_style_version=$(extract_json_value "${REPO_ROOT}/version.json" "style_version" || true)
+    conf_style_version=$(extract_shell_value "${REPO_ROOT}/config/vps_scripts.conf" "LAUNCHER_STYLE_VERSION" || true)
+    launcher_style_version=$(extract_shell_value "${REPO_ROOT}/vps.sh" "LAUNCHER_STYLE_VERSION" || true)
 
-    if [ -z "${json_version}" ] || [ -z "${conf_version}" ]; then
-        echo "Failed to extract version from version.json or vps_scripts.conf." >&2
+    if [ -z "${json_version}" ] || [ -z "${conf_version}" ] || [ -z "${launcher_version}" ]; then
+        echo "Failed to extract project version metadata." >&2
         exit 1
     fi
 
-    if [ "${json_version}" != "${conf_version}" ]; then
-        echo "Version mismatch: version.json=${json_version}, config=${conf_version}" >&2
+    if [ "${json_version}" != "${conf_version}" ] || [ "${json_version}" != "${launcher_version}" ]; then
+        echo "Version mismatch: version.json=${json_version}, config=${conf_version}, launcher=${launcher_version}" >&2
+        exit 1
+    fi
+
+    if [ -z "${json_style_version}" ] || [ -z "${conf_style_version}" ] || [ -z "${launcher_style_version}" ]; then
+        echo "Failed to extract launcher style version metadata." >&2
+        exit 1
+    fi
+
+    if [ "${json_style_version}" != "${conf_style_version}" ] || [ "${json_style_version}" != "${launcher_style_version}" ]; then
+        echo "Launcher style version mismatch: version.json=${json_style_version}, config=${conf_style_version}, launcher=${launcher_style_version}" >&2
         exit 1
     fi
 

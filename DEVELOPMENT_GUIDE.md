@@ -75,6 +75,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_execution_safety.sh
 ### UI, loader & misc
 ```bash
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_ui_framework.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_ui_layout.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_chinese_ui.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_loader_performance.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_menu_eof.sh
@@ -169,11 +170,19 @@ With `set -euo pipefail`:
 - Validate user input before using in commands, paths, or service names
 - Quote variables unless unquoted expansion is genuinely required
 
+## Terminal UI Rules
+
+- Terminal scripts cannot control the user's font size. Use bold/bright hierarchy, whitespace, and concise labels to improve readability instead.
+- Respect `VPS_UI_WIDTH` for deterministic previews and tests; otherwise detect the terminal width and cap wide layouts at 88 columns.
+- Use `text_display_width()` plus explicit padding for mixed Chinese/ASCII columns. Do not use `printf %-Ns` directly for CJK menu alignment.
+- Switch long menu details to a second indented line below 64 columns.
+- Avoid clearing the screen when stdout is not a TTY or `TERM` is unset/`dumb`.
+
 ## Release Process
 
 See `RELEASE_CHECKLIST.md` and `VERSIONING.md`. Key steps:
 - Update `CHANGELOG.md` Unreleased section
 - Update `version.json` version and release_date
 - Review `TASKS.md` and `PROGRESS.md` for milestone completion
-- Run full test suite (29 tests)
+- Run full test suite (30 tests)
 - Test remote launcher command from a clean environment

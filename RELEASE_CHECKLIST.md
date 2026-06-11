@@ -13,6 +13,8 @@
 - Run `bash -n` for changed scripts
 - Run `LAUNCHER_OVERRIDE="$PWD/vps.sh" REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_launcher_paths.sh`
 - Run `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh`
+- Run `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_ui_layout.sh`
+- Run the complete suite and require zero failures: `for f in tests/*.sh; do bash "$f" || exit 1; done`
 - Run `shellcheck` on changed scripts if available
 
 ## Release Content
@@ -24,7 +26,7 @@
 
 ## Packaging And Metadata
 
-Bump the version number in ALL of these files (grep `2\.[0-9]\.[0-9]` to find every occurrence):
+Bump the version number in ALL of these files (grep `[0-9]\+\.[0-9]\+\.[0-9]\+` to find every occurrence):
 
 - `version.json` — `version` + `release_date`
 - `config/vps_scripts.conf` — `SCRIPT_VERSION`
@@ -32,8 +34,10 @@ Bump the version number in ALL of these files (grep `2\.[0-9]\.[0-9]` to find ev
 - `README.md` — version badge URL
 - `CLAUDE.md` — version reference in "Version metadata" section
 - `VERSIONING.md` — active version listed in "Current State"
+- `version.json`, `config/vps_scripts.conf`, and `vps.sh` — launcher style version when the terminal UI changes
+- Project-owned module `SCRIPT_VERSION` constants when intentionally publishing a synchronized baseline
 
-Then verify: `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh` (enforces version.json ↔ config match)
+Then verify: `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh` (enforces project and launcher style versions across metadata, config, and launcher)
 - Regenerate any checksums if release workflow uses them
 
 ## Final Sanity Check

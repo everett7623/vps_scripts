@@ -17,7 +17,7 @@ CONFIG_FILE="${PROJECT_ROOT}/config/vps_scripts.conf"
 LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="${LOG_DIR}/hostname_change.log"
 BACKUP_DIR="/var/backups/hostname_change"
-SCRIPT_VERSION="2.0.0"
+SCRIPT_VERSION="1.0.0"
 
 AUTO_CONFIRM=false
 SHOW_HISTORY_ONLY=false
