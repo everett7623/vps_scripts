@@ -2,79 +2,90 @@
 
 ## Current Phase
 
-Repository stabilization and documentation alignment for the modular launcher path.
+Service-installer hardening completed. All 11 core installers now have safety tests, `set -euo pipefail`, and guarded execution paths. Menu expanded to 22 items (WP Panel added). Proxy tools now include Hysteria2. Documentation refresh and cross-script bug-fix sweep completed.
 
 ## Completed
 
+### Launcher & framework
 - Audited the repository structure and script inventory
-- Identified launcher menu targets that did not exist in the repo
 - Rebuilt `vps.sh` around actual repository modules
 - Added safer first-party download-and-execute behavior
 - Added confirmation before running third-party launcher commands
-- Reworked `scripts/system_tools/install_deps.sh` for better idempotency and reporting
-- Added `tests/validate_launcher_paths.sh`
-- Added `scripts/system_tools/health_check.sh` for read-only VPS health checks
-- Added `scripts/system_tools/security_audit.sh` for read-only security baseline audits
-- Added `tests/validate_system_tools_launcher.sh` for system-tools launcher coverage
-- Added `tests/validate_service_install_launcher.sh` for service-install launcher coverage
-- Hardened `scripts/service_install/nodejs.sh` version handling and remote installer execution
-- Removed the remaining avoidable launcher/update-system string execution path (`eval` / `sh -c`)
-- Added `tests/validate_execution_safety.sh` to prevent regressions in launcher and update execution safety
 - Added shared UI helpers for key-value rows, step display, status output, and runtime context
-- Updated the launcher module runtime panel to show path validation, isolated runtime, dependency download, and execution stages
-- Aligned `install_deps.sh` and `update_system.sh` with the shared runtime context display while preserving existing behavior
-- Added launcher local-file fast path for cloned-repo runs and parallel loading for module dependencies
-- Tuned download and public-IP probe timeouts so network failures return faster
-- Added `tests/validate_loader_performance.sh` to prevent loader-speed regressions
-- Added active-category launcher coverage for network, performance, other-tools, and uninstall menus
-- Tightened launcher header links, menu detail columns, and system-info tables for cleaner terminal alignment
-- Fixed launcher menu EOF handling so non-interactive runs do not loop on invalid choices
-- Added `tests/validate_menu_eof.sh` to prevent stdin EOF regressions
-- Hardened shared config helpers against regex-like keys and cross-filesystem replacement
-- Added symbolic-link protection to shared temporary-directory cleanup
-- Added `tests/validate_common_helpers.sh` for config and cleanup helper regression coverage
-- Defined `vps_scripts.sh` as a supported legacy-only compatibility handoff
-- Added `tests/validate_legacy_launcher_policy.sh` and legacy menu EOF handling
-- Hardened `scripts/service_install/python.sh` input, pyenv, and source-build execution paths
-- Added `tests/validate_python_installer_safety.sh`
-- Hardened `scripts/service_install/kubernetes.sh` input and worker join execution
-- Added `tests/validate_kubernetes_installer_safety.sh`
-- Hardened `scripts/service_install/docker.sh` download and removal paths
-- Added `tests/validate_docker_installer_safety.sh`
-- Hardened `scripts/service_install/go.sh` input validation, archive handling, and remote tool installation
-- Added `tests/validate_go_installer_safety.sh`
-- Hardened `scripts/service_install/java.sh` parameter validation and archive download handling
-- Added `tests/validate_java_installer_safety.sh`
-- Hardened `scripts/service_install/nginx.sh` repository key handling and source-build cleanup
-- Added `tests/validate_nginx_installer_safety.sh`
-- Completed `update_log.sh` handoff to canonical `CHANGELOG.md`
-- Added `tests/validate_update_log_handoff.sh`
-- Classified `scripts/update_scripts/` as inactive legacy/reference only
-- Added `tests/validate_update_scripts_legacy.sh`
-- Added repository line-ending policy for shell scripts, docs, metadata, and config files
-- Added `tests/validate_line_endings_policy.sh`
-- Added shell header, CRLF, and BOM validation for repository shell scripts
-- Completed the current script header and encoding guardrail pass
-- Created baseline project documentation set
+- Added launcher local-file fast path and parallel module-bundle loading
+- Tuned download and public-IP probe timeouts
+- Fixed launcher menu EOF handling for non-interactive runs
+- Added `bash -n` validation to `run_remote_script_url()` and `run_remote_command()`
+- Fixed wget missing `--connect-timeout`; added `pipefail` to `run_remote_command`
 
-## In Progress
+### Menu additions
+- Added **Hysteria2** to Proxy Tools menu (item 6)
+- Added **WP Panel** to Service Install menu (item 21)
 
-- Standardizing docs and release workflow around the modular path
-- Deepening system-tools diagnostics and launcher validation
-- Defining follow-up targets for update and install hardening
-- Reviewing remaining service-install scripts in priority order from `TASKS.md`
-- Expanding shared UI conventions across remaining script categories
-- Improving module startup speed and slow-network behavior
+### System tools (9 scripts)
+- Reworked `install_deps.sh` for better idempotency and reporting
+- Refactored `update_system.sh` to remove avoidable `eval`
+- Added `health_check.sh` and `security_audit.sh` (read-only diagnostics)
+- Normalized logging, validation, and backup patterns across all system tools
+
+### Service install hardening (11 scripts)
+- `docker.sh`: temp-file downloads, guarded removal paths
+- `nginx.sh`: temp-file key import, isolated source build, safe cleanup
+- `mysql.sh`: quoted chown, SQL-safe password generation
+- `postgresql.sh`: fixed `TOTAL_MEM` unbound crash, `$(nproc)` heredoc safety, WAL archive path
+- `redis.sh`: quoted chown (3×), make-jobs floor
+- `nodejs.sh`: version validation, temp-file remote installer
+- `python.sh`: `set -euo pipefail`, pyenv pipeline guard, wget error handling, trap safety
+- `go.sh`: `sh`→`bash` remote installer, strict input validation
+- `java.sh`: strict input validation, isolated archive downloads, quoted paths
+- `ruby.sh`: `mktemp -d` source build, `make -j` cap, nproc validation, sed precision fix, cd-leak fix
+- `kubernetes.sh`: `set -euo pipefail`, dead `PIPESTATUS` fix, duplicate sysctl removed
+
+### Cross-script fixes (9 files)
+- `VERSION_ID` unbound-variable crash fixed across all installers with `detect_system()`
+
+### Library (`lib/common_functions.sh`)
+- Reviewed for quoting, temp-file handling, and config safety
+- Fixed `$default` quoting in `ask_yes_no()`
+- Fixed `$1` quoting in service-control print messages
+- Hardened config helpers against regex-like keys and cross-filesystem replacement
+- Added symlink protection to temp-directory cleanup
+
+### Legacy launcher (`vps_scripts.sh`)
+- Defined as supported legacy-only compatibility handoff
+- Fixed EOF handling and quoting in error messages
+
+### Tests (29 validation scripts)
+- Launcher coverage: `validate_launcher_paths`, `validate_system_tools_launcher`, `validate_service_install_launcher`, `validate_active_category_coverage`
+- Core assets: `validate_core_assets`, `validate_script_headers`, `validate_line_endings_policy`
+- Policy: `validate_execution_safety`, `validate_legacy_launcher_policy`, `validate_update_scripts_legacy`, `validate_update_log_handoff`
+- Per-installer safety: `docker`, `python`, `kubernetes`, `go`, `java`, `nginx`, `mysql`, `postgresql`, `redis`
+- UI/misc: `validate_ui_framework`, `validate_chinese_ui`, `validate_loader_performance`, `validate_menu_eof`, `validate_command_install`, `validate_input_contract`, `validate_remote_module_runtime`, `validate_common_helpers`
+
+### Documentation
+- `CLAUDE.md`: accurate distro/arch/version metadata, architecture sections for `version.json`/`update_log.sh`/`.gitattributes`
+- `CHANGELOG.md`: comprehensive Unreleased section with all 2026-06-11 changes
+- `DEVELOPMENT_GUIDE.md`: updated with full test suite and current patterns
+- `TASKS.md`: updated P0/P1/P2 status
+- `PROGRESS.md`: this file
+- `SESSION.md`: 2026-06-11 session summary
+- `code_review.md`: updated findings and review targets
+
+### In Progress
+
+- Standardizing `set -euo pipefail` across remaining 8 service_install scripts (panel installers, jenkins, ruby, rust)
+- Expanding shared UI conventions across network_test and performance_test categories
 - Auditing framework guardrails before deeper category rewrites
-- Refining terminal layout consistency across launcher and system reports
 
-## Not Started
+### Not Started
 
-- Define the next high-risk install/update script review batch
+- Refactor `network_test/` and `performance_test/` categories for consistent structure and output
+- Add shellcheck CI or pre-commit hook
+- Consider extracting repeated build-from-source pattern into shared helper
+- Add `die()` helper function to `lib/common_functions.sh`
 
-## Success Criteria For Next Round
+### Success Criteria For Next Round
 
-- High-risk update/install scripts have a shared execution pattern
-- More scripts can pass `shellcheck` cleanly
-- Release docs and runtime metadata are consistent
-- Service-install launcher coverage remains protected by repo-local validation
+- All 20 service_install scripts have `set -euo pipefail`
+- Network/performance test scripts share a consistent output format
+- Release docs and runtime metadata reflect current menu structure (22 service items, 6 proxy items)

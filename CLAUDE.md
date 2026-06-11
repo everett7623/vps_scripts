@@ -4,13 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-Two directories at `D:\EvenFrank\Code\Github`:
-- **`vps_scripts/`** — the git-tracked mainline repo (this directory).
-- **`vps_scripts_work/`** — expanded working copy with more `service_install` and `system_tools` scripts, plus `tests/`, `lib/common_functions.sh`, `version.json`, and `vps.sh` launcher. This is the more complete/modern version; prefer it as the source of truth when in doubt.
+This is the mainline repo. All tests, scripts, and docs live here; there is no separate "work copy" — treat this directory as the single source of truth.
 
 ## Build, lint, and test
 
-No build step — everything is Bash scripts. All test scripts accept `REPO_ROOT_OVERRIDE` (and `LAUNCHER_OVERRIDE` where relevant) so they can run from any directory.
+No build step — everything is Bash scripts. All test scripts accept `REPO_ROOT_OVERRIDE` (and `LAUNCHER_OVERRIDE` where relevant) so they can run from any directory. The commands below assume you are `cd`'d to the repo root; `$PWD` must be the repo root when used as the override value.
 
 ### Quick syntax checks
 
@@ -69,6 +67,9 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_kubernetes_installer_safety.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_go_installer_safety.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_java_installer_safety.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_nginx_installer_safety.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_mysql_installer_safety.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_postgresql_installer_safety.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_redis_installer_safety.sh
 
 # Input contract and remote module runtime
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_input_contract.sh
@@ -95,7 +96,7 @@ shellcheck lib/common_functions.sh
 
 ## Architecture
 
-**VPS Scripts** is a modular Bash toolkit for Linux VPS operations — diagnostics, benchmarking, service deployment, and system maintenance. Deployed via `curl | bash` from GitHub raw content. Licensed AGPL-3.0. Target distros: Ubuntu, Debian, CentOS/RHEL, Fedora, Alpine, Arch. Architectures: x86_64, arm64. The UI is in Chinese.
+**VPS Scripts** is a modular Bash toolkit for Linux VPS operations — diagnostics, benchmarking, service deployment, and system maintenance. Deployed via `curl | bash` from GitHub raw content. Licensed AGPL-3.0. Target distros (per version.json): Ubuntu 18.04+, Debian 10+, CentOS 7+, AlmaLinux/Rocky 8+, Alpine 3.10+. Architectures: x86_64, aarch64. Fedora and Arch have some community support but are not in the canonical compatibility list. The UI is in Chinese.
 
 ### Dual-launcher design
 
@@ -181,7 +182,8 @@ scripts/
 ├── network_test/       # backhaul_route, bandwidth, ip_quality, network_quality, streaming_unlock
 ├── performance_test/   # cpu_benchmark, disk_io, memory_benchmark, network_throughput
 ├── service_install/    # docker, nginx, mysql, postgresql, redis, nodejs, python, go, java,
-│                       #   ruby, rust, wordpress, jenkins, kubernetes, ldnmp, panel installers
+│                       #   ruby, rust, wordpress, jenkins, kubernetes, ldnmp,
+│                       #   panel installers: 1panel, aapanel, amh, btpanel, cyberpanel
 ├── other_tools/        # bbr, fail2ban, nezha, swap
 ├── uninstall_scripts/  # clean_service_residues, rollback_system_environment,
 │                       #   clear_configuration_files, full_uninstall
@@ -193,6 +195,14 @@ scripts/
 ### Config (`config/vps_scripts.conf`)
 
 Project-level defaults: package lists for basic/dev/monitor/security groups, service install versions (nginx, mysql, php, redis), benchmark parameters, sysctl optimization values, third-party script URLs, logging paths. Sourced by scripts that also source `lib/common_functions.sh`. Its `SCRIPT_VERSION` must match `version.json`'s `version` field — this is enforced by `tests/validate_core_assets.sh`.
+
+### Version metadata (`version.json`)
+
+Canonical source for project version (`2.6.0`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+
+### Legacy changelog viewer (`update_log.sh`)
+
+Root-level compat script that reads `version.json` and prints `CHANGELOG.md` excerpt. Its only role is displaying version info; `CHANGELOG.md` is the canonical history. Any release-note logic should update `CHANGELOG.md`, not this script.
 
 ### Environment variable overrides
 
@@ -235,6 +245,8 @@ All `.sh` files in the repository must:
 - Use LF line endings (no CRLF)
 - Have no UTF-8 BOM
 - Be ASCII unless there is a strong reason otherwise
+
+`.gitattributes` enforces LF for all `.sh`, `.md`, `.json`, `.conf`, and `.txt` files — important for Windows/NAS checkouts. The line-endings policy is validated by `tests/validate_script_headers.sh` and `tests/validate_line_endings_policy.sh`.
 
 Script header format:
 ```bash

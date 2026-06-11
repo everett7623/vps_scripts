@@ -184,7 +184,7 @@ download_file_with_tool() {
             curl -fsSL --connect-timeout "${DOWNLOAD_CONNECT_TIMEOUT}" --max-time "${DOWNLOAD_MAX_TIME}" "${url}" -o "${output}"
             ;;
         wget)
-            wget -q --timeout="${DOWNLOAD_MAX_TIME}" -O "${output}" "${url}"
+            wget -q --connect-timeout="${DOWNLOAD_CONNECT_TIMEOUT}" --timeout="${DOWNLOAD_MAX_TIME}" -O "${output}" "${url}"
             ;;
         *)
             return 1
@@ -447,6 +447,13 @@ run_remote_script_url() {
         return 1
     fi
 
+    if ! bash -n "${temp_file}" 2>/dev/null; then
+        rm -f "${temp_file}"
+        echo -e "${RED}[错误] 下载内容语法检查未通过，已拒绝执行。${RESET}"
+        pause_for_menu
+        return 1
+    fi
+
     chmod +x "${temp_file}" 2>/dev/null || true
     if ! bash "${temp_file}"; then
         echo ""
@@ -482,9 +489,16 @@ run_remote_command() {
 
     {
         printf '%s\n' '#!/bin/bash'
-        printf '%s\n' 'set -e'
+        printf '%s\n' 'set -eo pipefail'
         printf '%s\n' "${command_to_run}"
     } > "${temp_file}"
+
+    if ! bash -n "${temp_file}" 2>/dev/null; then
+        rm -f "${temp_file}"
+        echo -e "${RED}[错误] 命令脚本语法检查未通过，已拒绝执行。${RESET}"
+        pause_for_menu
+        return 1
+    fi
 
     if ! bash "${temp_file}"; then
         echo ""
@@ -609,9 +623,10 @@ service_install_menu() {
         print_menu_item 18 "CyberPanel" "服务器控制面板"
         print_menu_item 19 "Jenkins" "自动化服务"
         print_menu_item 20 "Kubernetes" "集群环境"
+        print_menu_item 21 "WP Panel" "WordPress 面板"
         print_menu_item 0  "返回"
         echo ""
-        read_menu_choice "请选择 [0-20]: " || return 0
+        read_menu_choice "请选择 [0-21]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -635,6 +650,7 @@ service_install_menu() {
             18) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
             19) run_repo_script "scripts/service_install/jenkins.sh" ;;
             20) run_repo_script "scripts/service_install/kubernetes.sh" ;;
+            21) run_remote_command "apt-get update && apt-get install -y wget ca-certificates && wget -qO- https://raw.githubusercontent.com/naibabiji/wp-panel/main/install.sh | bash" "WP Panel installer" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -696,9 +712,10 @@ proxy_tools_menu() {
         print_menu_item 3 "勇哥 x-ui" "第三方社区脚本"
         print_menu_item 4 "官方 3x-ui" "第三方社区脚本"
         print_menu_item 5 "xeefei 3x-ui" "第三方社区脚本"
+        print_menu_item 6 "Hysteria2" "hy2 协议代理"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-5]: " || return 0
+        read_menu_choice "请选择 [0-6]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -707,6 +724,7 @@ proxy_tools_menu() {
             3) run_remote_script_url "https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh" "yonggekkk x-ui" ;;
             4) run_remote_script_url "https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh" "Official 3x-ui" ;;
             5) run_remote_script_url "https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh" "xeefei 3x-ui" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/hy2/main/install.sh" "Hysteria2 installer" ;;
             0) return ;;
             *) invalid_choice ;;
         esac

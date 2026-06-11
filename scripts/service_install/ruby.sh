@@ -242,11 +242,14 @@ install_rbenv() {
     # 添加到PATH
     export PATH="$RBENV_ROOT/bin:$PATH"
     
-    # 配置shell
+    # 配置shell（仅移除本脚本添加的 rbenv 行，避免误删用户其他含 rbenv 的配置）
     for shell_rc in ~/.bashrc ~/.zshrc; do
         if [[ -f "$shell_rc" ]]; then
-            # 清理旧配置
-            sed -i '/rbenv/d' "$shell_rc"
+            # 只移除匹配 rbenv init 和 rbenv PATH 的行，而非所有含 rbenv 的行
+            sed -i '/^# rbenv configuration$/d' "$shell_rc"
+            sed -i '/^export PATH=.*\/\.rbenv\/bin:\$PATH"$/d' "$shell_rc"
+            sed -i "/^export PATH=\"\$HOME\/\.rbenv\/bin:\$PATH\"$/d" "$shell_rc"
+            sed -i '/^eval "\$(rbenv init -)"$/d' "$shell_rc"
             # 添加新配置
             echo '' >> "$shell_rc"
             echo '# rbenv configuration' >> "$shell_rc"
@@ -312,47 +315,60 @@ install_rvm() {
 
 # 从源码编译安装
 install_from_source() {
+    local build_dir=""
+
     log "${CYAN}从源码编译安装Ruby...${NC}"
-    
+
     # 确定版本
     if [[ -z "$RUBY_VERSION" ]]; then
         RUBY_VERSION="$DEFAULT_RUBY_VERSION"
     fi
-    
+
+    # 使用 mktemp 创建隔离的构建目录，避免可预测的 /tmp 路径
+    build_dir=$(mktemp -d "/tmp/ruby-build.XXXXXX") || {
+        log "${RED}错误: 创建构建临时目录失败${NC}"
+        exit 1
+    }
+    cd "${build_dir}" || { log "${RED}错误: 无法进入构建目录${NC}"; rm -rf -- "${build_dir}"; exit 1; }
+
     # 下载源码
-    cd /tmp
-    RUBY_MAJOR=$(echo $RUBY_VERSION | cut -d. -f1,2)
+    RUBY_MAJOR=$(echo "$RUBY_VERSION" | cut -d. -f1,2)
     wget "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz"
-    
+
     if [[ ! -f "ruby-${RUBY_VERSION}.tar.gz" ]]; then
         log "${RED}错误: Ruby源码下载失败${NC}"
+        rm -rf -- "${build_dir}"
         exit 1
     fi
-    
+
     # 解压并编译
     tar -xzf "ruby-${RUBY_VERSION}.tar.gz"
-    cd "ruby-${RUBY_VERSION}"
-    
+    cd "ruby-${RUBY_VERSION}" || { log "${RED}错误: 无法进入源码目录${NC}"; rm -rf -- "${build_dir}"; exit 1; }
+
     # 配置编译选项
     ./configure \
         --prefix=/usr/local \
         --enable-shared \
         --disable-install-doc \
         --with-opt-dir=/usr/local
-    
-    # 编译并安装
-    make -j$(nproc)
-    
+
+    # 编译并安装（限制并行数为 CPU 核数或 4 的较小值，避免小内存 VPS OOM）
+    local cpu_count
+    cpu_count=$(nproc 2>/dev/null || echo 1)
+    [[ "$cpu_count" =~ ^[0-9]+$ ]] || cpu_count=1
+    local jobs=$(( cpu_count < 4 ? cpu_count : 4 ))
+    make -j"${jobs}"
+
     if [[ $EUID -eq 0 ]]; then
         make install
     else
         log "${YELLOW}需要root权限安装，请输入密码${NC}"
         sudo make install
     fi
-    
+
     # 清理临时文件
     cd /
-    rm -rf /tmp/ruby-${RUBY_VERSION}*
+    rm -rf -- "${build_dir}"
 }
 
 # 安装Rails

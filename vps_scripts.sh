@@ -184,7 +184,7 @@ main() {
             main_menu
             ;;
         *)
-            echo -e "${RED}[错误] 未知选项：$1${RESET}"
+            echo -e "${RED}[错误] 未知选项：${1}${RESET}"
             show_help
             exit 1
             ;;

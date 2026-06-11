@@ -149,7 +149,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VERSION=$VERSION_ID
+        VERSION=${VERSION_ID:-}
     else
         error_exit "无法检测操作系统信息"
     fi

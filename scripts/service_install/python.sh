@@ -14,8 +14,7 @@
 #==============================================================================
 
 # 颜色定义
-set -u
-set -o pipefail
+set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -36,7 +35,7 @@ WORK_DIR=""
 
 cleanup_work_dir() {
     if [[ -n "${WORK_DIR}" && -d "${WORK_DIR}" && ! -L "${WORK_DIR}" ]]; then
-        rm -rf -- "${WORK_DIR}"
+        rm -rf -- "${WORK_DIR}" 2>/dev/null || true
     fi
 }
 
@@ -126,7 +125,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
+        VER=${VERSION_ID:-}
     elif type lsb_release >/dev/null 2>&1; then
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)
@@ -263,7 +262,11 @@ install_pyenv() {
     else
         # 获取最新稳定版本
         log "${CYAN}获取最新Python版本...${NC}"
-        latest_version=$(pyenv install --list | grep -E '^\s*[0-9]+\.[0-9]+\.[0-9]+$' | tail -1 | tr -d ' ')
+        latest_version=$(pyenv install --list 2>/dev/null | grep -E '^\s*[0-9]+\.[0-9]+\.[0-9]+$' | tail -1 | tr -d ' ') || true
+        if [[ -z "$latest_version" ]]; then
+            log "${RED}错误: 无法获取最新Python版本列表，请检查网络连接或指定 --version${NC}"
+            exit 1
+        fi
         log "${CYAN}安装Python ${latest_version}...${NC}"
         pyenv install -v "$latest_version"
         pyenv global "$latest_version"
@@ -286,11 +289,9 @@ install_from_source() {
         exit 1
     }
 
-    cd "${WORK_DIR}"
-    wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" \
-        -O "Python-${PYTHON_VERSION}.tgz"
-    
-    if [[ ! -f "Python-${PYTHON_VERSION}.tgz" ]]; then
+    cd "${WORK_DIR}" || { log "${RED}错误: 无法进入构建目录${NC}"; exit 1; }
+    if ! wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" \
+        -O "Python-${PYTHON_VERSION}.tgz"; then
         log "${RED}错误: 下载Python源码失败${NC}"
         exit 1
     fi

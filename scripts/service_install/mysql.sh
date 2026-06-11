@@ -202,7 +202,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
+        VER=${VERSION_ID:-}
         VER_MAJOR=$(echo $VER | cut -d. -f1)
     elif type lsb_release >/dev/null 2>&1; then
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
@@ -218,7 +218,7 @@ detect_system() {
 
 # 生成随机密码
 generate_password() {
-    openssl rand -base64 16 | tr -d "=+/" | cut -c1-16
+    openssl rand -base64 16 | tr -d "=+/'" | cut -c1-16
 }
 
 # 检查是否已安装
@@ -455,7 +455,7 @@ initialize_database() {
     local temp_my_cnf=""
 
     mkdir -p "$DATA_DIR" "$LOG_DIR"
-    chown -R $MYSQL_USER:$MYSQL_USER "$DATA_DIR" "$LOG_DIR"
+    chown -R "${MYSQL_USER}:${MYSQL_USER}" "$DATA_DIR" "$LOG_DIR"
 
     systemctl enable --now mysql 2>/dev/null || systemctl enable --now mariadb
     sleep 5

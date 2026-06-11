@@ -4,40 +4,45 @@ All notable changes to this repository should be documented here.
 
 ## Unreleased
 
+### Added
+
+- Added **Hysteria2** installer to Proxy Tools menu (`vps.sh` menu item 6) via `run_remote_script_url`
+- Added **WP Panel** installer to Service Install menu (`vps.sh` menu item 21) via `run_remote_command`
+- Added `tests/validate_mysql_installer_safety.sh`, `tests/validate_postgresql_installer_safety.sh`, `tests/validate_redis_installer_safety.sh` to complete per-installer safety coverage
+- Added `bash -n` syntax validation to `run_remote_script_url()` — third-party scripts are now rejected if they fail syntax check
+- Added `bash -n` syntax validation to `run_remote_command()` — all 13+ call sites now screen content before execution
+
 ### Changed
 
 - Rebuilt `vps.sh` as a cleaner modular remote launcher aligned with files that actually exist in the repository
+- Reworked `scripts/system_tools/install_deps.sh` toward a more idempotent package installation flow
 - Added safer first-party module execution by downloading to a temporary file before running
 - Added confirmation before executing third-party remote one-liners from launcher menus
-- Reworked `scripts/system_tools/install_deps.sh` toward a more idempotent package installation flow
-- Added `tests/validate_launcher_paths.sh` to catch launcher references to missing scripts
-- Added read-only system tools for health checks and security baseline audits
-- Added `tests/validate_system_tools_launcher.sh` to keep system-tools menu entries aligned with script inventory
-- Added `tests/validate_service_install_launcher.sh` to keep service-install menu entries aligned with script inventory
-- Added `tests/validate_execution_safety.sh` to guard launcher and system-update execution patterns
 - Added shared UI helpers and a runtime context display for modernized modules
-- Added `tests/validate_ui_framework.sh` to keep the shared UI helper layer present
-- Added `tests/validate_loader_performance.sh` to protect loader speed optimizations
-- Added `tests/validate_active_category_coverage.sh` to protect active launcher category coverage
-- Added `tests/validate_common_helpers.sh` to cover shared config and temporary cleanup safety
-- Added `tests/validate_legacy_launcher_policy.sh` to keep the compatibility launcher legacy-only
-- Added `tests/validate_python_installer_safety.sh` to protect Python installer execution boundaries
-- Added `tests/validate_kubernetes_installer_safety.sh` to protect join-command and input handling
-- Added `tests/validate_update_log_handoff.sh` to keep `update_log.sh` aligned with `CHANGELOG.md`
-- Added `tests/validate_update_scripts_legacy.sh` to keep legacy update scripts out of active launcher menus
-- Added `.gitattributes` and `tests/validate_line_endings_policy.sh` to keep script and documentation line endings stable across Windows/NAS checkouts
-- Added `tests/validate_script_headers.sh` to enforce shell shebangs and reject CRLF or UTF-8 BOM in shell scripts
-- Refreshed core project documentation and contributor guidance
+- Added read-only system tools for health checks and security baseline audits
+- Updated `CLAUDE.md` with accurate distro/arch compatibility, VERSION_ID safety, `.gitattributes` policy, `version.json` and `update_log.sh` architecture notes
+- Updated `DEVELOPMENT_GUIDE.md`, `PROGRESS.md`, `TASKS.md`, `SESSION.md`, `code_review.md` with current project state
 
-### Fixed
+### Fixed (safety & correctness — 2026-06-11 session)
+
+- **`vps.sh`**: wget missing `--connect-timeout` (60s→6s on bad connections); `run_remote_script_url` lacked `bash -n` validation; `run_remote_command` injected `set -e` without `pipefail` (silent wget failure in pipelines); `run_remote_command` now gets `bash -n` check before execution
+- **`python.sh`**: added `set -euo pipefail`; guarded `pyenv install --list` pipeline against `set -e` preemptive abort with `|| true`; fixed `wget` silent-exit under `set -e`; guarded EXIT trap `rm -rf` with `|| true`
+- **`ruby.sh`**: replaced predictable `/tmp` paths with `mktemp -d` in source build; capped `make -j` at 4 (was unlimited `$(nproc)`); guarded `nproc` against non-numeric output (`make -j0` bug); fixed `sed -i '/rbenv/d'` over-deletion of user config; fixed build_dir leak on `cd` failure; quoted `echo $RUBY_VERSION`
+- **`kubernetes.sh`**: added `set -euo pipefail`; removed duplicate `tcp_max_syn_backlog` sysctl; fixed dead `PIPESTATUS` check under `set -o pipefail` by wrapping pipeline with `set +e`/`set -e`
+- **`mysql.sh`**: quoted `chown "$USER:$USER"`; stripped `'` from generated passwords to prevent SQL breakage
+- **`redis.sh`**: quoted `chown "$USER:$USER"` (3 occurrences); added floor to `make -j` fallback (0→1)
+- **`postgresql.sh`**: fixed `TOTAL_MEM` unbound crash when `--shared-buffers` provided; pre-computed `NP=$(nproc)` outside heredoc to avoid `set -e` abort; stripped `'` from generated passwords; WAL archive path now uses `$DATA_DIR` variable
+- **`go.sh`**: changed `sh`→`bash` for remote installer execution (fixes dash incompatibility)
+- **`lib/common_functions.sh`**: quoted `$default` in `answer=${answer:-"${default}"}`; quoted `$1` in service-control print messages
+- **`vps_scripts.sh`**: quoted `$1` in error message
+- **Cross-script (9 files)**: `VERSION=$VERSION_ID`→`VERSION=${VERSION_ID:-}` to prevent `set -u` crash on minimal containers/WSL that lack `VERSION_ID` in `/etc/os-release`
+
+### Fixed (prior hardening)
 
 - Fixed menu items in `vps.sh` that previously referenced missing `scripts/network_test/*` and `scripts/service_install/install_*` files
 - Reduced false success cases in dependency installation by checking installed packages and reporting failures more clearly
-- Hardened `scripts/service_install/nodejs.sh` by validating the Node.js major version and downloading remote installer scripts to temporary files before execution
 - Removed avoidable `eval` usage from third-party launcher command execution and avoided `sh -c` in Alpine update cleanup
-- Improved official module launch output with staged status lines while preserving the classic header and recommended links
 - Improved module startup speed with local cloned-repo loading, parallel dependency downloads, and shorter failed-network waits
-- Improved launcher link/menu alignment and system-info report table spacing
 - Fixed launcher menu handling when stdin reaches EOF in non-interactive runs
 - Hardened shared config helpers with validated keys, exact matching, same-directory atomic replacement, and permission preservation
 - Refused symbolic-link and out-of-scope paths in shared temporary-directory cleanup
@@ -50,6 +55,21 @@ All notable changes to this repository should be documented here.
 - Hardened `scripts/service_install/nginx.sh` with temp-file repository key import, isolated source-build directories, and safe cleanup
 - Completed the `update_log.sh` history handoff by making `CHANGELOG.md` the single source of release notes
 - Classified `scripts/update_scripts/` as inactive legacy/reference material instead of active architecture
+
+### Test suite additions
+
+- `tests/validate_launcher_paths.sh`, `tests/validate_system_tools_launcher.sh`, `tests/validate_service_install_launcher.sh`
+- `tests/validate_active_category_coverage.sh`, `tests/validate_execution_safety.sh`
+- `tests/validate_ui_framework.sh`, `tests/validate_loader_performance.sh`, `tests/validate_menu_eof.sh`
+- `tests/validate_common_helpers.sh`, `tests/validate_legacy_launcher_policy.sh`
+- `tests/validate_core_assets.sh`, `tests/validate_script_headers.sh`, `tests/validate_line_endings_policy.sh`
+- `tests/validate_update_log_handoff.sh`, `tests/validate_update_scripts_legacy.sh`
+- `tests/validate_docker_installer_safety.sh`, `tests/validate_python_installer_safety.sh`, `tests/validate_kubernetes_installer_safety.sh`
+- `tests/validate_go_installer_safety.sh`, `tests/validate_java_installer_safety.sh`, `tests/validate_nginx_installer_safety.sh`
+- `tests/validate_mysql_installer_safety.sh`, `tests/validate_postgresql_installer_safety.sh`, `tests/validate_redis_installer_safety.sh`
+- `tests/validate_input_contract.sh`, `tests/validate_remote_module_runtime.sh`
+- `tests/validate_chinese_ui.sh`, `tests/validate_command_install.sh`
+- `.gitattributes` (LF enforcement for `.sh`, `.md`, `.json`, `.conf`, `.txt`)
 
 ## 2.6.0 - 2026-01-20
 

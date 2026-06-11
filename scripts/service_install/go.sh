@@ -106,7 +106,7 @@ run_remote_installer() {
     local installer_file=""
 
     installer_file=$(download_to_temp "$url") || return 1
-    if ! sh "$installer_file" "$@"; then
+    if ! bash "$installer_file" "$@"; then
         rm -f -- "$installer_file"
         return 1
     fi
@@ -161,7 +161,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
+        VER=${VERSION_ID:-}
     elif type lsb_release >/dev/null 2>&1; then
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)

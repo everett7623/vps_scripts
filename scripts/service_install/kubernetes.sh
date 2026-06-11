@@ -25,6 +25,7 @@
 #==============================================================================
 
 # 颜色定义
+set -euo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -173,7 +174,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
+        VER=${VERSION_ID:-}
         VER_MAJOR=$(echo $VER | cut -d. -f1)
     else
         log "${RED}错误: 无法检测系统类型${NC}"
@@ -282,7 +283,6 @@ net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_max_orphans = 327680
 net.ipv4.tcp_orphan_retries = 3
 net.ipv4.tcp_syncookies = 1
-net.ipv4.tcp_max_syn_backlog = 16384
 net.ipv4.tcp_max_syn_backlog = 16384
 net.ipv4.tcp_timestamps = 0
 net.core.somaxconn = 16384
@@ -581,10 +581,13 @@ EOF
     fi
     
     # 初始化集群
+    set +e
     kubeadm init --config=/tmp/kubeadm-config.yaml | tee /tmp/kubeadm_init.log
+    local init_exit_code=${PIPESTATUS[0]}
+    set -e
     
     # 检查初始化结果
-    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    if [[ ${init_exit_code} -ne 0 ]]; then
         log "${RED}错误: Kubernetes集群初始化失败${NC}"
         exit 1
     fi

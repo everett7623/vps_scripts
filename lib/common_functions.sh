@@ -390,7 +390,7 @@ ask_yes_no() {
 
     while true; do
         read -r -p "${question} ${prompt}: " answer
-        answer=${answer:-$default}
+        answer=${answer:-"${default}"}
         case "${answer,,}" in
             y|yes) return 0 ;;
             n|no) return 1 ;;
@@ -446,15 +446,15 @@ check_service_status() {
 }
 
 start_service() {
-    systemctl start "$1" && print_success "服务 $1 已启动。" || print_error "启动服务 $1 失败。"
+    systemctl start "$1" && print_success "服务 ${1} 已启动。" || print_error "启动服务 ${1} 失败。"
 }
 
 stop_service() {
-    systemctl stop "$1" && print_success "服务 $1 已停止。" || print_error "停止服务 $1 失败。"
+    systemctl stop "$1" && print_success "服务 ${1} 已停止。" || print_error "停止服务 ${1} 失败。"
 }
 
 restart_service() {
-    systemctl restart "$1" && print_success "服务 $1 已重启。" || print_error "重启服务 $1 失败。"
+    systemctl restart "$1" && print_success "服务 ${1} 已重启。" || print_error "重启服务 ${1} 失败。"
 }
 
 cleanup_temp_files() {

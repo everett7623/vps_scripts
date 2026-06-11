@@ -160,7 +160,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
+        VER=${VERSION_ID:-}
     elif type lsb_release >/dev/null 2>&1; then
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)
@@ -265,7 +265,8 @@ install_redis() {
 
     log "${YELLOW}编译Redis...${NC}"
     make_jobs=$(nproc 2>/dev/null || echo 2)
-    make -j"$make_jobs"
+    make_jobs=$(( make_jobs > 0 ? make_jobs : 1 ))
+    make -j"${make_jobs}"
     # Skip make test in non-interactive mode — it can hang
     make install PREFIX=/usr/local
 
@@ -291,9 +292,9 @@ create_directories() {
     mkdir -p "/var/run/redis"
     
     # 设置权限
-    chown -R $REDIS_USER:$REDIS_USER "$DATA_DIR"
-    chown -R $REDIS_USER:$REDIS_USER "$LOG_DIR"
-    chown -R $REDIS_USER:$REDIS_USER "/var/run/redis"
+    chown -R "${REDIS_USER}:${REDIS_USER}" "$DATA_DIR"
+    chown -R "${REDIS_USER}:${REDIS_USER}" "$LOG_DIR"
+    chown -R "${REDIS_USER}:${REDIS_USER}" "/var/run/redis"
     
     chmod 755 "$CONFIG_DIR"
     chmod 755 "$DATA_DIR"

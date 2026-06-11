@@ -171,7 +171,7 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
+        VER=${VERSION_ID:-}
         VER_MAJOR=$(echo $VER | cut -d. -f1)
     elif type lsb_release >/dev/null 2>&1; then
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
@@ -187,7 +187,7 @@ detect_system() {
 
 # 生成随机密码
 generate_password() {
-    openssl rand -base64 16 | tr -d "=+/" | cut -c1-16
+    openssl rand -base64 16 | tr -d "=+/'" | cut -c1-16
 }
 
 # 检查PostgreSQL是否已安装
@@ -337,11 +337,14 @@ configure_postgresql() {
     cp "$PG_CONFIG_DIR/pg_hba.conf" "$PG_CONFIG_DIR/pg_hba.conf.backup.$(date +%Y%m%d_%H%M%S)"
     
     # 计算内存参数
+    TOTAL_MEM=$(free -m | awk '/^Mem:/{print $2}')
     if [[ -z "$SHARED_BUFFERS" ]]; then
-        TOTAL_MEM=$(free -m | awk '/^Mem:/{print $2}')
         SHARED_BUFFERS=$(( TOTAL_MEM * 25 / 100 ))MB
     fi
     
+    # 计算 nproc 默认值（避免 heredoc 内命令替换在 set -e 下崩溃）
+    NP=$(nproc 2>/dev/null || echo 1)
+
     # 生成优化配置
     cat >> "$PG_CONFIG_DIR/postgresql.conf" << EOF
 
@@ -384,9 +387,9 @@ shared_preload_libraries = 'pg_stat_statements'
 pg_stat_statements.track = all
 
 # 并行查询 (PG 9.6+)
-max_worker_processes = $(nproc)
-max_parallel_workers_per_gather = $(( $(nproc) / 2 ))
-max_parallel_workers = $(nproc)
+max_worker_processes = ${NP}
+max_parallel_workers_per_gather = $(( NP / 2 ))
+max_parallel_workers = ${NP}
 EOF
 
     # SSL配置
@@ -415,12 +418,12 @@ max_wal_senders = 10
 wal_keep_segments = 64
 hot_standby = on
 archive_mode = on
-archive_command = 'test ! -f /var/lib/postgresql/archive/%f && cp %p /var/lib/postgresql/archive/%f'
+archive_command = 'test ! -f ${DATA_DIR}/archive/%f && cp %p ${DATA_DIR}/archive/%f'
 EOF
-        
+
         # 创建归档目录
-        mkdir -p /var/lib/postgresql/archive
-        chown postgres:postgres /var/lib/postgresql/archive
+        mkdir -p "${DATA_DIR}/archive"
+        chown postgres:postgres "${DATA_DIR}/archive"
     fi
     
     # 配置pg_hba.conf
