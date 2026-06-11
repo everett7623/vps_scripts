@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "2.6.0",
-    "release_date": "2026-01-20",
+    "version": "2.7.0",
+    "release_date": "2026-06-12",
     "author": "Jensfrank",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
