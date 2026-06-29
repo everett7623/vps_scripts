@@ -1,0 +1,57 @@
+name: ShellCheck
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.sh'
+      - '.github/workflows/shellcheck.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.sh'
+      - '.github/workflows/shellcheck.yml'
+
+jobs:
+  shellcheck:
+    name: ShellCheck lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run bash -n syntax check on all scripts
+        run: |
+          echo "=== Syntax validation (bash -n) ==="
+          fail=0
+          while IFS= read -r f; do
+            if ! bash -n "$f" 2>&1; then
+              echo "FAIL: $f"
+              fail=1
+            fi
+          done < <(find . -name '*.sh' -not -path './.git/*')
+          [ "$fail" -eq 0 ] && echo "All scripts pass syntax check."
+          exit $fail
+
+      - name: Run ShellCheck on key scripts
+        run: |
+          echo "=== ShellCheck ==="
+          shellcheck --severity=error --shell=bash \
+            vps.sh \
+            lib/common_functions.sh \
+            scripts/system_tools/*.sh \
+            scripts/service_install/*.sh \
+            || true
+          echo ""
+          echo "=== ShellCheck (warnings) on network/performance ==="
+          shellcheck --severity=warning --shell=bash \
+            scripts/network_test/*.sh \
+            scripts/performance_test/*.sh \
+            || true
+
+      - name: Run strict-mode coverage test
+        run: |
+          echo "=== Strict mode coverage ==="
+          REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh

@@ -6,6 +6,9 @@ All notable changes to this repository are documented here.
 
 ### Added
 - `die()` helper function in `lib/common_functions.sh` to consolidate `print_error; exit 1` patterns.
+- `scripts/service_install/wppanel.sh` first-party wrapper for WP Panel (replaces inline `run_remote_command`).
+- `tests/validate_service_install_strict_mode.sh` to enforce strict-mode coverage across all service installers.
+- `.github/workflows/shellcheck.yml` GitHub Actions CI: bash -n syntax check, shellcheck lint, strict-mode test.
 
 ### Changed
 - Added `set -euo pipefail` to all 8 remaining service_install scripts (1panel, aapanel, amh, btpanel, cyberpanel, jenkins, ruby, rust).
@@ -23,6 +26,7 @@ All notable changes to this repository are documented here.
 - btpanel.sh: Replaced unsafe `wget -O install.sh` download pattern with explicit temp file.
 - rust.sh: Fixed `.zshrc` append when file doesn't exist, guarded all `cargo install` calls against `set -e`, replaced `curl | sh` for wasm-pack and rustup.
 - ruby.sh: Guarded `gem sources` and `bundle config` against `set -e`, replaced `curl | bash` for RVM, guarded GPG keyserver import.
+- postgresql.sh: Moved WAL archive directory from `${DATA_DIR}/archive` to `/var/lib/postgresql/archive` to prevent single-disk-failure data loss.
 
 ## 1.0.0 - 2026-06-12
 

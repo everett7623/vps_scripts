@@ -410,6 +410,11 @@ EOF
     
     # 复制配置
     if [[ "$DEPLOY_MODE" == "primary" ]] || [[ "$DEPLOY_MODE" == "standby" ]]; then
+        # 归档目录放在 DATA_DIR 之外，避免单盘故障同时丢失数据和归档
+        local ARCHIVE_DIR="/var/lib/postgresql/archive"
+        mkdir -p "${ARCHIVE_DIR}"
+        chown postgres:postgres "${ARCHIVE_DIR}"
+
         cat >> "$PG_CONFIG_DIR/postgresql.conf" << EOF
 
 # 复制设置
@@ -418,12 +423,8 @@ max_wal_senders = 10
 wal_keep_segments = 64
 hot_standby = on
 archive_mode = on
-archive_command = 'test ! -f ${DATA_DIR}/archive/%f && cp %p ${DATA_DIR}/archive/%f'
+archive_command = 'test ! -f ${ARCHIVE_DIR}/%f && cp %p ${ARCHIVE_DIR}/%f'
 EOF
-
-        # 创建归档目录
-        mkdir -p "${DATA_DIR}/archive"
-        chown postgres:postgres "${DATA_DIR}/archive"
     fi
     
     # 配置pg_hba.conf

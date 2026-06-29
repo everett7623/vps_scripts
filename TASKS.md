@@ -52,8 +52,8 @@
 - [x] Add `die()` helper function to consolidate 30+ scattered `print_error; exit 1` patterns
 - [x] Create `scripts/service_install/wppanel.sh` first-party wrapper (currently inline `run_remote_command`)
 - [x] Add `tests/validate_service_install_strict_mode.sh` to enforce `set -euo pipefail` coverage
-- [ ] Add shellcheck CI or pre-commit hook
-- [ ] Consider moving WAL archive directory outside PostgreSQL DATA_DIR for disaster recovery
+- [x] Add shellcheck CI or pre-commit hook
+- [x] Consider moving WAL archive directory outside PostgreSQL DATA_DIR for disaster recovery
 
 ## Documentation
 
