@@ -777,46 +777,48 @@ community_menu() {
         print_panel_title "社区脚本"
         print_menu_item 1  "YABS 性能测试" "综合基准脚本"
         print_menu_item 2  "Bench.sh 快速测试" "经典快速基准"
-        print_menu_item 3  "XY-IP 质量检测" "IP 综合检查"
-        print_menu_item 4  "XY 网络质量检测" "路由与质量"
-        print_menu_item 5  "NextTrace 回程路由" "可视化路由追踪"
-        print_menu_item 6  "NodeLoc 综合测试" "多项目测试脚本"
-        print_menu_item 7  "Nodequality" "节点质量评分"
-        print_menu_item 8  "spiritLHLS ecs" "综合性能测试"
-        print_menu_item 9  "流媒体解锁测试" "流媒体服务检测"
-        print_menu_item 10 "响应时间测试" "curl 请求耗时"
-        print_menu_item 11 "SSH 工具" "远程访问辅助"
-        print_menu_item 12 "JCNF 工具箱" "社区综合工具箱"
-        print_menu_item 13 "科技 Lion 工具箱" "社区综合工具箱"
-        print_menu_item 14 "BlueSkyXN 工具箱" "社区综合工具箱"
-        print_menu_item 15 "多线路测速" "多节点网络测速"
-        print_menu_item 16 "AutoTrace" "路由追踪工具"
-        print_menu_item 17 "超售检测" "内存压力测试"
-        print_menu_item 18 "NodeScriptKit" "NodeSeek 测试工具"
+        print_menu_item 3  "XY-IP 质量检测" "IP 风险与黑名单"
+        print_menu_item 4  "XY 网络质量检测" "路由与延迟"
+        print_menu_item 5  "XY 硬件质量体检" "CPU/IO 性能评估"
+        print_menu_item 6  "NextTrace 回程路由" "可视化路由追踪"
+        print_menu_item 7  "NodeLoc 综合测试" "多项目测试脚本"
+        print_menu_item 8  "Nodequality" "节点质量评分"
+        print_menu_item 9  "spiritLHLS ecs" "综合性能测试"
+        print_menu_item 10 "流媒体解锁测试" "流媒体服务检测"
+        print_menu_item 11 "响应时间测试" "curl 请求耗时"
+        print_menu_item 12 "SSH 工具" "远程访问辅助"
+        print_menu_item 13 "JCNF 工具箱" "社区综合工具箱"
+        print_menu_item 14 "科技 Lion 工具箱" "社区综合工具箱"
+        print_menu_item 15 "BlueSkyXN 工具箱" "社区综合工具箱"
+        print_menu_item 16 "多线路测速" "多节点网络测速"
+        print_menu_item 17 "AutoTrace" "路由追踪工具"
+        print_menu_item 18 "超售检测" "内存压力测试"
+        print_menu_item 19 "NodeScriptKit" "NodeSeek 测试工具"
         print_menu_item 0  "返回"
         echo ""
-        read_menu_choice "请选择 [0-18]: " || return 0
+        read_menu_choice "请选择 [0-19]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
             2) run_remote_command "wget -qO- bench.sh | bash" "Bench.sh quick benchmark" ;;
-            3) run_remote_script_url "https://IP.Check.Place" "XY-IP quality" ;;
-            4) run_remote_script_url "https://Net.Check.Place" "XY network quality" ;;
-            5) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/sjlleo/nexttrace/main/nt_install.sh)" "NextTrace installer" ;;
-            6) run_remote_command "curl -sSL https://abc.sd | bash" "NodeLoc benchmark" ;;
-            7) run_remote_command "bash <(curl -sL https://run.NodeQuality.com)" "Nodequality test" ;;
-            8) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
-            9) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
-            10) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
-            11) run_remote_command "curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh" "SSH tool" ;;
-            12) run_remote_command "wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh" "JCNF toolbox" ;;
-            13) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
-            14) run_remote_command "wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh" "BlueSkyXN toolbox" ;;
-            15) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
-            16) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" "AutoTrace" ;;
-            17) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" "Oversell check" ;;
-            18) run_remote_command "bash <(curl -sL https://sh.nodeseek.com)" "NodeScriptKit" ;;
+            3) run_remote_command "bash <(curl -Ls https://Check.Place) -I" "XY IP quality check" ;;
+            4) run_remote_command "bash <(curl -Ls https://Check.Place) -N" "XY network quality check" ;;
+            5) run_remote_command "bash <(curl -Ls https://Check.Place) -H" "XY hardware check" ;;
+            6) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/sjlleo/nexttrace/main/nt_install.sh)" "NextTrace installer" ;;
+            7) run_remote_command "curl -sSL https://abc.sd | bash" "NodeLoc benchmark" ;;
+            8) run_remote_command "bash <(curl -sL https://run.NodeQuality.com)" "Nodequality test" ;;
+            9) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
+            10) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
+            11) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
+            12) run_remote_command "curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh" "SSH tool" ;;
+            13) run_remote_command "wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh" "JCNF toolbox" ;;
+            14) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
+            15) run_remote_command "wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh" "BlueSkyXN toolbox" ;;
+            16) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
+            17) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" "AutoTrace" ;;
+            18) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" "Oversell check" ;;
+            19) run_remote_command "bash <(curl -sL https://sh.nodeseek.com)" "NodeScriptKit" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -963,17 +965,12 @@ main_menu() {
     check_environment
 
     # 获取使用统计（后台异步，不阻塞菜单显示）
-    local STATS_FILE="/tmp/.vps_scripts_stats_$$"
-    curl -fsS --max-time 3 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts&count_bg=%2379C83D&title_bg=%23555555&icon=github.svg&icon_color=%23E7E7E7&title=runs&edge_flat=true" -o /dev/null 2>/dev/null &
-    curl -fsS --max-time 3 "https://hits.seeyoufarm.com/api/count/keep/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2Fhit-counter&count_bg=%23C83D40&title_bg=%23555555" -o /dev/null 2>/dev/null
-    # 获取 JSON 格式计数
-    local stats_json=""
-    stats_json=$(curl -fsS --max-time 3 "https://hits.seeyoufarm.com/api/count/graph/dailyhits.json?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts" 2>/dev/null) || true
     local TODAY_HITS=""
     local TOTAL_HITS=""
-    if [ -n "${stats_json}" ]; then
-        TOTAL_HITS=$(printf '%s' "${stats_json}" | grep -oP '"total":\K[0-9]+' | head -1) || true
-        TODAY_HITS=$(printf '%s' "${stats_json}" | grep -oP '"count":\K[0-9]+' | tail -1) || true
+    local badge_svg=""
+    badge_svg=$(curl -fsS --max-time 3 "https://visitor-badge.laobi.icu/badge?page_id=everett7623.vps_scripts.launcher" 2>/dev/null) || true
+    if [ -n "${badge_svg}" ]; then
+        TOTAL_HITS=$(printf '%s' "${badge_svg}" | grep -oP '>\K[0-9]+(?=</text>)' | tail -1) || true
     fi
 
     while true; do
@@ -992,10 +989,8 @@ main_menu() {
         print_menu_item 10 "清理与卸载" "残留清理"
         print_menu_item 0 "退出"
         echo ""
-        if [ -n "${TODAY_HITS:-}" ] && [ -n "${TOTAL_HITS:-}" ]; then
-            printf '%b今日运行:%b %s  %b|%b  %b累计运行:%b %s\n' \
-                "${DIM}" "${GREEN}" "${TODAY_HITS}" "${DIM}" "${RESET}" \
-                "${DIM}" "${CYAN}" "${TOTAL_HITS}${RESET}"
+        if [ -n "${TOTAL_HITS:-}" ]; then
+            printf '%b累计运行:%b %s 次\n' "${DIM}" "${CYAN}" "${TOTAL_HITS}${RESET}"
         fi
         echo -e "${DIM}官方模块会先安全下载到临时文件，通过检查后再执行。${RESET}"
         echo ""
