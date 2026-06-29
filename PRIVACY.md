@@ -76,6 +76,14 @@ Service install menu (third-party items):
 - Document network-touching behavior in script headers and repo docs
 - Reduce opaque remote execution over time
 
+## Usage Statistics
+
+The launcher (`vps.sh`) sends a single lightweight request to `hits.seeyoufarm.com` on each run to count total script executions. This request:
+- Only increments a public counter badge
+- Does NOT collect IP addresses, system info, or any user data
+- Runs asynchronously in the background and does not affect script execution
+- Can be verified at: https://hits.seeyoufarm.com (open-source service)
+
 ## Operator Guidance
 
 - Review scripts before running them on production systems

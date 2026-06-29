@@ -962,6 +962,9 @@ uninstall_menu() {
 main_menu() {
     check_environment
 
+    # 轻量使用统计（仅计数，不收集用户数据，后台异步不阻塞）
+    curl -fsS "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts&count_bg=%2379C83D&title_bg=%23555555&icon=github.svg&icon_color=%23E7E7E7&title=runs&edge_flat=true" > /dev/null 2>&1 &
+
     while true; do
         print_header
         print_status_line
