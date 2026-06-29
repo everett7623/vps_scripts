@@ -759,7 +759,7 @@ service_install_menu() {
             18) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
             19) run_repo_script "scripts/service_install/jenkins.sh" ;;
             20) run_repo_script "scripts/service_install/kubernetes.sh" ;;
-            21) run_remote_command "apt-get update && apt-get install -y wget ca-certificates && wget -qO- https://raw.githubusercontent.com/naibabiji/wp-panel/main/install.sh | bash" "WP Panel installer" ;;
+            21) run_repo_script "scripts/service_install/wppanel.sh" ;;
             0) return ;;
             *) invalid_choice ;;
         esac

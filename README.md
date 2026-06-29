@@ -52,9 +52,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 
 ### 当前优化阶段
 - `system_tools`：主脚本已完成首轮收口
-- `network_test`：待继续统一结构与输出风格
-- `performance_test`：待继续整理
-- `service_install`：待逐个提升安全性与可维护性
+- `network_test`：已完成 `set -euo pipefail` 与 `mktemp` 安全加固
+- `performance_test`：已完成 `set -euo pipefail` 与 `mktemp` 安全加固
+- `service_install`：全部 21 个脚本已启用 `set -euo pipefail` 严格模式
 
 ## 功能特性
 
@@ -252,7 +252,7 @@ version.json               版本与元数据
 - `system_tools`: 9
 - `network_test`: 5
 - `performance_test`: 4
-- `service_install`: 20
+- `service_install`: 21
 - `other_tools`: 4
 - `uninstall_scripts`: 4
 - `update_scripts`: 4 legacy scripts + 1 policy note
@@ -274,6 +274,7 @@ LAUNCHER_OVERRIDE="$PWD/vps.sh" REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_la
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh
 ```
 
 如果本机装有 `shellcheck`，建议在提交前补跑。
@@ -293,11 +294,15 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 全部 21 个 service_install 脚本已启用 `set -euo pipefail` 严格模式
+- 全部 network_test 和 performance_test 脚本已加入严格模式与安全临时目录
+- 新增 `die()` 共享辅助函数，简化 `print_error; exit 1` 模式
+- 新增 `wppanel.sh` 作为 WP Panel 一等脚本（替代原内联 `run_remote_command`）
+- 新增 `tests/validate_service_install_strict_mode.sh` 自动化覆盖测试
+- 消除全项目 `curl | sh` 管道执行模式，统一使用下载-校验-执行流程
 - 发布 `1.0.0`：项目版本体系正式初始化，主启动器与模块进入首个稳定版本
 - 中文与英文混排菜单改为按终端显示宽度对齐
 - 24-88 列终端可响应式显示，窄屏详情自动换行
-- 修复非交互终端清屏、异常宽度值和 `LC_ALL=C` 中文宽度问题
-- 新增 `tests/validate_ui_layout.sh`，完整验证套件增至 30 项
 
 ### 查看完整历史
 - [CHANGELOG.md](CHANGELOG.md)：正式更新日志

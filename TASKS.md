@@ -50,8 +50,8 @@
 
 - [x] Extract repeated build-from-source pattern into shared helper in `lib/common_functions.sh`
 - [x] Add `die()` helper function to consolidate 30+ scattered `print_error; exit 1` patterns
-- [ ] Create `scripts/service_install/wppanel.sh` first-party wrapper (currently inline `run_remote_command`)
-- [ ] Add `tests/validate_service_install_strict_mode.sh` to enforce `set -euo pipefail` coverage
+- [x] Create `scripts/service_install/wppanel.sh` first-party wrapper (currently inline `run_remote_command`)
+- [x] Add `tests/validate_service_install_strict_mode.sh` to enforce `set -euo pipefail` coverage
 - [ ] Add shellcheck CI or pre-commit hook
 - [ ] Consider moving WAL archive directory outside PostgreSQL DATA_DIR for disaster recovery
 
@@ -64,4 +64,4 @@
 - [x] Update `SESSION.md` with 2026-06-11 session summary
 - [x] Update `DEVELOPMENT_GUIDE.md` with current patterns and full test suite
 - [x] Update `code_review.md` with current review findings
-- [ ] Keep `README.md` aligned with modular launcher path (review needed)
+- [x] Keep `README.md` aligned with modular launcher path (review needed)
