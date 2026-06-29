@@ -772,39 +772,45 @@ community_menu() {
         print_status_line
         print_panel_title "社区脚本"
         print_menu_item 1  "YABS 性能测试" "综合基准脚本"
-        print_menu_item 2  "XY-IP 质量检测" "IP 综合检查"
-        print_menu_item 3  "XY 网络质量检测" "路由与质量"
-        print_menu_item 4  "NodeLoc 综合测试" "多项目测试脚本"
-        print_menu_item 5  "spiritLHLS ecs" "综合性能测试"
-        print_menu_item 6  "流媒体解锁测试" "流媒体服务检测"
-        print_menu_item 7  "响应时间测试" "curl 请求耗时"
-        print_menu_item 8  "SSH 工具" "远程访问辅助"
-        print_menu_item 9  "JCNF 工具箱" "社区综合工具箱"
-        print_menu_item 10 "科技 Lion 工具箱" "社区综合工具箱"
-        print_menu_item 11 "BlueSkyXN 工具箱" "社区综合工具箱"
-        print_menu_item 12 "多线路测速" "多节点网络测速"
-        print_menu_item 13 "AutoTrace" "路由追踪工具"
-        print_menu_item 14 "超售检测" "内存压力测试"
+        print_menu_item 2  "Bench.sh 快速测试" "经典快速基准"
+        print_menu_item 3  "XY-IP 质量检测" "IP 综合检查"
+        print_menu_item 4  "XY 网络质量检测" "路由与质量"
+        print_menu_item 5  "NextTrace 回程路由" "可视化路由追踪"
+        print_menu_item 6  "NodeLoc 综合测试" "多项目测试脚本"
+        print_menu_item 7  "Nodequality" "节点质量评分"
+        print_menu_item 8  "spiritLHLS ecs" "综合性能测试"
+        print_menu_item 9  "流媒体解锁测试" "流媒体服务检测"
+        print_menu_item 10 "响应时间测试" "curl 请求耗时"
+        print_menu_item 11 "SSH 工具" "远程访问辅助"
+        print_menu_item 12 "JCNF 工具箱" "社区综合工具箱"
+        print_menu_item 13 "科技 Lion 工具箱" "社区综合工具箱"
+        print_menu_item 14 "BlueSkyXN 工具箱" "社区综合工具箱"
+        print_menu_item 15 "多线路测速" "多节点网络测速"
+        print_menu_item 16 "AutoTrace" "路由追踪工具"
+        print_menu_item 17 "超售检测" "内存压力测试"
         print_menu_item 0  "返回"
         echo ""
-        read_menu_choice "请选择 [0-14]: " || return 0
+        read_menu_choice "请选择 [0-17]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
-            2) run_remote_script_url "https://IP.Check.Place" "XY-IP quality" ;;
-            3) run_remote_script_url "https://Net.Check.Place" "XY network quality" ;;
-            4) run_remote_command "curl -sSL https://abc.sd | bash" "NodeLoc benchmark" ;;
-            5) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
-            6) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
-            7) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
-            8) run_remote_command "curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh" "SSH tool" ;;
-            9) run_remote_command "wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh" "JCNF toolbox" ;;
-            10) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
-            11) run_remote_command "wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh" "BlueSkyXN toolbox" ;;
-            12) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
-            13) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" "AutoTrace" ;;
-            14) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" "Oversell check" ;;
+            2) run_remote_command "wget -qO- bench.sh | bash" "Bench.sh quick benchmark" ;;
+            3) run_remote_script_url "https://IP.Check.Place" "XY-IP quality" ;;
+            4) run_remote_script_url "https://Net.Check.Place" "XY network quality" ;;
+            5) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/sjlleo/nexttrace/main/nt_install.sh)" "NextTrace installer" ;;
+            6) run_remote_command "curl -sSL https://abc.sd | bash" "NodeLoc benchmark" ;;
+            7) run_remote_command "bash <(curl -sL https://run.NodeQuality.com)" "Nodequality test" ;;
+            8) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
+            9) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
+            10) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
+            11) run_remote_command "curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh" "SSH tool" ;;
+            12) run_remote_command "wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh" "JCNF toolbox" ;;
+            13) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
+            14) run_remote_command "wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh" "BlueSkyXN toolbox" ;;
+            15) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
+            16) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" "AutoTrace" ;;
+            17) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" "Oversell check" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -833,7 +839,7 @@ proxy_tools_menu() {
             3) run_remote_script_url "https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh" "yonggekkk x-ui" ;;
             4) run_remote_script_url "https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh" "Official 3x-ui" ;;
             5) run_remote_script_url "https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh" "xeefei 3x-ui" ;;
-            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/hy2/main/install.sh" "Hysteria2 installer" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/hy2/main/hy2.sh" "Hysteria2 installer" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -850,9 +856,11 @@ other_tools_menu() {
         print_menu_item 3 "哪吒探针" "服务器监控"
         print_menu_item 4 "Swap" "虚拟内存管理"
         print_menu_item 5 "哪吒清理工具" "第三方清理脚本"
+        print_menu_item 6 "WARP 一键脚本" "Cloudflare IPv6"
+        print_menu_item 7 "DD 系统重装" "一键重装系统"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-5]: " || return 0
+        read_menu_choice "请选择 [0-7]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -861,6 +869,8 @@ other_tools_menu() {
             3) run_repo_script "scripts/other_tools/nezha.sh" ;;
             4) run_repo_script "scripts/other_tools/swap.sh" ;;
             5) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
+            6) run_remote_command "wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && chmod +x menu.sh && bash menu.sh" "Cloudflare WARP" ;;
+            7) run_remote_command "wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh && bash InstallNET.sh" "DD system reinstall" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
