@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # ==============================================================================
 # Script: scripts/system_tools/install_deps.sh
 # Purpose: Install baseline, development, monitoring, and security dependencies.

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/uninstall_scripts/rollback_system_environment.sh - VPS Scripts 系统环境回滚工具
 
 # 定义颜色

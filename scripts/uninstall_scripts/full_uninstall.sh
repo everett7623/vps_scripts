@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/uninstall_scripts/full_uninstall.sh - VPS Scripts 完全卸载工具
 
 # 定义颜色

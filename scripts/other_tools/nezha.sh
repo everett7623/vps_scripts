@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/other_tools/nezha.sh - VPS Scripts 哪吒监控安装工具
 
 # 定义颜色

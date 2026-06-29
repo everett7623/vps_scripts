@@ -26,6 +26,49 @@ Running these scripts may expose:
 - Linux distribution package repositories
 - Third-party benchmarking, testing, and installer endpoints referenced by specific scripts
 
+### Third-Party Tools Referenced in Menus
+
+Community scripts menu:
+- YABS (github.com/masonr/yet-another-bench-script)
+- Bench.sh (bench.sh)
+- XY IP/Network Check (Check.Place)
+- NextTrace (github.com/sjlleo/nexttrace)
+- NodeLoc benchmark (abc.sd)
+- Nodequality (run.NodeQuality.com)
+- spiritLHLS ecs (gitlab.com/spiritysdx/za)
+- Media unlock test (media.ispvps.com)
+- Response time test (nodebench.mereith.com)
+- SSH tool (github.com/eooce/ssh_tool)
+- JCNF toolbox (github.com/Netflixxp/jcnf-box)
+- KejiLion toolbox (kejilion.sh)
+- BlueSkyXN toolbox (github.com/BlueSkyXN/SKY-BOX)
+- Speedtest multi-line (github.com/i-abc/Speedtest)
+- AutoTrace (github.com/Chennhaoo/Shell_Bash)
+- Oversell check (github.com/uselibrary/memoryCheck)
+- NodeScriptKit (sh.nodeseek.com)
+
+Proxy tools menu:
+- sing-box scripts (github.com/yonggekkk, github.com/fscarmen)
+- x-ui / 3x-ui panels (gitlab.com/rwkgyg, github.com/mhsanaei, github.com/xeefei)
+- Hysteria2 (github.com/everett7623/hy2)
+
+Other tools menu:
+- Komari Monitor (github.com/komari-monitor/komari)
+- Cloudflare WARP (gitlab.com/fscarmen/warp)
+- DD System Reinstall (github.com/leitbogioro/Tools)
+- acme.sh (get.acme.sh)
+- oh-my-zsh (github.com/ohmyzsh/ohmyzsh)
+- Uptime Kuma (hub.docker.com louislam/uptime-kuma)
+- Tailscale (tailscale.com/install.sh)
+- FRP client (github.com/funnyzak/frpc)
+- Cloudflare Tunnel / cloudflared (github.com/cloudflare/cloudflared)
+- FileBrowser (github.com/filebrowser/get)
+- Nezha cleaner (github.com/everett7623/Nezha-cleaner)
+
+Service install menu (third-party items):
+- Caddy (caddyserver.com)
+- Portainer CE (hub.docker.com portainer/portainer-ce)
+
 ## Current Safety Direction
 
 - Keep first-party module execution separate from third-party commands

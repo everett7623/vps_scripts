@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/other_tools/bbr.sh - VPS Scripts BBR网络加速工具
 
 # 定义颜色

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/other_tools/fail2ban.sh - VPS Scripts Fail2ban安全工具
 
 # 定义颜色

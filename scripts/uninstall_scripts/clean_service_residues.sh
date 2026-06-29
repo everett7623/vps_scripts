@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/uninstall_scripts/clean_service_residues.sh - VPS Scripts 服务残留清理工具
 
 # 定义颜色

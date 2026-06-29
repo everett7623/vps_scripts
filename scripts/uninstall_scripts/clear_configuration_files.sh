@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/uninstall_scripts/clear_configuration_files.sh - VPS Scripts 配置文件清理工具
 
 # 定义颜色

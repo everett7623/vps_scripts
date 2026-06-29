@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # ==============================================================================
 # Script: scripts/system_tools/update_system.sh
 # Purpose: Safer system update workflow with backup, logging, and reboot checks.

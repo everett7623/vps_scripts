@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #/vps_scripts/scripts/other_tools/swap.sh - VPS Scripts SWAP设置工具
 
 # 定义颜色
