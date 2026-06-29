@@ -13,7 +13,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20CentOS%20%7C%20RHEL%20%7C%20Fedora%20%7C%20Arch-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
-[![Runs](https://visitor-badge.laobi.icu/badge?page_id=everett7623.vps_scripts)](https://github.com/everett7623/vps_scripts)
+[![Runs](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2FREADME&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=runs&edge_flat=false)](https://github.com/everett7623/vps_scripts)
 [![Stars](https://img.shields.io/github/stars/everett7623/vps_scripts?style=social)](https://github.com/everett7623/vps_scripts)
 
 [**项目地址**](https://github.com/everett7623/vps_scripts) | [**更新日志**](CHANGELOG.md) | [**开发指南**](DEVELOPMENT_GUIDE.md) | [**发布清单**](RELEASE_CHECKLIST.md)
