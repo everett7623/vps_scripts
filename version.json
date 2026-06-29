@@ -60,7 +60,8 @@
     "development_guide": "DEVELOPMENT_GUIDE.md",
     "changelog": "CHANGELOG.md",
     "release_checklist": "RELEASE_CHECKLIST.md",
-    "tasks": "TASKS.md"
+    "tasks": "TASKS.md",
+    "privacy": "PRIVACY.md"
   },
   "validation": {
     "launcher_paths": "tests/validate_launcher_paths.sh",

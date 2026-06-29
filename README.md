@@ -282,14 +282,11 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh
 
 ### 相关文档
 - [AGENTS.md](AGENTS.md)：协作规范与代理工作约束
-- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)：开发指南
+- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)：开发指南（含版本策略和审查清单）
 - [TASKS.md](TASKS.md)：待办与优先级
 - [PROGRESS.md](PROGRESS.md)：当前进展
 - [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)：发布前检查
-- [VERSIONING.md](VERSIONING.md)：版本策略
 - [PRIVACY.md](PRIVACY.md)：隐私与网络访问说明
-- [code_review.md](code_review.md)：代码审查记录
-- [SESSION.md](SESSION.md)：最近一次优化会话摘要
 - [CHANGELOG.md](CHANGELOG.md)：更新历史
 
 ## 更新日志
