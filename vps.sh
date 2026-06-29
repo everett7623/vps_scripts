@@ -792,9 +792,10 @@ community_menu() {
         print_menu_item 15 "多线路测速" "多节点网络测速"
         print_menu_item 16 "AutoTrace" "路由追踪工具"
         print_menu_item 17 "超售检测" "内存压力测试"
+        print_menu_item 18 "NodeScriptKit" "NodeSeek 测试工具"
         print_menu_item 0  "返回"
         echo ""
-        read_menu_choice "请选择 [0-17]: " || return 0
+        read_menu_choice "请选择 [0-18]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -815,6 +816,7 @@ community_menu() {
             15) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
             16) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" "AutoTrace" ;;
             17) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" "Oversell check" ;;
+            18) run_remote_command "bash <(curl -sL https://sh.nodeseek.com)" "NodeScriptKit" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -867,9 +869,13 @@ other_tools_menu() {
         print_menu_item 10 "tmux 终端复用" "防断连必备"
         print_menu_item 11 "oh-my-zsh" "Shell 增强"
         print_menu_item 12 "Uptime Kuma" "自托管监控"
+        print_menu_item 13 "Tailscale" "WireGuard 组网"
+        print_menu_item 14 "FRP 内网穿透" "反向代理穿透"
+        print_menu_item 15 "Cloudflare Tunnel" "零IP暴露隧道"
+        print_menu_item 16 "FileBrowser" "Web 文件管理"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-12]: " || return 0
+        read_menu_choice "请选择 [0-16]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -885,6 +891,10 @@ other_tools_menu() {
             10) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
             11) run_remote_command "sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" -- --unattended" "oh-my-zsh" ;;
             12) run_remote_command "docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1" "Uptime Kuma monitor" ;;
+            13) run_remote_command "curl -fsSL https://tailscale.com/install.sh | sh" "Tailscale mesh VPN" ;;
+            14) run_remote_command "wget https://raw.githubusercontent.com/funnyzak/frpc/main/frpc_linux_install.sh -O frpc_install.sh && chmod +x frpc_install.sh && bash frpc_install.sh" "FRP client (frpc)" ;;
+            15) run_remote_command "curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
+            16) run_remote_command "curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash" "FileBrowser file manager" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
