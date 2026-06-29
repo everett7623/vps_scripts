@@ -964,17 +964,14 @@ uninstall_menu() {
 main_menu() {
     check_environment
 
-    # 获取使用统计（借鉴 XY 大佬的 SVG 解析方式）
+    # 获取使用统计（visitor-badge.laobi.icu，稳定可用）
     local TODAY_HITS=""
     local TOTAL_HITS=""
-    local count_file=""
-    count_file=$(mktemp /tmp/vps_count.XXXXXX 2>/dev/null) || count_file="/tmp/vps_count_$$"
-    curl -fsS --max-time 3 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Feverett7623%2Fvps_scripts%2FREADME&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file" 2>/dev/null || true
-    if [ -s "$count_file" ]; then
-        TODAY_HITS=$(tail -3 "$count_file" | head -n 1 | awk '{print $5}') || true
-        TOTAL_HITS=$(tail -3 "$count_file" | head -n 1 | awk '{print $7}') || true
+    local count_svg=""
+    count_svg=$(curl -fsS --max-time 3 "https://visitor-badge.laobi.icu/badge?page_id=everett7623.vps_scripts.launcher" 2>/dev/null) || true
+    if [ -n "${count_svg}" ]; then
+        TOTAL_HITS=$(printf '%s' "${count_svg}" | grep -oP 'textLength="[0-9.]+"\s+transform="scale\(0\.1\)"\s+x="[0-9.]+"\s+y="140">\K[0-9]+' | tail -1) || true
     fi
-    rm -f "$count_file" 2>/dev/null
 
     while true; do
         print_header
@@ -992,8 +989,8 @@ main_menu() {
         print_menu_item 10 "清理与卸载" "残留清理"
         print_menu_item 0 "退出"
         echo ""
-        if [ -n "${TODAY_HITS:-}" ] || [ -n "${TOTAL_HITS:-}" ]; then
-            echo -e "${DIM}今日运行: ${GREEN}${TODAY_HITS:-0}${RESET}${DIM} | 累计运行: ${CYAN}${TOTAL_HITS:-0}${RESET}"
+        if [ -n "${TOTAL_HITS:-}" ]; then
+            echo -e "${DIM}累计运行: ${CYAN}${TOTAL_HITS}${RESET}${DIM} 次${RESET}"
         fi
         echo -e "${DIM}官方模块会先安全下载到临时文件，通过检查后再执行。${RESET}"
         echo ""

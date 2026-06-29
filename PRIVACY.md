@@ -78,11 +78,11 @@ Service install menu (third-party items):
 
 ## Usage Statistics
 
-The launcher (`vps.sh`) sends a single lightweight request to `hits.seeyoufarm.com` on each run to count total script executions. This request:
+The launcher (`vps.sh`) sends a single lightweight request to `visitor-badge.laobi.icu` on each run to count total script executions. This request:
 - Only increments a public counter badge
 - Does NOT collect IP addresses, system info, or any user data
-- Runs asynchronously in the background and does not affect script execution
-- Can be verified at: https://hits.seeyoufarm.com (open-source service)
+- Runs synchronously with a 3-second timeout, falls back gracefully if unavailable
+- Can be verified at: https://visitor-badge.laobi.icu (open-source service)
 
 ## Operator Guidance
 
