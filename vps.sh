@@ -733,9 +733,11 @@ service_install_menu() {
         print_menu_item 19 "Jenkins" "自动化服务"
         print_menu_item 20 "Kubernetes" "集群环境"
         print_menu_item 21 "WP Panel" "WordPress 面板"
+        print_menu_item 22 "Caddy" "自动 HTTPS 服务器"
+        print_menu_item 23 "Portainer" "Docker 可视化面板"
         print_menu_item 0  "返回"
         echo ""
-        read_menu_choice "请选择 [0-21]: " || return 0
+        read_menu_choice "请选择 [0-23]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -760,6 +762,8 @@ service_install_menu() {
             19) run_repo_script "scripts/service_install/jenkins.sh" ;;
             20) run_repo_script "scripts/service_install/kubernetes.sh" ;;
             21) run_repo_script "scripts/service_install/wppanel.sh" ;;
+            22) run_remote_command "curl -fsSL https://caddyserver.com/api/download?os=linux&arch=amd64 -o /usr/bin/caddy && chmod +x /usr/bin/caddy && caddy version" "Caddy web server" ;;
+            23) run_remote_command "docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest" "Portainer CE" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -858,9 +862,13 @@ other_tools_menu() {
         print_menu_item 5 "哪吒清理工具" "第三方清理脚本"
         print_menu_item 6 "WARP 一键脚本" "Cloudflare IPv6"
         print_menu_item 7 "DD 系统重装" "一键重装系统"
+        print_menu_item 8 "acme.sh 证书" "免费 SSL 证书"
+        print_menu_item 9 "tmux 终端复用" "防断连必备"
+        print_menu_item 10 "oh-my-zsh" "Shell 增强"
+        print_menu_item 11 "Uptime Kuma" "自托管监控"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-7]: " || return 0
+        read_menu_choice "请选择 [0-11]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -871,6 +879,10 @@ other_tools_menu() {
             5) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
             6) run_remote_command "wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && chmod +x menu.sh && bash menu.sh" "Cloudflare WARP" ;;
             7) run_remote_command "wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh && bash InstallNET.sh" "DD system reinstall" ;;
+            8) run_remote_command "curl https://get.acme.sh | sh -s email=my@example.com" "acme.sh SSL certificate tool" ;;
+            9) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
+            10) run_remote_command "sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" -- --unattended" "oh-my-zsh" ;;
+            11) run_remote_command "docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1" "Uptime Kuma monitor" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
