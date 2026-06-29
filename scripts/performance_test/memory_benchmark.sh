@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 #==============================================================================
 # 脚本名称: memory_benchmark.sh
@@ -25,7 +26,7 @@ LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="$LOG_DIR/memory_benchmark_$(date +%Y%m%d_%H%M%S).log"
 REPORT_DIR="/var/log/vps_scripts/reports"
 REPORT_FILE="$REPORT_DIR/memory_benchmark_$(date +%Y%m%d_%H%M%S).txt"
-TEMP_DIR="/tmp/memory_benchmark_$$"
+TEMP_DIR=$(mktemp -d "/tmp/memory_benchmark.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
 
 # 测试模式
 QUICK_MODE=false
@@ -41,12 +42,11 @@ STREAM_THREADS=$(nproc)  # STREAM测试线程数
 create_directories() {
     [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
     [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
-    [ ! -d "$TEMP_DIR" ] && mkdir -p "$TEMP_DIR"
 }
 
 # 清理
 cleanup() {
-    [ -d "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"
+    [ -d "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"
 }
 
 trap cleanup EXIT

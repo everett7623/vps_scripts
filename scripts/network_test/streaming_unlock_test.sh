@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 #==============================================================================
 # 脚本名称: streaming_unlock_test.sh
@@ -25,7 +26,7 @@ LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="$LOG_DIR/streaming_unlock_$(date +%Y%m%d_%H%M%S).log"
 REPORT_DIR="/var/log/vps_scripts/reports"
 REPORT_FILE="$REPORT_DIR/streaming_unlock_$(date +%Y%m%d_%H%M%S).txt"
-TEMP_DIR="/tmp/streaming_test_$$"
+TEMP_DIR=$(mktemp -d "/tmp/streaming_test.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
 
 # 测试模式
 BASIC_MODE=false
@@ -40,12 +41,11 @@ UA_MOBILE="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/60
 create_directories() {
     [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
     [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
-    [ ! -d "$TEMP_DIR" ] && mkdir -p "$TEMP_DIR"
 }
 
 # 清理
 cleanup() {
-    [ -d "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"
+    [ -d "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"
 }
 
 trap cleanup EXIT

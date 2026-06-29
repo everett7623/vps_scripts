@@ -4,6 +4,26 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+### Added
+- `die()` helper function in `lib/common_functions.sh` to consolidate `print_error; exit 1` patterns.
+
+### Changed
+- Added `set -euo pipefail` to all 8 remaining service_install scripts (1panel, aapanel, amh, btpanel, cyberpanel, jenkins, ruby, rust).
+- Added `set -euo pipefail` to all 5 network_test scripts (backhaul_route_test, bandwidth_test, ip_quality_test, network_quality_test, streaming_unlock_test).
+- Added `set -euo pipefail` to all 4 performance_test scripts (cpu_benchmark, disk_io_benchmark, memory_benchmark, network_throughput_test).
+- Replaced predictable `/tmp` paths with `mktemp -d` across all network_test and performance_test scripts.
+- Replaced `curl | sh` / `curl | bash` process-substitution patterns with download-to-tempfile-then-execute in cyberpanel.sh, rust.sh, ruby.sh.
+
+### Fixed
+- cyberpanel.sh: Fixed `TOTAL_MEM` unbound variable in `prepare_system()`, fixed `PKG_MANAGER` unbound when `prepare_system()` called directly, quoted `$service` and `$port` in loops.
+- jenkins.sh: Quoted all `$JENKINS_USER` in `chown` calls (5 occurrences), quoted `$VER` in `detect_system()`, added error handling to wget/install operations, fixed predictable log file path.
+- amh.sh: Removed duplicate `set -e`, replaced predictable temp dir with `mktemp -d`, guarded cleanup against unset `TEMP_DIR`.
+- 1panel.sh: Replaced predictable temp dir with `mktemp -d`, guarded cleanup against unset `TEMP_DIR`.
+- aapanel.sh: Replaced unsafe `curl -O`/`ls install*.sh` download pattern with explicit temp file.
+- btpanel.sh: Replaced unsafe `wget -O install.sh` download pattern with explicit temp file.
+- rust.sh: Fixed `.zshrc` append when file doesn't exist, guarded all `cargo install` calls against `set -e`, replaced `curl | sh` for wasm-pack and rustup.
+- ruby.sh: Guarded `gem sources` and `bundle config` against `set -e`, replaced `curl | bash` for RVM, guarded GPG keyserver import.
+
 ## 1.0.0 - 2026-06-12
 
 ### Added

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: jenkins.sh
 # 脚本描述: Jenkins CI/CD平台安装配置脚本 - 支持多种部署方式和插件管理
@@ -56,7 +57,7 @@ BACKUP_SCHEDULE=false
 USE_CHINA_MIRROR=false
 FORCE_INSTALL=false
 SCRIPT_VERSION="1.0.0"
-LOG_FILE="/tmp/jenkins_install_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE=$(mktemp "/tmp/jenkins_install_XXXXXX.log") || LOG_FILE="/tmp/jenkins_install_$$.log"
 
 # 默认配置
 JENKINS_HOME="/var/lib/jenkins"
@@ -182,12 +183,12 @@ detect_system() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
-        VER_MAJOR=$(echo $VER | cut -d. -f1)
+        VER="${VERSION_ID:-}"
+        VER_MAJOR=$(echo "$VER" | cut -d. -f1)
     elif type lsb_release >/dev/null 2>&1; then
         OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
         VER=$(lsb_release -sr)
-        VER_MAJOR=$(echo $VER | cut -d. -f1)
+        VER_MAJOR=$(echo "$VER" | cut -d. -f1)
     else
         log "${RED}错误: 无法检测系统类型${NC}"
         exit 1
@@ -251,14 +252,14 @@ install_java() {
 create_jenkins_user() {
     if ! id "$JENKINS_USER" &>/dev/null; then
         log "${CYAN}创建Jenkins用户...${NC}"
-        useradd --system --shell /bin/bash --home-dir "$JENKINS_HOME" --create-home $JENKINS_USER
+        useradd --system --shell /bin/bash --home-dir "$JENKINS_HOME" --create-home "$JENKINS_USER"
     fi
     
     # 创建必要的目录
     mkdir -p "$JENKINS_HOME"
     mkdir -p "$JENKINS_HOME/.jenkins"
     mkdir -p "$JENKINS_INIT_DIR"
-    chown -R $JENKINS_USER:$JENKINS_USER "$JENKINS_HOME"
+    chown -R "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_HOME"
 }
 
 # 系统包方式安装
@@ -269,10 +270,10 @@ install_package() {
         ubuntu|debian)
             # 添加Jenkins仓库
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                wget -q -O - https://mirrors.tuna.tsinghua.edu.cn/jenkins/debian-stable/jenkins.io.key | apt-key add -
+                wget -q -O - https://mirrors.tuna.tsinghua.edu.cn/jenkins/debian-stable/jenkins.io.key | apt-key add - || true
                 echo "deb https://mirrors.tuna.tsinghua.edu.cn/jenkins/debian-stable binary/" > /etc/apt/sources.list.d/jenkins.list
             else
-                wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | apt-key add -
+                wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | apt-key add - || true
                 echo "deb https://pkg.jenkins.io/debian-stable binary/" > /etc/apt/sources.list.d/jenkins.list
             fi
             
@@ -280,17 +281,17 @@ install_package() {
             if [[ "$JENKINS_VERSION" == "lts" ]]; then
                 apt-get install -y jenkins
             else
-                apt-get install -y jenkins=$JENKINS_VERSION
+                apt-get install -y "jenkins=$JENKINS_VERSION"
             fi
             ;;
         centos|rhel|fedora|rocky|almalinux)
             # 添加Jenkins仓库
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                wget -O /etc/yum.repos.d/jenkins.repo https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.repo
-                rpm --import https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.io.key
+                wget -O /etc/yum.repos.d/jenkins.repo https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.repo || { log "${RED}下载仓库文件失败${NC}"; exit 1; }
+                rpm --import https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.io.key || true
             else
-                wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-                rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+                wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo || { log "${RED}下载仓库文件失败${NC}"; exit 1; }
+                rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key || true
             fi
             
             yum install -y jenkins
@@ -324,7 +325,7 @@ install_war() {
     fi
     
     log "${YELLOW}下载Jenkins WAR包...${NC}"
-    wget -O "$JENKINS_WAR" "$DOWNLOAD_URL"
+    wget -O "$JENKINS_WAR" "$DOWNLOAD_URL" || { log "${RED}错误: Jenkins WAR包下载失败${NC}"; exit 1; }
     
     if [[ ! -f "$JENKINS_WAR" ]]; then
         log "${RED}错误: Jenkins WAR包下载失败${NC}"
@@ -419,7 +420,7 @@ configure_jenkins() {
   </site>
 </sites>
 EOF
-        chown $JENKINS_USER:$JENKINS_USER "$JENKINS_HOME/hudson.model.UpdateCenter.xml"
+        chown "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_HOME/hudson.model.UpdateCenter.xml"
     fi
     
     # 创建初始化脚本目录
@@ -429,7 +430,7 @@ EOF
     if [[ "$SKIP_SETUP_WIZARD" = true ]]; then
         echo "$JENKINS_VERSION" > "$JENKINS_HOME/jenkins.install.UpgradeWizard.state"
         echo "$JENKINS_VERSION" > "$JENKINS_HOME/jenkins.install.InstallUtil.lastExecVersion"
-        chown $JENKINS_USER:$JENKINS_USER "$JENKINS_HOME"/jenkins.install.*
+        chown "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_HOME"/jenkins.install.*
     fi
 }
 
@@ -465,7 +466,7 @@ instance.save()
 println "管理员用户 ${ADMIN_USER} 创建成功"
 EOF
     
-    chown $JENKINS_USER:$JENKINS_USER "$JENKINS_INIT_DIR/01-create-admin-user.groovy"
+    chown "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_INIT_DIR/01-create-admin-user.groovy"
 }
 
 # 配置安全设置
@@ -498,7 +499,7 @@ instance.save()
 println "安全配置完成"
 EOF
     
-    chown $JENKINS_USER:$JENKINS_USER "$JENKINS_INIT_DIR/02-security-config.groovy"
+    chown "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_INIT_DIR/02-security-config.groovy"
 }
 
 # 安装插件
@@ -563,7 +564,7 @@ if (installed) {
 }
 EOF
     
-    chown $JENKINS_USER:$JENKINS_USER "$JENKINS_INIT_DIR/03-install-plugins.groovy"
+    chown "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_INIT_DIR/03-install-plugins.groovy"
 }
 
 # 安装构建工具

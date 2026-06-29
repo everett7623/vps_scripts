@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # ==============================================================================
 # 脚本名称: bandwidth_test.sh
 # 仓库地址: https://github.com/everett7623/vps_scripts
@@ -26,7 +27,7 @@ LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="$LOG_DIR/bandwidth_test.log"
 REPORT_DIR="/var/log/vps_scripts/reports"
 REPORT_FILE="$REPORT_DIR/bandwidth_report_$(date +%Y%m%d_%H%M%S).txt"
-TEMP_DIR="/tmp/bandwidth_test_$$"
+TEMP_DIR=$(mktemp -d "/tmp/bandwidth_test.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
 
 # 默认参数
 TEST_MODE="unknown"
@@ -50,7 +51,7 @@ else
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}需要 root 权限${NC}"; exit 1; }; }
 fi
 
-mkdir -p "$LOG_DIR" "$REPORT_DIR" "$TEMP_DIR"
+mkdir -p "$LOG_DIR" "$REPORT_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # ------------------------------------------------------------------------------

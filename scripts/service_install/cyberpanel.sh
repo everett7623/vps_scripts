@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: cyberpanel.sh
 # 脚本描述: Cyberpanel面板安装脚本 - 提供交互式和半自动化安装Cyberpanel
@@ -237,6 +238,14 @@ prepare_system() {
     echo -e "${CYAN}系统准备和优化${NC}"
     echo "=================================================="
     
+    # 确保检测到包管理器
+    if [[ -z "${PKG_MANAGER:-}" ]]; then
+        if ! check_system; then
+            log_error "系统检查未通过"
+            exit 1
+        fi
+    fi
+    
     # 更新系统
     log_info "更新系统软件包..."
     if [[ "$PKG_MANAGER" == "apt" ]]; then
@@ -285,7 +294,9 @@ EOF
     log_success "系统参数优化完成"
     
     # 创建swap（如果内存小于2GB）
-    if [[ $TOTAL_MEM -lt 2048 ]]; then
+    local total_mem_mb
+    total_mem_mb=$(free -m | awk '/^Mem:/{print $2}')
+    if [[ $total_mem_mb -lt 2048 ]]; then
         if ! swapon -s | grep -q swapfile; then
             log_info "创建2GB Swap文件..."
             dd if=/dev/zero of=/swapfile bs=1M count=2048 >/dev/null 2>&1
@@ -375,7 +386,16 @@ EOF
     echo ""
     
     # 执行官方安装脚本
-    sh <(curl -s "$CYBERPANEL_URL" || wget -q -O - "$CYBERPANEL_URL")
+    local install_script
+    install_script=$(mktemp "/tmp/cyberpanel_install.XXXXXX") || { log_error "创建临时文件失败"; exit 1; }
+    if curl -fsSL "$CYBERPANEL_URL" -o "$install_script" || wget -q -O "$install_script" "$CYBERPANEL_URL"; then
+        sh "$install_script"
+    else
+        log_error "下载安装脚本失败"
+        rm -f -- "$install_script"
+        exit 1
+    fi
+    rm -f -- "$install_script"
     
     # 安装后处理
     if [[ -d "$INSTALL_DIR" ]]; then
@@ -439,10 +459,10 @@ configure_firewall() {
     # 检查并配置firewalld
     if command -v firewall-cmd &> /dev/null && systemctl is-active firewalld &>/dev/null; then
         for port in "${TCP_PORTS[@]}"; do
-            firewall-cmd --permanent --add-port=$port/tcp &>/dev/null
+            firewall-cmd --permanent --add-port="$port/tcp" &>/dev/null || true
         done
         for port in "${UDP_PORTS[@]}"; do
-            firewall-cmd --permanent --add-port=$port/udp &>/dev/null
+            firewall-cmd --permanent --add-port="$port/udp" &>/dev/null || true
         done
         firewall-cmd --reload
         log_success "firewalld防火墙规则已配置"
@@ -451,10 +471,10 @@ configure_firewall() {
     # 检查并配置ufw
     if command -v ufw &> /dev/null && ufw status | grep -q "Status: active"; then
         for port in "${TCP_PORTS[@]}"; do
-            ufw allow $port/tcp &>/dev/null
+            ufw allow "$port/tcp" &>/dev/null || true
         done
         for port in "${UDP_PORTS[@]}"; do
-            ufw allow $port/udp &>/dev/null
+            ufw allow "$port/udp" &>/dev/null || true
         done
         log_success "ufw防火墙规则已配置"
     fi
@@ -601,8 +621,8 @@ uninstall_cyberpanel() {
     # 停止所有服务
     services=(lscpd lsws mysql mariadb postfix pure-ftpd pdns)
     for service in "${services[@]}"; do
-        systemctl stop $service 2>/dev/null
-        systemctl disable $service 2>/dev/null
+        systemctl stop "$service" 2>/dev/null || true
+        systemctl disable "$service" 2>/dev/null || true
     done
     
     # 删除文件和目录

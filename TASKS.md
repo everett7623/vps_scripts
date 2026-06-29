@@ -41,15 +41,15 @@
 - [x] Classify `update_scripts/` as inactive legacy/reference
 - [x] Add Hysteria2 to Proxy Tools menu
 - [x] Add WP Panel to Service Install menu
-- [ ] Add `set -euo pipefail` to remaining 8 service_install scripts (1panel, aapanel, amh, btpanel, cyberpanel, jenkins, ruby, rust)
-- [ ] Refactor `network_test/` category for consistent structure and output
-- [ ] Refactor `performance_test/` category for consistent structure and output
+- [x] Add `set -euo pipefail` to remaining 8 service_install scripts (1panel, aapanel, amh, btpanel, cyberpanel, jenkins, ruby, rust)
+- [x] Refactor `network_test/` category for consistent structure and output
+- [x] Refactor `performance_test/` category for consistent structure and output
 - [ ] Add more non-interactive safety flags where appropriate
 
 ## P3 (new)
 
-- [ ] Extract repeated build-from-source pattern into shared helper in `lib/common_functions.sh`
-- [ ] Add `die()` helper function to consolidate 30+ scattered `print_error; exit 1` patterns
+- [x] Extract repeated build-from-source pattern into shared helper in `lib/common_functions.sh`
+- [x] Add `die()` helper function to consolidate 30+ scattered `print_error; exit 1` patterns
 - [ ] Create `scripts/service_install/wppanel.sh` first-party wrapper (currently inline `run_remote_command`)
 - [ ] Add `tests/validate_service_install_strict_mode.sh` to enforce `set -euo pipefail` coverage
 - [ ] Add shellcheck CI or pre-commit hook

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: rust.sh
 # 脚本描述: Rust 语言环境安装脚本 - 支持rustup、工具链管理和开发工具安装
@@ -273,7 +274,16 @@ install_rustup() {
         export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
     fi
     
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y $rustup_init_args
+    local rustup_script
+    rustup_script=$(mktemp "/tmp/rustup-init.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
+    if ! curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o "$rustup_script"; then
+        log "${RED}错误: 下载rustup安装脚本失败${NC}"
+        rm -f -- "$rustup_script"
+        exit 1
+    fi
+    # shellcheck disable=SC2086
+    sh "$rustup_script" -y $rustup_init_args
+    rm -f -- "$rustup_script"
     
     # 加载环境变量
     source "$CARGO_HOME/env"
@@ -338,16 +348,18 @@ install_dev_tools() {
     
     for tool in "${tools[@]}"; do
         log "${YELLOW}安装 $tool...${NC}"
-        cargo install "$tool" || log "${RED}$tool 安装失败${NC}"
+        cargo install "$tool" || log "${RED}$tool 安装失败(非致命)${NC}"
     done
     
     # 安装sccache（编译缓存）
     log "${YELLOW}安装sccache编译缓存...${NC}"
-    cargo install sccache
+    cargo install sccache || log "${RED}sccache 安装失败(非致命)${NC}"
     
     # 配置sccache
     echo 'export RUSTC_WRAPPER=sccache' >> ~/.bashrc
-    echo 'export RUSTC_WRAPPER=sccache' >> ~/.zshrc 2>/dev/null || true
+    if [[ -f ~/.zshrc ]]; then
+        echo 'export RUSTC_WRAPPER=sccache' >> ~/.zshrc
+    fi
     
     log "${GREEN}开发工具集安装完成${NC}"
 }
@@ -358,7 +370,14 @@ install_web_tools() {
     
     # 安装wasm-pack
     log "${YELLOW}安装wasm-pack...${NC}"
-    curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    local wasm_pack_script
+    wasm_pack_script=$(mktemp "/tmp/wasm-pack-install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; return 1; }
+    if curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh -o "$wasm_pack_script"; then
+        sh "$wasm_pack_script"
+    else
+        log "${RED}wasm-pack 下载失败${NC}"
+    fi
+    rm -f -- "$wasm_pack_script"
     
     # 安装trunk (WASM web应用打包工具)
     log "${YELLOW}安装trunk...${NC}"
@@ -374,7 +393,7 @@ install_web_tools() {
     
     for tool in "${web_tools[@]}"; do
         log "${YELLOW}安装 $tool...${NC}"
-        cargo install "$tool" || log "${RED}$tool 安装失败${NC}"
+        cargo install "$tool" || log "${RED}$tool 安装失败(非致命)${NC}"
     done
     
     log "${GREEN}Web开发工具安装完成${NC}"
@@ -399,7 +418,7 @@ install_cargo_plugins() {
     
     for plugin in "${plugins[@]}"; do
         log "${YELLOW}安装 $plugin...${NC}"
-        cargo install "$plugin" || log "${RED}$plugin 安装失败${NC}"
+        cargo install "$plugin" || log "${RED}$plugin 安装失败(非致命)${NC}"
     done
     
     log "${GREEN}cargo插件安装完成${NC}"

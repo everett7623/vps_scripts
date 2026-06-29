@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 #==============================================================================
 # 脚本名称: network_throughput_test.sh
@@ -25,7 +26,7 @@ LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="$LOG_DIR/network_throughput_$(date +%Y%m%d_%H%M%S).log"
 REPORT_DIR="/var/log/vps_scripts/reports"
 REPORT_FILE="$REPORT_DIR/network_throughput_$(date +%Y%m%d_%H%M%S).txt"
-TEMP_DIR="/tmp/network_throughput_$$"
+TEMP_DIR=$(mktemp -d "/tmp/network_throughput.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
 
 # 测试模式
 SERVER_MODE=false
@@ -44,14 +45,13 @@ TEST_PROTOCOLS=("tcp" "udp")  # 测试协议
 create_directories() {
     [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
     [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
-    [ ! -d "$TEMP_DIR" ] && mkdir -p "$TEMP_DIR"
 }
 
 # 清理
 cleanup() {
-    [ -d "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"
+    [ -d "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"
     # 停止可能运行的iperf3服务器
-    pkill -f "iperf3.*server" 2>/dev/null
+    pkill -f "iperf3.*server" 2>/dev/null || true
 }
 
 trap cleanup EXIT

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: amh.sh
 # 脚本描述: AMH面板自动安装脚本 - 一键安装AMH服务器管理面板
@@ -183,9 +184,8 @@ download_amh() {
     log_info "下载AMH安装程序..."
     
     # 创建临时目录
-    TEMP_DIR="/tmp/amh_$$"
-    mkdir -p $TEMP_DIR
-    cd $TEMP_DIR
+    TEMP_DIR=$(mktemp -d "/tmp/amh_install.XXXXXX") || { log_error "创建临时目录失败"; exit 1; }
+    cd "$TEMP_DIR"
     
     # 下载安装脚本
     if [[ "$DEFAULT_VERSION" == "latest" ]]; then
@@ -321,15 +321,14 @@ uninstall_amh() {
 
 # 清理函数
 cleanup() {
-    if [[ -d "$TEMP_DIR" ]]; then
-        rm -rf "$TEMP_DIR"
+    if [[ -d "${TEMP_DIR:-}" ]]; then
+        rm -rf -- "$TEMP_DIR"
     fi
 }
 
 # 主函数
 main() {
     # 设置错误处理
-    set -e
     trap cleanup EXIT
     
     # 解析参数

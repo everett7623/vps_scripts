@@ -575,6 +575,13 @@ graceful_exit() {
     exit "${exit_code}"
 }
 
+die() {
+    local message="${1:-Fatal error}"
+    local exit_code="${2:-1}"
+    print_error "${message}"
+    exit "${exit_code}"
+}
+
 trap 'graceful_exit 1 "Script interrupted."' INT TERM
 
 export -f print_msg print_info print_success print_warn print_error
@@ -589,4 +596,4 @@ export -f safe_mkdir backup_file download_file
 export -f read_config write_config
 export -f ask_yes_no select_option read_input is_valid_identifier
 export -f check_service_status start_service stop_service restart_service
-export -f cleanup_temp_files graceful_exit
+export -f cleanup_temp_files graceful_exit die

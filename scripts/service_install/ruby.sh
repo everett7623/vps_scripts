@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: ruby.sh
 # 脚本描述: Ruby 语言环境安装脚本 - 支持系统包、rbenv、rvm和源码编译安装
@@ -200,10 +201,12 @@ configure_china_mirrors() {
         log "${CYAN}配置中国镜像源...${NC}"
         
         # 配置gem源
-        gem sources --add https://gems.ruby-china.com/ --remove https://rubygems.org/
+        gem sources --add https://gems.ruby-china.com/ --remove https://rubygems.org/ || true
         
         # 配置bundle镜像
-        bundle config mirror.https://rubygems.org https://gems.ruby-china.com
+        if command -v bundle &> /dev/null; then
+            bundle config mirror.https://rubygems.org https://gems.ruby-china.com || true
+        fi
         
         log "${GREEN}镜像源配置完成${NC}"
     fi
@@ -294,20 +297,25 @@ install_rvm() {
     log "${CYAN}安装RVM...${NC}"
     
     # 安装GPG密钥
-    gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+    gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB || true
     
-    # 下载并安装RVM
-    if [[ "$USE_CHINA_MIRROR" = true ]]; then
-        curl -sSL https://get.rvm.io | bash -s stable --ruby="$RUBY_VERSION" --auto-dotfiles
-    else
-        curl -sSL https://get.rvm.io | bash -s stable --ruby="$RUBY_VERSION" --auto-dotfiles
+    # 下载并安装RVM (使用 temp file 而非 pipe)
+    local rvm_script
+    rvm_script=$(mktemp "/tmp/rvm-install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
+    local rvm_args="stable --ruby=${RUBY_VERSION:-$DEFAULT_RUBY_VERSION} --auto-dotfiles"
+    if ! curl -sSL https://get.rvm.io -o "$rvm_script"; then
+        log "${RED}错误: 下载RVM安装脚本失败${NC}"
+        rm -f -- "$rvm_script"
+        exit 1
     fi
+    bash "$rvm_script" $rvm_args
+    rm -f -- "$rvm_script"
     
     # 加载RVM
     source "$RVM_PATH/scripts/rvm"
     
     # 设置默认Ruby版本
-    if [[ -n "$RUBY_VERSION" ]]; then
+    if [[ -n "${RUBY_VERSION:-}" ]]; then
         rvm install "$RUBY_VERSION"
         rvm use "$RUBY_VERSION" --default
     fi
@@ -423,7 +431,7 @@ install_dev_tools() {
     
     for gem_name in "${gems[@]}"; do
         log "${YELLOW}安装 ${gem_name}...${NC}"
-        gem install "$gem_name" || log "${RED}${gem_name} 安装失败${NC}"
+        gem install "$gem_name" || log "${RED}${gem_name} 安装失败(非致命)${NC}"
     done
     
     log "${GREEN}开发工具集安装完成${NC}"

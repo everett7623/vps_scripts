@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # ==============================================================================
 # 脚本名称: backhaul_route_test.sh
 # 仓库地址: https://github.com/everett7623/vps_scripts

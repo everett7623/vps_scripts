@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: btpanel.sh
 # 脚本描述: BT宝塔面板官方安装脚本 - 基于官方脚本的增强版
@@ -116,18 +117,19 @@ install_btpanel() {
     log "${CYAN}开始安装宝塔面板...${NC}"
     
     # 下载官方安装脚本
-    wget -O install.sh "$INSTALL_SCRIPT"
-    
-    if [[ ! -f install.sh ]]; then
+    local install_script
+    install_script=$(mktemp "/tmp/btpanel_install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
+    if ! wget -O "$install_script" "$INSTALL_SCRIPT"; then
         log "${RED}错误: 下载安装脚本失败${NC}"
+        rm -f -- "$install_script"
         exit 1
     fi
     
     # 执行安装
-    echo y | bash install.sh
+    echo y | bash "$install_script" || true
     
     # 清理
-    rm -f install.sh
+    rm -f -- "$install_script"
 }
 
 # 配置面板

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #==============================================================================
 # 脚本名称: aapanel.sh
 # 脚本描述: aaPanel（宝塔国际版）官方安装脚本增强版
@@ -107,26 +108,21 @@ select_install_script() {
 install_aapanel() {
     log "${CYAN}开始安装aaPanel...${NC}"
     
-    # 下载官方安装脚本
+    # 下载官方安装脚本到临时文件
+    local install_script
+    install_script=$(mktemp "/tmp/aapanel_install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
+    
     if command -v curl &> /dev/null; then
-        curl -ksSO "$INSTALL_SCRIPT"
+        curl -ksSL "$INSTALL_SCRIPT" -o "$install_script" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
     else
-        wget --no-check-certificate -O install.sh "$INSTALL_SCRIPT"
+        wget --no-check-certificate -O "$install_script" "$INSTALL_SCRIPT" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
     fi
-    
-    if [[ ! -f install.sh ]] && [[ ! -f install_6.0_en.sh ]] && [[ ! -f install-ubuntu_6.0_en.sh ]]; then
-        log "${RED}错误: 下载安装脚本失败${NC}"
-        exit 1
-    fi
-    
-    # 获取正确的脚本名称
-    SCRIPT_NAME=$(ls install*.sh 2>/dev/null | head -1)
     
     # 执行安装
-    echo y | bash "$SCRIPT_NAME"
+    echo y | bash "$install_script" || true
     
     # 清理
-    rm -f "$SCRIPT_NAME"
+    rm -f -- "$install_script"
 }
 
 # 等待面板启动
