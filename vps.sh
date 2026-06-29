@@ -858,31 +858,33 @@ other_tools_menu() {
         print_menu_item 1 "BBR" "网络加速"
         print_menu_item 2 "Fail2ban" "基础安全防护"
         print_menu_item 3 "哪吒探针" "服务器监控"
-        print_menu_item 4 "Swap" "虚拟内存管理"
-        print_menu_item 5 "哪吒清理工具" "第三方清理脚本"
-        print_menu_item 6 "WARP 一键脚本" "Cloudflare IPv6"
-        print_menu_item 7 "DD 系统重装" "一键重装系统"
-        print_menu_item 8 "acme.sh 证书" "免费 SSL 证书"
-        print_menu_item 9 "tmux 终端复用" "防断连必备"
-        print_menu_item 10 "oh-my-zsh" "Shell 增强"
-        print_menu_item 11 "Uptime Kuma" "自托管监控"
+        print_menu_item 4 "Komari 探针" "轻量级监控"
+        print_menu_item 5 "Swap" "虚拟内存管理"
+        print_menu_item 6 "哪吒清理工具" "第三方清理脚本"
+        print_menu_item 7 "WARP 一键脚本" "Cloudflare IPv6"
+        print_menu_item 8 "DD 系统重装" "一键重装系统"
+        print_menu_item 9 "acme.sh 证书" "免费 SSL 证书"
+        print_menu_item 10 "tmux 终端复用" "防断连必备"
+        print_menu_item 11 "oh-my-zsh" "Shell 增强"
+        print_menu_item 12 "Uptime Kuma" "自托管监控"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-11]: " || return 0
+        read_menu_choice "请选择 [0-12]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/other_tools/bbr.sh" ;;
             2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
             3) run_repo_script "scripts/other_tools/nezha.sh" ;;
-            4) run_repo_script "scripts/other_tools/swap.sh" ;;
-            5) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
-            6) run_remote_command "wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && chmod +x menu.sh && bash menu.sh" "Cloudflare WARP" ;;
-            7) run_remote_command "wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh && bash InstallNET.sh" "DD system reinstall" ;;
-            8) run_remote_command "curl https://get.acme.sh | sh -s email=my@example.com" "acme.sh SSL certificate tool" ;;
-            9) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
-            10) run_remote_command "sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" -- --unattended" "oh-my-zsh" ;;
-            11) run_remote_command "docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1" "Uptime Kuma monitor" ;;
+            4) run_remote_command "curl -fsSL https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh -o install-komari.sh && chmod +x install-komari.sh && sudo ./install-komari.sh" "Komari monitor" ;;
+            5) run_repo_script "scripts/other_tools/swap.sh" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
+            7) run_remote_command "wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && chmod +x menu.sh && bash menu.sh" "Cloudflare WARP" ;;
+            8) run_remote_command "wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh && bash InstallNET.sh" "DD system reinstall" ;;
+            9) run_remote_command "curl https://get.acme.sh | sh -s email=my@example.com" "acme.sh SSL certificate tool" ;;
+            10) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
+            11) run_remote_command "sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" -- --unattended" "oh-my-zsh" ;;
+            12) run_remote_command "docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1" "Uptime Kuma monitor" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
