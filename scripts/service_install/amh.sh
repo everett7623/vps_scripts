@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: amh.sh
 # 脚本描述: AMH面板自动安装脚本 - 一键安装AMH服务器管理面板
 # 脚本路径: vps_scripts/scripts/service_install/amh.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash amh.sh [选项]
 # 选项: --version [版本号] (默认安装最新版)
 #       --domain [域名] (可选，用于SSL配置)

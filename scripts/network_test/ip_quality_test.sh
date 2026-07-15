@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: ip_quality_test.sh
 # 描述: VPS IP质量测试脚本 - 检测IP黑名单、声誉、类型、风险等级
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/network_test/ip_quality_test.sh
 # 使用方法: bash ip_quality_test.sh [IP地址]
 # 更新日期: 2024-06-17

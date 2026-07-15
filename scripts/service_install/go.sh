@@ -3,7 +3,7 @@
 # 脚本名称: go.sh
 # 脚本描述: Go 语言环境安装脚本 - 支持官方二进制包和源码编译安装
 # 脚本路径: vps_scripts/scripts/service_install/go.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash go.sh [选项]
 # 选项说明:
 #   --version <版本>    Go版本 (如: 1.21.5, 1.20.12)

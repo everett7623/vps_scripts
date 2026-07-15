@@ -3,7 +3,7 @@
 # 脚本名称: nodejs.sh
 # 脚本描述: Node.js运行环境安装脚本 - 支持多版本管理和包管理器安装
 # 脚本路径: vps_scripts/scripts/service_install/nodejs.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash nodejs.sh [选项]
 # 选项: --version=X.X --nvm --yarn --pnpm --pm2 --all
 # 更新日期: 2025-06-20
@@ -698,7 +698,7 @@ main() {
     # 显示脚本信息
     echo -e "${PURPLE}======================================${NC}"
     echo -e "${PURPLE}Node.js 运行环境安装脚本${NC}"
-    echo -e "${PURPLE}作者: Jensfrank${NC}"
+    echo -e "${PURPLE}作者: everettlabs${NC}"
     echo -e "${PURPLE}版本: 2025-06-20${NC}"
     echo -e "${PURPLE}======================================${NC}"
     echo

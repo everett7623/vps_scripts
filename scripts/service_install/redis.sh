@@ -3,7 +3,7 @@
 # 脚本名称: redis.sh
 # 脚本描述: Redis 内存数据库安装配置脚本 - 支持单机、主从、哨兵模式
 # 脚本路径: vps_scripts/scripts/service_install/redis.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash redis.sh [选项]
 # 选项说明:
 #   --version <版本>     Redis版本 (如: 7.2.3, 6.2.14)

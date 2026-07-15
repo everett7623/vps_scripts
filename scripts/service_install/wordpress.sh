@@ -3,7 +3,7 @@
 # 脚本名称: wordpress.sh
 # 脚本描述: WordPress自动安装脚本 - 一键部署WordPress网站
 # 脚本路径: vps_scripts/scripts/service_install/wordpress.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash wordpress.sh [选项]
 # 选项: --domain [域名] (必须，网站域名)
 #       --path [路径] (安装路径，默认/var/www/域名)
@@ -83,7 +83,7 @@ show_banner() {
     echo "=================================================="
     echo -e "${PURPLE}    WordPress 安装脚本${NC}"
     echo "=================================================="
-    echo "    作者: Jensfrank"
+    echo "    作者: everettlabs"
     echo "    版本: 1.0"
     echo "    更新: 2025-01-23"
     echo "=================================================="

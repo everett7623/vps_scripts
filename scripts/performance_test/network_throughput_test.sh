@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: network_throughput_test.sh
 # 描述: VPS网络吞吐量测试脚本 - 测试TCP/UDP吞吐量、包转发率、并发连接等
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/performance_test/network_throughput_test.sh
 # 使用方法: bash network_throughput_test.sh [选项]
 # 选项: --server (服务器模式) --client <IP> (客户端模式) --local (本地测试)

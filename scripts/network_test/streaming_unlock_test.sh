@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: streaming_unlock_test.sh
 # 描述: VPS流媒体解锁测试脚本 - 测试Netflix、Disney+、YouTube等流媒体服务解锁情况
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/network_test/streaming_unlock_test.sh
 # 使用方法: bash streaming_unlock_test.sh [选项]
 # 选项: --basic (基础测试) --full (完整测试) --region (地区检测)

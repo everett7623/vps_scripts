@@ -3,7 +3,7 @@
 # 脚本名称: python.sh
 # 脚本描述: Python 环境安装脚本 - 支持系统包管理器、pyenv和源码编译安装
 # 脚本路径: vps_scripts/scripts/service_install/python.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash python.sh [选项]
 # 选项说明:
 #   --method <方式>  安装方式 (system/pyenv/source)

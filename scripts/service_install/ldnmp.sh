@@ -3,7 +3,7 @@
 # 脚本名称: ldnmp.sh
 # 脚本描述: LNMP(Linux+Nginx+MySQL/MariaDB+PHP)环境一键安装脚本
 # 脚本路径: vps_scripts/scripts/service_install/ldnmp.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash ldnmp.sh [选项]
 # 选项: --nginx --mysql --mariadb --php=X.X --docker --all
 # 更新日期: 2025-06-20
@@ -523,7 +523,7 @@ main() {
     if ! $INSTALL_NGINX && ! $INSTALL_MYSQL && ! $INSTALL_MARIADB && ! $INSTALL_PHP && ! $INSTALL_DOCKER; then
         echo -e "${PURPLE}======================================${NC}"
         echo -e "${PURPLE}LDNMP环境一键安装脚本${NC}"
-        echo -e "${PURPLE}作者: Jensfrank${NC}"
+        echo -e "${PURPLE}作者: everettlabs${NC}"
         echo -e "${PURPLE}版本: 2025-06-20${NC}"
         echo -e "${PURPLE}======================================${NC}"
         echo

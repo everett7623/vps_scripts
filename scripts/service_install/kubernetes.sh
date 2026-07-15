@@ -3,7 +3,7 @@
 # 脚本名称: kubernetes.sh
 # 脚本描述: Kubernetes 容器编排平台安装脚本 - 支持单节点和集群部署
 # 脚本路径: vps_scripts/scripts/service_install/kubernetes.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash kubernetes.sh [选项]
 # 选项说明:
 #   --version <版本>      Kubernetes版本 (如: 1.28.4, 1.27.8)

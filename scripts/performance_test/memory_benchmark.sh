@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: memory_benchmark.sh
 # 描述: VPS内存性能测试脚本 - 测试内存带宽、延迟、稳定性等
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/performance_test/memory_benchmark.sh
 # 使用方法: bash memory_benchmark.sh [选项]
 # 选项: --quick (快速测试) --full (完整测试) --stress (压力测试)

@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: disk_io_benchmark.sh
 # 描述: VPS磁盘IO性能测试脚本 - 测试顺序读写、随机读写、IOPS等
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/performance_test/disk_io_benchmark.sh
 # 使用方法: bash disk_io_benchmark.sh [选项]
 # 选项: --quick (快速测试) --full (完整测试) --size (测试文件大小GB)

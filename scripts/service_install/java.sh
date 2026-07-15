@@ -3,7 +3,7 @@
 # 脚本名称: java.sh
 # 脚本描述: Java 环境安装脚本 - 支持 OpenJDK、Oracle JDK 和 GraalVM
 # 脚本路径: vps_scripts/scripts/service_install/java.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash java.sh [选项]
 # 选项说明:
 #   --type <类型>     JDK类型 (openjdk/oracle/graalvm)

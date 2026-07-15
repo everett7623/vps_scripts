@@ -3,7 +3,7 @@
 # 脚本名称: mysql.sh
 # 脚本描述: MySQL/MariaDB 数据库安装配置脚本 - 支持主从复制和安全加固
 # 脚本路径: vps_scripts/scripts/service_install/mysql.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash mysql.sh [选项]
 # 选项说明:
 #   --type <类型>        数据库类型 (mysql/mariadb)

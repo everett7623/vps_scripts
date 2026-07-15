@@ -3,7 +3,7 @@
 # 脚本名称: postgresql.sh
 # 脚本描述: PostgreSQL 数据库安装配置脚本 - 支持主从复制、性能优化和扩展管理
 # 脚本路径: vps_scripts/scripts/service_install/postgresql.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash postgresql.sh [选项]
 # 选项说明:
 #   --version <版本>     PostgreSQL版本 (12/13/14/15/16)

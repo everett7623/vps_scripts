@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: wppanel.sh
 # 脚本描述: WP Panel (WordPress面板) 安装脚本 - 基于官方安装脚本的安全包装
 # 脚本路径: vps_scripts/scripts/service_install/wppanel.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash wppanel.sh [选项]
 # 选项说明:
 #   --skip-update    跳过系统更新

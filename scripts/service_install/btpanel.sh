@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: btpanel.sh
 # 脚本描述: BT宝塔面板官方安装脚本 - 基于官方脚本的增强版
 # 脚本路径: vps_scripts/scripts/service_install/btpanel.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash btpanel.sh [选项]
 # 选项说明:
 #   --version <版本>     面板版本 (stable/beta)

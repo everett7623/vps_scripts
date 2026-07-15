@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: cpu_benchmark.sh
 # 描述: VPS CPU性能基准测试脚本 - 测试单核/多核性能、加密性能、压缩性能等
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/performance_test/cpu_benchmark.sh
 # 使用方法: bash cpu_benchmark.sh [选项]
 # 选项: --quick (快速测试) --full (完整测试) --stress (压力测试)

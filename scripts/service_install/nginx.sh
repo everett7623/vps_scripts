@@ -3,7 +3,7 @@
 # 脚本名称: nginx.sh
 # 脚本描述: Nginx Web服务器安装与配置脚本 - 支持多种安装方式和SSL证书配置
 # 脚本路径: vps_scripts/scripts/service_install/nginx.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash nginx.sh [选项]
 # 选项: --stable (稳定版) --mainline (主线版) --source (源码编译)
 # 更新日期: 2025-06-20
@@ -561,7 +561,7 @@ main() {
     # 显示脚本信息
     echo -e "${PURPLE}======================================${NC}"
     echo -e "${PURPLE}Nginx Web服务器安装脚本${NC}"
-    echo -e "${PURPLE}作者: Jensfrank${NC}"
+    echo -e "${PURPLE}作者: everettlabs${NC}"
     echo -e "${PURPLE}版本: 2025-06-20${NC}"
     echo -e "${PURPLE}======================================${NC}"
     echo

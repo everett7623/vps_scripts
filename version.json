@@ -4,7 +4,7 @@
     "description": "Modular VPS operations and deployment toolkit",
     "version": "1.0.0",
     "release_date": "2026-06-12",
-    "author": "Jensfrank",
+    "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
   },

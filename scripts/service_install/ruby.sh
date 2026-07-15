@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: ruby.sh
 # 脚本描述: Ruby 语言环境安装脚本 - 支持系统包、rbenv、rvm和源码编译安装
 # 脚本路径: vps_scripts/scripts/service_install/ruby.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash ruby.sh [选项]
 # 选项说明:
 #   --method <方式>      安装方式 (system/rbenv/rvm/source)

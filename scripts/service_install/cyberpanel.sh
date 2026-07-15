@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: cyberpanel.sh
 # 脚本描述: Cyberpanel面板安装脚本 - 提供交互式和半自动化安装Cyberpanel
 # 脚本路径: vps_scripts/scripts/service_install/cyberpanel.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash cyberpanel.sh [选项]
 # 选项: --check (仅检查系统要求)
 #       --prepare (安装前准备，包括依赖和优化)
@@ -51,7 +51,7 @@ show_banner() {
     echo "=================================================="
     echo -e "${PURPLE}    Cyberpanel 面板安装助手${NC}"
     echo "=================================================="
-    echo "    作者: Jensfrank"
+    echo "    作者: everettlabs"
     echo "    版本: 1.0"
     echo "    更新: 2025-01-23"
     echo "=================================================="

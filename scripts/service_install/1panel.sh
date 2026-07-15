@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: 1panel.sh
 # 脚本描述: 1Panel官方安装脚本增强版 - 基于官方quick_start.sh
 # 脚本路径: vps_scripts/scripts/service_install/1panel.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash 1panel_official.sh [选项]
 # 选项说明:
 #   --port <端口>         面板端口 (默认: 随机)

@@ -4,7 +4,7 @@ set -euo pipefail
 #==============================================================================
 # 脚本名称: network_quality_test.sh
 # 描述: VPS综合网络质量测试脚本 - 包含延迟、丢包、端口、连通性等全面测试
-# 作者: Jensfrank
+# 作者: everettlabs
 # 路径: vps_scripts/scripts/network_test/network_quality_test.sh
 # 使用方法: bash network_quality_test.sh [选项]
 # 选项: --basic (基础测试) --full (完整测试) --port (端口扫描)

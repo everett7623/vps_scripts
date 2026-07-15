@@ -4,7 +4,7 @@ set -euo pipefail
 # 脚本名称: jenkins.sh
 # 脚本描述: Jenkins CI/CD平台安装配置脚本 - 支持多种部署方式和插件管理
 # 脚本路径: vps_scripts/scripts/service_install/jenkins.sh
-# 作者: Jensfrank
+# 作者: everettlabs
 # 使用方法: bash jenkins.sh [选项]
 # 选项说明:
 #   --install-type <类型>  安装类型 (package/war/docker)
