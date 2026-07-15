@@ -9,7 +9,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -139,14 +139,22 @@ chmod +x vps.sh
 
 ### 快捷命令
 
+首次在交互终端中以 root 身份运行主启动器时，如果系统中没有本项目管理的 `vps` 命令，会自动安装快捷命令。已有同名但不属于本项目的命令不会被自动覆盖。
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh
 bash /tmp/vps.sh --install
 vps
 ```
 
-请使用 root 用户执行安装；普通用户可在命令前加 `sudo`。该命令会安装到 `/usr/local/bin/vps`，重新登录或切换目录后仍可直接运行。
+也可以从主菜单选择“8. 快捷命令管理 → 1. 安装或更新命令”。请使用 root 用户执行安装；普通用户可在命令前加 `sudo`。该命令会安装到 `/usr/local/bin/vps`，重新登录或切换目录后仍可直接运行。
 再次执行 `vps --install` 可更新启动器，执行 `vps --uninstall-command` 可移除快捷命令。
+
+`VPS_AUTO_INSTALL_COMMAND=true` 可在非交互场景中强制尝试创建（仍不会自动覆盖无关的同名命令）。如需禁止首次运行时自动创建快捷命令，可设置：
+
+```bash
+VPS_AUTO_INSTALL_COMMAND=false bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+```
 
 ### 使用建议
 
@@ -292,6 +300,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.1`：首次交互式 root 启动自动创建持久化 `vps` 命令，并提供禁用、非交互与同名命令冲突保护
 - 全部 21 个 service_install 脚本已启用 `set -euo pipefail` 严格模式
 - 全部 network_test 和 performance_test 脚本已加入严格模式与安全临时目录
 - 新增 `die()` 共享辅助函数，简化 `print_error; exit 1` 模式

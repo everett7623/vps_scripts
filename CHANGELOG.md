@@ -4,6 +4,15 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.1 - 2026-07-15
+
+### Fixed
+- Fixed the persistent-command startup gap from Issue #1 by creating the managed `vps` shortcut automatically on the first interactive root launch.
+
+### Changed
+- Added `VPS_AUTO_INSTALL_COMMAND=true` for non-interactive installation attempts and `VPS_AUTO_INSTALL_COMMAND=false` to disable automatic installation.
+- Kept automatic installation idempotent and prevented it from overwriting an unrelated `/usr/local/bin/vps` command.
+
 ## 1.1.0 - 2026-07-15
 
 ### Added

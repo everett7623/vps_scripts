@@ -4,7 +4,7 @@ This file captures current high-priority findings and the next review direction.
 
 ## Current State (2026-07-15)
 
-Version 1.1.0 prepares the accumulated post-1.0.0 work for release. All repository validation tests pass locally through Git Bash, the launcher and core metadata agree, and the new modern CLI toolkit stays within configured distribution repositories.
+Version 1.1.1 fixes the persistent-command startup gap reported in Issue #1. The managed `vps` shortcut is installed automatically on the first interactive root launch, while unrelated commands remain protected from automatic overwrite.
 
 ## Findings
 
@@ -31,6 +31,12 @@ Version 1.1.0 prepares the accumulated post-1.0.0 work for release. All reposito
 - Removed implicit launcher analytics/counter requests
 - Repaired the stale removed-directory validation
 - Synchronized project metadata and documentation at version 1.1.0
+
+### Completed in 1.1.1
+
+- Added idempotent automatic installation for the managed `vps` command
+- Added forced, disabled, non-interactive, and unrelated-command collision coverage
+- Updated the public shortcut workflow and synchronized patch-release metadata
 
 ## Next Recommended Review Targets
 

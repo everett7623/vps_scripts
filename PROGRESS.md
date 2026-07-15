@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.0 consolidates the 17 post-1.0.0 commits into a backward-compatible feature release. The launcher has expanded menus, no implicit usage-counter request, a first-party modern CLI toolkit, gating ShellCheck CI, and 34 repository validation scripts.
+Version 1.1.1 closes the persistent-command startup gap from Issue #1. The launcher now creates the managed `vps` command on the first interactive root run while retaining explicit install, opt-out, non-interactive, and collision-safe behavior.
 
 ## Completed
 
@@ -12,6 +12,7 @@ Version 1.1.0 consolidates the 17 post-1.0.0 commits into a backward-compatible 
 - Added temporary-file isolation, syntax checks, download fallbacks, and confirmation for third-party commands
 - Added responsive terminal widths, CJK-aware alignment, compact narrow-screen rows, and shared UI helpers
 - Added persistent `vps` command installation and a legacy-only `vps_scripts.sh` compatibility handoff
+- Added idempotent automatic `vps` command installation for first interactive root launches without overwriting unrelated commands
 - Removed the synchronous third-party usage-counter request from launcher startup
 
 ### Menus and tools
@@ -40,7 +41,7 @@ Version 1.1.0 consolidates the 17 post-1.0.0 commits into a backward-compatible 
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.0
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.1
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 

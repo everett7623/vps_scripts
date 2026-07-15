@@ -2,7 +2,7 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "release_date": "2026-07-15",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Modern CLI toolkit, stricter validation, expanded menus, and privacy-focused launcher startup."
+    "message": "Automatic persistent vps command installation with opt-out, non-interactive, and collision safeguards."
   },
   "compatibility": {
     "min_bash_version": "4.0",

@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.0"
+PROJECT_VERSION="1.1.1"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -443,6 +443,57 @@ install_vps_command() {
             echo -e "${DIM}请重新登录终端，或将该目录加入 shell 的 PATH。${RESET}"
             ;;
     esac
+}
+
+is_managed_vps_command() {
+    [ -f "${INSTALL_COMMAND}" ] &&
+        grep -Fq "exec bash \"${INSTALL_LAUNCHER}\" \"\$@\"" "${INSTALL_COMMAND}"
+}
+
+auto_install_vps_command() {
+    local policy="${VPS_AUTO_INSTALL_COMMAND:-auto}"
+
+    case "${policy}" in
+        false|no|off|0)
+            return 0
+            ;;
+        auto)
+            if [ ! -t 0 ] || [ ! -t 1 ]; then
+                return 0
+            fi
+            ;;
+        true|yes|on|1)
+            ;;
+        *)
+            echo -e "${YELLOW}[提示] 忽略无效的 VPS_AUTO_INSTALL_COMMAND：${policy}${RESET}"
+            return 0
+            ;;
+    esac
+
+    if [ -x "${INSTALL_COMMAND}" ] && [ -x "${INSTALL_LAUNCHER}" ]; then
+        return 0
+    fi
+
+    if [ -e "${INSTALL_COMMAND}" ] && ! is_managed_vps_command; then
+        echo -e "${YELLOW}[提示] ${INSTALL_COMMAND} 已存在且不属于本项目，未自动覆盖。${RESET}"
+        echo -e "${DIM}如确认可以替换，请手动执行：sudo bash vps.sh --install${RESET}"
+        return 0
+    fi
+
+    if [ -z "${VPS_INSTALL_PREFIX:-}" ] && [ "${EUID}" -ne 0 ]; then
+        echo -e "${YELLOW}[提示] 尚未安装 vps 快捷命令；自动安装需要 root 权限。${RESET}"
+        echo -e "${DIM}请执行：sudo bash vps.sh --install${RESET}"
+        return 0
+    fi
+
+    echo -e "${CYAN}[信息] 首次运行，正在自动创建 vps 快捷命令...${RESET}"
+    if [ -z "${VPS_INSTALL_SOURCE_OVERRIDE:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+        if ! VPS_INSTALL_SOURCE_OVERRIDE="${BASH_SOURCE[0]}" install_vps_command; then
+            echo -e "${YELLOW}[提示] 自动创建失败，当前启动器仍可继续使用。${RESET}"
+        fi
+    elif ! install_vps_command; then
+        echo -e "${YELLOW}[提示] 自动创建失败，当前启动器仍可继续使用。${RESET}"
+    fi
 }
 
 uninstall_vps_command() {
@@ -965,6 +1016,7 @@ uninstall_menu() {
 
 main_menu() {
     check_environment
+    auto_install_vps_command
 
     while true; do
         print_header

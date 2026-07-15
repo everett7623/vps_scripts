@@ -72,6 +72,14 @@
 - [x] Repair the removed `update_scripts/` validation boundary
 - [x] Synchronize version and launcher style metadata at `1.1.0`
 
+## 1.1.1 release
+
+- [x] Automatically create the managed `vps` command on the first interactive root launch
+- [x] Preserve explicit `8 → 1` and `--install` command installation paths
+- [x] Protect unrelated `/usr/local/bin/vps` commands from automatic overwrite
+- [x] Cover forced, disabled, non-interactive, and collision behavior
+- [x] Synchronize patch-release metadata and user documentation at `1.1.1`
+
 ## Documentation
 
 - [x] Update `CLAUDE.md` with accurate architecture and test commands
