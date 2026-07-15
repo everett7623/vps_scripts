@@ -9,11 +9,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
-[![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20CentOS%20%7C%20RHEL%20%7C%20Fedora%20%7C%20Arch-orange.svg)](https://github.com/everett7623/vps_scripts)
+[![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
-[![Runs](https://visitor-badge.laobi.icu/badge?page_id=everett7623.vps_scripts&left_color=gray&right_color=green&left_text=runs)](https://github.com/everett7623/vps_scripts)
 [![Stars](https://img.shields.io/github/stars/everett7623/vps_scripts?style=social)](https://github.com/everett7623/vps_scripts)
 
 [**项目地址**](https://github.com/everett7623/vps_scripts) | [**更新日志**](CHANGELOG.md) | [**开发指南**](DEVELOPMENT_GUIDE.md) | [**发布清单**](RELEASE_CHECKLIST.md)
@@ -41,7 +40,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 - `vps_scripts.sh` 作为受支持的 legacy-only 兼容入口保留，不再新增独立功能
 - 主框架、公共函数库和系统工具已完成一轮集中优化
 - 主启动器支持宽窄终端自适应、中文对齐和更清晰的视觉层级
-- 仓库现有 30 个验证脚本，便于后续逐分类继续升级
+- 仓库现有 34 个验证脚本，覆盖菜单路径、脚本安全、发布元数据、隐私边界与核心安装器
 
 ### 已完成的重点
 - 启动器安全性与菜单映射修正
@@ -88,6 +87,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 - **开发环境** - Node.js、Python、Java、Go 等运行环境
 - **代理服务** - Shadowsocks、V2Ray、WireGuard 等相关部署
 - **监控服务** - 哪吒监控等常见 VPS 运维组件
+- **现代 CLI 工具包** - 从发行版仓库安装 btop、ripgrep、fd、bat、fzf、jq、ncdu、restic
 
 ## 系统要求
 
@@ -96,11 +96,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main
 - **Debian** 10+
 - **CentOS** 7+
 - **RHEL / Rocky / AlmaLinux** 8+
-- **Fedora**
-- **Arch / Manjaro**
 - **Alpine Linux** 3.10+
 
-详细兼容信息以 [version.json](version.json) 为准。
+Fedora、Arch 等发行版中的部分脚本可能可用，但不在当前正式兼容矩阵内。详细信息以 [version.json](version.json) 为准。
 
 ### 基础要求
 - **CPU**：1 核及以上
@@ -242,7 +240,6 @@ scripts/
   service_install/         服务安装
   other_tools/             其他工具
   uninstall_scripts/       卸载脚本
-  update_scripts/          旧更新脚本（仅历史参考，不在主入口启用）
 tests/                     仓库级校验脚本
 vps.sh                     主启动器
 vps_scripts.sh             legacy-only 兼容启动器
@@ -254,9 +251,8 @@ version.json               版本与元数据
 - `network_test`: 5
 - `performance_test`: 4
 - `service_install`: 21
-- `other_tools`: 4
+- `other_tools`: 5
 - `uninstall_scripts`: 4
-- `update_scripts`: 4 legacy scripts + 1 policy note
 
 ## 验证与维护
 
@@ -276,6 +272,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_system_tools_launcher.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh
+REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ```
 
 如果本机装有 `shellcheck`，建议在提交前补跑。
@@ -300,8 +297,9 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh
 - 新增 `die()` 共享辅助函数，简化 `print_error; exit 1` 模式
 - 新增 `wppanel.sh` 作为 WP Panel 一等脚本（替代原内联 `run_remote_command`）
 - 新增 `tests/validate_service_install_strict_mode.sh` 自动化覆盖测试
-- 消除全项目 `curl | sh` 管道执行模式，统一使用下载-校验-执行流程
-- 发布 `1.0.0`：项目版本体系正式初始化，主启动器与模块进入首个稳定版本
+- 第一方远程安装路径统一使用下载、校验、执行流程
+- 发布 `1.1.0`：新增现代 CLI 工具包、收紧 CI、移除启动器默认计数请求
+- `1.0.0` 作为项目首个稳定基线保留
 - 中文与英文混排菜单改为按终端显示宽度对齐
 - 24-88 列终端可响应式显示，窄屏详情自动换行
 
@@ -314,11 +312,11 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh
 欢迎继续完善这个项目。
 
 ### 建议的开发方向
-- 继续优化 `network_test`、`performance_test`、`service_install` 分类
+- 优先加固 BBR、Swap、Fail2ban、哪吒四个第一方 `other_tools` 脚本
 - 进一步减少高风险远程执行模式
 - 提升 UTF-8 文档一致性与脚本可维护性
 - 增加更多 repo-local 验证脚本
-- 不再恢复 `update_scripts/` 到主菜单；如需复用其中逻辑，应迁移为新的窄范围模块并配套测试
+- 不再恢复已删除的 `update_scripts/`；如需复用历史逻辑，应迁移为新的窄范围模块并配套测试
 
 ### 贡献方式
 1. Fork 本仓库

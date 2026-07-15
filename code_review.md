@@ -1,82 +1,40 @@
 # Code Review
 
-This file captures the current high-priority review findings and follow-up direction.
+This file captures current high-priority findings and the next review direction.
 
-## Current State (2026-06-12)
+## Current State (2026-07-15)
 
-All 11 core service installers have been hardened with safety tests, `set -euo pipefail`, and guarded execution paths. The launcher and shared UI now use responsive widths, display-width-aware CJK alignment, and compact narrow-terminal layouts. The 30-test validation suite is green.
+Version 1.1.0 prepares the accumulated post-1.0.0 work for release. All repository validation tests pass locally through Git Bash, the launcher and core metadata agree, and the new modern CLI toolkit stays within configured distribution repositories.
 
 ## Findings
 
 ### High (open)
 
-- 8 of 20 service_install scripts still lack `set -euo pipefail`: `1panel.sh`, `aapanel.sh`, `amh.sh`, `btpanel.sh`, `cyberpanel.sh`, `jenkins.sh`, `ruby.sh`, `rust.sh`. These are panel installers and auxiliary tools that would benefit from strict mode.
-- WAL archive directory in `postgresql.sh` is co-located with the PostgreSQL data directory (`${DATA_DIR}/archive`). A single disk failure destroys both data and archive, defeating the purpose of WAL archiving.
-- No `die()` helper in `lib/common_functions.sh` despite ~30-40 scattered `print_error; exit 1` pairs across installer scripts.
+- `scripts/other_tools/bbr.sh` replaces the complete `/etc/sysctl.conf`; it must use a dedicated drop-in and restore only project-owned settings.
+- `scripts/other_tools/swap.sh` runs `swapoff -a`, recreates `/swapfile`, and appends to `/etc/fstab` without deduplication; repeated execution can disrupt unrelated swap devices.
+- `scripts/other_tools/fail2ban.sh` replaces `jail.local` and assumes one SSH log path/filter layout across distributions.
+- `scripts/other_tools/nezha.sh` writes user-supplied server, port, and secret values directly into a systemd unit without sufficient validation or escaping.
 
 ### Medium (open)
 
-- `network_test/` and `performance_test/` categories not yet modernized — inconsistent output formatting, some scripts lack `set -euo pipefail`.
-- `vps_scripts.sh` still contains direct third-party `curl | bash` flows without safety wrappers (legacy-only, but still reachable).
-- `ruby.sh` sed cleanup block uses 4 separate `sed -i` calls when 1 combined call would suffice.
+- Several third-party launcher entries still use `curl | sh`, process substitution, fixed `amd64` downloads, or files in the current directory.
+- `install_deps.sh` has a very broad “all tools” scope and may configure extra repositories; narrower groups and clearer previews would reduce blast radius.
+- Tests are strong on syntax and static policy but still light on container-based behavior and idempotency.
 
-### Low (open)
+### Completed in 1.1.0
 
-- Some scripts use predictable `/tmp` log file paths (`LOG_FILE="/tmp/xxx_$(date ...).log"`) rather than `mktemp`.
-- Test coverage is syntax/path/pattern-based — no behavioral or integration tests.
-- Several legacy category scripts still use independent fixed-width banners; migrate them to shared UI helpers when those categories are modernized.
-
-## Completed In This Optimization Round (2026-06-11)
-
-### Launcher hardening
-- Fixed wget missing `--connect-timeout` (was 60s, now 6s on bad connections)
-- Added `bash -n` syntax validation to both `run_remote_script_url()` and `run_remote_command()`
-- Added `pipefail` to `run_remote_command` temp-file wrapper
-- Added Hysteria2 (Proxy Tools item 6) and WP Panel (Service Install item 21)
-
-### Installer hardening (11 scripts)
-- `docker.sh`, `nginx.sh`, `mysql.sh`, `postgresql.sh`, `redis.sh`, `nodejs.sh`, `python.sh`, `go.sh`, `java.sh`, `ruby.sh`, `kubernetes.sh`
-- All now have `set -euo pipefail` (except ruby.sh which uses explicit error handling)
-- Cross-script `VERSION_ID` unbound-variable crash fixed (9 scripts)
-- Critical bugs fixed: `TOTAL_MEM` unbound, dead `PIPESTATUS`, `set -e` preempting guards, `nproc`→`make -j0`, `make -j` floor, wget silent-exit, trap safety, build-dir leak
-
-### Library fixes
-- Quoted `$default` in `ask_yes_no()`
-- Quoted `$1` in service-control print messages
-- Hardened config helpers: exact keys, same-directory atomic writes, symlink guards
-
-### Test suite
-- 30 tests, all pass
-- Per-installer safety tests for all 11 core installers
-- Cross-category coverage for launcher paths, execution safety, UI, loader, EOF handling
-- Responsive layout coverage for wide/narrow terminals and `LC_ALL=C` CJK width handling
-
-### Documentation
-- `CLAUDE.md`: accurate architecture, distro/arch, test commands
-- `CHANGELOG.md`: comprehensive Unreleased section
-- `DEVELOPMENT_GUIDE.md`: full test suite, architecture patterns, error-handling rules
-- `PROGRESS.md`, `TASKS.md`, `SESSION.md`: current state
+- Hardened all 21 service installers with strict-mode coverage
+- Hardened network and performance scripts with strict mode and safe temporary directories
+- Added launcher syntax checks and temporary execution for first-party modules
+- Added a first-party modern CLI toolkit with non-interactive status/install flags
+- Made ShellCheck error findings gating in CI
+- Removed implicit launcher analytics/counter requests
+- Repaired the stale removed-directory validation
+- Synchronized project metadata and documentation at version 1.1.0
 
 ## Next Recommended Review Targets
 
-1. Add `set -euo pipefail` to remaining 8 service_install scripts
-2. Refactor `network_test/` category (5 scripts) for consistent structure
-3. Refactor `performance_test/` category (4 scripts) for consistent structure
-4. Extract repeated build-from-source pattern into shared helper
-5. Add `die()` helper to `lib/common_functions.sh`
-6. Create `scripts/service_install/wppanel.sh` wrapper
-
-## Review Heuristics
-
-Use this checklist when touching a script:
-
-- [ ] Can it be run twice safely (idempotent)?
-- [ ] Does it validate external input before use?
-- [ ] Does it log failures clearly with actionable messages?
-- [ ] Does it use `mktemp` for temp files, not predictable paths?
-- [ ] Does it avoid `eval` unless genuinely unavoidable?
-- [ ] Does it separate first-party and third-party execution clearly?
-- [ ] Does it have `set -euo pipefail` (or explicit error handling)?
-- [ ] Are all variables quoted unless unquoted expansion is required?
-- [ ] Do heredocs use quoted `<< 'EOF'` when expansion is unwanted, unquoted `<< EOF` when expansion is needed?
-- [ ] Are command substitutions in heredocs pre-computed to avoid `set -e` surprises?
+1. BBR and Swap configuration ownership/idempotency
+2. Fail2ban and Nezha input/configuration safety
+3. Architecture-aware wrappers for cloudflared, Caddy, and other third-party installers
+4. Container-based behavioral tests on Debian, Ubuntu, Rocky/Alma, and Alpine

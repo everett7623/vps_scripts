@@ -42,7 +42,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_script_headers.sh
 # CRLF not allowed in shell scripts, docs, metadata, or config files
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_line_endings_policy.sh
 
-# update_scripts/ classified as inactive legacy; update_log.sh hands off to CHANGELOG.md
+# update_scripts/ removed; update_log.sh hands off to CHANGELOG.md
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_update_scripts_legacy.sh
 REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_update_log_handoff.sh
 ```
@@ -184,12 +184,9 @@ scripts/
 ├── service_install/    # docker, nginx, mysql, postgresql, redis, nodejs, python, go, java,
 │                       #   ruby, rust, wordpress, jenkins, kubernetes, ldnmp,
 │                       #   panel installers: 1panel, aapanel, amh, btpanel, cyberpanel
-├── other_tools/        # bbr, fail2ban, nezha, swap
-├── uninstall_scripts/  # clean_service_residues, rollback_system_environment,
+├── other_tools/        # bbr, fail2ban, nezha, swap, modern_cli
+└── uninstall_scripts/  # clean_service_residues, rollback_system_environment,
 │                       #   clear_configuration_files, full_uninstall
-└── update_scripts/     # DEPRECATED — inactive legacy/reference only. Not in the main menu.
-                        #   Do not add new features here; if logic is needed, migrate it to a
-                        #   new focused module with tests.
 ```
 
 ### Config (`config/vps_scripts.conf`)
@@ -198,7 +195,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.0.0`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.0`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -260,7 +257,7 @@ Script header format:
 ## Working rules (from AGENTS.md)
 
 - Prefer editing the modular path (`vps.sh`, `lib/`, `scripts/`, `tests/`) over expanding `vps_scripts.sh`.
-- Do not add new features to `scripts/update_scripts/` — it is inactive legacy/reference.
+- Do not restore `scripts/update_scripts/`; migrate any needed historical logic into a focused, tested module.
 - Avoid `eval` unless no safer alternative exists.
 - Prefer arrays over command strings for package-manager commands.
 - Prefer `mktemp` over predictable `/tmp` filenames.

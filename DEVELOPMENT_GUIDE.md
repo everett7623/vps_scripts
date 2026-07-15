@@ -164,7 +164,7 @@ With `set -euo pipefail`:
 - Shared helpers in `lib/common_functions.sh`
 - `export -f` all library functions for sub-shell availability
 - New menu entries must point to existing files or valid URLs
-- `scripts/update_scripts/` is inactive legacy — do not add new features there
+- `scripts/update_scripts/` was removed — do not restore it; migrate needed logic into a focused module
 - Avoid `eval` unless no safer alternative exists
 - Prefer arrays over command strings for package-manager commands
 - Validate user input before using in commands, paths, or service names
@@ -184,5 +184,5 @@ See `RELEASE_CHECKLIST.md` and `VERSIONING.md`. Key steps:
 - Update `CHANGELOG.md` Unreleased section
 - Update `version.json` version and release_date
 - Review `TASKS.md` and `PROGRESS.md` for milestone completion
-- Run full test suite (30 tests)
+- Run full test suite (34 tests)
 - Test remote launcher command from a clean environment

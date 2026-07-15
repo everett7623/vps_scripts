@@ -11,6 +11,13 @@
 - [x] Fix `set -e` preempting pyenv pipeline guard in python.sh
 - [x] Fix `nproc`→`make -j0` (unlimited) in ruby.sh and redis.sh
 
+## P0 (next safety round)
+
+- [ ] Make `bbr.sh` use a project-owned `/etc/sysctl.d/` drop-in and reversible backup
+- [ ] Make `swap.sh` idempotent without `swapoff -a` or duplicate `/etc/fstab` entries
+- [ ] Preserve existing Fail2ban configuration and support distro-specific SSH logging
+- [ ] Validate and escape all Nezha systemd unit inputs
+
 ## P1 (done)
 
 - [x] Review and harden `scripts/service_install/nodejs.sh`
@@ -38,7 +45,7 @@
 - [x] Normalize logging conventions across system_tools modules
 - [x] Optimize module loading speed and slow-network behavior
 - [x] Standardize script headers and encoding (LF, no BOM, `#!/bin/bash`)
-- [x] Classify `update_scripts/` as inactive legacy/reference
+- [x] Remove inactive legacy `update_scripts/` and retain a regression boundary
 - [x] Add Hysteria2 to Proxy Tools menu
 - [x] Add WP Panel to Service Install menu
 - [x] Add `set -euo pipefail` to remaining 8 service_install scripts (1panel, aapanel, amh, btpanel, cyberpanel, jenkins, ruby, rust)
@@ -55,13 +62,23 @@
 - [x] Add shellcheck CI or pre-commit hook
 - [x] Consider moving WAL archive directory outside PostgreSQL DATA_DIR for disaster recovery
 
+## 1.1.0 release
+
+- [x] Add the first-party modern CLI toolkit with non-interactive flags
+- [x] Add modern CLI and launcher privacy regression tests
+- [x] Enforce synchronized version, release date, changelog, README, and runtime metadata
+- [x] Make ShellCheck errors fail CI
+- [x] Remove the implicit launcher usage-counter request
+- [x] Repair the removed `update_scripts/` validation boundary
+- [x] Synchronize version and launcher style metadata at `1.1.0`
+
 ## Documentation
 
 - [x] Update `CLAUDE.md` with accurate architecture and test commands
-- [x] Update `CHANGELOG.md` with all 2026-06-11 changes
+- [x] Update `CHANGELOG.md` with 1.1.0 changes
 - [x] Refresh `PROGRESS.md` with completed hardening and current phase
 - [x] Update `TASKS.md` (this file)
-- [x] Update `SESSION.md` with 2026-06-11 session summary
+- [x] Retain `SESSION.md` as the historical 2026-06-11 session summary
 - [x] Update `DEVELOPMENT_GUIDE.md` with current patterns and full test suite
 - [x] Update `code_review.md` with current review findings
-- [x] Keep `README.md` aligned with modular launcher path (review needed)
+- [x] Keep `README.md` aligned with the modular launcher and current inventory

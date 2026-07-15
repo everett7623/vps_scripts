@@ -5,11 +5,23 @@ on:
     branches: [main]
     paths:
       - '**.sh'
+      - 'version.json'
+      - 'config/vps_scripts.conf'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'VERSIONING.md'
+      - 'RELEASE_CHECKLIST.md'
       - '.github/workflows/shellcheck.yml'
   pull_request:
     branches: [main]
     paths:
       - '**.sh'
+      - 'version.json'
+      - 'config/vps_scripts.conf'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'VERSIONING.md'
+      - 'RELEASE_CHECKLIST.md'
       - '.github/workflows/shellcheck.yml'
 
 jobs:
@@ -35,23 +47,26 @@ jobs:
           [ "$fail" -eq 0 ] && echo "All scripts pass syntax check."
           exit $fail
 
-      - name: Run ShellCheck on key scripts
+      - name: Run ShellCheck on maintained scripts
         run: |
           echo "=== ShellCheck ==="
           shellcheck --severity=error --shell=bash \
             vps.sh \
+            vps_scripts.sh \
             lib/common_functions.sh \
             scripts/system_tools/*.sh \
             scripts/service_install/*.sh \
-            || true
-          echo ""
-          echo "=== ShellCheck (warnings) on network/performance ==="
-          shellcheck --severity=warning --shell=bash \
             scripts/network_test/*.sh \
             scripts/performance_test/*.sh \
-            || true
+            scripts/other_tools/*.sh \
+            scripts/uninstall_scripts/*.sh
 
-      - name: Run strict-mode coverage test
+      - name: Run repository validation suite
         run: |
-          echo "=== Strict mode coverage ==="
-          REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_service_install_strict_mode.sh
+          echo "=== Repository validation ==="
+          export REPO_ROOT_OVERRIDE="$PWD"
+          export LAUNCHER_OVERRIDE="$PWD/vps.sh"
+          for test_file in tests/*.sh; do
+            echo "RUN: $test_file"
+            bash "$test_file"
+          done

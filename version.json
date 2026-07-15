@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.0.0",
-    "release_date": "2026-06-12",
+    "version": "1.1.0",
+    "release_date": "2026-07-15",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -13,7 +13,7 @@
     "legacy_compat": "vps_scripts.sh",
     "legacy_support_status": "legacy-only",
     "legacy_policy": "compatibility handoff only; no new features",
-    "style_version": "1.0.0",
+    "style_version": "1.1.0",
     "primary_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "legacy_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
   },
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Initial stable release with modular tooling, responsive terminal UI, and repository validation."
+    "message": "Modern CLI toolkit, stricter validation, expanded menus, and privacy-focused launcher startup."
   },
   "compatibility": {
     "min_bash_version": "4.0",
@@ -52,7 +52,8 @@
     "Benchmark and network diagnostics",
     "Service installation modules",
     "Validation-oriented repository layout",
-    "Responsive terminal UI"
+    "Responsive terminal UI",
+    "Modern CLI toolkit"
   ],
   "documentation": {
     "readme": "README.md",
@@ -66,7 +67,8 @@
     "launcher_paths": "tests/validate_launcher_paths.sh",
     "core_assets": "tests/validate_core_assets.sh",
     "system_tools": "tests/validate_system_tools.sh",
-    "ui_layout": "tests/validate_ui_layout.sh"
+    "ui_layout": "tests/validate_ui_layout.sh",
+    "release_metadata": "tests/validate_release_metadata.sh"
   },
   "checksums": {
     "vps.sh": "auto-generated-on-release",

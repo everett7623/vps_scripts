@@ -2,91 +2,59 @@
 
 ## Current Phase
 
-Version 1.0.0 is the initialized stable baseline, with a responsive launcher UI, CJK-aware alignment, narrow-terminal layouts, and 30 repository validation tests. Service-installer hardening remains complete for all 11 core installers.
+Version 1.1.0 consolidates the 17 post-1.0.0 commits into a backward-compatible feature release. The launcher has expanded menus, no implicit usage-counter request, a first-party modern CLI toolkit, gating ShellCheck CI, and 34 repository validation scripts.
 
 ## Completed
 
-### Launcher & framework
-- Audited the repository structure and script inventory
-- Rebuilt `vps.sh` around actual repository modules
-- Added safer first-party download-and-execute behavior
-- Added confirmation before running third-party launcher commands
-- Added shared UI helpers for key-value rows, step display, status output, and runtime context
-- Added launcher local-file fast path and parallel module-bundle loading
-- Tuned download and public-IP probe timeouts
-- Fixed launcher menu EOF handling for non-interactive runs
-- Added responsive terminal widths, CJK-aware menu alignment, compact narrow-screen rows, and clearer visual hierarchy
-- Added `bash -n` validation to `run_remote_script_url()` and `run_remote_command()`
-- Fixed wget missing `--connect-timeout`; added `pipefail` to `run_remote_command`
+### Launcher and framework
 
-### Menu additions
-- Added **Hysteria2** to Proxy Tools menu (item 6)
-- Added **WP Panel** to Service Install menu (item 21)
+- Rebuilt `vps.sh` around real repository modules with local-file and remote download paths
+- Added temporary-file isolation, syntax checks, download fallbacks, and confirmation for third-party commands
+- Added responsive terminal widths, CJK-aware alignment, compact narrow-screen rows, and shared UI helpers
+- Added persistent `vps` command installation and a legacy-only `vps_scripts.sh` compatibility handoff
+- Removed the synchronous third-party usage-counter request from launcher startup
 
-### System tools (9 scripts)
-- Reworked `install_deps.sh` for better idempotency and reporting
-- Refactored `update_system.sh` to remove avoidable `eval`
-- Added `health_check.sh` and `security_audit.sh` (read-only diagnostics)
-- Normalized logging, validation, and backup patterns across all system tools
+### Menus and tools
 
-### Service install hardening (11 scripts)
-- `docker.sh`: temp-file downloads, guarded removal paths
-- `nginx.sh`: temp-file key import, isolated source build, safe cleanup
-- `mysql.sh`: quoted chown, SQL-safe password generation
-- `postgresql.sh`: fixed `TOTAL_MEM` unbound crash, `$(nproc)` heredoc safety, WAL archive path
-- `redis.sh`: quoted chown (3×), make-jobs floor
-- `nodejs.sh`: version validation, temp-file remote installer
-- `python.sh`: `set -euo pipefail`, pyenv pipeline guard, wget error handling, trap safety
-- `go.sh`: `sh`→`bash` remote installer, strict input validation
-- `java.sh`: strict input validation, isolated archive downloads, quoted paths
-- `ruby.sh`: `mktemp -d` source build, `make -j` cap, nproc validation, sed precision fix, cd-leak fix
-- `kubernetes.sh`: `set -euo pipefail`, dead `PIPESTATUS` fix, duplicate sysctl removed
+- Added Hysteria2, WP Panel, Caddy, Portainer, Komari, acme.sh, tmux, oh-my-zsh, Uptime Kuma, Tailscale, FRP, cloudflared, FileBrowser, and additional community diagnostics
+- Added `scripts/other_tools/modern_cli.sh` for btop, ripgrep, fd, bat, fzf, jq, ncdu, and restic
+- Added `--status`, `--install`, and `--help` to the modern CLI toolkit
+- Kept the toolkit on configured distribution repositories without adding remote installer pipelines
 
-### Cross-script fixes (9 files)
-- `VERSION_ID` unbound-variable crash fixed across all installers with `detect_system()`
+### Maintained script hardening
 
-### Library (`lib/common_functions.sh`)
-- Reviewed for quoting, temp-file handling, and config safety
-- Fixed `$default` quoting in `ask_yes_no()`
-- Fixed `$1` quoting in service-control print messages
-- Hardened config helpers against regex-like keys and cross-filesystem replacement
-- Added symlink protection to temp-directory cleanup
+- Enabled `set -euo pipefail` across all 21 service installers and all network/performance scripts
+- Replaced predictable temporary paths with `mktemp` in the affected maintained scripts
+- Removed first-party `curl | sh` patterns from the hardened service installers
+- Fixed installer quoting, input validation, cleanup, package-manager, strict-mode, and build concurrency defects
+- Moved PostgreSQL WAL archives outside the primary data directory
+- Added shared `die()` and build-from-source helpers
 
-### Legacy launcher (`vps_scripts.sh`)
-- Defined as supported legacy-only compatibility handoff
-- Fixed EOF handling and quoting in error messages
+### Validation and CI
 
-### Tests (30 validation scripts)
-- Launcher coverage: `validate_launcher_paths`, `validate_system_tools_launcher`, `validate_service_install_launcher`, `validate_active_category_coverage`
-- Core assets: `validate_core_assets`, `validate_script_headers`, `validate_line_endings_policy`
-- Policy: `validate_execution_safety`, `validate_legacy_launcher_policy`, `validate_update_scripts_legacy`, `validate_update_log_handoff`
-- Per-installer safety: `docker`, `python`, `kubernetes`, `go`, `java`, `nginx`, `mysql`, `postgresql`, `redis`
-- UI/misc: `validate_ui_framework`, `validate_ui_layout`, `validate_chinese_ui`, `validate_loader_performance`, `validate_menu_eof`, `validate_command_install`, `validate_input_contract`, `validate_remote_module_runtime`, `validate_common_helpers`
+- 34 repository validation scripts now cover paths, categories, UI, strict mode, installers, release metadata, privacy, and execution safety
+- Release metadata validation keeps the version, date, changelog, README, version policy, config, and launcher synchronized
+- ShellCheck error findings now fail CI instead of being ignored
+- Fixed `validate_update_scripts_legacy.sh` to match the removed legacy directory
+- Launcher path, core asset, menu coverage, and line-ending policies remain enforced
 
-### Documentation
-- `CLAUDE.md`: accurate distro/arch/version metadata, architecture sections for `version.json`/`update_log.sh`/`.gitattributes`
-- `CHANGELOG.md`: comprehensive Unreleased section with all 2026-06-11 changes
-- `DEVELOPMENT_GUIDE.md`: updated with full test suite and current patterns
-- `TASKS.md`: updated P0/P1/P2 status
-- `PROGRESS.md`: this file
-- `SESSION.md`: 2026-06-11 session summary
-- `code_review.md`: updated findings and review targets
+### Documentation and release metadata
 
-### In Progress
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.0
+- Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
+- Recorded the next safety round around the four first-party `other_tools` scripts
 
-- Standardizing `set -euo pipefail` across remaining 8 service_install scripts (panel installers, jenkins, ruby, rust)
-- Expanding shared UI conventions across network_test and performance_test categories
-- Auditing framework guardrails before deeper category rewrites
+## Next Safety Round
 
-### Not Started
+- Change BBR to a dedicated `/etc/sysctl.d/` drop-in instead of replacing `/etc/sysctl.conf`
+- Make Swap changes idempotent and preserve unrelated swap devices and `/etc/fstab` entries
+- Rework Fail2ban defaults for distro-specific logging and existing local configuration
+- Validate and escape Nezha agent inputs before writing systemd configuration
+- Replace remaining third-party `curl | sh` and architecture-specific commands with reviewed wrappers
 
-- Refactor `network_test/` and `performance_test/` categories for consistent structure and output
-- Add shellcheck CI or pre-commit hook
-- Consider extracting repeated build-from-source pattern into shared helper
-- Add `die()` helper function to `lib/common_functions.sh`
+## Success Criteria For Next Release
 
-### Success Criteria For Next Round
-
-- All 20 service_install scripts have `set -euo pipefail`
-- Network/performance test scripts share a consistent output format
-- Release docs and runtime metadata reflect current menu structure (22 service items, 6 proxy items)
+- No first-party utility overwrites a whole shared system configuration file
+- All destructive utility actions offer a clear preview, confirmation, and rollback path
+- Third-party installers use architecture-aware, temporary-file wrappers where practical
+- Behavioral tests supplement the existing syntax and pattern validation

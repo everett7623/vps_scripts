@@ -9,12 +9,12 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.0.0"
+PROJECT_VERSION="1.1.0"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
 BLOG_URL="https://seedloc.com"
-LAUNCHER_STYLE_VERSION="1.0.0"
+LAUNCHER_STYLE_VERSION="1.1.0"
 LOCAL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')"
 DOWNLOAD_CONNECT_TIMEOUT="${VPS_DOWNLOAD_CONNECT_TIMEOUT:-6}"
 DOWNLOAD_MAX_TIME="${VPS_DOWNLOAD_MAX_TIME:-60}"
@@ -875,9 +875,10 @@ other_tools_menu() {
         print_menu_item 14 "FRP 内网穿透" "反向代理穿透"
         print_menu_item 15 "Cloudflare Tunnel" "零IP暴露隧道"
         print_menu_item 16 "FileBrowser" "Web 文件管理"
+        print_menu_item 17 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-16]: " || return 0
+        read_menu_choice "请选择 [0-17]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -897,6 +898,7 @@ other_tools_menu() {
             14) run_remote_command "wget https://raw.githubusercontent.com/funnyzak/frpc/main/frpc_linux_install.sh -O frpc_install.sh && chmod +x frpc_install.sh && bash frpc_install.sh" "FRP client (frpc)" ;;
             15) run_remote_command "curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
             16) run_remote_command "curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash" "FileBrowser file manager" ;;
+            17) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -964,15 +966,6 @@ uninstall_menu() {
 main_menu() {
     check_environment
 
-    # 获取使用统计（visitor-badge.laobi.icu，稳定可用）
-    local TODAY_HITS=""
-    local TOTAL_HITS=""
-    local count_svg=""
-    count_svg=$(curl -fsS --max-time 3 "https://visitor-badge.laobi.icu/badge?page_id=everett7623.vps_scripts.launcher" 2>/dev/null) || true
-    if [ -n "${count_svg}" ]; then
-        TOTAL_HITS=$(printf '%s' "${count_svg}" | grep -oP 'textLength="[0-9.]+"\s+transform="scale\(0\.1\)"\s+x="[0-9.]+"\s+y="140">\K[0-9]+' | tail -1) || true
-    fi
-
     while true; do
         print_header
         print_status_line
@@ -989,9 +982,6 @@ main_menu() {
         print_menu_item 10 "清理与卸载" "残留清理"
         print_menu_item 0 "退出"
         echo ""
-        if [ -n "${TOTAL_HITS:-}" ]; then
-            echo -e "${DIM}累计运行: ${CYAN}${TOTAL_HITS}${RESET}${DIM} 次${RESET}"
-        fi
         echo -e "${DIM}官方模块会先安全下载到临时文件，通过检查后再执行。${RESET}"
         echo ""
         read_menu_choice "请选择 [0-10]: " || return 0

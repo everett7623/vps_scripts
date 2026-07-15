@@ -65,6 +65,8 @@ Other tools menu:
 - FileBrowser (github.com/filebrowser/get)
 - Nezha cleaner (github.com/everett7623/Nezha-cleaner)
 
+The first-party modern CLI toolkit uses only the Linux distribution repositories already configured on the host. It does not add a third-party repository or execute a downloaded installer.
+
 Service install menu (third-party items):
 - Caddy (caddyserver.com)
 - Portainer CE (hub.docker.com portainer/portainer-ce)
@@ -78,11 +80,7 @@ Service install menu (third-party items):
 
 ## Usage Statistics
 
-The launcher (`vps.sh`) sends a single lightweight request to `visitor-badge.laobi.icu` on each run to count total script executions. This request:
-- Only increments a public counter badge
-- Does NOT collect IP addresses, system info, or any user data
-- Runs synchronously with a 3-second timeout, falls back gracefully if unavailable
-- Can be verified at: https://visitor-badge.laobi.icu (open-source service)
+The launcher does not send usage-counter or analytics requests. Network access occurs only for launcher/module downloads, update metadata, user-selected tools, and diagnostics described above.
 
 ## Operator Guidance
 
