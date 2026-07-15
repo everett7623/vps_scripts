@@ -20,6 +20,7 @@
 ## Release Content
 
 - Update `CHANGELOG.md`
+- Update `VERSIONING.md` if policy changed
 - Update `README.md` if install or usage guidance changed
 - Review `TASKS.md` and `PROGRESS.md` for any completed milestones
 
@@ -32,6 +33,7 @@ Bump the version number in ALL of these files (grep `[0-9]\+\.[0-9]\+\.[0-9]\+` 
 - `vps.sh` — `PROJECT_VERSION`
 - `README.md` — version badge URL
 - `CLAUDE.md` — version reference in "Version metadata" section
+- `VERSIONING.md` — active version listed in "Current State"
 - `version.json`, `config/vps_scripts.conf`, and `vps.sh` — launcher style version when the terminal UI changes
 - Project-owned module `SCRIPT_VERSION` constants when intentionally publishing a synchronized baseline
 

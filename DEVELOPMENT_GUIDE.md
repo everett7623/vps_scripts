@@ -170,21 +170,6 @@ With `set -euo pipefail`:
 - Validate user input before using in commands, paths, or service names
 - Quote variables unless unquoted expansion is genuinely required
 
-## Review Checklist
-
-Use this checklist when touching a script:
-
-- [ ] Can it be run twice safely (idempotent)?
-- [ ] Does it validate external input before use?
-- [ ] Does it log failures clearly with actionable messages?
-- [ ] Does it use `mktemp` for temp files, not predictable paths?
-- [ ] Does it avoid `eval` unless genuinely unavoidable?
-- [ ] Does it separate first-party and third-party execution clearly?
-- [ ] Does it have `set -euo pipefail` (or explicit error handling)?
-- [ ] Are all variables quoted unless unquoted expansion is required?
-- [ ] Do heredocs use quoted `<< 'EOF'` when expansion is unwanted?
-- [ ] Are command substitutions in heredocs pre-computed to avoid `set -e` surprises?
-
 ## Terminal UI Rules
 
 - Terminal scripts cannot control the user's font size. Use bold/bright hierarchy, whitespace, and concise labels to improve readability instead.
@@ -195,24 +180,9 @@ Use this checklist when touching a script:
 
 ## Release Process
 
-See `RELEASE_CHECKLIST.md`. Key steps:
+See `RELEASE_CHECKLIST.md` and `VERSIONING.md`. Key steps:
 - Update `CHANGELOG.md` Unreleased section
 - Update `version.json` version and release_date
 - Review `TASKS.md` and `PROGRESS.md` for milestone completion
-- Run full test suite (31 tests)
+- Run full test suite (30 tests)
 - Test remote launcher command from a clean environment
-
-## Versioning Policy
-
-Use semantic versioning for code releases:
-
-- `MAJOR`: incompatible behavior or architecture changes
-- `MINOR`: new backward-compatible features
-- `PATCH`: backward-compatible fixes, documentation corrections, and safety improvements
-
-Version metadata lives in `version.json`. The public release history starts at `v1.0.0`.
-
-Release rules of thumb:
-- Menu mapping fixes, validation additions, and safer command execution → patch
-- New script groups or substantial new capabilities → minor
-- Breaking launcher behavior or removing legacy paths → major
