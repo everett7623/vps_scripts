@@ -238,12 +238,10 @@ install_dependencies() {
         ubuntu|debian)
             apt-get update -qq
             apt-get install -y -qq \
-                apt-transport-https \
                 ca-certificates \
                 curl \
                 gnupg \
-                lsb-release \
-                software-properties-common
+                lsb-release
             ;;
         centos|rhel|almalinux|rocky)
             yum install -y -q \

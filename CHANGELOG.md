@@ -6,6 +6,7 @@ All notable changes to this repository are documented here.
 
 ### Fixed
 - Allowed the Docker installer to run on officially supported Debian 13 (Trixie) systems.
+- Removed obsolete APT helper dependencies that blocked Docker installation on minimal Debian 13 systems.
 
 ## 1.1.1 - 2026-07-15
 

@@ -17,6 +17,14 @@ Author: everettlabs
 The Debian compatibility allowlist stopped at version 12, so Debian 13 exited
 before repository setup even though Docker officially supports Trixie.
 
+## Follow-up
+
+A real Debian 13 installation then failed because the dependency list included
+`software-properties-common`, which the script does not use and the host could
+not locate. The same list also included the obsolete `apt-transport-https`
+transitional package. Both were removed, leaving only packages used by the
+installer, and the safety test now prevents these dependencies from returning.
+
 ## Validation
 
 - `bash -n scripts/service_install/docker.sh`

@@ -31,6 +31,11 @@ if grep -Eq 'curl[^\n]*-o[[:space:]]+/usr/local/bin/docker-compose' "${SCRIPT}";
     exit 1
 fi
 
+if grep -Eq 'apt-transport-https|software-properties-common' "${SCRIPT}"; then
+    echo "Docker installer still requires obsolete APT helper packages." >&2
+    exit 1
+fi
+
 if grep -Eq 'rm[[:space:]]+-rf[[:space:]]+"\$DOCKER_(DATA|CONFIG)_DIR"' "${SCRIPT}"; then
     echo "Docker removal still bypasses safe removal helpers." >&2
     exit 1
