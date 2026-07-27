@@ -179,7 +179,7 @@ check_compatibility() {
             ;;
         debian)
             case $VERSION in
-                9|10|11|12) supported=true ;;
+                9|10|11|12|13) supported=true ;;
             esac
             ;;
         centos|rhel|almalinux|rocky)

@@ -19,6 +19,7 @@ grep -Fq 'install -m 0755 "$compose_file" /usr/local/bin/docker-compose' "${SCRI
 grep -Fq 'safe_remove_dir "$DOCKER_DATA_DIR"' "${SCRIPT}"
 grep -Fq 'safe_remove_dir "$DOCKER_CONFIG_DIR"' "${SCRIPT}"
 grep -Fq 'safe_remove_file /usr/local/bin/docker-compose' "${SCRIPT}"
+grep -Fq '9|10|11|12|13) supported=true' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)' "${SCRIPT}"; then
     echo "Docker installer pipes remote content to a shell." >&2

@@ -4,6 +4,9 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+### Fixed
+- Allowed the Docker installer to run on officially supported Debian 13 (Trixie) systems.
+
 ## 1.1.1 - 2026-07-15
 
 ### Fixed
