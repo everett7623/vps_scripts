@@ -33,6 +33,16 @@ release asset name, while Docker Compose publishes `x86_64`. Compose-specific
 mappings now cover `x86_64`, `aarch64`, and `armv7`, with regression assertions
 for all supported installer architectures.
 
+### Official installer simplification
+
+The custom distribution, repository, Compose, update, and removal branches were
+replaced with Docker's official `get.docker.com` installer. The repository
+wrapper still downloads to a `mktemp` file, validates shell syntax before
+execution, cleans up on exit, and returns immediately when Docker Engine and the
+Compose plugin are already available. Custom `--remove`, `--update`,
+`--compose`, and `--cn` options were intentionally removed because no repository
+caller used them.
+
 ## Validation
 
 - `bash -n scripts/service_install/docker.sh`

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # Script: tests/validate_docker_installer_safety.sh
-# Purpose: Guard Docker installer download and removal safety.
+# Purpose: Guard the Docker official-installer wrapper.
 # ==============================================================================
 
 set -euo pipefail
@@ -12,41 +12,22 @@ REPO_ROOT="${REPO_ROOT_OVERRIDE:-${REPO_ROOT_DEFAULT}}"
 SCRIPT="${REPO_ROOT}/scripts/service_install/docker.sh"
 
 bash -n "${SCRIPT}"
-grep -Fq 'download_to_temp()' "${SCRIPT}"
-grep -Fq 'key_file=$(download_to_temp "$docker_repo_url/linux/$OS/gpg")' "${SCRIPT}"
-grep -Fq 'compose_file=$(download_to_temp "$download_url")' "${SCRIPT}"
-grep -Fq 'install -m 0755 "$compose_file" /usr/local/bin/docker-compose' "${SCRIPT}"
-grep -Fq 'amd64) compose_arch="x86_64"' "${SCRIPT}"
-grep -Fq 'arm64) compose_arch="aarch64"' "${SCRIPT}"
-grep -Fq 'armhf) compose_arch="armv7"' "${SCRIPT}"
-grep -Fq 'docker-compose-linux-${compose_arch}' "${SCRIPT}"
-grep -Fq 'safe_remove_dir "$DOCKER_DATA_DIR"' "${SCRIPT}"
-grep -Fq 'safe_remove_dir "$DOCKER_CONFIG_DIR"' "${SCRIPT}"
-grep -Fq 'safe_remove_file /usr/local/bin/docker-compose' "${SCRIPT}"
-grep -Fq '9|10|11|12|13) supported=true' "${SCRIPT}"
+grep -Fq 'readonly DOCKER_INSTALL_URL="https://get.docker.com"' "${SCRIPT}"
+grep -Fq 'installer_file=$(mktemp "/tmp/get-docker.XXXXXX")' "${SCRIPT}"
+grep -Fq 'curl -fsSL "$DOCKER_INSTALL_URL" -o "$installer_file"' "${SCRIPT}"
+grep -Fq 'bash -n "$installer_file"' "${SCRIPT}"
+grep -Fq 'sh "$installer_file"' "${SCRIPT}"
+grep -Fq 'trap cleanup EXIT' "${SCRIPT}"
+grep -Fq 'docker compose version' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)' "${SCRIPT}"; then
     echo "Docker installer pipes remote content to a shell." >&2
     exit 1
 fi
 
-if grep -Eq 'curl[^\n]*-o[[:space:]]+/usr/local/bin/docker-compose' "${SCRIPT}"; then
-    echo "Docker Compose is still downloaded directly into /usr/local/bin." >&2
+if grep -Eq 'download\.docker\.com|api\.github\.com/repos/docker/compose|docker-compose-linux-' "${SCRIPT}"; then
+    echo "Docker installer still reimplements repository or Compose setup." >&2
     exit 1
 fi
 
-if grep -Eq 'apt-transport-https|software-properties-common' "${SCRIPT}"; then
-    echo "Docker installer still requires obsolete APT helper packages." >&2
-    exit 1
-fi
-
-if grep -Eq 'rm[[:space:]]+-rf[[:space:]]+"\$DOCKER_(DATA|CONFIG)_DIR"' "${SCRIPT}"; then
-    echo "Docker removal still bypasses safe removal helpers." >&2
-    exit 1
-fi
-
-help_output=$(bash "${SCRIPT}" --help)
-grep -Fq -- "--remove" <<< "${help_output}"
-grep -Fq -- "--compose" <<< "${help_output}"
-
-echo "Docker installer safety is valid."
+echo "Docker official installer wrapper is valid."

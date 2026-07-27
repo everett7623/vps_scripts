@@ -4,10 +4,8 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
-### Fixed
-- Allowed the Docker installer to run on officially supported Debian 13 (Trixie) systems.
-- Removed obsolete APT helper dependencies that blocked Docker installation on minimal Debian 13 systems.
-- Corrected Docker Compose release asset architecture names to prevent `404` downloads on AMD64, ARM64, and ARMv7.
+### Changed
+- Replaced the custom Docker repository and Compose installation flow with a safely downloaded and syntax-checked `get.docker.com` official installer.
 
 ## 1.1.1 - 2026-07-15
 
