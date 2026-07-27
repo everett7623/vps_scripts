@@ -236,6 +236,12 @@ VPS_AUTO_INSTALL_COMMAND=false bash <(curl -fsSL https://raw.githubusercontent.c
 
 </details>
 
+### 卸载与清理模块
+
+- “完全卸载”仅备份并删除 VPS Scripts 自身的快捷命令、启动器文件和项目日志。
+- 完全卸载备份保存在 `/var/backups/vps_scripts/`，不会落入临时隔离运行目录。
+- Docker、Web 服务、数据库等业务组件必须通过“服务残留清理”逐项确认，不会被完全卸载功能自动删除。
+
 ## 项目结构
 
 ```text

@@ -91,6 +91,7 @@ main() {
     require_file "tests/validate_java_installer_safety.sh"
     require_file "tests/validate_common_helpers.sh"
     require_file "tests/validate_docker_installer_safety.sh"
+    require_file "tests/validate_full_uninstall_safety.sh"
     require_file "tests/validate_legacy_launcher_policy.sh"
     require_file "tests/validate_kubernetes_installer_safety.sh"
     require_file "tests/validate_line_endings_policy.sh"

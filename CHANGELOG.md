@@ -7,6 +7,9 @@ All notable changes to this repository are documented here.
 ### Changed
 - Replaced the custom Docker repository and Compose installation flow with a safely downloaded and syntax-checked `get.docker.com` official installer.
 
+### Fixed
+- Fixed recursive backup failure in the isolated full-uninstall runtime and limited removal to verified first-party commands, launcher files, and logs.
+
 ## 1.1.1 - 2026-07-15
 
 ### Fixed
