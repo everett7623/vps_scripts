@@ -25,6 +25,14 @@ not locate. The same list also included the obsolete `apt-transport-https`
 transitional package. Both were removed, leaving only packages used by the
 installer, and the safety test now prevents these dependencies from returning.
 
+### Compose download
+
+The next real installation reached the Docker Compose download but received a
+GitHub `404`. The installer reused Debian's `amd64` package architecture in the
+release asset name, while Docker Compose publishes `x86_64`. Compose-specific
+mappings now cover `x86_64`, `aarch64`, and `armv7`, with regression assertions
+for all supported installer architectures.
+
 ## Validation
 
 - `bash -n scripts/service_install/docker.sh`

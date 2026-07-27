@@ -340,6 +340,14 @@ install_docker_compose() {
     
     local compose_version
     local compose_file=""
+    local compose_arch=""
+    case $ARCH in
+        amd64) compose_arch="x86_64" ;;
+        arm64) compose_arch="aarch64" ;;
+        armhf) compose_arch="armv7" ;;
+        *) error_exit "不支持的 Docker Compose 架构: $ARCH" ;;
+    esac
+
     compose_version=$(curl -fsSL https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || true)
     
     if [[ -z $compose_version ]]; then
@@ -349,9 +357,9 @@ install_docker_compose() {
     
     local download_url
     if [[ $USE_CN_MIRROR == true ]]; then
-        download_url="https://github.com.cnpmjs.org/docker/compose/releases/download/${compose_version}/docker-compose-linux-${ARCH}"
+        download_url="https://github.com.cnpmjs.org/docker/compose/releases/download/${compose_version}/docker-compose-linux-${compose_arch}"
     else
-        download_url="https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-${ARCH}"
+        download_url="https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-${compose_arch}"
     fi
     
     # 下载并安装
