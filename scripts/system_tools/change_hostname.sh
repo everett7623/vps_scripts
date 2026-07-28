@@ -104,6 +104,20 @@ validate_hostname() {
     return 0
 }
 
+read_backup_hostname() {
+    local backup_path="$1"
+    local metadata_file="${backup_path}/metadata.env"
+    local hostname=""
+
+    if [ -f "${metadata_file}" ]; then
+        hostname=$(awk -F= '$1 == "OLD_HOSTNAME" { value=$2; sub(/^'"'"'/, "", value); sub(/'"'"'$/, "", value); print value; exit }' "${metadata_file}")
+    fi
+    if [ -z "${hostname}" ] && [ -f "${backup_path}/old_hostname.txt" ]; then
+        hostname=$(cat "${backup_path}/old_hostname.txt")
+    fi
+    printf '%s\n' "${hostname}"
+}
+
 create_backup() {
     local old_name="$1"
     local backup_path="${BACKUP_DIR}/backup_$(date +%Y%m%d_%H%M%S)"
@@ -338,13 +352,7 @@ restore_backup() {
         return 1
     }
 
-    if [ -f "${backup_path}/metadata.env" ]; then
-        # shellcheck disable=SC1090
-        . "${backup_path}/metadata.env"
-        old_name="${OLD_HOSTNAME:-}"
-    fi
-
-    [ -z "${old_name}" ] && [ -f "${backup_path}/old_hostname.txt" ] && old_name=$(cat "${backup_path}/old_hostname.txt")
+    old_name=$(read_backup_hostname "${backup_path}")
     [ -n "${old_name}" ] || {
         print_error "备份元数据中缺少原主机名。"
         return 1
@@ -376,7 +384,6 @@ restore_backup() {
 
 show_history() {
     local backup_path=""
-    local metadata_file=""
     local old_name=""
 
     print_header "主机名备份历史"
@@ -386,19 +393,11 @@ show_history() {
         return 0
     fi
 
-    for backup_path in $(ls -1dt "${BACKUP_DIR}"/backup_* 2>/dev/null); do
-        metadata_file="${backup_path}/metadata.env"
-        old_name="unknown"
-        if [ -f "${metadata_file}" ]; then
-            # shellcheck disable=SC1090
-            . "${metadata_file}"
-            old_name="${OLD_HOSTNAME:-unknown}"
-        elif [ -f "${backup_path}/old_hostname.txt" ]; then
-            old_name=$(cat "${backup_path}/old_hostname.txt")
-        fi
-
+    while IFS= read -r backup_path; do
+        old_name=$(read_backup_hostname "${backup_path}")
+        old_name=${old_name:-unknown}
         printf "  %-28s %s\n" "$(basename "${backup_path}")" "${old_name}"
-    done
+    done < <(find "${BACKUP_DIR}" -mindepth 1 -maxdepth 1 -type d -name 'backup_*' -print 2>/dev/null | sort -r)
 }
 
 rollback_latest() {

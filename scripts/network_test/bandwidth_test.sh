@@ -64,12 +64,12 @@ detect_and_init_servers() {
     print_header "检测 VPS 网络环境"
     
     # 检测到中国 DNS 的连通性
-    local cn_check=$(ping -c 2 -W 2 114.114.114.114 2>/dev/null | grep -c "time=")
+    local cn_check=$(ping -c 2 -W 2 114.114.114.114 2>/dev/null | grep -c "time=" || true)
     
     # 获取地理位置
-    local ip_info=$(curl -s --max-time 5 "http://ip-api.com/json/?fields=country,regionName,city,isp")
-    local country=$(echo "$ip_info" | grep -oP '"country":"\K[^"]+')
-    local isp=$(echo "$ip_info" | grep -oP '"isp":"\K[^"]+')
+    local ip_info=$(curl -fsSL --max-time 5 "https://ipapi.co/json/" 2>/dev/null || true)
+    local country=$(echo "$ip_info" | grep -oP '"country_name":\s*"\K[^"]+' || true)
+    local isp=$(echo "$ip_info" | grep -oP '"org":\s*"\K[^"]+' || true)
     
     echo -e "  位置: ${GREEN}${country:-未知}${NC} | 运营商: ${BLUE}${isp:-未知}${NC}"
     
@@ -118,16 +118,31 @@ detect_and_init_servers() {
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
+run_repo_setup_script() {
+    local url="$1"
+    local script_file=""
+
+    script_file=$(mktemp "${TEMP_DIR}/repo-setup.XXXXXX") || return 1
+    if ! curl -fsSL "${url}" -o "${script_file}" || ! bash -n "${script_file}"; then
+        rm -f -- "${script_file}"
+        return 1
+    fi
+    local exit_code=0
+    bash "${script_file}" || exit_code=$?
+    rm -f -- "${script_file}"
+    return "${exit_code}"
+}
+
 install_tools() {
     # Speedtest
     if ! command -v speedtest &>/dev/null; then
         print_info "安装 Speedtest CLI..."
         if command -v apt-get &>/dev/null; then
-            curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash &>> "$LOG_FILE"
-            apt-get install -y speedtest &>> "$LOG_FILE"
+            run_repo_setup_script "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh" >> "$LOG_FILE" 2>&1
+            apt-get install -y speedtest >> "$LOG_FILE" 2>&1
         elif command -v yum &>/dev/null; then
-            curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh | bash &>> "$LOG_FILE"
-            yum install -y speedtest &>> "$LOG_FILE"
+            run_repo_setup_script "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh" >> "$LOG_FILE" 2>&1
+            yum install -y speedtest >> "$LOG_FILE" 2>&1
         else
             local arch=$(uname -m)
             [ "$arch" = "x86_64" ] && arch="x86_64" || arch="aarch64"
@@ -217,13 +232,13 @@ test_cdn_download() {
     
     declare -A CDN_NODES=(
         [cf_global]="https://speed.cloudflare.com/__down?bytes=25000000:Cloudflare Global"
-        [aws_us_east]="http://s3.us-east-1.amazonaws.com/speedtest.us-east-1/10MB.bin:AWS US East"
-        [aws_us_west]="http://s3-us-west-1.amazonaws.com/speedtest/10MB.zip:AWS US West"
-        [aws_ap_se]="http://s3-ap-southeast-1.amazonaws.com/speedtest/10MB.zip:AWS Singapore"
-        [aws_ap_ne]="http://s3-ap-northeast-1.amazonaws.com/speedtest/10MB.zip:AWS Japan"
-        [linode_sg]="http://speedtest.singapore.linode.com/100MB-singapore.bin:Linode Singapore"
-        [linode_jp]="http://speedtest.tokyo2.linode.com/100MB-tokyo2.bin:Linode Tokyo"
-        [do_sf]="http://speedtest-sfo3.digitalocean.com/100mb.test:DigitalOcean SF"
+        [aws_us_east]="https://s3.us-east-1.amazonaws.com/speedtest.us-east-1/10MB.bin:AWS US East"
+        [aws_us_west]="https://s3-us-west-1.amazonaws.com/speedtest/10MB.zip:AWS US West"
+        [aws_ap_se]="https://s3-ap-southeast-1.amazonaws.com/speedtest/10MB.zip:AWS Singapore"
+        [aws_ap_ne]="https://s3-ap-northeast-1.amazonaws.com/speedtest/10MB.zip:AWS Japan"
+        [linode_sg]="https://speedtest.singapore.linode.com/100MB-singapore.bin:Linode Singapore"
+        [linode_jp]="https://speedtest.tokyo2.linode.com/100MB-tokyo2.bin:Linode Tokyo"
+        [do_sf]="https://speedtest-sfo3.digitalocean.com/100mb.test:DigitalOcean SF"
     )
     
     for key in "${!CDN_NODES[@]}"; do
@@ -231,8 +246,8 @@ test_cdn_download() {
         echo -ne "  ${CYAN}$name${NC} ... "
         
         local temp_file="$TEMP_DIR/cdn_test"
-        local speed=$(timeout 20 wget -O "$temp_file" --no-check-certificate "$url" 2>&1 | \
-                      grep -o "[0-9.]\+ [KMG]B/s" | tail -1)
+        local speed=$(timeout 20 wget -O "$temp_file" "$url" 2>&1 | \
+                      grep -o "[0-9.]\+ [KMG]B/s" | tail -1 || true)
         rm -f "$temp_file"
         
         if [ -n "$speed" ]; then
@@ -322,10 +337,10 @@ custom_speedtest() {
     read -p "请输入备注名称 (可选): " sname
     [ -z "$sname" ] && sname="Custom-$sid"
     
-    if [ -n "$sid" ]; then
+    if [[ "$sid" =~ ^[0-9]+$ ]]; then
         run_speedtest_single "$sid" "$sname"
     else
-        print_error "ID 不能为空"
+        print_error "ID必须为数字"
     fi
 }
 
@@ -412,7 +427,11 @@ show_menu() {
 
 main() {
     # 命令行处理
-    if [ -n "$1" ]; then
+    if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+        echo "Usage: bash bandwidth_test.sh [--quick | --full]"
+        return 0
+    fi
+    if [ -n "${1:-}" ]; then
         detect_and_init_servers
         install_tools
         case "$1" in
@@ -430,9 +449,6 @@ main() {
                 test_iperf3_batch
                 test_china_route
                 exit ;;
-            --help|-h) 
-                echo "Usage: bash bandwidth_test.sh [--quick | --full]"
-                exit 0 ;;
             *) print_error "无效参数"; exit 1 ;;
         esac
     else

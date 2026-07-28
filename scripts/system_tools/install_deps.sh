@@ -149,6 +149,21 @@ install_one_package() {
     env DEBIAN_FRONTEND=noninteractive "${INSTALL_CMD[@]}" "$package" >> "$LOG_FILE" 2>&1
 }
 
+run_nodejs_setup() {
+    local setup_file=""
+
+    setup_file=$(mktemp "/tmp/nodesource-setup.XXXXXX") || return 1
+    if ! curl -fsSL https://deb.nodesource.com/setup_lts.x -o "${setup_file}" ||
+       ! bash -n "${setup_file}"; then
+        rm -f -- "${setup_file}"
+        return 1
+    fi
+    local exit_code=0
+    bash "${setup_file}" >> "$LOG_FILE" 2>&1 || exit_code=$?
+    rm -f -- "${setup_file}"
+    return "${exit_code}"
+}
+
 configure_extra_repos() {
     print_info "正在按需配置附加软件源..."
 
@@ -171,8 +186,7 @@ configure_extra_repos() {
             fi
 
             if ! command -v node >/dev/null 2>&1; then
-                curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - >> "$LOG_FILE" 2>&1 || \
-                    print_warn "NodeSource 初始化失败。"
+                run_nodejs_setup || print_warn "NodeSource 初始化失败。"
             fi
             ;;
         centos|rhel|rocky|almalinux)

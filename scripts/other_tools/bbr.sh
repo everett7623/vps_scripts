@@ -25,11 +25,11 @@ install_tools() {
         
         # 根据不同系统安装
         if command -v apt &> /dev/null; then
-            sudo apt update && sudo apt install -y bc
+            apt update && apt install -y bc
         elif command -v yum &> /dev/null; then
-            sudo yum install -y bc
+            yum install -y bc
         elif command -v pacman &> /dev/null; then
-            sudo pacman -S --noconfirm bc
+            pacman -S --noconfirm bc
         else
             echo -e "${RED}无法安装bc工具，请手动安装。${NC}"
             exit 1
@@ -57,8 +57,11 @@ check_kernel() {
 
 # 检查BBR是否已启用
 check_bbr_status() {
-    local bbr_status=$(sysctl net.ipv4.tcp_congestion_control | grep -o "bbr")
-    local fq_status=$(sysctl net.core.default_qdisc | grep -o "fq")
+    local bbr_status=""
+    local fq_status=""
+
+    bbr_status=$(sysctl net.ipv4.tcp_congestion_control 2>/dev/null | grep -o "bbr" || true)
+    fq_status=$(sysctl net.core.default_qdisc 2>/dev/null | grep -o "fq" || true)
     
     if [ "$bbr_status" == "bbr" ] && [ "$fq_status" == "fq" ]; then
         echo -e "${GREEN}BBR已经启用!${NC}"
@@ -80,32 +83,9 @@ install_bbr() {
     fi
     
     # 写入BBR配置
-    cat > /etc/sysctl.conf << EOF
-fs.file-max = 6815744
-net.ipv4.tcp_no_metrics_save=1
-net.ipv4.tcp_ecn=0
-net.ipv4.tcp_frto=0
-net.ipv4.tcp_mtu_probing=0
-net.ipv4.tcp_rfc1337=0
-net.ipv4.tcp_sack=1
-net.ipv4.tcp_fack=1
-net.ipv4.tcp_window_scaling=1
-net.ipv4.tcp_adv_win_scale=1
-net.ipv4.tcp_moderate_rcvbuf=1
-net.core.rmem_max=33554432
-net.core.wmem_max=33554432
-net.ipv4.tcp_rmem=4096 87380 33554432
-net.ipv4.tcp_wmem=4096 16384 33554432
-net.ipv4.udp_rmem_min=8192
-net.ipv4.udp_wmem_min=8192
-net.ipv4.ip_forward=1
-net.ipv4.conf.all.route_localnet=1
-net.ipv4.conf.all.forwarding=1
-net.ipv4.conf.default.forwarding=1
+    cat > /etc/sysctl.d/99-vps-bbr.conf << EOF
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
-net.ipv6.conf.all.forwarding=1
-net.ipv6.conf.default.forwarding=1
 EOF
     
     # 应用配置
@@ -123,14 +103,12 @@ uninstall_bbr() {
     echo -e "${YELLOW}正在卸载BBR网络优化...${NC}"
     
     # 恢复备份配置
-    if [ -f /etc/sysctl.conf.bak ]; then
-        cp /etc/sysctl.conf.bak /etc/sysctl.conf
-        echo -e "${YELLOW}已恢复原配置文件。${NC}"
+    if [ -f /etc/sysctl.d/99-vps-bbr.conf ]; then
+        rm -f /etc/sysctl.d/99-vps-bbr.conf
+        echo -e "${YELLOW}已移除本工具写入的BBR配置。${NC}"
     else
         # 如果没有备份，则重置BBR相关配置
-        sed -i '/net.core.default_qdisc=fq/d' /etc/sysctl.conf
-        sed -i '/net.ipv4.tcp_congestion_control=bbr/d' /etc/sysctl.conf
-        echo -e "${YELLOW}已移除BBR相关配置。${NC}"
+        echo -e "${YELLOW}未找到本工具写入的BBR配置。${NC}"
     fi
     
     # 应用配置
@@ -163,7 +141,7 @@ show_bbr_status() {
     fi
     
     # 显示BBR当前状态
-    check_bbr_status
+    check_bbr_status || true
 }
 
 # 主函数
@@ -180,7 +158,7 @@ main() {
     install_tools
     
     # 检查内核版本
-    check_kernel
+    check_kernel || true
     
     echo ""
     

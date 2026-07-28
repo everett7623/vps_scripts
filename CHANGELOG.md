@@ -6,9 +6,18 @@ All notable changes to this repository are documented here.
 
 ### Changed
 - Replaced the custom Docker repository and Compose installation flow with a safely downloaded and syntax-checked `get.docker.com` official installer.
+- Kept third-party menu entries on their official project scripts while routing them through launcher confirmation, isolated temporary download, Bash syntax validation, and cleanup.
 
 ### Fixed
 - Fixed recursive backup failure in the isolated full-uninstall runtime and limited removal to verified first-party commands, launcher files, and logs.
+- Propagated third-party command and script failures through the launcher, and added ARM architecture detection for Caddy and cloudflared downloads.
+- Prevented the BBR tool from overwriting `/etc/sysctl.conf`, made Swap configuration idempotent in `/etc/fstab`, and validated Fail2ban configuration before restarting the service.
+- Repaired legacy cleanup batch actions so confirmation and menu input reach child invocations, excluded interactive WordPress and hostname actions from batch execution, and validated the WordPress deletion target.
+- Hardened the Nezha agent installer with validated inputs, verified archive contents, systemd escaping, and unit-file verification.
+- Replaced remaining first-party remote shell pipelines in LDNMP, dependency setup, Jenkins build tooling, and bandwidth testing; added upgrade-hardening regression coverage.
+- Made shared confirmation and input helpers cancel cleanly on stdin EOF, and stopped hostname rollback from sourcing backup metadata as shell code.
+- Made the LDNMP compatibility installer validate PHP versions and conflicting database selections, protect generated credentials, and require an explicit flag before creating a phpinfo demo site.
+- Separated system-update confirmation from reboot behavior: automatic updates now require explicit `--reboot` before restarting the host.
 
 ## 1.1.1 - 2026-07-15
 

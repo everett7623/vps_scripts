@@ -231,13 +231,9 @@ case "$choice" in
         echo -e "${WHITE}清理所有配置文件...${NC}"
         
         # 执行所有清理操作
-        bash "$0" <<< "1"
-        bash "$0" <<< "2"
-        bash "$0" <<< "3"
-        bash "$0" <<< "4"
-        bash "$0" <<< "5"
-        bash "$0" <<< "6"
-        bash "$0" <<< "7"
+        for config_choice in 1 2 3 4 5 6 7; do
+            printf 'y\n%s\n' "${config_choice}" | bash "$0"
+        done
         
         echo -e "${GREEN}所有配置文件清理完成${NC}"
         ;;
@@ -252,4 +248,4 @@ echo ""
 echo -e "${GREEN}配置文件清理完成${NC}"
 echo -e "${WHITE}备份目录: ${YELLOW}$BACKUP_DIR${NC}"
 echo ""
-read -n 1 -s -r -p "按任意键返回主菜单..."
+read -n 1 -s -r -p "按任意键返回主菜单..." || true

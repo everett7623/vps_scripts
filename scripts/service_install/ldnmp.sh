@@ -31,6 +31,7 @@ INSTALL_MYSQL=false
 INSTALL_MARIADB=false
 INSTALL_PHP=false
 INSTALL_DOCKER=false
+CREATE_DEMO_SITE=false
 PHP_VERSION="8.2"
 DB_ROOT_PASSWORD=""
 
@@ -74,8 +75,49 @@ check_system() {
 
 # 生成随机密码
 generate_password() {
-    local length=${1:-16}
-    tr -dc 'A-Za-z0-9!@#$%^&*()_+=' < /dev/urandom | head -c "$length"
+    local length="${1:-16}"
+    local password=""
+
+    [[ "${length}" =~ ^[1-9][0-9]*$ ]] || return 1
+    password=$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+=' < /dev/urandom | head -c "${length}" || true)
+    [ "${#password}" -eq "${length}" ] || return 1
+    printf '%s\n' "${password}"
+}
+
+validate_php_version() {
+    case "${1}" in
+        7.4|8.0|8.1|8.2|8.3|8.4) return 0 ;;
+        *) log_error "不支持的 PHP 版本: ${1}"; return 1 ;;
+    esac
+}
+
+write_root_password() {
+    local password="$1"
+    umask 077
+    printf '%s\n' "${password}" > /root/.mysql_root_password
+    chmod 600 /root/.mysql_root_password
+}
+
+run_remote_bash_installer() {
+    local url="$1"
+    local label="$2"
+    local installer=""
+
+    installer=$(mktemp "/tmp/ldnmp-installer.XXXXXX") || {
+        log_error "无法创建 ${label} 临时安装文件"
+        return 1
+    }
+    if ! curl -fsSL "${url}" -o "${installer}" || ! bash -n "${installer}"; then
+        rm -f -- "${installer}"
+        log_error "${label} 安装脚本下载或语法校验失败"
+        return 1
+    fi
+    if ! bash "${installer}"; then
+        rm -f -- "${installer}"
+        log_error "${label} 安装脚本执行失败"
+        return 1
+    fi
+    rm -f -- "${installer}"
 }
 
 # 更新系统
@@ -103,8 +145,10 @@ install_nginx() {
     log_info "安装Nginx..."
     case $OS in
         ubuntu|debian)
-            curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add -
-            echo "deb https://nginx.org/packages/$OS/ $(lsb_release -cs) nginx" > /etc/apt/sources.list.d/nginx.list
+            curl -fsSL https://nginx.org/keys/nginx_signing.key | \
+                gpg --dearmor -o /usr/share/keyrings/nginx-signing.gpg
+            echo "deb [signed-by=/usr/share/keyrings/nginx-signing.gpg] https://nginx.org/packages/$OS/ $(lsb_release -cs) nginx" \
+                > /etc/apt/sources.list.d/nginx.list
             apt-get update -qq && apt-get install -y nginx
             ;;
         centos|rhel|fedora|almalinux|rocky)
@@ -136,6 +180,8 @@ install_database() {
 
 # 安装MySQL
 install_mysql_server() {
+    local mysql_repo_file=""
+
     if command -v mysql >/dev/null 2>&1; then
         log_warning "MySQL已安装"
         return
@@ -146,13 +192,18 @@ install_mysql_server() {
     
     case $OS in
         ubuntu|debian)
-            wget -q https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb -O /tmp/mysql-apt.deb
-            DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/mysql-apt.deb
+            mysql_repo_file=$(mktemp "/tmp/mysql-apt.XXXXXX")
+            if ! wget -q https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb -O "${mysql_repo_file}" ||
+               ! DEBIAN_FRONTEND=noninteractive dpkg -i "${mysql_repo_file}"; then
+                rm -f -- "${mysql_repo_file}"
+                log_error "MySQL 仓库配置包下载或安装失败"
+                return 1
+            fi
+            rm -f -- "${mysql_repo_file}"
             apt-get update -qq
             debconf-set-selections <<< "mysql-server mysql-server/root-password password $DB_ROOT_PASSWORD"
             debconf-set-selections <<< "mysql-server mysql-server/root-password-again password $DB_ROOT_PASSWORD"
             DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
-            rm -f /tmp/mysql-apt.deb
             ;;
         centos|rhel|almalinux|rocky)
             yum install -y https://dev.mysql.com/get/mysql80-community-release-el${VER%%.*}-9.noarch.rpm
@@ -160,8 +211,7 @@ install_mysql_server() {
             ;;
     esac
     
-    echo "$DB_ROOT_PASSWORD" > /root/.mysql_root_password
-    chmod 600 /root/.mysql_root_password
+    write_root_password "${DB_ROOT_PASSWORD}"
     systemctl enable mysqld 2>/dev/null || systemctl enable mysql
     systemctl start mysqld 2>/dev/null || systemctl start mysql
     log_success "MySQL安装完成"
@@ -179,7 +229,7 @@ install_mariadb_server() {
     
     case $OS in
         ubuntu|debian)
-            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
+            run_remote_bash_installer "https://downloads.mariadb.com/MariaDB/mariadb_repo_setup" "MariaDB 仓库"
             apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server
             ;;
         centos|rhel|almalinux|rocky)
@@ -202,8 +252,7 @@ DROP DATABASE IF EXISTS test;
 FLUSH PRIVILEGES;
 EOF
     
-    echo "$DB_ROOT_PASSWORD" > /root/.mysql_root_password
-    chmod 600 /root/.mysql_root_password
+    write_root_password "${DB_ROOT_PASSWORD}"
     log_success "MariaDB安装完成"
 }
 
@@ -216,8 +265,10 @@ install_php() {
             if [[ "$OS" == "ubuntu" ]]; then
                 add-apt-repository -y ppa:ondrej/php
             else
-                wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add -
-                echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+                curl -fsSL https://packages.sury.org/php/apt.gpg | \
+                    gpg --dearmor -o /usr/share/keyrings/sury-php.gpg
+                echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
+                    > /etc/apt/sources.list.d/php.list
             fi
             apt-get update -qq
             apt-get install -y php${PHP_VERSION}-{fpm,cli,common,mysql,curl,gd,mbstring,xml,zip,bcmath,intl,opcache}
@@ -250,13 +301,31 @@ install_docker() {
     fi
     
     log_info "安装Docker..."
-    curl -fsSL https://get.docker.com | bash
+    run_remote_bash_installer "https://get.docker.com" "Docker"
     systemctl enable docker && systemctl start docker
     
     # 安装Docker Compose
-    COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-    curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
+    local compose_version=""
+    local compose_arch=""
+    local compose_temp=""
+    compose_version=$(curl -fsSL https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")' || true)
+    case "$(uname -m)" in
+        x86_64) compose_arch="x86_64" ;;
+        aarch64|arm64) compose_arch="aarch64" ;;
+        *) log_warning "不支持的 Docker Compose 架构: $(uname -m)"; return 0 ;;
+    esac
+    if [ -z "${compose_version}" ]; then
+        log_warning "无法获取 Docker Compose 最新版本"
+        return 0
+    fi
+    compose_temp=$(mktemp "/tmp/docker-compose.XXXXXX") || return 1
+    if ! curl -fsSL "https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-${compose_arch}" -o "${compose_temp}"; then
+        rm -f -- "${compose_temp}"
+        log_warning "Docker Compose 下载失败"
+        return 0
+    fi
+    install -m 0755 "${compose_temp}" /usr/local/bin/docker-compose
+    rm -f -- "${compose_temp}"
     
     log_success "Docker安装完成"
 }
@@ -266,10 +335,10 @@ create_demo_site() {
     log_info "创建示例站点..."
     
     # 创建网站目录
-    mkdir -p ${WEB_ROOT}/default
+    mkdir -p "${WEB_ROOT}/default"
     
     # 创建测试页面
-    cat > ${WEB_ROOT}/default/index.php <<'EOF'
+    cat > "${WEB_ROOT}/default/index.php" <<'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -347,7 +416,7 @@ create_demo_site() {
 EOF
 
     # 创建phpinfo页面
-    echo '<?php phpinfo(); ?>' > ${WEB_ROOT}/default/phpinfo.php
+    echo '<?php phpinfo(); ?>' > "${WEB_ROOT}/default/phpinfo.php"
     
     # 创建Nginx配置
     cat > /etc/nginx/sites-available/default <<EOF
@@ -380,7 +449,7 @@ EOF
     ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
     
-    chown -R www-data:www-data ${WEB_ROOT}/default 2>/dev/null || chown -R nginx:nginx ${WEB_ROOT}/default
+    chown -R www-data:www-data "${WEB_ROOT}/default" 2>/dev/null || chown -R nginx:nginx "${WEB_ROOT}/default"
     
     log_success "示例站点创建完成"
 }
@@ -438,7 +507,7 @@ show_installation_info() {
         else
             echo "✓ MariaDB $(mariadb --version | awk '{print $5}' | sed 's/,$//')"
         fi
-        echo "  数据库root密码: $(cat /root/.mysql_root_password 2>/dev/null || echo '查看 /root/.mysql_root_password')"
+        echo "  数据库 root 密码文件: /root/.mysql_root_password"
     fi
     $INSTALL_PHP && echo "✓ PHP ${PHP_VERSION}"
     $INSTALL_DOCKER && echo "✓ Docker $(docker --version | awk '{print $3}' | sed 's/,$//')"
@@ -488,6 +557,10 @@ main() {
                 INSTALL_DOCKER=true
                 shift
                 ;;
+            --demo-site)
+                CREATE_DEMO_SITE=true
+                shift
+                ;;
             --all)
                 INSTALL_NGINX=true
                 INSTALL_MARIADB=true
@@ -503,6 +576,7 @@ main() {
                 echo "  --mariadb    安装MariaDB"
                 echo "  --php[=X.X]  安装PHP (默认8.2)"
                 echo "  --docker     安装Docker"
+                echo "  --demo-site  创建包含 phpinfo 的示例站点"
                 echo "  --all        安装所有组件(Nginx+MariaDB+PHP+Docker)"
                 echo "  -h, --help   显示帮助信息"
                 echo
@@ -519,6 +593,14 @@ main() {
         esac
     done
     
+    if $INSTALL_MYSQL && $INSTALL_MARIADB; then
+        log_error "MySQL 与 MariaDB 不能同时选择。"
+        exit 1
+    fi
+    if $INSTALL_PHP; then
+        validate_php_version "${PHP_VERSION}" || exit 1
+    fi
+
     # 如果没有指定任何选项，显示交互式菜单
     if ! $INSTALL_NGINX && ! $INSTALL_MYSQL && ! $INSTALL_MARIADB && ! $INSTALL_PHP && ! $INSTALL_DOCKER; then
         echo -e "${PURPLE}======================================${NC}"
@@ -587,8 +669,8 @@ main() {
     fi
     
     # 创建日志文件
-    mkdir -p $(dirname "$LOG_FILE")
-    touch "$LOG_FILE"
+    mkdir -p "$(dirname "${LOG_FILE}")"
+    touch "${LOG_FILE}"
     
     # 执行安装
     log_info "开始安装LDNMP环境..."
@@ -606,7 +688,7 @@ main() {
     $INSTALL_DOCKER && install_docker
     
     # 创建示例站点和管理脚本
-    if $INSTALL_NGINX && $INSTALL_PHP; then
+    if $INSTALL_NGINX && $INSTALL_PHP && $CREATE_DEMO_SITE; then
         create_demo_site
     fi
     

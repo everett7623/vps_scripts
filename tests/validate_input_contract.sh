@@ -24,6 +24,14 @@ grep -Fq 'read_input "请输入时区编号或完整时区名称" "" selection' 
     "${REPO_ROOT}/scripts/system_tools/set_timezone.sh"
 grep -Fq 'read_input "请输入新的主机名" "" new_name' \
     "${REPO_ROOT}/scripts/system_tools/change_hostname.sh"
+grep -Fq 'read_backup_hostname()' \
+    "${REPO_ROOT}/scripts/system_tools/change_hostname.sh"
+
+if grep -Fq '. "${backup_path}/metadata.env"' \
+    "${REPO_ROOT}/scripts/system_tools/change_hostname.sh"; then
+    echo "Hostname backup metadata must not be sourced as shell code." >&2
+    exit 1
+fi
 
 if grep -Fq 'update_ntp_choice_from_reply' "${REPO_ROOT}/scripts/system_tools/set_timezone.sh"; then
     echo "Legacy REPLY-based NTP input remains." >&2

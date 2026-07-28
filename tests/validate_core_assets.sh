@@ -98,6 +98,7 @@ main() {
     require_file "tests/validate_python_installer_safety.sh"
     require_file "tests/validate_script_headers.sh"
     require_file "tests/validate_system_tools_launcher.sh"
+    require_file "tests/validate_system_update_reboot_policy.sh"
     require_file "tests/validate_update_log_handoff.sh"
     require_file "tests/validate_update_scripts_legacy.sh"
     require_file "tests/validate_execution_safety.sh"
@@ -105,9 +106,11 @@ main() {
     require_file "tests/validate_ui_framework.sh"
     require_file "tests/validate_ui_layout.sh"
     require_file "tests/validate_loader_performance.sh"
+    require_file "tests/validate_ldnmp_installer_safety.sh"
     require_file "tests/validate_active_category_coverage.sh"
     require_file "tests/validate_menu_eof.sh"
     require_file "tests/validate_nginx_installer_safety.sh"
+    require_file "tests/validate_upgrade_hardening.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"

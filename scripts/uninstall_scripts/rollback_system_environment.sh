@@ -134,10 +134,11 @@ case "$choice" in
         cp /etc/hosts "$BACKUP_DIR/hosts.bak"
         
         # 修改主机名
+        current_hostname=$(hostname)
         hostnamectl set-hostname "$original_hostname"
         
         # 更新hosts文件
-        sed -i "s/$(hostname)/$original_hostname/g" /etc/hosts
+        sed -i "s|${current_hostname}|${original_hostname}|g" /etc/hosts
         
         echo -e "${GREEN}系统主机名已回滚为: $original_hostname${NC}"
         ;;
@@ -191,11 +192,10 @@ case "$choice" in
         echo -e "${WHITE}回滚所有系统环境...${NC}"
         
         # 执行所有回滚操作
-        bash "$0" <<< "1"
-        bash "$0" <<< "2"
-        bash "$0" <<< "3"
-        bash "$0" <<< "4"
-        bash "$0" <<< "5"
+        for environment_choice in 1 2 3 4; do
+            printf 'y\n%s\n' "${environment_choice}" | bash "$0"
+        done
+        echo -e "${YELLOW}主机名需要手动输入，未包含在批量回滚中${NC}"
         
         echo -e "${GREEN}所有系统环境已回滚${NC}"
         ;;
@@ -210,4 +210,4 @@ echo ""
 echo -e "${GREEN}系统环境回滚完成${NC}"
 echo -e "${WHITE}备份目录: ${YELLOW}$BACKUP_DIR${NC}"
 echo ""
-read -n 1 -s -r -p "按任意键返回主菜单..."
+read -n 1 -s -r -p "按任意键返回主菜单..." || true

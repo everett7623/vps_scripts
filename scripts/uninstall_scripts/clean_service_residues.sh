@@ -114,6 +114,10 @@ case "$choice" in
         # 获取WordPress安装目录
         read -p "请输入WordPress安装目录 [/var/www/html/wordpress]: " wp_dir
         wp_dir=${wp_dir:-/var/www/html/wordpress}
+        if [[ "${wp_dir}" != /* || "${wp_dir}" == "/" || ! -d "${wp_dir}" || ! -f "${wp_dir}/wp-config.php" ]]; then
+            echo -e "${RED}错误: WordPress目录必须是包含 wp-config.php 的绝对路径${NC}"
+            exit 1
+        fi
         
         # 备份WordPress
         if [ -d "$wp_dir" ]; then
@@ -274,14 +278,10 @@ case "$choice" in
         echo -e "${WHITE}清理所有服务...${NC}"
         
         # 执行所有清理操作
-        bash "$0" <<< "1"
-        bash "$0" <<< "2"
-        bash "$0" <<< "3"
-        bash "$0" <<< "4"
-        bash "$0" <<< "5"
-        bash "$0" <<< "6"
-        bash "$0" <<< "7"
-        bash "$0" <<< "8"
+        for service_choice in 1 2 4 5 6 7 8; do
+            printf 'y\n%s\n' "${service_choice}" | bash "$0"
+        done
+        echo -e "${YELLOW}WordPress需要指定目录，未包含在批量清理中${NC}"
         
         echo -e "${GREEN}所有服务清理完成${NC}"
         ;;
@@ -296,4 +296,4 @@ echo ""
 echo -e "${GREEN}服务残留清理完成${NC}"
 echo -e "${WHITE}备份目录: ${YELLOW}$BACKUP_DIR${NC}"
 echo ""
-read -n 1 -s -r -p "按任意键返回主菜单..."
+read -n 1 -s -r -p "按任意键返回主菜单..." || true

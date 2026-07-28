@@ -66,40 +66,34 @@ fi
 echo -e "${WHITE}配置Fail2ban...${NC}"
 
 # 创建自定义配置
-cat > /etc/fail2ban/jail.local << EOF
+mkdir -p /etc/fail2ban/jail.d
+if [ -f /etc/fail2ban/jail.d/vps-scripts-sshd.local ]; then
+    cp /etc/fail2ban/jail.d/vps-scripts-sshd.local \
+        /etc/fail2ban/jail.d/vps-scripts-sshd.local.bak
+fi
+cat > /etc/fail2ban/jail.d/vps-scripts-sshd.local << EOF
 [DEFAULT]
 ignoreip = 127.0.0.1/8
-bantime = 86400  # 封禁时间(秒)
-findtime = 3600   # 查找时间(秒)
-maxretry = 5      # 最大尝试次数
+bantime = 86400
+findtime = 3600
+maxretry = 5
 backend = systemd
 
 [sshd]
 enabled = true
 port = ssh
-filter = sshd
-logpath = /var/log/auth.log
-maxretry = 3
-bantime = 86400
-
-[sshd-ddos]
-enabled = true
-port = ssh
-filter = sshd-ddos
-logpath = /var/log/auth.log
 maxretry = 3
 bantime = 86400
 EOF
 
 # 启动Fail2ban服务
 echo -e "${WHITE}启动Fail2ban服务...${NC}"
-if [ "$system_type" == "centos" ]; then
-    systemctl enable fail2ban
-    systemctl restart fail2ban
-else
-    systemctl enable fail2ban
-    systemctl restart fail2ban
+if ! fail2ban-client -t; then
+    echo -e "${RED}Fail2ban配置检查失败，已保留备份文件${NC}"
+    exit 1
 fi
+systemctl enable fail2ban
+systemctl restart fail2ban
 
 # 检查服务状态
 if systemctl is-active fail2ban &> /dev/null; then

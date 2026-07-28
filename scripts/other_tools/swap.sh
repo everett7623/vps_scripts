@@ -60,12 +60,12 @@ case "$size_choice" in
 esac
 
 # 计算SWAP大小(MB)用于显示
-if [[ $swap_size == *"G" ]]; then
-    swap_size_mb=$(echo ${swap_size%G}*1024 | bc)
-elif [[ $swap_size == *"M" ]]; then
-    swap_size_mb=${swap_size%M}
+if [[ $swap_size =~ ^([1-9][0-9]*)G$ ]]; then
+    swap_size_mb=$((BASH_REMATCH[1] * 1024))
+elif [[ $swap_size =~ ^([1-9][0-9]*)M$ ]]; then
+    swap_size_mb=${BASH_REMATCH[1]}
 else
-    echo -e "${RED}无效的大小格式，请使用G或M后缀${NC}"
+    echo -e "${RED}无效的大小格式，请使用正整数和G或M后缀${NC}"
     exit 1
 fi
 
@@ -86,6 +86,8 @@ fi
 
 # 创建SWAP文件
 echo -e "${WHITE}创建SWAP文件...${NC}"
+swapoff /swapfile 2>/dev/null || true
+rm -f /swapfile
 fallocate -l "$swap_size" /swapfile
 
 # 设置权限
@@ -101,7 +103,8 @@ swapon /swapfile
 
 # 添加到fstab
 echo -e "${WHITE}配置开机自动挂载...${NC}"
-echo '/swapfile none swap defaults 0 0' | tee -a /etc/fstab
+sed -i '\|^/swapfile[[:space:]]|d' /etc/fstab
+echo '/swapfile none swap defaults 0 0' >> /etc/fstab
 
 # 配置swappiness
 echo -e "${WHITE}配置SWAP参数...${NC}"

@@ -17,6 +17,7 @@ UPDATE_CACHE_AGE=3600
 AUTO_CONFIRM=false
 UPDATE_KERNEL=false
 SECURITY_ONLY=false
+REBOOT_AFTER_UPDATE=false
 REBOOT_REQUIRED=false
 
 PKG_MANAGER=""
@@ -47,8 +48,6 @@ else
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
 fi
-
-mkdir -p "${LOG_DIR}" "${BACKUP_DIR}"
 
 log() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "${LOG_FILE}"
@@ -117,6 +116,7 @@ show_help() {
   --auto, -y      无需交互确认
   --kernel, -k    在支持时包含内核或发行版升级
   --security, -s  在 yum/dnf 系统中仅安装安全更新
+  --reboot        仅在更新后确实需要时自动重启
   --help, -h      显示此帮助信息
 EOF
 }
@@ -312,10 +312,12 @@ check_reboot_needed() {
 
     print_warn "需要重启系统才能完成本次更新。"
 
-    if [ "${AUTO_CONFIRM}" = "true" ]; then
-        print_warn "已启用自动模式，系统将在 5 秒后重启..."
+    if [ "${REBOOT_AFTER_UPDATE}" = "true" ]; then
+        print_warn "已指定 --reboot，系统将在 5 秒后重启..."
         sleep 5
         reboot
+    elif [ "${AUTO_CONFIRM}" = "true" ]; then
+        print_warn "自动确认模式不会自动重启；请使用 --reboot 明确请求重启。"
     else
         read -r -p "是否立即重启？[y/N]: " answer
         [[ "${answer}" =~ ^[Yy]$ ]] && reboot
@@ -334,6 +336,7 @@ OS: ${OS_TYPE}
 Package Manager: ${PKG_MANAGER}
 Security Only: ${SECURITY_ONLY}
 Kernel/Dist Upgrade: ${UPDATE_KERNEL}
+Reboot Requested: ${REBOOT_AFTER_UPDATE}
 Reboot Required: ${REBOOT_REQUIRED}
 Log File: ${LOG_FILE}
 ==================================================
@@ -348,6 +351,7 @@ main() {
             --auto|-y) AUTO_CONFIRM=true ;;
             --kernel|-k) UPDATE_KERNEL=true ;;
             --security|-s) SECURITY_ONLY=true ;;
+            --reboot) REBOOT_AFTER_UPDATE=true ;;
             --help|-h) show_help; exit 0 ;;
             *) print_error "未知参数：$1"; show_help; exit 1 ;;
         esac
@@ -355,6 +359,7 @@ main() {
     done
 
     check_root
+    mkdir -p "${LOG_DIR}" "${BACKUP_DIR}"
     print_header "系统更新工具"
     print_runtime_context "update_system.sh" "系统更新" "${LOG_FILE}"
     detect_system

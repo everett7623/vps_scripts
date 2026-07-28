@@ -473,7 +473,10 @@ ask_yes_no() {
     [ "${default}" = "y" ] && prompt="[Y/n]"
 
     while true; do
-        read -r -p "${question} ${prompt}: " answer
+        if ! read -r -p "${question} ${prompt}: " answer; then
+            print_warn "输入已结束，已取消操作。"
+            return 1
+        fi
         answer=${answer:-"${default}"}
         case "${answer,,}" in
             y|yes) return 0 ;;
@@ -508,10 +511,12 @@ read_input() {
     local input=""
 
     if [ -n "${default}" ]; then
-        read -r -p "${prompt} [${default}]: " input
+        if ! read -r -p "${prompt} [${default}]: " input; then
+            return 1
+        fi
         input=${input:-$default}
-    else
-        read -r -p "${prompt}: " input
+    elif ! read -r -p "${prompt}: " input; then
+        return 1
     fi
 
     if [ -n "${variable_name}" ]; then

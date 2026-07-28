@@ -30,10 +30,15 @@ Version 1.1.1 closes the persistent-command startup gap from Issue #1. The launc
 - Fixed installer quoting, input validation, cleanup, package-manager, strict-mode, and build concurrency defects
 - Moved PostgreSQL WAL archives outside the primary data directory
 - Added shared `die()` and build-from-source helpers
+- Hardened the Nezha agent installer with input validation, isolated archive verification, systemd escaping, and unit verification
+- Replaced first-party remote shell pipelines in LDNMP, dependency installation, Jenkins build tooling, and bandwidth testing with validated temporary scripts
+- Routed third-party project installer entries through launcher confirmation, isolated download, syntax validation, and execution
+- Made the LDNMP compatibility installer validate requested PHP/database choices, protect generated credentials, and require explicit demo-site opt-in
+- Separated non-interactive system-update confirmation from reboots, which now require explicit `--reboot` opt-in
 
 ### Validation and CI
 
-- 34 repository validation scripts now cover paths, categories, UI, strict mode, installers, release metadata, privacy, and execution safety
+- 39 repository validation scripts now cover paths, categories, UI, strict mode, installers, release metadata, privacy, execution safety, and upgrade-hardening policy
 - Release metadata validation keeps the version, date, changelog, README, version policy, config, and launcher synchronized
 - ShellCheck error findings now fail CI instead of being ignored
 - Fixed `validate_update_scripts_legacy.sh` to match the removed legacy directory
@@ -45,13 +50,12 @@ Version 1.1.1 closes the persistent-command startup gap from Issue #1. The launc
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
-## Next Safety Round
+## Next Modernization Round
 
-- Change BBR to a dedicated `/etc/sysctl.d/` drop-in instead of replacing `/etc/sysctl.conf`
-- Make Swap changes idempotent and preserve unrelated swap devices and `/etc/fstab` entries
-- Rework Fail2ban defaults for distro-specific logging and existing local configuration
-- Validate and escape Nezha agent inputs before writing systemd configuration
-- Replace remaining third-party `curl | sh` and architecture-specific commands with reviewed wrappers
+- Split the LDNMP compatibility facade into calls to focused maintained installers
+- Add mocked behavioral tests for package managers, systemd, downloads, and destructive cleanup paths
+- Add non-interactive dry-run/status modes to additional state-changing utilities
+- Review project-owned installer archives for checksum or signature validation where upstream publishes verifiable metadata
 
 ## Success Criteria For Next Release
 

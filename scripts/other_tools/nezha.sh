@@ -31,9 +31,23 @@ case "$confirm" in
 esac
 
 # 获取哪吒监控服务器信息
-read -p "请输入哪吒监控服务器地址: " server
-read -p "请输入哪吒监控服务器端口: " port
-read -p "请输入客户端唯一标识: " secret
+read -r -p "请输入哪吒监控服务器地址: " server
+read -r -p "请输入哪吒监控服务器端口: " port
+read -r -p "请输入客户端唯一标识: " secret
+
+if [[ ! "${server}" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] &&
+   [[ ! "${server}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    echo -e "${RED}错误: 服务器地址必须是域名或 IPv4 地址${NC}"
+    exit 1
+fi
+if [[ ! "${port}" =~ ^[0-9]+$ ]] || [ "${port}" -lt 1 ] || [ "${port}" -gt 65535 ]; then
+    echo -e "${RED}错误: 端口必须在 1-65535 范围内${NC}"
+    exit 1
+fi
+if [ -z "${secret}" ] || [[ "${secret}" == *$'\n'* ]] || [[ "${secret}" == *$'\r'* ]]; then
+    echo -e "${RED}错误: 客户端唯一标识不能为空且不能包含换行符${NC}"
+    exit 1
+fi
 
 # 安装必要依赖
 echo -e "${WHITE}安装必要依赖...${NC}"
@@ -46,8 +60,12 @@ fi
 
 # 下载并安装哪吒客户端
 echo -e "${WHITE}下载并安装哪吒客户端...${NC}"
+WORK_DIR=$(mktemp -d "/tmp/nezha-agent.XXXXXX") || {
+    echo -e "${RED}错误: 创建临时目录失败${NC}"
+    exit 1
+}
+trap 'rm -rf -- "${WORK_DIR}"' EXIT
 mkdir -p /opt/nezha
-cd /opt/nezha || exit
 
 # 获取系统架构
 arch=$(uname -m)
@@ -68,11 +86,22 @@ case $arch in
 esac
 
 # 下载客户端
-wget -q https://github.com/naiba/nezha/releases/latest/download/nezha-agent_linux_$arch.tar.gz
-tar -xzf nezha-agent_linux_$arch.tar.gz
-rm nezha-agent_linux_$arch.tar.gz
+ARCHIVE_FILE="${WORK_DIR}/nezha-agent.tar.gz"
+if ! wget -qO "${ARCHIVE_FILE}" "https://github.com/naiba/nezha/releases/latest/download/nezha-agent_linux_${arch}.tar.gz" ||
+   ! tar -tzf "${ARCHIVE_FILE}" | grep -qx 'nezha-agent'; then
+    echo -e "${RED}错误: 下载内容无效或不包含 nezha-agent${NC}"
+    exit 1
+fi
+tar -xzf "${ARCHIVE_FILE}" -C "${WORK_DIR}" --no-same-owner
+if [ ! -f "${WORK_DIR}/nezha-agent" ]; then
+    echo -e "${RED}错误: 未找到 Nezha Agent 可执行文件${NC}"
+    exit 1
+fi
+install -m 0755 "${WORK_DIR}/nezha-agent" /opt/nezha/nezha-agent
 
 # 创建服务
+server_arg=$(systemd-escape -- "${server}:${port}")
+secret_arg=$(systemd-escape -- "${secret}")
 cat > /etc/systemd/system/nezha-agent.service << EOF
 [Unit]
 Description=Nezha Agent
@@ -82,7 +111,7 @@ Wants=network.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/nezha
-ExecStart=/opt/nezha/nezha-agent -s $server:$port -p $secret
+ExecStart=/opt/nezha/nezha-agent -s ${server_arg} -p ${secret_arg}
 Restart=always
 RestartSec=5
 TimeoutStopSec=5
@@ -90,6 +119,10 @@ TimeoutStopSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+if ! systemd-analyze verify /etc/systemd/system/nezha-agent.service; then
+    echo -e "${RED}错误: systemd 服务配置校验失败${NC}"
+    exit 1
+fi
 
 # 启动服务
 echo -e "${WHITE}启动哪吒监控客户端...${NC}"

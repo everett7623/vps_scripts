@@ -580,6 +580,9 @@ run_repo_script() {
 run_remote_script_url() {
     local url="${1}"
     local label="${2}"
+    shift 2
+    local -a script_args=("$@")
+    local temp_root=""
     local temp_file=""
 
     print_header
@@ -594,39 +597,44 @@ run_remote_script_url() {
         return 0
     fi
 
-    temp_file=$(mktemp "/tmp/vps_remote_script.XXXXXX") || {
-        echo -e "${RED}[错误] 创建临时文件失败。${RESET}"
+    temp_root=$(mktemp -d "/tmp/vps_remote_script.XXXXXX") || {
+        echo -e "${RED}[错误] 创建临时目录失败。${RESET}"
         pause_for_menu
         return 1
     }
+    temp_file="${temp_root}/script.sh"
 
     if ! download_file_with_tool "${url}" "${temp_file}" || [ ! -s "${temp_file}" ]; then
-        rm -f "${temp_file}"
+        rm -rf -- "${temp_root}"
         echo -e "${RED}[错误] 下载第三方脚本失败。${RESET}"
         pause_for_menu
         return 1
     fi
 
     if ! bash -n "${temp_file}" 2>/dev/null; then
-        rm -f "${temp_file}"
+        rm -rf -- "${temp_root}"
         echo -e "${RED}[错误] 下载内容语法检查未通过，已拒绝执行。${RESET}"
         pause_for_menu
         return 1
     fi
 
     chmod +x "${temp_file}" 2>/dev/null || true
-    if ! bash "${temp_file}"; then
+    local exit_code=0
+    (cd "${temp_root}" && bash "${temp_file}" "${script_args[@]}") || exit_code=$?
+    if [ "${exit_code}" -ne 0 ]; then
         echo ""
         echo -e "${RED}[错误] 第三方脚本执行失败。${RESET}"
     fi
 
-    rm -f "${temp_file}"
+    rm -rf -- "${temp_root}"
     pause_for_menu
+    return "${exit_code}"
 }
 
 run_remote_command() {
     local command_to_run="${1}"
     local description="${2:-third-party command}"
+    local temp_root=""
     local temp_file=""
 
     print_header
@@ -641,11 +649,12 @@ run_remote_command() {
         return 0
     fi
 
-    temp_file=$(mktemp "/tmp/vps_remote_command.XXXXXX") || {
-        echo -e "${RED}[错误] 创建临时命令文件失败。${RESET}"
+    temp_root=$(mktemp -d "/tmp/vps_remote_command.XXXXXX") || {
+        echo -e "${RED}[错误] 创建临时命令目录失败。${RESET}"
         pause_for_menu
         return 1
     }
+    temp_file="${temp_root}/command.sh"
 
     {
         printf '%s\n' '#!/bin/bash'
@@ -654,19 +663,22 @@ run_remote_command() {
     } > "${temp_file}"
 
     if ! bash -n "${temp_file}" 2>/dev/null; then
-        rm -f "${temp_file}"
+        rm -rf -- "${temp_root}"
         echo -e "${RED}[错误] 命令脚本语法检查未通过，已拒绝执行。${RESET}"
         pause_for_menu
         return 1
     fi
 
-    if ! bash "${temp_file}"; then
+    local exit_code=0
+    (cd "${temp_root}" && bash "${temp_file}") || exit_code=$?
+    if [ "${exit_code}" -ne 0 ]; then
         echo ""
         echo -e "${RED}[错误] 第三方命令执行失败。${RESET}"
     fi
 
-    rm -f "${temp_file}"
+    rm -rf -- "${temp_root}"
     pause_for_menu
+    return "${exit_code}"
 }
 
 system_tools_menu() {
@@ -813,7 +825,7 @@ service_install_menu() {
             19) run_repo_script "scripts/service_install/jenkins.sh" ;;
             20) run_repo_script "scripts/service_install/kubernetes.sh" ;;
             21) run_repo_script "scripts/service_install/wppanel.sh" ;;
-            22) run_remote_command "curl -fsSL https://caddyserver.com/api/download?os=linux&arch=amd64 -o /usr/bin/caddy && chmod +x /usr/bin/caddy && caddy version" "Caddy web server" ;;
+            22) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o /usr/bin/caddy && chmod +x /usr/bin/caddy && /usr/bin/caddy version" "Caddy web server" ;;
             23) run_remote_command "docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest" "Portainer CE" ;;
             0) return ;;
             *) invalid_choice ;;
@@ -852,24 +864,24 @@ community_menu() {
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
-            2) run_remote_command "wget -qO- bench.sh | bash" "Bench.sh quick benchmark" ;;
-            3) run_remote_command "bash <(curl -Ls https://Check.Place) -I" "XY IP quality check" ;;
-            4) run_remote_command "bash <(curl -Ls https://Check.Place) -N" "XY network quality check" ;;
-            5) run_remote_command "bash <(curl -Ls https://Check.Place) -H" "XY hardware check" ;;
-            6) run_remote_command "bash <(curl -Ls https://raw.githubusercontent.com/sjlleo/nexttrace/main/nt_install.sh)" "NextTrace installer" ;;
-            7) run_remote_command "curl -sSL https://abc.sd | bash" "NodeLoc benchmark" ;;
-            8) run_remote_command "bash <(curl -sL https://run.NodeQuality.com)" "Nodequality test" ;;
+            2) run_remote_script_url "https://bench.sh" "Bench.sh quick benchmark" ;;
+            3) run_remote_script_url "https://Check.Place" "XY IP quality check" "-I" ;;
+            4) run_remote_script_url "https://Check.Place" "XY network quality check" "-N" ;;
+            5) run_remote_script_url "https://Check.Place" "XY hardware check" "-H" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/sjlleo/nexttrace/main/nt_install.sh" "NextTrace installer" ;;
+            7) run_remote_script_url "https://abc.sd" "NodeLoc benchmark" ;;
+            8) run_remote_script_url "https://run.NodeQuality.com" "Nodequality test" ;;
             9) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
             10) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
             11) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
-            12) run_remote_command "curl -fsSL https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh -o ssh_tool.sh && chmod +x ssh_tool.sh && ./ssh_tool.sh" "SSH tool" ;;
-            13) run_remote_command "wget -O jcnfbox.sh https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh && chmod +x jcnfbox.sh && clear && ./jcnfbox.sh" "JCNF toolbox" ;;
+            12) run_remote_script_url "https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh" "SSH tool" ;;
+            13) run_remote_script_url "https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh" "JCNF toolbox" ;;
             14) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
-            15) run_remote_command "wget -O box.sh https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh && chmod +x box.sh && clear && ./box.sh" "BlueSkyXN toolbox" ;;
+            15) run_remote_script_url "https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh" "BlueSkyXN toolbox" ;;
             16) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
-            17) run_remote_command "wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh" "AutoTrace" ;;
-            18) run_remote_command "wget --no-check-certificate -O memoryCheck.sh https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh && chmod +x memoryCheck.sh && bash memoryCheck.sh" "Oversell check" ;;
-            19) run_remote_command "bash <(curl -sL https://sh.nodeseek.com)" "NodeScriptKit" ;;
+            17) run_remote_script_url "https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh" "AutoTrace" ;;
+            18) run_remote_script_url "https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh" "Oversell check" ;;
+            19) run_remote_script_url "https://sh.nodeseek.com" "NodeScriptKit" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -936,19 +948,19 @@ other_tools_menu() {
             1) run_repo_script "scripts/other_tools/bbr.sh" ;;
             2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
             3) run_repo_script "scripts/other_tools/nezha.sh" ;;
-            4) run_remote_command "curl -fsSL https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh -o install-komari.sh && chmod +x install-komari.sh && sudo ./install-komari.sh" "Komari monitor" ;;
+            4) run_remote_script_url "https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh" "Komari monitor" ;;
             5) run_repo_script "scripts/other_tools/swap.sh" ;;
             6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
-            7) run_remote_command "wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && chmod +x menu.sh && bash menu.sh" "Cloudflare WARP" ;;
-            8) run_remote_command "wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh && bash InstallNET.sh" "DD system reinstall" ;;
-            9) run_remote_command "curl https://get.acme.sh | sh -s email=my@example.com" "acme.sh SSL certificate tool" ;;
+            7) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
+            8) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
+            9) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
             10) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
-            11) run_remote_command "sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" -- --unattended" "oh-my-zsh" ;;
+            11) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
             12) run_remote_command "docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1" "Uptime Kuma monitor" ;;
-            13) run_remote_command "curl -fsSL https://tailscale.com/install.sh | sh" "Tailscale mesh VPN" ;;
-            14) run_remote_command "wget https://raw.githubusercontent.com/funnyzak/frpc/main/frpc_linux_install.sh -O frpc_install.sh && chmod +x frpc_install.sh && bash frpc_install.sh" "FRP client (frpc)" ;;
-            15) run_remote_command "curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
-            16) run_remote_command "curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash" "FileBrowser file manager" ;;
+            13) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
+            14) run_remote_script_url "https://raw.githubusercontent.com/funnyzak/frpc/main/frpc_linux_install.sh" "FRP client (frpc)" ;;
+            15) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
+            16) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager" ;;
             17) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
             0) return ;;
             *) invalid_choice ;;

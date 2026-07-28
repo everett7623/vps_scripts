@@ -11,12 +11,13 @@
 - [x] Fix `set -e` preempting pyenv pipeline guard in python.sh
 - [x] Fix `nproc`→`make -j0` (unlimited) in ruby.sh and redis.sh
 
-## P0 (next safety round)
+## P0 (completed safety round)
 
-- [ ] Make `bbr.sh` use a project-owned `/etc/sysctl.d/` drop-in and reversible backup
-- [ ] Make `swap.sh` idempotent without `swapoff -a` or duplicate `/etc/fstab` entries
-- [ ] Preserve existing Fail2ban configuration and support distro-specific SSH logging
-- [ ] Validate and escape all Nezha systemd unit inputs
+- [x] Make `bbr.sh` use a project-owned `/etc/sysctl.d/` drop-in and reversible backup
+- [x] Make `swap.sh` idempotent without `swapoff -a` or duplicate `/etc/fstab` entries
+- [x] Preserve existing Fail2ban configuration and support distro-specific SSH logging
+- [x] Validate and escape all Nezha systemd unit inputs
+- [x] Route third-party project installer scripts through isolated download, syntax validation, confirmation, and execution paths
 
 ## P1 (done)
 
@@ -51,9 +52,17 @@
 - [x] Add `set -euo pipefail` to remaining 8 service_install scripts (1panel, aapanel, amh, btpanel, cyberpanel, jenkins, ruby, rust)
 - [x] Refactor `network_test/` category for consistent structure and output
 - [x] Refactor `performance_test/` category for consistent structure and output
+- [x] Add validated arguments to the third-party script wrapper for official installer flags
 - [ ] Add more non-interactive safety flags where appropriate
 
 ## P3 (new)
+
+- [x] Remove direct remote shell pipelines from first-party LDNMP, dependency, Jenkins, and bandwidth-test flows
+- [x] Add an upgrade-hardening regression test for launcher, Nezha, LDNMP, and bandwidth-test policies
+- [x] Add LDNMP input, credential-disclosure, and demo-site safety regression coverage
+- [x] Require explicit `--reboot` for non-interactive system-update restarts
+
+## P3 (existing)
 
 - [x] Extract repeated build-from-source pattern into shared helper in `lib/common_functions.sh`
 - [x] Add `die()` helper function to consolidate 30+ scattered `print_error; exit 1` patterns

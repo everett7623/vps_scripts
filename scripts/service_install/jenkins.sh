@@ -567,6 +567,21 @@ EOF
     chown "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_INIT_DIR/03-install-plugins.groovy"
 }
 
+run_nodejs_setup() {
+    local setup_file=""
+
+    setup_file=$(mktemp "/tmp/jenkins-nodesource.XXXXXX") || return 1
+    if ! curl -fsSL https://deb.nodesource.com/setup_lts.x -o "${setup_file}" ||
+       ! bash -n "${setup_file}"; then
+        rm -f -- "${setup_file}"
+        return 1
+    fi
+    local exit_code=0
+    bash "${setup_file}" || exit_code=$?
+    rm -f -- "${setup_file}"
+    return "${exit_code}"
+}
+
 # 安装构建工具
 install_build_tools() {
     if [[ "$INSTALL_TOOLS" != true ]]; then
@@ -593,7 +608,7 @@ install_build_tools() {
     
     # 安装Node.js
     log "${YELLOW}安装Node.js...${NC}"
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+    run_nodejs_setup
     apt-get install -y nodejs
     
     # 配置环境变量
