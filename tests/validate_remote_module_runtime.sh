@@ -7,7 +7,7 @@ REPO_ROOT="${REPO_ROOT_OVERRIDE:-${REPO_ROOT_DEFAULT}}"
 RUNTIME_ROOT=$(mktemp -d "/tmp/vps-runtime-test.XXXXXX")
 
 cleanup() {
-    rm -rf "${RUNTIME_ROOT}"
+    rm -rf -- "${RUNTIME_ROOT}"
 }
 trap cleanup EXIT
 

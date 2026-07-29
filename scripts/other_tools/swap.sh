@@ -87,7 +87,7 @@ fi
 # 创建SWAP文件
 echo -e "${WHITE}创建SWAP文件...${NC}"
 swapoff /swapfile 2>/dev/null || true
-rm -f /swapfile
+rm -f -- /swapfile
 fallocate -l "$swap_size" /swapfile
 
 # 设置权限

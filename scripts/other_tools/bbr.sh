@@ -104,7 +104,7 @@ uninstall_bbr() {
     
     # 恢复备份配置
     if [ -f /etc/sysctl.d/99-vps-bbr.conf ]; then
-        rm -f /etc/sysctl.d/99-vps-bbr.conf
+        rm -f -- /etc/sysctl.d/99-vps-bbr.conf
         echo -e "${YELLOW}已移除本工具写入的BBR配置。${NC}"
     else
         # 如果没有备份，则重置BBR相关配置

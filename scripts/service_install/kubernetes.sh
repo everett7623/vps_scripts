@@ -552,7 +552,16 @@ init_master() {
     log "${CYAN}初始化Kubernetes主节点...${NC}"
     
     # 生成kubeadm配置文件
-    cat > /tmp/kubeadm-config.yaml << EOF
+    local kubeadm_config
+    local kubeadm_log
+    kubeadm_config=$(mktemp "/tmp/kubeadm-config.XXXXXX") || { log "${RED}错误: 创建kubeadm配置文件失败${NC}"; exit 1; }
+    kubeadm_log=$(mktemp "/tmp/kubeadm-init.XXXXXX") || {
+        log "${RED}错误: 创建kubeadm日志文件失败${NC}"
+        rm -f -- "$kubeadm_config"
+        exit 1
+    }
+
+    cat > "$kubeadm_config" << EOF
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 localAPIEndpoint:
@@ -575,27 +584,28 @@ EOF
 
     # 如果使用中国镜像
     if [[ "$USE_CHINA_MIRROR" = true ]]; then
-        cat >> /tmp/kubeadm-config.yaml << EOF
+        cat >> "$kubeadm_config" << EOF
 imageRepository: registry.aliyuncs.com/google_containers
 EOF
     fi
-    
+
     # 初始化集群
     set +e
-    kubeadm init --config=/tmp/kubeadm-config.yaml | tee /tmp/kubeadm_init.log
+    kubeadm init --config="$kubeadm_config" | tee "$kubeadm_log"
     local init_exit_code=${PIPESTATUS[0]}
     set -e
     
     # 检查初始化结果
     if [[ ${init_exit_code} -ne 0 ]]; then
         log "${RED}错误: Kubernetes集群初始化失败${NC}"
+        rm -f -- "$kubeadm_config" "$kubeadm_log"
         exit 1
     fi
     
     # 配置kubectl
-    mkdir -p $HOME/.kube
-    cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-    chown $(id -u):$(id -g) $HOME/.kube/config
+    mkdir -p "$HOME/.kube"
+    cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+    chown "$(id -u):$(id -g)" "$HOME/.kube/config"
     
     # 对于单节点集群，允许在主节点调度Pod
     if [[ "$DEPLOY_MODE" == "single" ]]; then
@@ -604,8 +614,13 @@ EOF
     fi
     
     # 保存join命令
-    grep -A 2 "kubeadm join" /tmp/kubeadm_init.log > "$JOIN_COMMAND_FILE"
+    if ! grep -A 2 "kubeadm join" "$kubeadm_log" > "$JOIN_COMMAND_FILE"; then
+        log "${RED}错误: 未能生成工作节点加入命令${NC}"
+        rm -f -- "$kubeadm_config" "$kubeadm_log"
+        exit 1
+    fi
     chmod 600 "$JOIN_COMMAND_FILE"
+    rm -f -- "$kubeadm_config" "$kubeadm_log"
     
     log "${GREEN}Kubernetes主节点初始化完成${NC}"
 }
@@ -685,7 +700,9 @@ install_dashboard() {
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
     
     # 创建管理员用户
-    cat > /tmp/dashboard-admin.yaml << EOF
+    local dashboard_admin_file
+    dashboard_admin_file=$(mktemp "/tmp/dashboard-admin.XXXXXX") || { log "${RED}错误: 创建Dashboard管理员配置失败${NC}"; return 1; }
+    cat > "$dashboard_admin_file" << EOF
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -705,8 +722,13 @@ subjects:
   name: admin-user
   namespace: kubernetes-dashboard
 EOF
-    
-    kubectl apply -f /tmp/dashboard-admin.yaml
+
+    if ! kubectl apply -f "$dashboard_admin_file"; then
+        log "${RED}错误: 创建Dashboard管理员失败${NC}"
+        rm -f -- "$dashboard_admin_file"
+        return 1
+    fi
+    rm -f -- "$dashboard_admin_file"
     
     # 修改Service类型为NodePort
     kubectl patch svc kubernetes-dashboard -n kubernetes-dashboard -p '{"spec":{"type":"NodePort","ports":[{"port":443,"targetPort":8443,"nodePort":30443}]}}'
@@ -758,17 +780,28 @@ install_metrics() {
     log "${CYAN}安装Metrics Server...${NC}"
     
     # 下载并修改配置
-    wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml -O /tmp/metrics-server.yaml
-    
+    local metrics_server_file
+    metrics_server_file=$(mktemp "/tmp/metrics-server.XXXXXX") || { log "${RED}错误: 创建Metrics Server配置文件失败${NC}"; return 1; }
+    if ! wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml -O "$metrics_server_file"; then
+        log "${RED}错误: 下载Metrics Server配置失败${NC}"
+        rm -f -- "$metrics_server_file"
+        return 1
+    fi
+
     # 添加启动参数以支持自签名证书
-    sed -i '/args:/a\        - --kubelet-insecure-tls' /tmp/metrics-server.yaml
-    
+    sed -i '/args:/a\\        - --kubelet-insecure-tls' "$metrics_server_file"
+
     # 如果使用中国镜像
     if [[ "$USE_CHINA_MIRROR" = true ]]; then
-        sed -i 's#registry.k8s.io/metrics-server/#registry.cn-hangzhou.aliyuncs.com/google_containers/#g' /tmp/metrics-server.yaml
+        sed -i 's#registry.k8s.io/metrics-server/#registry.cn-hangzhou.aliyuncs.com/google_containers/#g' "$metrics_server_file"
     fi
-    
-    kubectl apply -f /tmp/metrics-server.yaml
+
+    if ! kubectl apply -f "$metrics_server_file"; then
+        log "${RED}错误: 安装Metrics Server失败${NC}"
+        rm -f -- "$metrics_server_file"
+        return 1
+    fi
+    rm -f -- "$metrics_server_file"
     
     log "${GREEN}Metrics Server安装完成${NC}"
 }
@@ -782,17 +815,26 @@ install_helm() {
     log "${CYAN}安装Helm 3...${NC}"
     
     # 下载安装脚本
-    curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-    chmod 700 /tmp/get_helm.sh
-    
+    local helm_installer
+    helm_installer=$(mktemp "/tmp/get-helm.XXXXXX") || { log "${RED}错误: 创建Helm安装脚本失败${NC}"; return 1; }
+    if ! curl -fsSL -o "$helm_installer" https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3; then
+        log "${RED}错误: 下载Helm安装脚本失败${NC}"
+        rm -f -- "$helm_installer"
+        return 1
+    fi
+    chmod 700 "$helm_installer"
+
     # 安装Helm
     if [[ "$USE_CHINA_MIRROR" = true ]]; then
         export HELM_INSTALL_DIR=/usr/local/bin
-        /tmp/get_helm.sh
-    else
-        /tmp/get_helm.sh
     fi
-    
+    if ! "$helm_installer"; then
+        log "${RED}错误: Helm安装脚本执行失败${NC}"
+        rm -f -- "$helm_installer"
+        return 1
+    fi
+    rm -f -- "$helm_installer"
+
     # 添加常用仓库
     helm repo add stable https://charts.helm.sh/stable
     helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -850,7 +892,9 @@ create_test_app() {
     kubectl create namespace test-app 2>/dev/null || true
     
     # 部署nginx测试应用
-    cat > /tmp/test-app.yaml << EOF
+    local test_app_file
+    test_app_file=$(mktemp "/tmp/test-app.XXXXXX") || { log "${RED}错误: 创建测试应用配置失败${NC}"; return 1; }
+    cat > "$test_app_file" << EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -893,8 +937,13 @@ spec:
     targetPort: 80
     nodePort: 30088
 EOF
-    
-    kubectl apply -f /tmp/test-app.yaml
+
+    if ! kubectl apply -f "$test_app_file"; then
+        log "${RED}错误: 部署测试应用失败${NC}"
+        rm -f -- "$test_app_file"
+        return 1
+    fi
+    rm -f -- "$test_app_file"
     
     log "${GREEN}测试应用创建完成${NC}"
     log "${YELLOW}访问地址: http://$(hostname -I | awk '{print $1}'):30088${NC}"

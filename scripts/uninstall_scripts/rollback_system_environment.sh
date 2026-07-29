@@ -87,7 +87,7 @@ case "$choice" in
         fi
         
         # 删除残留文件
-        rm -rf /etc/fail2ban
+        rm -rf -- /etc/fail2ban
         
         echo -e "${GREEN}Fail2ban安全防护已回滚${NC}"
         ;;
@@ -105,7 +105,7 @@ case "$choice" in
         sed -i '/swap/d' /etc/fstab
         
         # 删除swap文件
-        rm -f /swapfile
+        rm -f -- /swapfile
         
         echo -e "${GREEN}Swap空间已回滚${NC}"
         ;;

@@ -49,7 +49,7 @@ safe_remove_dir() {
 
     case "$target" in
         "$INSTALL_LIB_DIR"|"$LOG_DIR")
-            [[ -d $target ]] && rm -rf -- "$target"
+            [[ -d "$target" ]] && rm -rf -- "$target"
             ;;
         *)
             error_exit "拒绝删除非预期目录: $target"

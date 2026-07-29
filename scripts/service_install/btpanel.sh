@@ -173,9 +173,10 @@ install_lnmp_env() {
     
     log "${CYAN}安装LNMP环境...${NC}"
     
-    # 创建自动安装脚本
-    cat > /tmp/install_lnmp.sh << 'EOF'
+    # 执行自动安装步骤
+    bash <<'EOF'
 #!/bin/bash
+set -euo pipefail
 echo "正在安装LNMP环境..."
 
 # 安装Nginx
@@ -189,10 +190,6 @@ echo "4" | bt 1
 
 echo "LNMP环境安装完成"
 EOF
-    
-    chmod +x /tmp/install_lnmp.sh
-    /tmp/install_lnmp.sh
-    rm -f /tmp/install_lnmp.sh
 }
 
 # 安装LAMP
@@ -203,9 +200,10 @@ install_lamp_env() {
     
     log "${CYAN}安装LAMP环境...${NC}"
     
-    # 创建自动安装脚本
-    cat > /tmp/install_lamp.sh << 'EOF'
+    # 执行自动安装步骤
+    bash <<'EOF'
 #!/bin/bash
+set -euo pipefail
 echo "正在安装LAMP环境..."
 
 # 安装Apache
@@ -219,10 +217,6 @@ echo "4" | bt 1
 
 echo "LAMP环境安装完成"
 EOF
-    
-    chmod +x /tmp/install_lamp.sh
-    /tmp/install_lamp.sh
-    rm -f /tmp/install_lamp.sh
 }
 
 # 安装Docker

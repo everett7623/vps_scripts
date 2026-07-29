@@ -51,7 +51,7 @@ cleanup() {
     [ -d "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"
     [ -d "${TEST_DIR:-}" ] && rm -rf -- "$TEST_DIR"
     # 清理测试文件
-    rm -f /tmp/test_file_* 2>/dev/null || true
+    rm -f -- /tmp/test_file_* 2>/dev/null || true
 }
 
 trap cleanup EXIT
@@ -192,7 +192,7 @@ dd_test() {
     fi
     
     # 清理测试文件
-    rm -f "$TEST_DIR/test_write"
+    rm -f -- "$TEST_DIR/test_write"
     
     # 保存结果
     {
@@ -388,7 +388,7 @@ fs_benchmark() {
     
     start_time=$(date +%s.%N)
     
-    rm -f "$TEST_DIR"/small_file_*
+    rm -f -- "$TEST_DIR"/small_file_*
     sync
     
     end_time=$(date +%s.%N)

@@ -235,7 +235,7 @@ install_rbenv() {
     if [[ -d "$RBENV_ROOT" ]] && [[ "$FORCE_INSTALL" = false ]]; then
         log "${YELLOW}rbenv已存在${NC}"
     else
-        rm -rf "$RBENV_ROOT"
+        rm -rf -- "$RBENV_ROOT"
         git clone https://github.com/rbenv/rbenv.git "$RBENV_ROOT"
     fi
     

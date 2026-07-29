@@ -6,7 +6,7 @@ REPO_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 TEST_ROOT=$(mktemp -d "/tmp/vps-command-test.XXXXXX")
 
 cleanup() {
-    rm -rf "${TEST_ROOT}"
+    rm -rf -- "${TEST_ROOT}"
 }
 trap cleanup EXIT
 

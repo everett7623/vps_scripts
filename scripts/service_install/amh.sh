@@ -306,11 +306,11 @@ uninstall_amh() {
     fi
     
     # 删除文件
-    rm -rf /home/amh
-    rm -rf /home/wwwroot
-    rm -rf /home/mysql_data
-    rm -f /usr/local/bin/amh
-    rm -f /etc/init.d/amh-*
+    rm -rf -- /home/amh
+    rm -rf -- /home/wwwroot
+    rm -rf -- /home/mysql_data
+    rm -f -- /usr/local/bin/amh
+    rm -f -- /etc/init.d/amh-*
     
     # 删除用户
     userdel -r www 2>/dev/null

@@ -4,7 +4,9 @@
 > 兼容入口 `vps_scripts.sh` 以 legacy-only 状态保留，仅维护旧命令转交能力；新功能统一进入 `vps.sh` 和模块脚本。
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && bash "$tmp_script"
+rm -f "$tmp_script"
 ```
 
 <div align="center">
@@ -113,19 +115,25 @@ Fedora、Arch 等发行版中的部分脚本可能可用，但不在当前正式
 ### 推荐方式：模块化主入口
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && bash "$tmp_script"
+rm -f "$tmp_script"
 ```
 
 如果没有 `curl`，也可以使用：
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
+wget -qO "$tmp_script" https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh && bash "$tmp_script"
+rm -f "$tmp_script"
 ```
 
 ### 兼容方式：旧入口
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh)
+tmp_script=$(mktemp /tmp/vps-legacy.XXXXXX) || exit 1
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh -o "$tmp_script" && bash "$tmp_script"
+rm -f "$tmp_script"
 ```
 
 ### 本地使用
@@ -142,8 +150,9 @@ chmod +x vps.sh
 首次在交互终端中以 root 身份运行主启动器时，如果系统中没有本项目管理的 `vps` 命令，会自动安装快捷命令。已有同名但不属于本项目的命令不会被自动覆盖。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh
-bash /tmp/vps.sh --install
+tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && bash "$tmp_script" --install
+rm -f "$tmp_script"
 vps
 ```
 
@@ -153,7 +162,9 @@ vps
 `VPS_AUTO_INSTALL_COMMAND=true` 可在非交互场景中强制尝试创建（仍不会自动覆盖无关的同名命令）。如需禁止首次运行时自动创建快捷命令，可设置：
 
 ```bash
-VPS_AUTO_INSTALL_COMMAND=false bash <(curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh)
+tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && VPS_AUTO_INSTALL_COMMAND=false bash "$tmp_script"
+rm -f "$tmp_script"
 ```
 
 ### 使用建议

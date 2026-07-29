@@ -368,11 +368,14 @@ install_wizard() {
     fi
     
     # 记录安装选项
-    cat > /tmp/cyberpanel_install_options.txt << EOF
+    local options_file
+    options_file=$(mktemp "/tmp/cyberpanel-options.XXXXXX") || { log_error "创建安装选项记录失败"; exit 1; }
+    cat > "$options_file" << EOF
 版本选择: $version_choice
 完整服务: $full_service
 安装时间: $(date)
 EOF
+    log_info "安装选项已记录: $options_file"
     
     # 执行安装
     log_info "开始下载并执行Cyberpanel官方安装脚本..."
@@ -389,7 +392,11 @@ EOF
     local install_script
     install_script=$(mktemp "/tmp/cyberpanel_install.XXXXXX") || { log_error "创建临时文件失败"; exit 1; }
     if curl -fsSL "$CYBERPANEL_URL" -o "$install_script" || wget -q -O "$install_script" "$CYBERPANEL_URL"; then
-        sh "$install_script"
+        if ! sh "$install_script"; then
+            log_error "Cyberpanel官方安装脚本执行失败"
+            rm -f -- "$install_script"
+            exit 1
+        fi
     else
         log_error "下载安装脚本失败"
         rm -f -- "$install_script"

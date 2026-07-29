@@ -184,7 +184,7 @@ update_hosts_file() {
     ' /etc/hosts > "${temp_file}"
 
     cat "${temp_file}" > /etc/hosts
-    rm -f "${temp_file}"
+    rm -f -- "${temp_file}"
 }
 
 update_key_value_file() {
@@ -215,7 +215,7 @@ update_key_value_file() {
     fi
 
     cat "${temp_file}" > "${file}"
-    rm -f "${temp_file}"
+    rm -f -- "${temp_file}"
 }
 
 update_cloud_init() {
@@ -242,7 +242,7 @@ update_cloud_init() {
     ' "${file}" > "${temp_file}"
 
     cat "${temp_file}" > "${file}"
-    rm -f "${temp_file}"
+    rm -f -- "${temp_file}"
 }
 
 restart_related_services() {

@@ -101,7 +101,7 @@ write_file_atomically() {
     local temp_file="$2"
 
     cat "${temp_file}" > "${target}"
-    rm -f "${temp_file}"
+    rm -f -- "${temp_file}"
 }
 
 apply_kernel_tuning() {

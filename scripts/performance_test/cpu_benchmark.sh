@@ -285,14 +285,14 @@ compression_benchmark() {
         echo -e "${GREEN}  $comp 压缩速度: ${compress_speed} MB/s${NC}"
         
         # 清理压缩文件
-        rm -f "$TEMP_DIR/test."* 2>/dev/null
+        rm -f -- "$TEMP_DIR/test."* 2>/dev/null
         
         # 保存结果
         echo "$comp 压缩: ${compress_speed} MB/s" >> "$REPORT_FILE"
     done
     
     # 清理测试文件
-    rm -f "$TEMP_DIR/test_file"
+    rm -f -- "$TEMP_DIR/test_file"
 }
 
 # 整数运算测试

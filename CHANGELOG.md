@@ -7,10 +7,12 @@ All notable changes to this repository are documented here.
 ### Changed
 - Replaced the custom Docker repository and Compose installation flow with a safely downloaded and syntax-checked `get.docker.com` official installer.
 - Kept third-party menu entries on their official project scripts while routing them through launcher confirmation, isolated temporary download, Bash syntax validation, and cleanup.
+- Updated README and launcher quick-start hints to download first-party launchers to temporary files before execution instead of using Bash process substitution.
 
 ### Fixed
 - Fixed recursive backup failure in the isolated full-uninstall runtime and limited removal to verified first-party commands, launcher files, and logs.
 - Propagated third-party command and script failures through the launcher, and added ARM architecture detection for Caddy and cloudflared downloads.
+- Replaced predictable BT Panel helper scripts and CyberPanel option records under `/tmp` with heredoc execution or `mktemp`, and cleaned up the CyberPanel installer after execution failures.
 - Prevented the BBR tool from overwriting `/etc/sysctl.conf`, made Swap configuration idempotent in `/etc/fstab`, and validated Fail2ban configuration before restarting the service.
 - Repaired legacy cleanup batch actions so confirmation and menu input reach child invocations, excluded interactive WordPress and hostname actions from batch execution, and validated the WordPress deletion target.
 - Hardened the Nezha agent installer with validated inputs, verified archive contents, systemd escaping, and unit-file verification.
@@ -85,3 +87,10 @@ All notable changes to this repository are documented here.
 - Fixed non-interactive menu EOF handling and terminal clearing behavior.
 - Fixed mixed Chinese/ASCII alignment, narrow-terminal overflow, malformed terminal width handling, and `LC_ALL=C` display-width behavior.
 - Hardened temporary-file cleanup, quoting, input validation, package-manager handling, and strict-mode edge cases across maintained scripts.
+
+## Optimization notes - 2026-07-28
+
+### Fixed
+- Hardened generated temporary files and execution hints across launchers, panel installers, Kubernetes setup, and WordPress cleanup paths.
+- Added safer deletion boundaries to uninstall scripts by using `rm --`, quoted variables, and directory-scoped cleanup helpers instead of direct glob deletion.
+- Tightened recursive ownership and permission operations in selected service installers with explicit option terminators and quoted path arguments.

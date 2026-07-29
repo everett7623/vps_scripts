@@ -39,6 +39,15 @@ PARENT_DIR=$(realpath "$SCRIPT_DIR/..")
 BACKUP_DIR="$PARENT_DIR/backup/config_clean_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
+clear_directory_contents() {
+    local target_dir="$1"
+
+    if [ ! -d "$target_dir" ]; then
+        return 0
+    fi
+
+    find "$target_dir" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+}
 # 配置文件列表
 echo -e "${WHITE}可清理的配置文件:${NC}"
 echo "1. Nginx配置"
@@ -68,9 +77,9 @@ case "$choice" in
         fi
         
         # 删除配置文件
-        rm -rf /etc/nginx/conf.d/*
-        rm -rf /etc/nginx/sites-available/*
-        rm -rf /etc/nginx/sites-enabled/*
+        clear_directory_contents "/etc/nginx/conf.d"
+        clear_directory_contents "/etc/nginx/sites-available"
+        clear_directory_contents "/etc/nginx/sites-enabled"
         
         # 恢复默认配置
         if [ -f "/etc/nginx/nginx.conf.bak" ]; then
@@ -92,9 +101,9 @@ case "$choice" in
         fi
         
         # 删除配置文件
-        rm -rf /etc/httpd/conf.d/*
-        rm -rf /etc/httpd/sites-available/*
-        rm -rf /etc/httpd/sites-enabled/*
+        clear_directory_contents "/etc/httpd/conf.d"
+        clear_directory_contents "/etc/httpd/sites-available"
+        clear_directory_contents "/etc/httpd/sites-enabled"
         
         # 恢复默认配置
         if [ -f "/etc/httpd/conf/httpd.conf.bak" ]; then
@@ -122,9 +131,9 @@ case "$choice" in
         fi
         
         # 删除配置文件
-        rm -rf /etc/mysql/conf.d/*
-        rm -rf /etc/mysql/mariadb.conf.d/*
-        rm -rf /etc/my.cnf.d/*
+        clear_directory_contents "/etc/mysql/conf.d"
+        clear_directory_contents "/etc/mysql/mariadb.conf.d"
+        clear_directory_contents "/etc/my.cnf.d"
         
         # 恢复默认配置
         if [ -f "/etc/mysql/my.cnf.bak" ]; then
@@ -150,8 +159,9 @@ case "$choice" in
         fi
         
         # 删除配置文件
-        rm -rf /etc/php/*/fpm/pool.d/*
-        rm -rf /etc/php/*/conf.d/*
+        for php_config_dir in /etc/php/*/fpm/pool.d /etc/php/*/conf.d; do
+            clear_directory_contents "$php_config_dir"
+        done
         
         # 恢复默认配置
         if [ -f "/etc/php.ini.bak" ]; then
@@ -173,7 +183,7 @@ case "$choice" in
         fi
         
         # 删除配置文件
-        rm -rf /etc/docker/*
+        clear_directory_contents "/etc/docker"
         
         # 恢复默认配置
         if [ -f "/etc/docker/daemon.json.bak" ]; then

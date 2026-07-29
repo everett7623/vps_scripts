@@ -52,7 +52,7 @@ else
 fi
 
 mkdir -p "$LOG_DIR" "$REPORT_DIR"
-trap 'rm -rf "$TEMP_DIR"' EXIT
+trap 'rm -rf -- "$TEMP_DIR"' EXIT
 
 # ------------------------------------------------------------------------------
 # 2. 节点配置与初始化
@@ -248,7 +248,7 @@ test_cdn_download() {
         local temp_file="$TEMP_DIR/cdn_test"
         local speed=$(timeout 20 wget -O "$temp_file" "$url" 2>&1 | \
                       grep -o "[0-9.]\+ [KMG]B/s" | tail -1 || true)
-        rm -f "$temp_file"
+        rm -f -- "$temp_file"
         
         if [ -n "$speed" ]; then
             if [[ "$speed" =~ MB/s ]]; then

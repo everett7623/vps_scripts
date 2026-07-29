@@ -266,7 +266,7 @@ install_nginx_source() {
     # 创建nginx用户和目录
     useradd -r -s /sbin/nologin nginx 2>/dev/null || true
     mkdir -p /var/cache/nginx/{client_temp,proxy_temp,fastcgi_temp,uwsgi_temp,scgi_temp}
-    chown -R nginx:nginx /var/cache/nginx
+    chown -R -- nginx:nginx /var/cache/nginx
     
     # 清理
     cd /
@@ -430,7 +430,7 @@ EOF
 </html>
 EOF
     
-    chown -R nginx:nginx /var/www/html
+    chown -R -- nginx:nginx /var/www/html
 }
 
 # 配置防火墙

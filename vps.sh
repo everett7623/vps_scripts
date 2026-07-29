@@ -974,7 +974,9 @@ update_info_menu() {
     echo -e "${WHITE}启动器会在运行时获取最新的官方模块。${RESET}"
     echo -e "${DIM}如需刷新主界面，可重新运行以下命令：${RESET}"
     echo ""
-    echo -e "${CYAN}bash <(curl -fsSL ${GITHUB_RAW_URL}/vps.sh)${RESET}"
+    echo -e "${CYAN}tmp_script=\$(mktemp /tmp/vps.XXXXXX) || exit 1${RESET}"
+    echo -e "${CYAN}curl -fsSL ${GITHUB_RAW_URL}/vps.sh -o \"\$tmp_script\" && bash \"\$tmp_script\"${RESET}"
+    echo -e "${CYAN}rm -f \"\$tmp_script\"${RESET}"
     pause_for_menu
 }
 

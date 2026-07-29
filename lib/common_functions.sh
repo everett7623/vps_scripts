@@ -26,7 +26,7 @@ export UI_THEME=${UI_THEME:-neon-shell}
 print_msg() {
     local color="${1}"
     local message="${2}"
-    echo -e "${color}${message}${NC}"
+    printf '%b%s%b\n' "${color}" "${message}" "${NC}"
 }
 
 print_info() {
@@ -197,9 +197,21 @@ show_progress() {
     local filled=0
     local empty=0
 
+    if ! [[ "${current}" =~ ^[0-9]+$ ]] ||
+       ! [[ "${total}" =~ ^[0-9]+$ ]] ||
+       ! [[ "${width}" =~ ^[1-9][0-9]*$ ]]; then
+        print_error "进度参数必须是非负整数，且宽度必须大于 0。"
+        return 1
+    fi
+
+    current=$((10#${current}))
+    total=$((10#${total}))
+    width=$((10#${width}))
+
     if [ "${total}" -le 0 ]; then
         total=1
     fi
+    [ "${current}" -gt "${total}" ] && current="${total}"
 
     percent=$((current * 100 / total))
     filled=$((width * current / total))
@@ -219,6 +231,12 @@ wait_with_animation() {
     local spin='|/-\'
     local i=0
     local loops=0
+
+    if ! [[ "${duration}" =~ ^[0-9]+$ ]]; then
+        print_error "等待时长或进程 ID 必须是非负整数。"
+        return 1
+    fi
+    duration=$((10#${duration}))
 
     if [[ "${duration}" =~ ^[0-9]+$ ]] && [ "${duration}" -gt 1000 ] && kill -0 "${duration}" 2>/dev/null; then
         while kill -0 "${duration}" 2>/dev/null; do
@@ -332,13 +350,13 @@ get_public_ip() {
     }
 
     if [ "${ip_version}" = "4" ]; then
-        ip=$(curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ifconfig.me 2>/dev/null || \
-             curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ip.sb 2>/dev/null || \
-             curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" icanhazip.com 2>/dev/null)
+        ip=$(curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" https://ifconfig.me 2>/dev/null || \
+             curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" https://ip.sb 2>/dev/null || \
+             curl -fsS -4 --connect-timeout "${connect_timeout}" --max-time "${timeout}" https://icanhazip.com 2>/dev/null)
     else
-        ip=$(curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ifconfig.me 2>/dev/null || \
-             curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" ip.sb 2>/dev/null || \
-             curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" icanhazip.com 2>/dev/null)
+        ip=$(curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" https://ifconfig.me 2>/dev/null || \
+             curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" https://ip.sb 2>/dev/null || \
+             curl -fsS -6 --connect-timeout "${connect_timeout}" --max-time "${timeout}" https://icanhazip.com 2>/dev/null)
     fi
 
     echo "${ip:-unavailable}"
@@ -346,6 +364,15 @@ get_public_ip() {
 
 check_port() {
     local port="${1}"
+
+    if ! [[ "${port}" =~ ^[0-9]+$ ]]; then
+        return 2
+    fi
+    port=$((10#${port}))
+    if [ "${port}" -lt 1 ] || [ "${port}" -gt 65535 ]; then
+        return 2
+    fi
+
     if command_exists ss; then
         ss -tuln | grep -q ":${port} "
     elif command_exists netstat; then
@@ -359,12 +386,12 @@ test_url() {
     local url="${1}"
     local timeout="${2:-5}"
     local connect_timeout="${VPS_CONNECT_TIMEOUT:-2}"
-    curl -fsSIL --connect-timeout "${connect_timeout}" --max-time "${timeout}" "${url}" >/dev/null 2>&1
+    curl -fsSIL --connect-timeout "${connect_timeout}" --max-time "${timeout}" -- "${url}" >/dev/null 2>&1
 }
 
 safe_mkdir() {
     local dir="${1}"
-    [ -d "${dir}" ] || mkdir -p "${dir}"
+    [ -d "${dir}" ] || mkdir -p -- "${dir}"
 }
 
 backup_file() {
@@ -372,7 +399,7 @@ backup_file() {
     local backup_suffix="${2:-$(date +%Y%m%d_%H%M%S)}"
 
     if [ -f "${file}" ]; then
-        cp "${file}" "${file}.${backup_suffix}" && print_success "已将 ${file} 备份到 ${file}.${backup_suffix}"
+        cp -- "${file}" "${file}.${backup_suffix}" && print_success "已将 ${file} 备份到 ${file}.${backup_suffix}"
     fi
 }
 
@@ -384,7 +411,7 @@ download_file() {
     local i=1
 
     while [ "${i}" -le "${retries}" ]; do
-        if curl -fsSL --connect-timeout "${VPS_CONNECT_TIMEOUT:-2}" --max-time "${timeout}" "${url}" -o "${output}"; then
+        if curl -fsSL --connect-timeout "${VPS_CONNECT_TIMEOUT:-2}" --max-time "${timeout}" -o "${output}" -- "${url}"; then
             print_success "已下载 $(basename "${output}")"
             return 0
         fi
@@ -433,9 +460,15 @@ write_config() {
         return 1
     fi
 
-    config_dir=$(dirname "${config_file}")
-    safe_mkdir "${config_dir}"
-    [ -f "${config_file}" ] || touch "${config_file}"
+    config_dir=$(dirname -- "${config_file}")
+    if ! safe_mkdir "${config_dir}"; then
+        print_error "创建配置目录失败：${config_dir}"
+        return 1
+    fi
+    if [ ! -f "${config_file}" ] && ! (umask 077; touch -- "${config_file}"); then
+        print_error "创建配置文件失败：${config_file}"
+        return 1
+    fi
 
     temp_file=$(mktemp "${config_dir}/.vps_config.XXXXXX") || {
         print_error "创建临时配置文件失败。"
@@ -452,10 +485,10 @@ write_config() {
         return 1
     fi
 
-    if command_exists chmod && chmod --reference="${config_file}" "${temp_file}" 2>/dev/null; then
+    if command_exists chmod && chmod --reference="${config_file}" -- "${temp_file}" 2>/dev/null; then
         :
     else
-        chmod 600 "${temp_file}" 2>/dev/null || true
+        chmod 600 -- "${temp_file}" 2>/dev/null || true
     fi
 
     if ! mv -f -- "${temp_file}" "${config_file}"; then
@@ -548,17 +581,37 @@ restart_service() {
 
 cleanup_temp_files() {
     local temp_dir="${1:-/tmp/vps_scripts_temp}"
+    local resolved_dir=""
 
     case "${temp_dir}" in
         /tmp/*|/var/tmp/*)
-            if [ -L "${temp_dir}" ]; then
-                print_warn "Refusing to clean a symbolic-link temp path: ${temp_dir}"
-                return 1
-            fi
-            [ -d "${temp_dir}" ] && rm -rf -- "${temp_dir}"
             ;;
         *)
             print_warn "跳过非预期临时目录的清理：${temp_dir}"
+            return 1
+            ;;
+    esac
+
+    if [ ! -e "${temp_dir}" ] && [ ! -L "${temp_dir}" ]; then
+        return 0
+    fi
+    if [ -L "${temp_dir}" ]; then
+        print_warn "拒绝清理符号链接临时路径：${temp_dir}"
+        return 1
+    fi
+
+    if command_exists realpath; then
+        resolved_dir=$(realpath -m -- "${temp_dir}" 2>/dev/null) || resolved_dir=""
+    elif command_exists readlink; then
+        resolved_dir=$(readlink -f -- "${temp_dir}" 2>/dev/null) || resolved_dir=""
+    fi
+
+    case "${resolved_dir}" in
+        /tmp/?*|/var/tmp/?*)
+            rm -rf -- "${resolved_dir}"
+            ;;
+        *)
+            print_warn "拒绝清理解析后超出临时目录的路径：${temp_dir}"
             return 1
             ;;
     esac

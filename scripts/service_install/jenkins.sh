@@ -259,7 +259,7 @@ create_jenkins_user() {
     mkdir -p "$JENKINS_HOME"
     mkdir -p "$JENKINS_HOME/.jenkins"
     mkdir -p "$JENKINS_INIT_DIR"
-    chown -R "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_HOME"
+    chown -R -- "$JENKINS_USER":"$JENKINS_USER" "$JENKINS_HOME"
 }
 
 # 系统包方式安装
@@ -596,7 +596,7 @@ install_build_tools() {
     wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
     tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt/
     ln -sf /opt/apache-maven-${MAVEN_VERSION} /opt/maven
-    rm -f apache-maven-${MAVEN_VERSION}-bin.tar.gz
+    rm -f -- "apache-maven-${MAVEN_VERSION}-bin.tar.gz"
     
     # 安装Gradle
     log "${YELLOW}安装Gradle...${NC}"
@@ -604,7 +604,7 @@ install_build_tools() {
     wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
     unzip -q gradle-${GRADLE_VERSION}-bin.zip -d /opt/
     ln -sf /opt/gradle-${GRADLE_VERSION} /opt/gradle
-    rm -f gradle-${GRADLE_VERSION}-bin.zip
+    rm -f -- "gradle-${GRADLE_VERSION}-bin.zip"
     
     # 安装Node.js
     log "${YELLOW}安装Node.js...${NC}"
@@ -828,7 +828,7 @@ pipeline {
 </flow-definition>
 EOF
     
-    chown -R $JENKINS_USER:$JENKINS_USER "$JENKINS_HOME/jobs"
+    chown -R -- "${JENKINS_USER}:${JENKINS_USER}" "$JENKINS_HOME/jobs"
 }
 
 # 启动Jenkins服务

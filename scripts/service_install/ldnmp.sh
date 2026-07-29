@@ -449,7 +449,7 @@ EOF
     ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
     
-    chown -R www-data:www-data "${WEB_ROOT}/default" 2>/dev/null || chown -R nginx:nginx "${WEB_ROOT}/default"
+    chown -R -- www-data:www-data "${WEB_ROOT}/default" 2>/dev/null || chown -R -- nginx:nginx "${WEB_ROOT}/default"
     
     log_success "示例站点创建完成"
 }

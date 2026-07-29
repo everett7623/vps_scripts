@@ -747,21 +747,21 @@ set_permissions() {
     
     # 设置所有者
     if [[ "$WEB_SERVER" == "nginx" || "$WEB_SERVER" == "openlitespeed" ]]; then
-        chown -R www-data:www-data $SITE_PATH
+        chown -R www-data:www-data -- "$SITE_PATH"
     elif [[ "$WEB_SERVER" == "apache" ]]; then
         if [[ "$PKG_MANAGER" == "apt" ]]; then
-            chown -R www-data:www-data $SITE_PATH
+            chown -R www-data:www-data -- "$SITE_PATH"
         else
-            chown -R apache:apache $SITE_PATH
+            chown -R apache:apache -- "$SITE_PATH"
         fi
     fi
     
     # 设置权限
-    find $SITE_PATH -type d -exec chmod 755 {} \;
-    find $SITE_PATH -type f -exec chmod 644 {} \;
+    find "$SITE_PATH" -type d -exec chmod 755 {} \;
+    find "$SITE_PATH" -type f -exec chmod 644 {} \;
     
     # WordPress上传目录需要写权限
-    chmod -R 775 $SITE_PATH/wp-content/uploads
+    chmod -R 775 -- "$SITE_PATH/wp-content/uploads"
     
     log_success "权限设置完成"
 }
@@ -1076,7 +1076,7 @@ EOF
     log_info "创建备份压缩包..."
     cd "$BACKUP_DIR"
     tar -czf "${backup_name}.tar.gz" "$backup_name"
-    rm -rf "$backup_path"
+    rm -rf -- "$backup_path"
     
     log_success "备份完成！"
     echo ""
@@ -1235,7 +1235,7 @@ uninstall_wordpress() {
     DB_USER=$(grep "DB_USER" "$SITE_PATH/wp-config.php" | cut -d"'" -f4)
     
     # 删除网站文件
-    rm -rf "$SITE_PATH"
+    rm -rf -- "$SITE_PATH"
     
     # 获取MySQL root密码并删除数据库
     get_mysql_root_password
@@ -1250,29 +1250,29 @@ uninstall_wordpress() {
     
     # 删除Web服务器配置
     if [[ "$WEB_SERVER" == "nginx" ]]; then
-        rm -f /etc/nginx/sites-available/$DOMAIN
-        rm -f /etc/nginx/sites-enabled/$DOMAIN
+        rm -f -- "/etc/nginx/sites-available/$DOMAIN"
+        rm -f -- "/etc/nginx/sites-enabled/$DOMAIN"
         nginx -t && systemctl reload nginx
     elif [[ "$WEB_SERVER" == "apache" ]]; then
-        a2dissite ${DOMAIN}.conf 2>/dev/null
-        rm -f /etc/apache2/sites-available/${DOMAIN}.conf
+        a2dissite "${DOMAIN}.conf" 2>/dev/null
+        rm -f -- "/etc/apache2/sites-available/${DOMAIN}.conf"
         systemctl reload apache2
     elif [[ "$WEB_SERVER" == "openlitespeed" ]]; then
-        rm -rf /usr/local/lsws/conf/vhosts/$DOMAIN
+        rm -rf -- "/usr/local/lsws/conf/vhosts/$DOMAIN"
         /usr/local/lsws/bin/lshttpd -s reload
     fi
     
     # 删除SSL证书
     if command -v certbot &>/dev/null; then
-        certbot delete --cert-name $DOMAIN 2>/dev/null
+        certbot delete --cert-name "$DOMAIN" 2>/dev/null
     fi
     
     # 删除日志文件
-    rm -f /var/log/nginx/${DOMAIN}_*.log
-    rm -f /var/log/apache2/${DOMAIN}_*.log
+    rm -f -- /var/log/nginx/"${DOMAIN}"_*.log
+    rm -f -- /var/log/apache2/"${DOMAIN}"_*.log
     
     # 删除信息文件
-    rm -f /root/wordpress_${DOMAIN}_info.txt
+    rm -f -- "/root/wordpress_${DOMAIN}_info.txt"
     
     log_success "WordPress卸载完成"
 }
