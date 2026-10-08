@@ -95,6 +95,13 @@
 - [x] Cover forced, disabled, non-interactive, and collision behavior
 - [x] Synchronize patch-release metadata and user documentation at `1.1.1`
 
+## 1.1.2 release
+
+- [x] Fix Issue #2 network-test menu failures and extend soft-fail / log-dir hardening
+- [x] Standardize public bootstrap commands to one-line `/tmp/vps.sh` form
+- [x] Synchronize version, date, changelog, README badge, VERSIONING, CLAUDE, and release validation at `1.1.2`
+- [x] Add `tests/validate_bootstrap_command.sh` to keep docs/launcher hints aligned
+
 ## Documentation
 
 - [x] Update `CLAUDE.md` with accurate architecture and test commands

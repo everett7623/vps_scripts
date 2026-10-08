@@ -4,20 +4,24 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.2 - 2026-10-09
+
 ### Added
-- `init_script_dirs()` and `run_soft()` helpers in `lib/common_functions.sh` for writable log/report paths and soft-fail diagnostic probes.
+- `init_script_dirs()`, `resolve_log_dir()`, and `run_soft()` helpers in `lib/common_functions.sh` for writable log/report paths and soft-fail diagnostic probes.
 - `tests/validate_network_test_resilience.sh` regression coverage for Issue #2 network-test failures.
 - `tests/validate_performance_test_resilience.sh` for performance_test log-dir soft-fail and other_tools status/dry-run flags.
 - `tests/validate_category_resilience.sh` and `tests/validate_mocked_runtime_smoke.sh` for full-repo footgun scans and mocked helper behavior.
+- `tests/validate_bootstrap_command.sh` to keep public one-line bootstrap commands synchronized.
 - `--status` / `--dry-run` / `--help` non-interactive modes for `swap.sh` and `fail2ban.sh`; `--status` / `--install` / `--uninstall` for `bbr.sh`.
-- `resolve_log_dir()` helper; system_tools log-dir fallback; `full_uninstall.sh --dry-run`; `ldnmp.sh --status` facade handoff.
+- `full_uninstall.sh --dry-run` and `ldnmp.sh --status` facade handoff to focused installers.
 
 ### Changed
+- Standardized public bootstrap commands to the common one-line form: `curl -fsSL .../vps.sh -o /tmp/vps.sh && bash /tmp/vps.sh` (README, `vps.sh`, `vps_scripts.sh`).
 - Network and performance test modules now fall back to a user-writable temp log directory when `/var/log/vps_scripts` is unavailable.
+- System tools resolve log directories through `resolve_log_dir` instead of assuming `/var/log/vps_scripts` is always writable.
 - Launcher `run_repo_script` reports Ctrl+C (exit 130) as cancellation instead of a generic module failure.
 - Replaced the custom Docker repository and Compose installation flow with a safely downloaded and syntax-checked `get.docker.com` official installer.
 - Kept third-party menu entries on their official project scripts while routing them through launcher confirmation, isolated temporary download, Bash syntax validation, and cleanup.
-- Updated README and launcher quick-start hints to download first-party launchers to temporary files before execution instead of using Bash process substitution.
 
 ### Fixed
 - Fixed Issue #2: network-test menu modules (backhaul, bandwidth, IP quality, network quality, streaming unlock) no longer exit with code 1 on unbound `$1`, single-node timeouts, or non-writable `/var/log` under `set -euo pipefail`.

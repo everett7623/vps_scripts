@@ -148,9 +148,7 @@ main_menu() {
             2) launch_remote_vps ;;
             3)
                 echo ""
-                echo -e "${CYAN}tmp_script=\$(mktemp /tmp/vps.XXXXXX) || exit 1${RESET}"
-                echo -e "${CYAN}curl -fsSL ${SCRIPT_URL} -o \"\$tmp_script\" && bash \"\$tmp_script\"${RESET}"
-                echo -e "${CYAN}rm -f \"\$tmp_script\"${RESET}"
+                echo -e "${CYAN}curl -fsSL ${SCRIPT_URL} -o /tmp/vps.sh && bash /tmp/vps.sh${RESET}"
                 pause_for_menu
                 ;;
             0)

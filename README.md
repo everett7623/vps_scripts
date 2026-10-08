@@ -4,14 +4,12 @@
 > 兼容入口 `vps_scripts.sh` 以 legacy-only 状态保留，仅维护旧命令转交能力；新功能统一进入 `vps.sh` 和模块脚本。
 
 ```bash
-tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
-curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && bash "$tmp_script"
-rm -f "$tmp_script"
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh && bash /tmp/vps.sh
 ```
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -42,7 +40,7 @@ rm -f "$tmp_script"
 - `vps_scripts.sh` 作为受支持的 legacy-only 兼容入口保留，不再新增独立功能
 - 主框架、公共函数库和系统工具已完成一轮集中优化
 - 主启动器支持宽窄终端自适应、中文对齐和更清晰的视觉层级
-- 仓库现有 34 个验证脚本，覆盖菜单路径、脚本安全、发布元数据、隐私边界与核心安装器
+- 仓库验证脚本覆盖菜单路径、脚本安全、发布元数据、启动命令格式、隐私边界与核心安装器
 
 ### 已完成的重点
 - 启动器安全性与菜单映射修正
@@ -115,25 +113,19 @@ Fedora、Arch 等发行版中的部分脚本可能可用，但不在当前正式
 ### 推荐方式：模块化主入口
 
 ```bash
-tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
-curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && bash "$tmp_script"
-rm -f "$tmp_script"
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh && bash /tmp/vps.sh
 ```
 
 如果没有 `curl`，也可以使用：
 
 ```bash
-tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
-wget -qO "$tmp_script" https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh && bash "$tmp_script"
-rm -f "$tmp_script"
+wget -qO /tmp/vps.sh https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh && bash /tmp/vps.sh
 ```
 
 ### 兼容方式：旧入口
 
 ```bash
-tmp_script=$(mktemp /tmp/vps-legacy.XXXXXX) || exit 1
-curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh -o "$tmp_script" && bash "$tmp_script"
-rm -f "$tmp_script"
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh -o /tmp/vps_scripts.sh && bash /tmp/vps_scripts.sh
 ```
 
 ### 本地使用
@@ -150,9 +142,7 @@ chmod +x vps.sh
 首次在交互终端中以 root 身份运行主启动器时，如果系统中没有本项目管理的 `vps` 命令，会自动安装快捷命令。已有同名但不属于本项目的命令不会被自动覆盖。
 
 ```bash
-tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
-curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && bash "$tmp_script" --install
-rm -f "$tmp_script"
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh && bash /tmp/vps.sh --install
 vps
 ```
 
@@ -162,9 +152,7 @@ vps
 `VPS_AUTO_INSTALL_COMMAND=true` 可在非交互场景中强制尝试创建（仍不会自动覆盖无关的同名命令）。如需禁止首次运行时自动创建快捷命令，可设置：
 
 ```bash
-tmp_script=$(mktemp /tmp/vps.XXXXXX) || exit 1
-curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o "$tmp_script" && VPS_AUTO_INSTALL_COMMAND=false bash "$tmp_script"
-rm -f "$tmp_script"
+curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh -o /tmp/vps.sh && VPS_AUTO_INSTALL_COMMAND=false bash /tmp/vps.sh
 ```
 
 ### 使用建议
@@ -317,6 +305,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.2`：修复 Issue #2 网络测试全挂；统一一键启动命令为常见一行格式；诊断脚本日志目录回退与软失败硬化
 - 发布 `1.1.1`：首次交互式 root 启动自动创建持久化 `vps` 命令，并提供禁用、非交互与同名命令冲突保护
 - 全部 21 个 service_install 脚本已启用 `set -euo pipefail` 严格模式
 - 全部 network_test 和 performance_test 脚本已加入严格模式与安全临时目录

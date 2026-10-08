@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Completed the A→B→C hardening sweep for Issue #2-class failures: network/performance soft-fail + log fallback, other_tools status/dry-run, system_tools `resolve_log_dir`, uninstall dry-run, LDNMP status facade, and category/mocked regression tests. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites.
+Version 1.1.2 ships the Issue #2 network-test fix, shared log-dir/soft-fail helpers, standardized one-line bootstrap commands, and synchronized release metadata. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites.
 
 ## Completed
 
@@ -52,7 +52,7 @@ Completed the A→B→C hardening sweep for Issue #2-class failures: network/per
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.1
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.2
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 

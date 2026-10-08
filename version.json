@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.1",
-    "release_date": "2026-07-15",
+    "version": "1.1.2",
+    "release_date": "2026-10-09",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Automatic persistent vps command installation with opt-out, non-interactive, and collision safeguards."
+    "message": "Issue #2 network-test resilience, shared log-dir helpers, and standardized one-line bootstrap commands."
   },
   "compatibility": {
     "min_bash_version": "4.0",
