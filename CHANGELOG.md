@@ -4,12 +4,23 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+### Added
+- `init_script_dirs()` and `run_soft()` helpers in `lib/common_functions.sh` for writable log/report paths and soft-fail diagnostic probes.
+- `tests/validate_network_test_resilience.sh` regression coverage for Issue #2 network-test failures.
+- `tests/validate_performance_test_resilience.sh` for performance_test log-dir soft-fail and other_tools status/dry-run flags.
+- `tests/validate_category_resilience.sh` and `tests/validate_mocked_runtime_smoke.sh` for full-repo footgun scans and mocked helper behavior.
+- `--status` / `--dry-run` / `--help` non-interactive modes for `swap.sh` and `fail2ban.sh`; `--status` / `--install` / `--uninstall` for `bbr.sh`.
+- `resolve_log_dir()` helper; system_tools log-dir fallback; `full_uninstall.sh --dry-run`; `ldnmp.sh --status` facade handoff.
+
 ### Changed
+- Network and performance test modules now fall back to a user-writable temp log directory when `/var/log/vps_scripts` is unavailable.
+- Launcher `run_repo_script` reports Ctrl+C (exit 130) as cancellation instead of a generic module failure.
 - Replaced the custom Docker repository and Compose installation flow with a safely downloaded and syntax-checked `get.docker.com` official installer.
 - Kept third-party menu entries on their official project scripts while routing them through launcher confirmation, isolated temporary download, Bash syntax validation, and cleanup.
 - Updated README and launcher quick-start hints to download first-party launchers to temporary files before execution instead of using Bash process substitution.
 
 ### Fixed
+- Fixed Issue #2: network-test menu modules (backhaul, bandwidth, IP quality, network quality, streaming unlock) no longer exit with code 1 on unbound `$1`, single-node timeouts, or non-writable `/var/log` under `set -euo pipefail`.
 - Fixed recursive backup failure in the isolated full-uninstall runtime and limited removal to verified first-party commands, launcher files, and logs.
 - Propagated third-party command and script failures through the launcher, and added ARM architecture detection for Caddy and cloudflared downloads.
 - Replaced predictable BT Panel helper scripts and CyberPanel option records under `/tmp` with heredoc execution or `mktemp`, and cleaned up the CyberPanel installer after execution failures.

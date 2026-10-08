@@ -359,7 +359,14 @@ main() {
     done
 
     check_root
-    mkdir -p "${LOG_DIR}" "${BACKUP_DIR}"
+    if declare -F resolve_log_dir >/dev/null 2>&1; then
+        resolve_log_dir "${VPS_LOG_DIR:-/var/log/vps_scripts}" || true
+        LOG_FILE="${LOG_DIR}/system_update.log"
+    else
+        mkdir -p "${LOG_DIR}"
+    fi
+    mkdir -p "${BACKUP_DIR}" 2>/dev/null || BACKUP_DIR="${TMPDIR:-/tmp}/vps_backups_update"
+    mkdir -p "${BACKUP_DIR}"
     print_header "系统更新工具"
     print_runtime_context "update_system.sh" "系统更新" "${LOG_FILE}"
     detect_system

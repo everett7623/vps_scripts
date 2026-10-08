@@ -111,6 +111,10 @@ main() {
     require_file "tests/validate_menu_eof.sh"
     require_file "tests/validate_nginx_installer_safety.sh"
     require_file "tests/validate_upgrade_hardening.sh"
+    require_file "tests/validate_network_test_resilience.sh"
+    require_file "tests/validate_performance_test_resilience.sh"
+    require_file "tests/validate_category_resilience.sh"
+    require_file "tests/validate_mocked_runtime_smoke.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"

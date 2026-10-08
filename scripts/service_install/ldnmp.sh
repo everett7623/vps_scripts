@@ -527,6 +527,27 @@ show_installation_info() {
     echo -e "${GREEN}========================================${NC}"
 }
 
+show_component_status() {
+    echo -e "${PURPLE}LDNMP 组件状态（只读）${NC}"
+    echo "------------------------"
+    local item
+    for item in nginx mysql mariadb php docker; do
+        if command -v "${item}" >/dev/null 2>&1 || command -v "${item}d" >/dev/null 2>&1; then
+            echo -e "${GREEN}[已安装]${NC} ${item}"
+        else
+            echo -e "${YELLOW}[未检测到]${NC} ${item}"
+        fi
+    done
+    echo
+    echo "建议使用聚焦安装脚本（可独立维护）:"
+    echo "  scripts/service_install/nginx.sh"
+    echo "  scripts/service_install/mysql.sh"
+    echo "  scripts/service_install/postgresql.sh"
+    echo "  scripts/service_install/python.sh"
+    echo "  scripts/service_install/docker.sh"
+    echo "本脚本保留为兼容门面；后续将逐步委托到上述模块。"
+}
+
 # 主函数
 main() {
     # 解析命令行参数
@@ -568,6 +589,10 @@ main() {
                 INSTALL_DOCKER=true
                 shift
                 ;;
+            --status)
+                show_component_status
+                return 0
+                ;;
             -h|--help)
                 echo "使用方法: $0 [选项]"
                 echo "选项:"
@@ -578,12 +603,14 @@ main() {
                 echo "  --docker     安装Docker"
                 echo "  --demo-site  创建包含 phpinfo 的示例站点"
                 echo "  --all        安装所有组件(Nginx+MariaDB+PHP+Docker)"
+                echo "  --status     只读显示组件状态与聚焦安装脚本提示"
                 echo "  -h, --help   显示帮助信息"
                 echo
                 echo "示例:"
                 echo "  $0 --all                    # 安装所有组件"
                 echo "  $0 --nginx --mariadb --php  # 安装LNMP"
                 echo "  $0 --php=8.1               # 安装PHP 8.1"
+                echo "  $0 --status                # 查看状态"
                 exit 0
                 ;;
             *)

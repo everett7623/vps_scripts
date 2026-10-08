@@ -23,11 +23,8 @@ SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
 
-LOG_DIR="/var/log/vps_scripts"
-LOG_FILE="$LOG_DIR/bandwidth_test.log"
-REPORT_DIR="/var/log/vps_scripts/reports"
-REPORT_FILE="$REPORT_DIR/bandwidth_report_$(date +%Y%m%d_%H%M%S).txt"
 TEMP_DIR=$(mktemp -d "/tmp/bandwidth_test.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
+CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 
 # 默认参数
 TEST_MODE="unknown"
@@ -38,6 +35,7 @@ LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
 CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
 
 if [ -f "$LIB_FILE" ]; then
+    # shellcheck source=/dev/null
     source "$LIB_FILE"
     [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 else
@@ -49,9 +47,30 @@ else
     print_error() { echo -e "${RED}[错误] $1${NC}"; }
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}需要 root 权限${NC}"; exit 1; }; }
+    safe_mkdir() { local dir="${1}"; [ -d "${dir}" ] || mkdir -p -- "${dir}"; }
+    init_script_dirs() {
+        local script_name="${1:-vps_script}"
+        local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+        local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+        local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+        local base=""
+        if safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+            base="${preferred}"
+        else
+            base="${fallback}"
+            safe_mkdir "${base}" || return 1
+        fi
+        LOG_DIR="${base}"
+        REPORT_DIR="${base}/reports"
+        safe_mkdir "${REPORT_DIR}" || return 1
+        LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+        REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+        : > "${LOG_FILE}" || true
+        : > "${REPORT_FILE}" || true
+    }
 fi
 
-mkdir -p "$LOG_DIR" "$REPORT_DIR"
+init_script_dirs "bandwidth" "${CURRENT_TIME}"
 trap 'rm -rf -- "$TEMP_DIR"' EXIT
 
 # ------------------------------------------------------------------------------
@@ -138,31 +157,40 @@ install_tools() {
     if ! command -v speedtest &>/dev/null; then
         print_info "安装 Speedtest CLI..."
         if command -v apt-get &>/dev/null; then
-            run_repo_setup_script "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh" >> "$LOG_FILE" 2>&1
-            apt-get install -y speedtest >> "$LOG_FILE" 2>&1
+            run_repo_setup_script "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh" >> "$LOG_FILE" 2>&1 || true
+            apt-get install -y speedtest >> "$LOG_FILE" 2>&1 || true
         elif command -v yum &>/dev/null; then
-            run_repo_setup_script "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh" >> "$LOG_FILE" 2>&1
-            yum install -y speedtest >> "$LOG_FILE" 2>&1
+            run_repo_setup_script "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh" >> "$LOG_FILE" 2>&1 || true
+            yum install -y speedtest >> "$LOG_FILE" 2>&1 || true
         else
-            local arch=$(uname -m)
+            local arch
+            arch=$(uname -m)
             [ "$arch" = "x86_64" ] && arch="x86_64" || arch="aarch64"
-            wget -qO "$TEMP_DIR/speedtest.tgz" "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-${arch}.tgz"
-            tar -xzf "$TEMP_DIR/speedtest.tgz" -C "$TEMP_DIR"
-            mv "$TEMP_DIR/speedtest" /usr/local/bin/
-            chmod +x /usr/local/bin/speedtest
+            wget -qO "$TEMP_DIR/speedtest.tgz" "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-${arch}.tgz" || true
+            if [ -f "$TEMP_DIR/speedtest.tgz" ]; then
+                tar -xzf "$TEMP_DIR/speedtest.tgz" -C "$TEMP_DIR" || true
+                if [ -f "$TEMP_DIR/speedtest" ]; then
+                    mv "$TEMP_DIR/speedtest" /usr/local/bin/ || true
+                    chmod +x /usr/local/bin/speedtest || true
+                fi
+            fi
         fi
-        speedtest --accept-license --accept-gdpr &>> "$LOG_FILE"
+        if command -v speedtest &>/dev/null; then
+            speedtest --accept-license --accept-gdpr &>> "$LOG_FILE" || true
+        else
+            print_warn "Speedtest CLI 安装失败，将跳过相关测速"
+        fi
     fi
 
     # iperf3 & 基础工具
     if ! command -v iperf3 &>/dev/null || ! command -v bc &>/dev/null; then
         print_info "安装 iperf3 及基础工具..."
         if command -v apt-get &>/dev/null; then
-            apt-get install -y iperf3 bc curl &>> "$LOG_FILE"
+            apt-get install -y iperf3 bc curl &>> "$LOG_FILE" || true
         elif command -v yum &>/dev/null; then
-            yum install -y iperf3 bc curl &>> "$LOG_FILE"
+            yum install -y iperf3 bc curl &>> "$LOG_FILE" || true
         elif command -v apk &>/dev/null; then
-            apk add iperf3 bc curl &>> "$LOG_FILE"
+            apk add iperf3 bc curl &>> "$LOG_FILE" || true
         fi
     fi
 }
@@ -175,16 +203,25 @@ install_tools() {
 run_speedtest_single() {
     local id=$1
     local name=$2
-    
+
+    if ! command -v speedtest &>/dev/null; then
+        echo -e "  ${YELLOW}[跳过]${NC} $name - speedtest 不可用"
+        return 0
+    fi
+
     echo -ne "  正在测试: ${CYAN}$name${NC} (ID:$id) ... "
-    
-    local res=$(timeout 45 speedtest --server-id="$id" --format=json 2>/dev/null || echo "")
-    
+
+    local res
+    res=$(timeout 45 speedtest --server-id="$id" --format=json 2>/dev/null || echo "")
+
     if [ -n "$res" ]; then
-        local dl=$(echo "$res" | grep -oP '"download":{"bandwidth":\K[0-9]+' | awk '{printf "%.2f", $1 * 8 / 1000000}')
-        local ul=$(echo "$res" | grep -oP '"upload":{"bandwidth":\K[0-9]+' | awk '{printf "%.2f", $1 * 8 / 1000000}')
-        local ping=$(echo "$res" | grep -oP '"latency":\K[0-9.]+' | head -1)
-        
+        local dl
+        local ul
+        local ping
+        dl=$(echo "$res" | grep -oP '"download":{"bandwidth":\K[0-9]+' | awk '{printf "%.2f", $1 * 8 / 1000000}' || true)
+        ul=$(echo "$res" | grep -oP '"upload":{"bandwidth":\K[0-9]+' | awk '{printf "%.2f", $1 * 8 / 1000000}' || true)
+        ping=$(echo "$res" | grep -oP '"latency":\K[0-9.]+' | head -1 || true)
+
         if [ -n "$ping" ]; then
             echo -ne "\r"
             printf "  %-20s | 延迟: ${CYAN}%-6s${NC} | 下行: ${GREEN}%-8s${NC} | 上行: ${BLUE}%-8s${NC}\n" \
@@ -193,10 +230,11 @@ run_speedtest_single() {
             return 0
         fi
     fi
-    
+
     echo -e "\r  ${RED}[失败]${NC} $name - 节点不可用或超时"
     log "Speedtest timeout: $name (ID:$id)"
-    return 1
+    # 单点失败不终止整轮测试（set -e 兼容）
+    return 0
 }
 
 # [模块2] iperf3 测速 (针对海外)
@@ -310,18 +348,29 @@ test_stability() {
     local total=0; local min=99999; local max=0
     
     for i in {1..5}; do
-        local start=$(date +%s.%N)
-        wget -q -O /dev/null "$url"
-        local end=$(date +%s.%N)
-        local time=$(echo "$end - $start" | bc)
-        local speed=$(echo "scale=2; 80 / $time" | bc) # 10MB*8
+        local start
+        local end
+        local time
+        local speed
+        start=$(date +%s.%N)
+        if ! wget -q -O /dev/null "$url" 2>/dev/null; then
+            printf "  [%d/5] 采样: ${RED}失败${NC}\n" "$i"
+            continue
+        fi
+        end=$(date +%s.%N)
+        time=$(echo "$end - $start" | bc 2>/dev/null || echo "0")
+        speed=$(echo "scale=2; 80 / $time" | bc 2>/dev/null || echo "0")
         printf "  [%d/5] 采样: ${CYAN}%s Mbps${NC}\n" "$i" "$speed"
-        total=$(echo "$total + $speed" | bc)
-        if (( $(echo "$speed < $min" | bc -l) )); then min=$speed; fi
-        if (( $(echo "$speed > $max" | bc -l) )); then max=$speed; fi
+        total=$(echo "$total + $speed" | bc 2>/dev/null || echo "$total")
+        if command -v bc &>/dev/null; then
+            if (( $(echo "$speed < $min" | bc -l 2>/dev/null || echo 0) )); then min=$speed; fi
+            if (( $(echo "$speed > $max" | bc -l 2>/dev/null || echo 0) )); then max=$speed; fi
+        fi
     done
-    local avg=$(echo "scale=2; $total / 5" | bc)
-    local jitter=$(echo "scale=2; ($max - $min) / $avg * 100" | bc)
+    local avg
+    local jitter
+    avg=$(echo "scale=2; $total / 5" | bc 2>/dev/null || echo "0")
+    jitter=$(echo "scale=2; ($max - $min) / ($avg + 0.01) * 100" | bc 2>/dev/null || echo "0")
     echo -e "\n  平均: ${GREEN}$avg Mbps${NC} | 抖动: ${YELLOW}$jitter%${NC}"
     echo "Stability: Avg $avg Mbps, Jitter $jitter%" >> "$REPORT_FILE"
 }
@@ -338,7 +387,7 @@ custom_speedtest() {
     [ -z "$sname" ] && sname="Custom-$sid"
     
     if [[ "$sid" =~ ^[0-9]+$ ]]; then
-        run_speedtest_single "$sid" "$sname"
+        run_speedtest_single "$sid" "$sname" || true
     else
         print_error "ID必须为数字"
     fi
@@ -390,33 +439,33 @@ show_menu() {
             print_info "开始快速测试..."
             for k in $(echo "${!SPEEDTEST_SERVERS[@]}" | head -5); do
                 IFS='|' read -r id name <<< "${SPEEDTEST_SERVERS[$k]}"
-                run_speedtest_single "$id" "$name"
+                run_speedtest_single "$id" "$name" || true
             done
-            test_cdn_download
+            test_cdn_download || true
             ;;
         2)
             print_info "开始完整测试..."
             for k in "${!SPEEDTEST_SERVERS[@]}"; do
                 IFS='|' read -r id name <<< "${SPEEDTEST_SERVERS[$k]}"
-                run_speedtest_single "$id" "$name"
+                run_speedtest_single "$id" "$name" || true
             done
-            test_iperf3_batch
-            test_china_route
-            test_cdn_download
-            test_stability
+            test_iperf3_batch || true
+            test_china_route || true
+            test_cdn_download || true
+            test_stability || true
             ;;
         3)
             for k in "${!SPEEDTEST_SERVERS[@]}"; do
                 IFS='|' read -r id name <<< "${SPEEDTEST_SERVERS[$k]}"
-                run_speedtest_single "$id" "$name"
+                run_speedtest_single "$id" "$name" || true
             done
             ;;
-        4) test_iperf3_batch ;;
-        5) test_cdn_download ;;
-        6) test_china_route ;;
-        7) test_stability ;;
-        8) custom_speedtest ;;
-        0) exit 0 ;;
+        4) test_iperf3_batch || true ;;
+        5) test_cdn_download || true ;;
+        6) test_china_route || true ;;
+        7) test_stability || true ;;
+        8) custom_speedtest || true ;;
+        0) return 0 ;;
         *) print_error "无效输入"; sleep 1; show_menu ;;
     esac
     
@@ -438,18 +487,18 @@ main() {
             --quick)
                 for k in $(echo "${!SPEEDTEST_SERVERS[@]}" | head -5); do
                     IFS='|' read -r id name <<< "${SPEEDTEST_SERVERS[$k]}"
-                    run_speedtest_single "$id" "$name"
+                    run_speedtest_single "$id" "$name" || true
                 done
-                exit ;;
+                return 0 ;;
             --full)
                 for k in "${!SPEEDTEST_SERVERS[@]}"; do
                     IFS='|' read -r id name <<< "${SPEEDTEST_SERVERS[$k]}"
-                    run_speedtest_single "$id" "$name"
+                    run_speedtest_single "$id" "$name" || true
                 done
-                test_iperf3_batch
-                test_china_route
-                exit ;;
-            *) print_error "无效参数"; exit 1 ;;
+                test_iperf3_batch || true
+                test_china_route || true
+                return 0 ;;
+            *) print_error "无效参数"; return 1 ;;
         esac
     else
         show_menu

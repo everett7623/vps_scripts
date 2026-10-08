@@ -53,8 +53,14 @@ else
 fi
 
 ensure_runtime_dirs() {
-    safe_mkdir "${LOG_DIR}"
-    safe_mkdir "${REPORT_DIR}"
+    if declare -F resolve_log_dir >/dev/null 2>&1; then
+        resolve_log_dir "${VPS_LOG_DIR:-/var/log/vps_scripts}" || true
+        LOG_FILE="${LOG_DIR}/clean_system.log"
+        REPORT_DIR="${LOG_DIR}"
+    else
+        safe_mkdir "${LOG_DIR}"
+        safe_mkdir "${REPORT_DIR}"
+    fi
 }
 
 check_root_or_exit() {

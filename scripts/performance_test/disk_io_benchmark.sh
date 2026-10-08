@@ -22,12 +22,42 @@ WHITE='\033[0;37m'
 NC='\033[0m' # No Color
 
 # 配置变量
-LOG_DIR="/var/log/vps_scripts"
-LOG_FILE="$LOG_DIR/disk_io_benchmark_$(date +%Y%m%d_%H%M%S).log"
-REPORT_DIR="/var/log/vps_scripts/reports"
-REPORT_FILE="$REPORT_DIR/disk_io_benchmark_$(date +%Y%m%d_%H%M%S).txt"
+CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 TEMP_DIR=$(mktemp -d "/tmp/disk_io_benchmark.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
 TEST_DIR=$(mktemp -d "${TEST_PATH:-/tmp}/disk_test.XXXXXX") || { echo "Failed to create test dir"; exit 1; }
+SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || echo "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
+LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
+CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
+
+if [ -f "$LIB_FILE" ]; then
+    # shellcheck source=/dev/null
+    source "$LIB_FILE"
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+else
+    safe_mkdir() { local dir="${1}"; [ -d "${dir}" ] || mkdir -p -- "${dir}"; }
+    init_script_dirs() {
+        local script_name="${1:-vps_script}"
+        local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+        local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+        local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+        local base=""
+        if safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+            base="${preferred}"
+        else
+            base="${fallback}"
+            safe_mkdir "${base}" || return 1
+        fi
+        LOG_DIR="${base}"
+        REPORT_DIR="${base}/reports"
+        safe_mkdir "${REPORT_DIR}" || return 1
+        LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+        REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+        : > "${LOG_FILE}" || true
+        : > "${REPORT_FILE}" || true
+    }
+fi
 
 # 测试模式
 QUICK_MODE=false
@@ -40,10 +70,9 @@ DD_COUNT=$((TEST_SIZE * 1024))
 FIO_RUNTIME=30  # FIO测试时长(秒)
 IOPING_COUNT=100  # ioping测试次数
 
-# 创建目录
+# 创建目录（可写路径回退）
 create_directories() {
-    [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
-    [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
+    init_script_dirs "disk_io_benchmark" "${CURRENT_TIME}"
 }
 
 # 清理
@@ -776,18 +805,19 @@ main() {
     } > "$REPORT_FILE"
     
     if [ "$QUICK_MODE" = true ]; then
-        quick_test
-        calculate_score
-        generate_report
+        quick_test || true
+        calculate_score || true
+        generate_report || true
     elif [ "$FULL_MODE" = true ]; then
-        full_test
-        calculate_score
-        generate_report
+        full_test || true
+        calculate_score || true
+        generate_report || true
     else
-        interactive_menu
+        interactive_menu || true
     fi
-    
+
     print_msg "$GREEN" "\n磁盘IO性能测试完成！"
+    return 0
 }
 
 # 运行主函数
