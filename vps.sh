@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.1"
+PROJECT_VERSION="1.1.2"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -978,9 +978,7 @@ update_info_menu() {
     echo -e "${WHITE}启动器会在运行时获取最新的官方模块。${RESET}"
     echo -e "${DIM}如需刷新主界面，可重新运行以下命令：${RESET}"
     echo ""
-    echo -e "${CYAN}tmp_script=\$(mktemp /tmp/vps.XXXXXX) || exit 1${RESET}"
-    echo -e "${CYAN}curl -fsSL ${GITHUB_RAW_URL}/vps.sh -o \"\$tmp_script\" && bash \"\$tmp_script\"${RESET}"
-    echo -e "${CYAN}rm -f \"\$tmp_script\"${RESET}"
+    echo -e "${CYAN}curl -fsSL ${GITHUB_RAW_URL}/vps.sh -o /tmp/vps.sh && bash /tmp/vps.sh${RESET}"
     pause_for_menu
 }
 

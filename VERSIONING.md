@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.1`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.2`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.1` is a backward-compatible patch release for persistent `vps` command startup behavior. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.2` is a backward-compatible patch release for Issue #2 network-test resilience, shared log-directory helpers, and standardized one-line bootstrap commands. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
@@ -19,6 +19,7 @@ Use semantic versioning for code releases:
 - `version.json` is the machine-readable source for launcher metadata
 - `CHANGELOG.md` is the human-readable change log
 - `update_log.sh` is a legacy compatibility viewer; `CHANGELOG.md` is the canonical historical record
+- Every published release must bump and synchronize version metadata, README badge, CHANGELOG section, VERSIONING current state, and release checklist expectations in the same commit
 
 ## Release Rule Of Thumb
 

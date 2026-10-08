@@ -115,6 +115,7 @@ main() {
     require_file "tests/validate_performance_test_resilience.sh"
     require_file "tests/validate_category_resilience.sh"
     require_file "tests/validate_mocked_runtime_smoke.sh"
+    require_file "tests/validate_bootstrap_command.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"

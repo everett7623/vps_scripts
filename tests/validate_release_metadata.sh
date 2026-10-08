@@ -45,5 +45,10 @@ require_text "README.md" "version-${version}-blue.svg"
 require_text "VERSIONING.md" "active project version listed as \`${version}\`"
 require_text "CHANGELOG.md" "## ${version} - ${release_date}"
 require_text "RELEASE_CHECKLIST.md" "tests/validate_release_metadata.sh"
+require_text "CLAUDE.md" "Canonical source for project version (\`${version}\`)"
+require_text "README.md" "发布 \`${version}\`"
+
+# Public bootstrap command stays synchronized with release docs
+bash "${REPO_ROOT}/tests/validate_bootstrap_command.sh"
 
 echo "Release metadata is synchronized for ${version} (${release_date})."

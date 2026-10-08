@@ -8,12 +8,14 @@ Required synchronized files:
 
 - `version.json`: project version, release date, and update message
 - `config/vps_scripts.conf` and `vps.sh`: runtime project version
-- `README.md`: public version badge and user-visible inventory
+- `README.md`: public version badge, bootstrap command, and user-visible inventory
 - `CHANGELOG.md`: dated release section below an empty `Unreleased` heading
 - `VERSIONING.md`: active version and policy
+- `CLAUDE.md`: version metadata section
 - `PROGRESS.md` and `TASKS.md`: completed milestone and next backlog
+- `vps.sh` / `vps_scripts.sh`: public bootstrap hint matches README one-liner
 
-The release commit must pass `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh`. After pushing the release commit, create the matching annotated `vX.Y.Z` tag and GitHub Release from the corresponding `CHANGELOG.md` section.
+The release commit must pass `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh` (includes bootstrap command sync). After pushing the release commit, create the matching annotated `vX.Y.Z` tag and GitHub Release from the corresponding `CHANGELOG.md` section.
 
 ## Before Version Bump
 
