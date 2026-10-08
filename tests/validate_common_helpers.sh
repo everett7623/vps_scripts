@@ -80,4 +80,18 @@ printf '%s\n' "remove" > "${safe_temp}/file"
 cleanup_temp_files "${safe_temp}"
 [ ! -e "${safe_temp}" ]
 
+# resolve_log_dir / init_script_dirs prefer a writable VPS_LOG_DIR
+export VPS_LOG_DIR="${TEST_ROOT}/vps-logs"
+resolve_log_dir
+[ "${LOG_DIR}" = "${TEST_ROOT}/vps-logs" ]
+init_script_dirs "helper_test" "stamp1"
+[ "${LOG_DIR}" = "${TEST_ROOT}/vps-logs" ]
+[ -d "${REPORT_DIR}" ]
+[ -f "${LOG_FILE}" ]
+[ -f "${REPORT_FILE}" ]
+
+# run_soft never fails the caller
+run_soft "false probe" false
+run_soft "true probe" true
+
 echo "Common helper safety is valid."

@@ -22,11 +22,41 @@ WHITE='\033[0;37m'
 NC='\033[0m' # No Color
 
 # 配置变量
-LOG_DIR="/var/log/vps_scripts"
-LOG_FILE="$LOG_DIR/streaming_unlock_$(date +%Y%m%d_%H%M%S).log"
-REPORT_DIR="/var/log/vps_scripts/reports"
-REPORT_FILE="$REPORT_DIR/streaming_unlock_$(date +%Y%m%d_%H%M%S).txt"
+CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 TEMP_DIR=$(mktemp -d "/tmp/streaming_test.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
+SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || echo "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
+LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
+CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
+
+if [ -f "$LIB_FILE" ]; then
+    # shellcheck source=/dev/null
+    source "$LIB_FILE"
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+else
+    safe_mkdir() { local dir="${1}"; [ -d "${dir}" ] || mkdir -p -- "${dir}"; }
+    init_script_dirs() {
+        local script_name="${1:-vps_script}"
+        local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+        local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+        local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+        local base=""
+        if safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+            base="${preferred}"
+        else
+            base="${fallback}"
+            safe_mkdir "${base}" || return 1
+        fi
+        LOG_DIR="${base}"
+        REPORT_DIR="${base}/reports"
+        safe_mkdir "${REPORT_DIR}" || return 1
+        LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+        REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+        : > "${LOG_FILE}" || true
+        : > "${REPORT_FILE}" || true
+    }
+fi
 
 # 测试模式
 BASIC_MODE=false
@@ -37,10 +67,9 @@ REGION_CHECK=false
 UA_BROWSER="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 UA_MOBILE="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
-# 创建目录
+# 创建目录（可写路径回退，避免 set -e / 非 root 崩溃）
 create_directories() {
-    [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
-    [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
+    init_script_dirs "streaming_unlock" "${CURRENT_TIME}"
 }
 
 # 清理
@@ -68,21 +97,27 @@ get_ip_location() {
     print_msg "$BLUE" "========== IP地理位置信息 =========="
     
     # 获取公网IP
-    local public_ip=$(curl -s -4 --max-time 5 ip.sb 2>/dev/null)
-    
+    local public_ip
+    public_ip=$(curl -s -4 --max-time 5 ip.sb 2>/dev/null || true)
+
     if [ -z "$public_ip" ]; then
         print_msg "$RED" "无法获取公网IP"
-        return 1
+        return 0
     fi
-    
+
     # 获取IP信息
-    local ip_info=$(curl -s --max-time 5 "http://ip-api.com/json/${public_ip}?fields=country,countryCode,regionName,city,isp,as" 2>/dev/null)
-    
+    local ip_info
+    ip_info=$(curl -s --max-time 5 "http://ip-api.com/json/${public_ip}?fields=country,countryCode,regionName,city,isp,as" 2>/dev/null || true)
+
     if [ -n "$ip_info" ]; then
-        local country=$(echo "$ip_info" | grep -oP '"country":\s*"\K[^"]+')
-        local country_code=$(echo "$ip_info" | grep -oP '"countryCode":\s*"\K[^"]+')
-        local region=$(echo "$ip_info" | grep -oP '"regionName":\s*"\K[^"]+')
-        local city=$(echo "$ip_info" | grep -oP '"city":\s*"\K[^"]+')
+        local country
+        local country_code
+        local region
+        local city
+        country=$(echo "$ip_info" | grep -oP '"country":\s*"\K[^"]+' || true)
+        country_code=$(echo "$ip_info" | grep -oP '"countryCode":\s*"\K[^"]+' || true)
+        region=$(echo "$ip_info" | grep -oP '"regionName":\s*"\K[^"]+' || true)
+        city=$(echo "$ip_info" | grep -oP '"city":\s*"\K[^"]+' || true)
         local isp=$(echo "$ip_info" | grep -oP '"isp":\s*"\K[^"]+')
         
         echo -e "${CYAN}IP地址:${NC} $public_ip"
@@ -772,18 +807,19 @@ main() {
     } > "$REPORT_FILE"
     
     if [ "$BASIC_MODE" = true ]; then
-        basic_test
-        generate_summary
-        generate_detailed_report
+        basic_test || true
+        generate_summary || true
+        generate_detailed_report || true
     elif [ "$FULL_MODE" = true ]; then
-        full_test
-        generate_summary
-        generate_detailed_report
+        full_test || true
+        generate_summary || true
+        generate_detailed_report || true
     else
-        interactive_menu
+        interactive_menu || true
     fi
-    
+
     print_msg "$GREEN" "\n流媒体解锁测试完成！"
+    return 0
 }
 
 # 运行主函数

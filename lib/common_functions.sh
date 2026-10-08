@@ -394,6 +394,72 @@ safe_mkdir() {
     [ -d "${dir}" ] || mkdir -p -- "${dir}"
 }
 
+# Resolve a writable LOG_DIR (does not create timestamped log/report files).
+resolve_log_dir() {
+    local preferred="${1:-${VPS_LOG_DIR:-/var/log/vps_scripts}}"
+    local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+
+    if [ -n "${preferred}" ] && safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+        LOG_DIR="${preferred}"
+        return 0
+    fi
+
+    LOG_DIR="${fallback}"
+    safe_mkdir "${LOG_DIR}" || {
+        print_error "无法创建日志目录：${LOG_DIR}"
+        return 1
+    }
+    return 0
+}
+
+# Prefer VPS_LOG_DIR or /var/log/vps_scripts; fall back to a writable temp path.
+# Sets LOG_DIR, REPORT_DIR, LOG_FILE, REPORT_FILE for diagnostic scripts.
+init_script_dirs() {
+    local script_name="${1:-vps_script}"
+    local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+    local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+    local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+    local base=""
+
+    if [ -n "${preferred}" ] && safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+        base="${preferred}"
+    else
+        base="${fallback}"
+        safe_mkdir "${base}" || {
+            print_error "无法创建日志目录：${base}"
+            return 1
+        }
+    fi
+
+    LOG_DIR="${base}"
+    REPORT_DIR="${base}/reports"
+    safe_mkdir "${REPORT_DIR}" || {
+        print_error "无法创建报告目录：${REPORT_DIR}"
+        return 1
+    }
+
+    LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+    REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+    : > "${LOG_FILE}" || true
+    : > "${REPORT_FILE}" || true
+    return 0
+}
+
+# Run a command; on failure print a warning and return 0 (for diagnostic probes).
+run_soft() {
+    local description="${1:-command}"
+    shift || true
+    if [ "$#" -eq 0 ]; then
+        print_warn "run_soft: 未提供命令（${description}）"
+        return 0
+    fi
+    if "$@" >/dev/null 2>&1; then
+        return 0
+    fi
+    print_warn "${description} 失败，已继续"
+    return 0
+}
+
 backup_file() {
     local file="${1}"
     local backup_suffix="${2:-$(date +%Y%m%d_%H%M%S)}"
@@ -650,7 +716,7 @@ export -f show_progress wait_with_animation
 export -f check_root command_exists ensure_command
 export -f get_os_release get_os_version get_arch get_cpu_cores get_total_memory
 export -f get_public_ip check_port test_url
-export -f safe_mkdir backup_file download_file
+export -f safe_mkdir resolve_log_dir init_script_dirs run_soft backup_file download_file
 export -f read_config write_config
 export -f ask_yes_no select_option read_input is_valid_identifier
 export -f check_service_status start_service stop_service restart_service

@@ -1,77 +1,133 @@
 #!/bin/bash
 set -euo pipefail
-#/vps_scripts/scripts/other_tools/fail2ban.sh - VPS Scripts Fail2ban安全工具
+# ==============================================================================
+# Script: scripts/other_tools/fail2ban.sh
+# Purpose: Install and configure Fail2ban SSH jail with status/dry-run modes.
+# ==============================================================================
 
-# 定义颜色
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
 WHITE='\033[0;37m'
-NC='\033[0m' # 恢复默认颜色
+NC='\033[0m'
 
-# 检查是否为root用户
-if [ "$(id -u)" != "0" ]; then
-   echo -e "${RED}错误: 此脚本需要root权限运行${NC}" 1>&2
-   exit 1
-fi
+JAIL_FILE="/etc/fail2ban/jail.d/vps-scripts-sshd.local"
+DRY_RUN=false
 
-echo -e "${WHITE}Fail2ban安全工具${NC}"
-echo "------------------------"
-
-# 确认操作
-echo -e "${YELLOW}警告: 安装Fail2ban将增强系统安全性，但可能影响正常访问${NC}"
-read -p "确定要安装Fail2ban吗? (y/n): " confirm
-case "$confirm" in 
-  y|Y ) echo -e "${GREEN}开始安装Fail2ban...${NC}";;
-  n|N ) echo -e "${YELLOW}已取消操作${NC}"; exit 0;;
-  * ) echo -e "${RED}无效选择，已取消操作${NC}"; exit 1;;
-esac
-
-# 检测系统类型
-if [ -f /etc/redhat-release ]; then
-    system_type="centos"
-elif [ -f /etc/debian_version ]; then
-    if grep -q "ubuntu" /etc/os-release; then
-        system_type="ubuntu"
-    else
-        system_type="debian"
+require_root() {
+    if [ "$(id -u)" != "0" ]; then
+        echo -e "${RED}错误: 此脚本需要root权限运行${NC}" 1>&2
+        exit 1
     fi
-else
-    echo -e "${RED}不支持的操作系统类型${NC}"
-    exit 1
-fi
+}
 
-echo -e "${WHITE}检测到系统类型: ${YELLOW}$system_type${NC}"
+show_help() {
+    cat <<'EOF'
+用法：bash fail2ban.sh [选项]
 
-# 根据系统类型安装Fail2ban
-echo -e "${WHITE}安装Fail2ban...${NC}"
-if [ "$system_type" == "centos" ]; then
-    yum -y install epel-release
-    yum -y install fail2ban
-else
-    apt-get update
-    apt-get -y install fail2ban
-fi
+选项：
+  --status    显示 Fail2ban / SSH jail 状态
+  --dry-run   预览安装与配置动作，不修改系统
+  --help      显示帮助
 
-# 检查Fail2ban是否安装成功
-if ! command -v fail2ban-server &> /dev/null; then
-    echo -e "${RED}Fail2ban安装失败，请手动检查${NC}"
-    exit 1
-fi
+无参数时进入交互安装流程。
+EOF
+}
 
-# 配置Fail2ban
-echo -e "${WHITE}配置Fail2ban...${NC}"
+show_status() {
+    echo -e "${WHITE}Fail2ban 状态${NC}"
+    echo "------------------------"
+    if command -v fail2ban-server >/dev/null 2>&1; then
+        echo -e "${GREEN}已安装:${NC} $(command -v fail2ban-server)"
+    else
+        echo -e "${YELLOW}未安装 fail2ban-server${NC}"
+    fi
+    if systemctl is-active fail2ban >/dev/null 2>&1; then
+        echo -e "${GREEN}服务:${NC} active"
+    else
+        echo -e "${YELLOW}服务:${NC} inactive 或未安装"
+    fi
+    if [ -f "${JAIL_FILE}" ]; then
+        echo -e "${GREEN}项目 jail:${NC} ${JAIL_FILE}"
+    else
+        echo -e "${YELLOW}项目 jail 未部署${NC}"
+    fi
+    if command -v fail2ban-client >/dev/null 2>&1; then
+        fail2ban-client status sshd 2>/dev/null || true
+    fi
+}
 
-# 创建自定义配置
-mkdir -p /etc/fail2ban/jail.d
-if [ -f /etc/fail2ban/jail.d/vps-scripts-sshd.local ]; then
-    cp /etc/fail2ban/jail.d/vps-scripts-sshd.local \
-        /etc/fail2ban/jail.d/vps-scripts-sshd.local.bak
-fi
-cat > /etc/fail2ban/jail.d/vps-scripts-sshd.local << EOF
+preview_plan() {
+    echo -e "${WHITE}DRY-RUN 预览${NC}"
+    echo "------------------------"
+    echo "将安装 fail2ban 软件包（apt/yum）"
+    echo "将写入 ${JAIL_FILE}（保留已有文件备份）"
+    echo "将 fail2ban-client -t 校验配置"
+    echo "将 enable/restart fail2ban 服务"
+    echo -e "${YELLOW}未实际修改系统。${NC}"
+}
+
+detect_system_type() {
+    if [ -f /etc/redhat-release ]; then
+        echo "centos"
+    elif [ -f /etc/debian_version ]; then
+        if grep -qi "ubuntu" /etc/os-release 2>/dev/null; then
+            echo "ubuntu"
+        else
+            echo "debian"
+        fi
+    else
+        echo ""
+    fi
+}
+
+install_fail2ban() {
+    local system_type
+    local confirm=""
+
+    echo -e "${WHITE}Fail2ban安全工具${NC}"
+    echo "------------------------"
+
+    if [ "${DRY_RUN}" = true ]; then
+        preview_plan
+        return 0
+    fi
+
+    echo -e "${YELLOW}警告: 安装Fail2ban将增强系统安全性，但可能影响正常访问${NC}"
+    read -r -p "确定要安装Fail2ban吗? (y/n): " confirm
+    case "${confirm}" in
+        y|Y) echo -e "${GREEN}开始安装Fail2ban...${NC}" ;;
+        n|N) echo -e "${YELLOW}已取消操作${NC}"; return 0 ;;
+        *) echo -e "${RED}无效选择，已取消操作${NC}"; return 1 ;;
+    esac
+
+    system_type=$(detect_system_type)
+    if [ -z "${system_type}" ]; then
+        echo -e "${RED}不支持的操作系统类型${NC}"
+        return 1
+    fi
+
+    echo -e "${WHITE}检测到系统类型: ${YELLOW}${system_type}${NC}"
+    echo -e "${WHITE}安装Fail2ban...${NC}"
+    if [ "${system_type}" = "centos" ]; then
+        yum -y install epel-release
+        yum -y install fail2ban
+    else
+        apt-get update
+        apt-get -y install fail2ban
+    fi
+
+    if ! command -v fail2ban-server >/dev/null 2>&1; then
+        echo -e "${RED}Fail2ban安装失败，请手动检查${NC}"
+        return 1
+    fi
+
+    echo -e "${WHITE}配置Fail2ban...${NC}"
+    mkdir -p /etc/fail2ban/jail.d
+    if [ -f "${JAIL_FILE}" ]; then
+        cp -- "${JAIL_FILE}" "${JAIL_FILE}.bak"
+    fi
+    cat > "${JAIL_FILE}" << EOF
 [DEFAULT]
 ignoreip = 127.0.0.1/8
 bantime = 86400
@@ -86,30 +142,59 @@ maxretry = 3
 bantime = 86400
 EOF
 
-# 启动Fail2ban服务
-echo -e "${WHITE}启动Fail2ban服务...${NC}"
-if ! fail2ban-client -t; then
-    echo -e "${RED}Fail2ban配置检查失败，已保留备份文件${NC}"
-    exit 1
-fi
-systemctl enable fail2ban
-systemctl restart fail2ban
+    echo -e "${WHITE}启动Fail2ban服务...${NC}"
+    if ! fail2ban-client -t; then
+        echo -e "${RED}Fail2ban配置检查失败，已保留备份文件${NC}"
+        return 1
+    fi
+    systemctl enable fail2ban
+    systemctl restart fail2ban
 
-# 检查服务状态
-if systemctl is-active fail2ban &> /dev/null; then
-    echo -e "${GREEN}Fail2ban服务已成功启动${NC}"
-else
-    echo -e "${RED}Fail2ban服务启动失败，请手动检查${NC}"
-    exit 1
-fi
+    if systemctl is-active fail2ban >/dev/null 2>&1; then
+        echo -e "${GREEN}Fail2ban服务已成功启动${NC}"
+    else
+        echo -e "${RED}Fail2ban服务启动失败，请手动检查${NC}"
+        return 1
+    fi
 
-echo ""
-echo -e "${GREEN}Fail2ban安装配置完成${NC}"
-echo -e "${WHITE}主要配置参数:${NC}"
-echo -e "${YELLOW}封禁时间: 24小时${NC}"
-echo -e "${YELLOW}最大尝试次数: 3次${NC}"
-echo -e "${YELLOW}保护服务: SSH${NC}"
-echo ""
-echo -e "${WHITE}查看封禁IP: ${YELLOW}fail2ban-client status sshd${NC}"
-echo -e "${WHITE}解封IP: ${YELLOW}fail2ban-client set sshd unbanip IP地址${NC}"
-echo ""
+    echo ""
+    echo -e "${GREEN}Fail2ban安装配置完成${NC}"
+    echo -e "${WHITE}主要配置参数:${NC}"
+    echo -e "${YELLOW}封禁时间: 24小时${NC}"
+    echo -e "${YELLOW}最大尝试次数: 3次${NC}"
+    echo -e "${YELLOW}保护服务: SSH${NC}"
+    echo ""
+    echo -e "${WHITE}查看封禁IP: ${YELLOW}fail2ban-client status sshd${NC}"
+    echo -e "${WHITE}解封IP: ${YELLOW}fail2ban-client set sshd unbanip IP地址${NC}"
+    echo ""
+}
+
+main() {
+    case "${1:-}" in
+        --help|-h)
+            show_help
+            return 0
+            ;;
+        --status)
+            show_status
+            return 0
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            require_root
+            preview_plan
+            return 0
+            ;;
+        "")
+            require_root
+            install_fail2ban
+            ;;
+        *)
+            echo -e "${RED}未知参数: ${1}${NC}"
+            show_help
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

@@ -19,6 +19,8 @@ grep -Fq 'safe_remove_file "$INSTALL_COMMAND"' "${SCRIPT}"
 grep -Fq 'safe_remove_dir "$INSTALL_LIB_DIR"' "${SCRIPT}"
 grep -Fq 'safe_remove_dir "$LOG_DIR"' "${SCRIPT}"
 grep -Fq 'cp -a "$INSTALL_LIB_DIR" "${BACKUP_DIR}/vps-scripts"' "${SCRIPT}"
+grep -Fq -- '--dry-run' "${SCRIPT}"
+grep -Fq 'show_preview()' "${SCRIPT}"
 
 if grep -Eq 'BACKUP_DIR=.*PARENT_DIR|cp[[:space:]]+-r[[:space:]]+"\$PARENT_DIR"' "${SCRIPT}"; then
     echo "Full uninstall still backs a directory up inside itself." >&2

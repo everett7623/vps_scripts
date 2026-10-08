@@ -49,7 +49,13 @@ else
 fi
 
 ensure_runtime_dirs() {
-    safe_mkdir "${LOG_DIR}"
+    if declare -F resolve_log_dir >/dev/null 2>&1; then
+        resolve_log_dir "${VPS_LOG_DIR:-/var/log/vps_scripts}" || true
+        LOG_FILE="${LOG_DIR}/optimize_system.log"
+    else
+        safe_mkdir "${LOG_DIR}"
+    fi
+    safe_mkdir "${BACKUP_DIR}" 2>/dev/null || BACKUP_DIR="${TMPDIR:-/tmp}/vps_backups_optimize"
     safe_mkdir "${BACKUP_DIR}"
 }
 

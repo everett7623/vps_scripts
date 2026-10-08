@@ -563,13 +563,17 @@ run_repo_script() {
     print_runtime_step 4 4 "执行模块"
     echo ""
     bash "${script_file}" || exit_code=$?
-    if [ "${exit_code}" -ne 0 ]; then
+    if [ "${exit_code}" -eq 0 ]; then
         echo ""
-        echo -e "${RED}[错误] 模块执行失败。${RESET}"
+        echo -e "${GREEN}[完成] 模块执行结束。${RESET}"
+    elif [ "${exit_code}" -eq 130 ]; then
+        echo ""
+        echo -e "${YELLOW}[取消] 模块被中断（Ctrl+C）。${RESET}"
         echo -e "${DIM}退出码: ${exit_code} | 模块: ${script_rel_path}${RESET}"
     else
         echo ""
-        echo -e "${GREEN}[完成] 模块执行结束。${RESET}"
+        echo -e "${RED}[错误] 模块执行失败。${RESET}"
+        echo -e "${DIM}退出码: ${exit_code} | 模块: ${script_rel_path}${RESET}"
     fi
 
     rm -rf "${temp_root}"

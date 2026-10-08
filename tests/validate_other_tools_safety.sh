@@ -21,10 +21,13 @@ fi
 
 grep -Fq '/etc/sysctl.d/99-vps-bbr.conf' "${BBR_SCRIPT}"
 grep -Fq 'sed -i '\''\|^/swapfile[[:space:]]|d'\''' "${SWAP_SCRIPT}"
-grep -Fq '[[ $swap_size =~ ^([1-9][0-9]*)G$ ]]' "${SWAP_SCRIPT}"
+grep -Eq '\[\[ \$\{?swap_size\}? =~ \^\(\[1-9\]\[0-9\]\*\)G\$ \]\]' "${SWAP_SCRIPT}"
+grep -Fq -- '--status' "${SWAP_SCRIPT}"
 grep -Fq '/etc/fail2ban/jail.d/vps-scripts-sshd.local' "${FAIL2BAN_SCRIPT}"
 grep -Fq 'fail2ban-client -t' "${FAIL2BAN_SCRIPT}"
+grep -Fq -- '--status' "${FAIL2BAN_SCRIPT}"
 grep -Fq 'return "${exit_code}"' "${LAUNCHER}"
 grep -Fq 'aarch64|arm64) arch=arm64' "${LAUNCHER}"
+grep -Fq '模块被中断' "${LAUNCHER}"
 
 echo "Other-tools safety checks are valid."

@@ -144,44 +144,81 @@ show_bbr_status() {
     check_bbr_status || true
 }
 
+show_help() {
+    cat <<'EOF'
+用法：bash bbr.sh [选项]
+
+选项：
+  --status     仅显示 BBR 状态
+  --install    非交互启用 BBR（需 root）
+  --uninstall  非交互禁用 BBR（需 root）
+  --help       显示帮助
+
+无参数时进入交互菜单。
+EOF
+}
+
 # 主函数
 main() {
+    case "${1:-}" in
+        --help|-h)
+            show_help
+            return 0
+            ;;
+        --status)
+            show_bbr_status
+            return 0
+            ;;
+        --install)
+            check_root
+            install_tools
+            check_kernel || true
+            install_bbr
+            return 0
+            ;;
+        --uninstall)
+            check_root
+            uninstall_bbr
+            return 0
+            ;;
+        "")
+            ;;
+        *)
+            echo -e "${RED}未知参数: ${1}${NC}"
+            show_help
+            return 1
+            ;;
+    esac
+
     echo -e "${YELLOW}=============================================${NC}"
     echo -e "${YELLOW}           BBR网络优化工具                   ${NC}"
     echo -e "${YELLOW}=============================================${NC}"
     echo ""
-    
-    # 检查root权限
+
     check_root
-    
-    # 安装必要工具
     install_tools
-    
-    # 检查内核版本
     check_kernel || true
-    
+
     echo ""
-    
-    # 显示状态
     show_bbr_status
-    
     echo ""
-    
-    # 显示选项菜单
+
     echo "请选择要执行的操作:"
     echo "1. 安装/启用BBR"
     echo "2. 卸载/禁用BBR"
     echo "3. 显示BBR状态"
     echo "4. 退出"
     echo ""
-    
-    read -p "请输入选项 (1-4): " option
-    
+
+    local option=""
+    local confirm=""
+    read -r -p "请输入选项 (1-4): " option
+
     case $option in
         1)
             echo ""
             echo -e "${YELLOW}注意: 安装BBR可能需要重启系统才能完全生效。${NC}"
-            read -p "是否继续? (y/n): " confirm
+            read -r -p "是否继续? (y/n): " confirm
             if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
                 install_bbr
                 echo -e "${GREEN}BBR安装完成!${NC}"
@@ -192,7 +229,7 @@ main() {
             ;;
         2)
             echo ""
-            read -p "确定要卸载BBR吗? (y/n): " confirm
+            read -r -p "确定要卸载BBR吗? (y/n): " confirm
             if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
                 uninstall_bbr
                 echo -e "${GREEN}BBR卸载完成!${NC}"
@@ -206,14 +243,14 @@ main() {
             ;;
         4)
             echo -e "${GREEN}感谢使用BBR网络优化工具!${NC}"
-            exit 0
+            return 0
             ;;
         *)
             echo -e "${RED}无效选项，操作已取消。${NC}"
-            exit 1
+            return 1
             ;;
     esac
 }
 
 # 执行主函数
-main
+main "$@"

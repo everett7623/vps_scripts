@@ -19,11 +19,7 @@ SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
 
-LOG_DIR="/var/log/vps_scripts"
-REPORT_DIR="$LOG_DIR/reports"
 CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
-LOG_FILE="$LOG_DIR/backhaul_${CURRENT_TIME}.log"
-REPORT_FILE="$REPORT_DIR/backhaul_report_${CURRENT_TIME}.txt"
 
 # 默认开关
 TEST_MODE="standard" # standard, fast(ping only), full(include mtr)
@@ -35,6 +31,7 @@ LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
 CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
 
 if [ -f "$LIB_FILE" ]; then
+    # shellcheck source=/dev/null
     source "$LIB_FILE"
     [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 else
@@ -45,9 +42,30 @@ else
     print_error() { echo -e "${RED}[错误] $1${NC}"; }
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}需要 root 权限${NC}"; exit 1; }; }
+    safe_mkdir() { local dir="${1}"; [ -d "${dir}" ] || mkdir -p -- "${dir}"; }
+    init_script_dirs() {
+        local script_name="${1:-vps_script}"
+        local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+        local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+        local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+        local base=""
+        if safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+            base="${preferred}"
+        else
+            base="${fallback}"
+            safe_mkdir "${base}" || return 1
+        fi
+        LOG_DIR="${base}"
+        REPORT_DIR="${base}/reports"
+        safe_mkdir "${REPORT_DIR}" || return 1
+        LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+        REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+        : > "${LOG_FILE}" || true
+        : > "${REPORT_FILE}" || true
+    }
 fi
 
-mkdir -p "$LOG_DIR" "$REPORT_DIR"
+init_script_dirs "backhaul" "${CURRENT_TIME}"
 
 # ------------------------------------------------------------------------------
 # 2. 测试目标库 (完整保留)
@@ -92,34 +110,42 @@ check_dependencies() {
     if [ ${#missing[@]} -gt 0 ]; then
         print_warn "安装缺失依赖: ${missing[*]}"
         if command -v apt-get &>/dev/null; then
-            apt-get update -qq && apt-get install -y traceroute mtr-tiny iputils-ping dnsutils bc curl jq &>> "$LOG_FILE"
+            apt-get update -qq &>> "$LOG_FILE" || true
+            apt-get install -y traceroute mtr-tiny iputils-ping dnsutils bc curl jq &>> "$LOG_FILE" || true
         elif command -v yum &>/dev/null; then
-            yum install -y traceroute mtr iputils bind-utils bc curl jq &>> "$LOG_FILE"
+            yum install -y traceroute mtr iputils bind-utils bc curl jq &>> "$LOG_FILE" || true
         elif command -v apk &>/dev/null; then
-            apk add --no-cache traceroute mtr iputils bind-tools bc curl jq &>> "$LOG_FILE"
+            apk add --no-cache traceroute mtr iputils bind-tools bc curl jq &>> "$LOG_FILE" || true
         fi
     fi
 }
 
 get_local_info() {
     print_info "获取本机网络信息..."
-    local ip=$(curl -s -4 --max-time 3 ip.sb 2>/dev/null)
-    local info=$(curl -s --max-time 3 "http://ip-api.com/json/${ip}?lang=zh-CN" 2>/dev/null)
-    
-    local country=$(echo "$info" | grep -oP '"country":"\K[^"]+')
-    local isp=$(echo "$info" | grep -oP '"isp":"\K[^"]+')
-    local as_info=$(echo "$info" | grep -oP '"as":"\K[^"]+')
-    
-    echo -e "${CYAN}本机 IP:${NC} $ip ($country)"
-    echo -e "${CYAN}运营商 :${NC} $isp"
-    echo -e "${CYAN}AS 信息:${NC} $as_info"
+    local ip
+    local info=""
+    ip=$(curl -s -4 --max-time 3 ip.sb 2>/dev/null || true)
+    if [ -n "$ip" ]; then
+        info=$(curl -s --max-time 3 "http://ip-api.com/json/${ip}?lang=zh-CN" 2>/dev/null || true)
+    fi
+
+    local country
+    local isp
+    local as_info
+    country=$(echo "$info" | grep -oP '"country":"\K[^"]+' || true)
+    isp=$(echo "$info" | grep -oP '"isp":"\K[^"]+' || true)
+    as_info=$(echo "$info" | grep -oP '"as":"\K[^"]+' || true)
+
+    echo -e "${CYAN}本机 IP:${NC} ${ip:-未知} (${country:-未知})"
+    echo -e "${CYAN}运营商 :${NC} ${isp:-未知}"
+    echo -e "${CYAN}AS 信息:${NC} ${as_info:-未知}"
     echo ""
-    
+
     {
         echo "=== 本机信息 ==="
-        echo "IP: $ip"
-        echo "位置: $country"
-        echo "ISP: $isp / $as_info"
+        echo "IP: ${ip:-未知}"
+        echo "位置: ${country:-未知}"
+        echo "ISP: ${isp:-未知} / ${as_info:-未知}"
         echo "时间: $(date)"
         echo ""
     } >> "$REPORT_FILE"
@@ -174,45 +200,53 @@ test_single_target() {
     local trace_cmd=""
     
     # 1. Ping 测试 (优先)
-    local ping_res=$(ping -c 4 -W 1 "$ip" 2>&1)
-    local loss=$(echo "$ping_res" | grep -oP '\d+(?=% packet loss)')
-    local latency=$(echo "$ping_res" | grep "min/avg" | awk -F '/' '{print $5}')
-    
+    local ping_res
+    ping_res=$(ping -c 4 -W 1 "$ip" 2>&1 || true)
+    local loss
+    local latency
+    loss=$(echo "$ping_res" | grep -oP '\d+(?=% packet loss)' || echo "100")
+    latency=$(echo "$ping_res" | grep "min/avg" | awk -F '/' '{print $5}' || true)
+
     # 如果 Ping 不通，直接返回
     if [ -z "$latency" ]; then
         printf "%-16s | %-15s | ${RED}%-6s${NC} | ${RED}%-8s${NC} | %-6s | %-15s\n" \
             "${name:0:16}" "$ip" "100%" "超时" "-" "-"
-        return
+        return 0
     fi
-    
+
     # 快速模式跳过路由追踪
     if [ "$TEST_MODE" == "fast" ]; then
         printf "%-16s | %-15s | %-6s | %-8s | %-6s | %-15s\n" \
             "${name:0:16}" "$ip" "$loss%" "${latency}ms" "-" "跳过"
-        return
+        return 0
     fi
-    
+
     # 2. 路由追踪 (Traceroute)
     case $TRACE_METHOD in
         tcp) trace_cmd="traceroute -T -n -w 1 -q 1 -m $MAX_HOPS $ip" ;;
         udp) trace_cmd="traceroute -U -n -w 1 -q 1 -m $MAX_HOPS $ip" ;;
         *)   trace_cmd="traceroute -I -n -w 1 -q 1 -m $MAX_HOPS $ip" ;; # Default ICMP
     esac
-    
-    local trace_out=$($trace_cmd 2>&1)
-    local hops=$(echo "$trace_out" | tail -n 1 | awk '{print $1}')
-    local route_type=$(analyze_route_type "$trace_out")
-    
+
+    local trace_out
+    trace_out=$($trace_cmd 2>&1 || true)
+    local hops
+    local route_type
+    hops=$(echo "$trace_out" | tail -n 1 | awk '{print $1}' || echo "-")
+    route_type=$(analyze_route_type "$trace_out" || echo "普通线路")
+
     # 3. MTR 测试 (仅在 Full 模式或高丢包时触发)
     if [ "$TEST_MODE" == "full" ]; then
-        mtr -r -n -c 10 "$ip" >> "$REPORT_FILE" 2>&1
+        mtr -r -n -c 10 "$ip" >> "$REPORT_FILE" 2>&1 || true
     fi
-    
+
     # 输出表格行
     # 格式化颜色输出 (根据延迟变色)
     local lat_color=$GREEN
-    if (( $(echo "$latency > 150" | bc -l) )); then lat_color=$YELLOW; fi
-    if (( $(echo "$latency > 300" | bc -l) )); then lat_color=$RED; fi
+    if command -v bc &>/dev/null; then
+        if (( $(echo "$latency > 150" | bc -l 2>/dev/null || echo 0) )); then lat_color=$YELLOW; fi
+        if (( $(echo "$latency > 300" | bc -l 2>/dev/null || echo 0) )); then lat_color=$RED; fi
+    fi
     
     printf "%-16s | %-15s | %-6s | ${lat_color}%-8s${NC} | %-6s | %b\n" \
         "${name:0:16}" "$ip" "$loss%" "${latency}ms" "$hops" "$route_type"
@@ -333,22 +367,22 @@ interactive_menu() {
 main() {
     if [ "$TRACE_METHOD" == "icmp" ]; then check_root; fi
     check_dependencies
-    
-    # 命令行处理
-    if [ -n "$1" ]; then
-        case "$1" in
-            --cn) run_batch_test "cn" "China"; exit ;;
-            --all) 
+
+    # 命令行处理（${1:-} 避免 set -u 下无参崩溃）
+    if [ -n "${1:-}" ]; then
+        case "${1}" in
+            --cn) run_batch_test "cn" "China"; return 0 ;;
+            --all)
                 run_batch_test "cn" "China"
                 run_batch_test "asia" "Asia"
                 run_batch_test "na" "North America"
                 run_batch_test "eu" "Europe"
-                exit ;;
-            --fast) TEST_MODE="fast"; run_batch_test "cn" "China (Fast)"; exit ;;
-            --help|-h) 
+                return 0 ;;
+            --fast) TEST_MODE="fast"; run_batch_test "cn" "China (Fast)"; return 0 ;;
+            --help|-h)
                 echo "Usage: bash backhaul_route_test.sh [--cn | --all | --fast]"
-                exit 0 ;;
-            *) print_error "无效参数"; exit 1 ;;
+                return 0 ;;
+            *) print_error "无效参数"; return 1 ;;
         esac
     else
         interactive_menu

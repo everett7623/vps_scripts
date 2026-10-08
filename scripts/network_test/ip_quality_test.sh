@@ -21,11 +21,41 @@ WHITE='\033[0;37m'
 NC='\033[0m' # No Color
 
 # 配置变量
-LOG_DIR="/var/log/vps_scripts"
-LOG_FILE="$LOG_DIR/ip_quality_$(date +%Y%m%d_%H%M%S).log"
-REPORT_DIR="/var/log/vps_scripts/reports"
-REPORT_FILE="$REPORT_DIR/ip_quality_$(date +%Y%m%d_%H%M%S).txt"
+CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 TEMP_DIR=$(mktemp -d "/tmp/ip_quality.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
+SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || echo "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
+LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
+CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
+
+if [ -f "$LIB_FILE" ]; then
+    # shellcheck source=/dev/null
+    source "$LIB_FILE"
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+else
+    safe_mkdir() { local dir="${1}"; [ -d "${dir}" ] || mkdir -p -- "${dir}"; }
+    init_script_dirs() {
+        local script_name="${1:-vps_script}"
+        local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+        local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+        local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+        local base=""
+        if safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+            base="${preferred}"
+        else
+            base="${fallback}"
+            safe_mkdir "${base}" || return 1
+        fi
+        LOG_DIR="${base}"
+        REPORT_DIR="${base}/reports"
+        safe_mkdir "${REPORT_DIR}" || return 1
+        LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+        REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+        : > "${LOG_FILE}" || true
+        : > "${REPORT_FILE}" || true
+    }
+fi
 
 # 测试IP（默认使用本机公网IP）
 TARGET_IP=""
@@ -47,10 +77,9 @@ BLACKLIST_SERVERS[psbl]="psbl.surriel.com"
 BLACKLIST_SERVERS[mailspike]="bl.mailspike.net"
 BLACKLIST_SERVERS[truncate]="truncate.gbudb.net"
 
-# 创建目录
+# 创建目录（可写路径回退，避免 set -e / 非 root 崩溃）
 create_directories() {
-    [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
-    [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
+    init_script_dirs "ip_quality" "${CURRENT_TIME}"
 }
 
 # 清理
@@ -659,54 +688,57 @@ EOF
 main() {
     # 初始化
     create_directories
-    
+
+    local arg1="${1:-}"
+
     # 解析参数
     if [ $# -eq 0 ]; then
         # 无参数，使用本机IP
-        TARGET_IP=$(curl -s -4 --max-time 5 ip.sb 2>/dev/null || curl -s -4 --max-time 5 ifconfig.me 2>/dev/null)
-        
+        TARGET_IP=$(curl -s -4 --max-time 5 ip.sb 2>/dev/null || curl -s -4 --max-time 5 ifconfig.me 2>/dev/null || true)
+
         if [ -z "$TARGET_IP" ]; then
-            print_msg "$RED" "无法获取本机公网IP"
-            exit 1
+            print_msg "$RED" "无法获取本机公网IP，请手动指定 IP"
+            TARGET_IP="0.0.0.0"
         fi
-    elif [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    elif [ "$arg1" = "--help" ] || [ "$arg1" = "-h" ]; then
         show_help
-        exit 0
+        return 0
     else
         # 验证IP格式
-        if [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            TARGET_IP=$1
+        if [[ "$arg1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TARGET_IP=$arg1
         else
-            print_msg "$RED" "无效的IP地址格式: $1"
-            exit 1
+            print_msg "$RED" "无效的IP地址格式: $arg1"
+            return 1
         fi
     fi
-    
+
     # 开始检测
     log "开始IP质量检测: $TARGET_IP"
-    
+
     {
         echo "========== IP质量检测 =========="
         echo "开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
         echo ""
     } > "$REPORT_FILE"
-    
+
     # 如果有参数，执行完整检测
-    if [ $# -gt 0 ] && [ "$1" != "--help" ] && [ "$1" != "-h" ]; then
-        get_ip_info "$TARGET_IP"
-        check_rdns "$TARGET_IP"
-        check_blacklists "$TARGET_IP"
-        check_open_ports "$TARGET_IP"
-        check_cloud_provider "$TARGET_IP"
-        check_abuse_db "$TARGET_IP"
-        calculate_risk_score "$TARGET_IP"
-        generate_comprehensive_report
+    if [ $# -gt 0 ] && [ "$arg1" != "--help" ] && [ "$arg1" != "-h" ]; then
+        get_ip_info "$TARGET_IP" || true
+        check_rdns "$TARGET_IP" || true
+        check_blacklists "$TARGET_IP" || true
+        check_open_ports "$TARGET_IP" || true
+        check_cloud_provider "$TARGET_IP" || true
+        check_abuse_db "$TARGET_IP" || true
+        calculate_risk_score "$TARGET_IP" || true
+        generate_comprehensive_report || true
     else
         # 否则显示交互菜单
-        interactive_menu
+        interactive_menu || true
     fi
-    
+
     print_msg "$GREEN" "\nIP质量检测完成！"
+    return 0
 }
 
 # 运行主函数

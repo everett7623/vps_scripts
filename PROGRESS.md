@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.1 closes the persistent-command startup gap from Issue #1. The launcher now creates the managed `vps` command on the first interactive root run while retaining explicit install, opt-out, non-interactive, and collision-safe behavior.
+Completed the A→B→C hardening sweep for Issue #2-class failures: network/performance soft-fail + log fallback, other_tools status/dry-run, system_tools `resolve_log_dir`, uninstall dry-run, LDNMP status facade, and category/mocked regression tests. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites.
 
 ## Completed
 
@@ -24,6 +24,12 @@ Version 1.1.1 closes the persistent-command startup gap from Issue #1. The launc
 
 ### Maintained script hardening
 
+- Fixed Issue #2 across all five `scripts/network_test/` modules with `${1:-}` guards, soft-fail probes, and `init_script_dirs` log/report fallback
+- Added shared `init_script_dirs()` and `run_soft()` helpers plus `tests/validate_network_test_resilience.sh`
+- Hardened all four `performance_test/` modules with the same log-dir and soft-fail patterns
+- Added `--status`/`--dry-run` to swap/fail2ban, CLI modes to bbr, and interrupt-aware launcher messaging
+- Added `resolve_log_dir()` and wired system_tools log/backup fallbacks; `full_uninstall.sh --dry-run`; `ldnmp.sh --status`
+- Added `validate_category_resilience.sh` and `validate_mocked_runtime_smoke.sh`
 - Enabled `set -euo pipefail` across all 21 service installers and all network/performance scripts
 - Replaced predictable temporary paths with `mktemp` in the affected maintained scripts
 - Removed first-party `curl | sh` patterns from the hardened service installers
@@ -38,7 +44,7 @@ Version 1.1.1 closes the persistent-command startup gap from Issue #1. The launc
 
 ### Validation and CI
 
-- 39 repository validation scripts now cover paths, categories, UI, strict mode, installers, release metadata, privacy, execution safety, and upgrade-hardening policy
+- Repository validation scripts now cover paths, categories, UI, strict mode, installers, release metadata, privacy, execution safety, upgrade-hardening, network/performance resilience, and mocked helper smoke checks
 - Release metadata validation keeps the version, date, changelog, README, version policy, config, and launcher synchronized
 - ShellCheck error findings now fail CI instead of being ignored
 - Fixed `validate_update_scripts_legacy.sh` to match the removed legacy directory

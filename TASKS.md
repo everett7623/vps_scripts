@@ -61,6 +61,12 @@
 - [x] Add an upgrade-hardening regression test for launcher, Nezha, LDNMP, and bandwidth-test policies
 - [x] Add LDNMP input, credential-disclosure, and demo-site safety regression coverage
 - [x] Require explicit `--reboot` for non-interactive system-update restarts
+- [x] Fix Issue #2 network-test menu failures (`unbound $1`, single-node `set -e` abort, log-dir fallback)
+- [x] Add `init_script_dirs` / `run_soft` helpers and `validate_network_test_resilience.sh`
+- [x] Harden `performance_test/` with the same log-dir and soft-fail patterns
+- [x] Add `--status`/`--dry-run` flags for swap/fail2ban and CLI modes for bbr
+- [x] Batch-scan remaining categories for `set -u` / AND-list mkdir / probe-abort defects
+- [x] Add `resolve_log_dir`, system_tools log fallback, uninstall dry-run, LDNMP `--status`, mocked runtime smoke tests
 
 ## P3 (existing)
 

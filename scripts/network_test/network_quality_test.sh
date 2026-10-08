@@ -22,11 +22,41 @@ WHITE='\033[0;37m'
 NC='\033[0m' # No Color
 
 # 配置变量
-LOG_DIR="/var/log/vps_scripts"
-LOG_FILE="$LOG_DIR/network_quality_$(date +%Y%m%d_%H%M%S).log"
-REPORT_DIR="/var/log/vps_scripts/reports"
-REPORT_FILE="$REPORT_DIR/network_quality_$(date +%Y%m%d_%H%M%S).txt"
+CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 TEMP_DIR=$(mktemp -d "/tmp/network_quality.XXXXXX") || { echo "Failed to create temp dir"; exit 1; }
+SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || echo "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
+LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
+CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
+
+if [ -f "$LIB_FILE" ]; then
+    # shellcheck source=/dev/null
+    source "$LIB_FILE"
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+else
+    safe_mkdir() { local dir="${1}"; [ -d "${dir}" ] || mkdir -p -- "${dir}"; }
+    init_script_dirs() {
+        local script_name="${1:-vps_script}"
+        local stamp="${2:-$(date +%Y%m%d_%H%M%S)}"
+        local preferred="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+        local fallback="${TMPDIR:-/tmp}/vps_scripts_$(id -u 2>/dev/null || echo nobody)"
+        local base=""
+        if safe_mkdir "${preferred}" 2>/dev/null && [ -w "${preferred}" ]; then
+            base="${preferred}"
+        else
+            base="${fallback}"
+            safe_mkdir "${base}" || return 1
+        fi
+        LOG_DIR="${base}"
+        REPORT_DIR="${base}/reports"
+        safe_mkdir "${REPORT_DIR}" || return 1
+        LOG_FILE="${LOG_DIR}/${script_name}_${stamp}.log"
+        REPORT_FILE="${REPORT_DIR}/${script_name}_report_${stamp}.txt"
+        : > "${LOG_FILE}" || true
+        : > "${REPORT_FILE}" || true
+    }
+fi
 
 # 测试模式
 BASIC_MODE=false
@@ -71,10 +101,9 @@ COMMON_PORTS[mongodb]="27017:MongoDB"
 COMMON_PORTS[rdp]="3389:RDP"
 COMMON_PORTS[vnc]="5900:VNC"
 
-# 创建必要目录
+# 创建必要目录（可写路径回退，避免 set -e / 非 root 崩溃）
 create_directories() {
-    [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
-    [ ! -d "$REPORT_DIR" ] && mkdir -p "$REPORT_DIR"
+    init_script_dirs "network_quality" "${CURRENT_TIME}"
 }
 
 # 清理临时文件
@@ -110,12 +139,12 @@ check_dependencies() {
     
     if [ ${#missing[@]} -gt 0 ]; then
         print_msg "$YELLOW" "缺少工具: ${missing[*]}，正在安装..."
-        
+
         if command -v apt-get &> /dev/null; then
-            apt-get update -qq
-            apt-get install -y iputils-ping netcat-openbsd nmap dnsutils mtr-tiny iproute2 iperf3 &>> "$LOG_FILE"
+            apt-get update -qq &>> "$LOG_FILE" || true
+            apt-get install -y iputils-ping netcat-openbsd nmap dnsutils mtr-tiny iproute2 iperf3 &>> "$LOG_FILE" || true
         elif command -v yum &> /dev/null; then
-            yum install -y iputils nc nmap bind-utils mtr iproute iperf3 &>> "$LOG_FILE"
+            yum install -y iputils nc nmap bind-utils mtr iproute iperf3 &>> "$LOG_FILE" || true
         fi
     fi
 }
@@ -730,18 +759,19 @@ main() {
     } > "$REPORT_FILE"
     
     if [ "$BASIC_MODE" = true ]; then
-        basic_test
-        calculate_network_score
-        generate_report
+        basic_test || true
+        calculate_network_score || true
+        generate_report || true
     elif [ "$FULL_MODE" = true ]; then
-        full_test
-        calculate_network_score
-        generate_report
+        full_test || true
+        calculate_network_score || true
+        generate_report || true
     else
-        interactive_menu
+        interactive_menu || true
     fi
-    
+
     print_msg "$GREEN" "\n网络质量测试完成！"
+    return 0
 }
 
 # 运行主函数
