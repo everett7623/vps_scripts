@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.5"
+PROJECT_VERSION="1.1.6"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -906,24 +906,32 @@ proxy_tools_menu() {
         print_header
         print_status_line
         print_panel_title "代理工具"
-        print_menu_item 1 "勇哥 sing-box" "第三方社区脚本"
-        print_menu_item 2 "fscarmen sing-box" "第三方社区脚本"
-        print_menu_item 3 "勇哥 x-ui" "第三方社区脚本"
-        print_menu_item 4 "官方 3x-ui" "第三方社区脚本"
-        print_menu_item 5 "xeefei 3x-ui" "第三方社区脚本"
-        print_menu_item 6 "Hysteria2" "hy2 协议代理"
+        print_menu_item 1 "3x-ui" "Xray 多协议面板（官方）"
+        print_menu_item 2 "S-UI" "sing-box 多协议面板"
+        print_menu_item 3 "X-Panel" "3x-ui 中文增强版"
+        print_menu_item 4 "勇哥 x-ui" "x-ui 一键脚本"
+        print_menu_item 5 "勇哥 sing-box" "sing-box 一键脚本"
+        print_menu_item 6 "fscarmen sing-box" "sing-box 一键脚本"
+        print_menu_item 7 "mack-a 八合一" "v2ray-agent 多协议脚本"
+        print_menu_item 8 "Hysteria2" "hy2 一键脚本"
+        print_menu_item 9 "Hysteria2 官方" "仅安装核心，需自行配置"
+        print_menu_item 10 "Xray 官方" "仅安装核心，需自行配置"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-6]: " || return 0
+        read_menu_choice "请选择 [0-10]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
-            1) run_remote_script_url "https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh" "yonggekkk sing-box" ;;
-            2) run_remote_script_url "https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh" "fscarmen sing-box" ;;
-            3) run_remote_script_url "https://gitlab.com/rwkgyg/x-ui-yg/raw/main/install.sh" "yonggekkk x-ui" ;;
-            4) run_remote_script_url "https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh" "Official 3x-ui" ;;
-            5) run_remote_script_url "https://raw.githubusercontent.com/xeefei/3x-ui/master/install.sh" "xeefei 3x-ui" ;;
-            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/hy2/main/hy2.sh" "Hysteria2 installer" ;;
+            1) run_remote_script_url "https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh" "Official 3x-ui" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/alireza0/s-ui/master/install.sh" "S-UI" ;;
+            3) run_remote_script_url "https://raw.githubusercontent.com/xeefei/X-Panel/master/install.sh" "xeefei X-Panel" ;;
+            4) run_remote_script_url "https://raw.githubusercontent.com/yonggekkk/x-ui-yg/main/install.sh" "yonggekkk x-ui" ;;
+            5) run_remote_script_url "https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh" "yonggekkk sing-box" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh" "fscarmen sing-box" ;;
+            7) run_remote_script_url "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" "mack-a v2ray-agent" ;;
+            8) run_remote_script_url "https://raw.githubusercontent.com/everett7623/hy2/main/hy2.sh" "Hysteria2 installer" ;;
+            9) run_remote_script_url "https://get.hy2.sh/" "Official Hysteria2 server install" ;;
+            10) run_remote_script_url "https://github.com/XTLS/Xray-install/raw/main/install-release.sh" "Official Xray-core install" install ;;
             0) return ;;
             *) invalid_choice ;;
         esac

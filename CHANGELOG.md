@@ -4,6 +4,16 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.6 - 2026-10-09
+
+### Added
+- Proxy tools menu: S-UI (sing-box panel, `alireza0/s-ui`), mack-a v2ray-agent multi-protocol script, the official Hysteria2 server installer (`get.hy2.sh`), and the official Xray-core installer (`XTLS/Xray-install`, run with `install`). The two official installers only install the core and a systemd unit; configuration is left to the user.
+
+### Changed
+- Proxy tools menu is grouped as panels (3x-ui, S-UI, X-Panel) first, then one-click scripts, then official core installers. **Proxy menu numbers changed.**
+- yonggekkk x-ui now downloads from the GitHub repository the author documents (`yonggekkk/x-ui-yg`) instead of the older GitLab copy.
+- xeefei's panel entry is renamed X-Panel and uses its current repository URL (`xeefei/X-Panel`; the old `xeefei/3x-ui` path only redirected).
+
 ## 1.1.5 - 2026-10-09
 
 ### Added

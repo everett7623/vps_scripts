@@ -127,9 +127,16 @@
 - [x] Move archived/stale entries to the end with labels; Uptime Kuma to 2.x; Docker presence check for Docker-based entries
 - [x] Synchronize version, date, changelog, README, PRIVACY, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.5`
 
+## 1.1.6 release
+
+- [x] Catalog review of the proxy tools menu (URL liveness + upstream activity); community test tools re-checked, no changes needed
+- [x] Add S-UI, mack-a v2ray-agent, official Hysteria2 and Xray-core installers
+- [x] Move x-ui-yg and X-Panel to current upstream URLs; group panels before scripts
+- [x] Synchronize version, date, changelog, README, PRIVACY, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.6`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); done for service install, other tools, community in 1.1.5; next: proxy tools, network/performance tests, system tools
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); done for service install, other tools, community in 1.1.5 and proxy tools in 1.1.6; next: feature gaps in first-party network/performance/system tools
 - [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

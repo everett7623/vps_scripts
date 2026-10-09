@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.5`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.6`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.5` is a backward-compatible patch release that refreshes the service-install, other-tools, and community menus: it adds popular maintained projects, replaces the broken FRP entry with a first-party checksum-verified installer, and moves outdated entries lower. Menu numbers in those three submenus changed. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.6` is a backward-compatible patch release that refreshes the proxy tools menu: it adds S-UI, mack-a v2ray-agent, and the official Hysteria2 and Xray-core installers, moves two entries to their current upstream URLs, and groups panels before scripts. Proxy menu numbers changed. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
