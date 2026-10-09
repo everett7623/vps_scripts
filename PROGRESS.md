@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools (optimize, hostname, timezone, update) and fixes several correctness bugs found along the way; 1.1.3 added the same preview model to every uninstall helper, the Nezha agent, and Docker. All previews are exercised by an executed dry-run behavior test. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites for real (non-preview) execution paths.
+Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools (optimize, hostname, timezone, update) and fixes several correctness bugs found along the way; 1.1.3 added the same preview model to every uninstall helper, the Nezha agent, and Docker. All previews are exercised by an executed dry-run behavior test. Remaining work is a per-category catalog review (adding popular maintained tools, deprioritizing outdated ones) and richer mocked pkg/systemd suites for real (non-preview) execution paths. The LDNMP installer stays a single combined installer.
 
 ## Completed
 
@@ -62,7 +62,7 @@ Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools
 
 ## Next Modernization Round
 
-- Split the LDNMP compatibility facade into calls to focused maintained installers
+- Review each category for popular maintained tools to add and outdated entries to deprioritize
 - Add mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Extend checksum or signature validation to other project-owned installer archives where upstream publishes verifiable metadata
 
