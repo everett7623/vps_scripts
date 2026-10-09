@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.3 adds preview/status/non-interactive flags and persistent backups to every uninstall helper, repairs the Nezha agent installer for the current upstream release with SHA-256 verification, and adds Docker installer preview modes, covered by an executed dry-run behavior test. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites for real (non-preview) execution paths.
+Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools (optimize, hostname, timezone, update) and fixes several correctness bugs found along the way; 1.1.3 added the same preview model to every uninstall helper, the Nezha agent, and Docker. All previews are exercised by an executed dry-run behavior test. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites for real (non-preview) execution paths.
 
 ## Completed
 
@@ -40,6 +40,7 @@ Version 1.1.3 adds preview/status/non-interactive flags and persistent backups t
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- Added `--dry-run` to optimize/hostname/timezone/update system tools; fixed timezone path traversal, unvalidated SSH baseline reloads, inverted yum/dnf reboot detection, and stdin-EOF menu loops
 - Replaced first-party remote shell pipelines in LDNMP, dependency installation, Jenkins build tooling, and bandwidth testing with validated temporary scripts
 - Routed third-party project installer entries through launcher confirmation, isolated download, syntax validation, and execution
 - Made the LDNMP compatibility installer validate requested PHP/database choices, protect generated credentials, and require explicit demo-site opt-in
@@ -55,7 +56,7 @@ Version 1.1.3 adds preview/status/non-interactive flags and persistent backups t
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.3
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.4
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
@@ -63,7 +64,6 @@ Version 1.1.3 adds preview/status/non-interactive flags and persistent backups t
 
 - Split the LDNMP compatibility facade into calls to focused maintained installers
 - Add mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
-- Add `--dry-run` to the remaining state-changing system tools (optimize, hostname, timezone, update)
 - Extend checksum or signature validation to other project-owned installer archives where upstream publishes verifiable metadata
 
 ## Success Criteria For Next Release

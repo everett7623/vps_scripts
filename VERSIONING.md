@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.3`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.4`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.3` is a backward-compatible patch release that adds non-interactive preview/status flags and persistent backups to the uninstall helpers, repairs the Nezha agent installer for the current upstream release with SHA-256 verification, and adds Docker installer preview modes. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.4` is a backward-compatible patch release that adds `--dry-run` previews to the system optimize, hostname, timezone, and update tools and fixes timezone input validation, SSH baseline validation, and yum/dnf reboot detection. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

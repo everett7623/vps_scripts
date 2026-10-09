@@ -20,6 +20,7 @@ BACKUP_DIR="/var/backups/hostname_change"
 SCRIPT_VERSION="1.0.0"
 
 AUTO_CONFIRM=false
+DRY_RUN=false
 SHOW_HISTORY_ONLY=false
 SHOW_CURRENT_ONLY=false
 ROLLBACK_ONLY=false
@@ -42,7 +43,7 @@ else
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
     check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
-    read_input() { local prompt="$1"; local default="${2:-}"; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " REPLY; REPLY=${REPLY:-$default}; else read -r -p "${prompt}: " REPLY; fi; }
+    read_input() { local prompt="$1"; local default="${2:-}"; local var_name="${3:-REPLY}"; local input=""; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " input || return 1; input=${input:-$default}; else read -r -p "${prompt}: " input || return 1; fi; printf -v "${var_name}" '%s' "${input}"; }
 fi
 
 ensure_runtime_dirs() {
@@ -72,6 +73,7 @@ show_help() {
   --rollback       使用最近一次备份回滚
   --history        显示主机名备份历史
   --show           显示当前主机名并退出
+  --dry-run        仅预览修改或回滚将触及的文件，不修改系统（无需 root）
   --help, -h       显示此帮助信息
 EOF
 }
@@ -416,6 +418,11 @@ rollback_latest() {
     }
 
     print_warn "最近备份：$(basename "${latest_backup}")"
+    if [ "${DRY_RUN}" = true ]; then
+        printf '[DRY-RUN] 从 %s 恢复 hostname/hosts 等文件，并将主机名设回 %s\n' \
+            "${latest_backup}" "$(read_backup_hostname "${latest_backup}")"
+        return 0
+    fi
     if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Roll back hostname using the latest backup?"; then
         print_info "已取消回滚。"
         return 0
@@ -430,6 +437,20 @@ show_current_hostname() {
     printf "%b%-18s%b %s\n" "${CYAN}" "主要 IP:" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
 }
 
+preview_change() {
+    local old_name="$1"
+    local new_name="$2"
+    local file=""
+
+    print_warn "DRY-RUN：以下仅为预览，不会修改系统。"
+    printf '[DRY-RUN] 主机名 %s -> %s\n' "${old_name}" "${new_name}"
+    printf '[DRY-RUN] 备份到 %s/backup_<时间戳>\n' "${BACKUP_DIR}"
+    for file in /etc/hostname /etc/hosts /etc/sysconfig/network /etc/mailname /etc/postfix/main.cf /etc/cloud/cloud.cfg; do
+        [ -f "${file}" ] && printf '[DRY-RUN] 更新 %s\n' "${file}"
+    done
+    printf '[DRY-RUN] hostnamectl set-hostname %s，重启 systemd-hostnamed/rsyslog（postfix 若运行）\n' "${new_name}"
+}
+
 change_hostname_flow() {
     local new_name="$1"
     local old_name=""
@@ -441,6 +462,11 @@ change_hostname_flow() {
 
     if [ "${new_name}" = "${old_name}" ]; then
         print_warn "主机名已经是 ${new_name}。"
+        return 0
+    fi
+
+    if [ "${DRY_RUN}" = true ]; then
+        preview_change "${old_name}" "${new_name}"
         return 0
     fi
 
@@ -484,7 +510,7 @@ interactive_menu() {
         echo "4) 查看当前主机名"
         echo "0) 退出"
         echo ""
-        read -r -p "请选择 [0-4]: " selection
+        read -r -p "请选择 [0-4]: " selection || { echo ""; exit 0; }
 
         case "${selection}" in
             1)
@@ -530,6 +556,9 @@ parse_args() {
             --rollback)
                 ROLLBACK_ONLY=true
                 ;;
+            --dry-run)
+                DRY_RUN=true
+                ;;
             --history)
                 SHOW_HISTORY_ONLY=true
                 ;;
@@ -571,17 +600,26 @@ main() {
     fi
 
     if [ "${ROLLBACK_ONLY}" = true ]; then
-        check_root
-        ensure_runtime_dirs
+        if [ "${DRY_RUN}" != true ]; then
+            check_root
+            ensure_runtime_dirs
+        fi
         rollback_latest
         exit $?
     fi
 
     if [ -n "${NEW_HOSTNAME:-}" ]; then
-        check_root
-        ensure_runtime_dirs
+        if [ "${DRY_RUN}" != true ]; then
+            check_root
+            ensure_runtime_dirs
+        fi
         change_hostname_flow "${NEW_HOSTNAME}"
         exit $?
+    fi
+
+    if [ "${DRY_RUN}" = true ]; then
+        print_error "--dry-run 需要配合新主机名或 --rollback 使用。"
+        exit 1
     fi
 
     check_root

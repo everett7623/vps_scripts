@@ -19,6 +19,7 @@ LOG_FILE="${LOG_DIR}/optimize_system.log"
 BACKUP_DIR="/var/backups/system_optimize"
 
 AUTO_CONFIRM=false
+DRY_RUN=false
 RUN_ALL=false
 RUN_KERNEL=false
 RUN_LIMITS=false
@@ -62,6 +63,7 @@ ensure_runtime_dirs() {
 log() {
     local level="$1"
     shift
+    [ "${DRY_RUN}" = true ] && return 0
     ensure_runtime_dirs
     printf '[%s] [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${level}" "$*" >> "${LOG_FILE}"
 }
@@ -78,8 +80,13 @@ show_help() {
   --memory         在低内存环境中配置 Swap 保护
   --services       禁用已知的低价值桌面服务
   --security       应用 SSH 延迟与安全基线
+  --dry-run        仅预览将写入的文件与命令，不修改系统（无需 root）
   --help, -h       显示此帮助信息
 EOF
+}
+
+preview() {
+    printf '[DRY-RUN] %s\n' "$*"
 }
 
 backup_target() {
@@ -115,6 +122,11 @@ apply_kernel_tuning() {
     local temp_file=""
 
     print_title "内核参数优化"
+    if [ "${DRY_RUN}" = true ]; then
+        preview "备份并写入 ${sysctl_file}（tcp/bbr/fq、vm.swappiness=10 等保守参数）"
+        preview "sysctl -p ${sysctl_file}"
+        return 0
+    fi
     ensure_runtime_dirs
     backup_target "${sysctl_file}"
     [ -f /etc/sysctl.conf ] && backup_target "/etc/sysctl.conf"
@@ -157,6 +169,13 @@ apply_limits_tuning() {
     local temp_file=""
 
     print_title "系统限制优化"
+    if [ "${DRY_RUN}" = true ]; then
+        preview "备份并写入 ${limits_file}（nofile/nproc = 65535）"
+        if [ -d "${systemd_dir}" ]; then
+            preview "写入 ${systemd_file} 并执行 systemctl daemon-reexec"
+        fi
+        return 0
+    fi
     ensure_runtime_dirs
     backup_target "${limits_file}"
     backup_target "${systemd_file}"
@@ -237,6 +256,14 @@ ensure_swap_protection() {
     fi
 
     print_warn "低内存主机未启用 Swap（内存 ${total_memory_mb}MB）。"
+    if [ "${DRY_RUN}" = true ]; then
+        if [ -f /swapfile ]; then
+            preview "/swapfile 已存在，将跳过自动创建"
+        else
+            preview "创建 ${new_swap_mb}MB /swapfile（chmod 600、mkswap、swapon）并追加 /etc/fstab 条目"
+        fi
+        return 0
+    fi
     if [ "${AUTO_CONFIRM}" = false ] && ! ask_yes_no "Create a ${new_swap_mb}MB swap file at /swapfile?"; then
         print_info "已跳过 Swap 创建。"
         return 0
@@ -285,6 +312,10 @@ disable_low_value_services() {
     for service in "${services[@]}"; do
         if systemctl list-unit-files "${service}.service" >/dev/null 2>&1; then
             if systemctl is-enabled "${service}" >/dev/null 2>&1 || systemctl is-active "${service}" >/dev/null 2>&1; then
+                if [ "${DRY_RUN}" = true ]; then
+                    preview "systemctl stop ${service} && systemctl disable ${service}"
+                    continue
+                fi
                 run_logged_command "stop ${service}" systemctl stop "${service}" || true
                 run_logged_command "disable ${service}" systemctl disable "${service}" || true
                 print_success "已禁用服务 ${service}。"
@@ -300,8 +331,36 @@ apply_ssh_baseline() {
     local sshd_dropin_dir="/etc/ssh/sshd_config.d"
     local sshd_dropin_file="${sshd_dropin_dir}/99-vps-scripts.conf"
     local temp_file=""
+    local changed_file=""
+    local previous_copy=""
 
     print_title "SSH 安全基线"
+
+    if [ "${DRY_RUN}" = true ]; then
+        if [ -d "${sshd_dropin_dir}" ]; then
+            preview "写入 ${sshd_dropin_file}（UseDNS no）"
+        elif [ -f "${sshd_main}" ]; then
+            preview "在 ${sshd_main} 中设置 UseDNS no"
+        else
+            preview "未找到 SSH 配置文件，将跳过"
+            return 0
+        fi
+        preview "sshd -t 校验，失败则自动还原；通过后 reload ssh/sshd"
+        return 0
+    fi
+
+    if [ -d "${sshd_dropin_dir}" ]; then
+        changed_file="${sshd_dropin_file}"
+    elif [ -f "${sshd_main}" ]; then
+        changed_file="${sshd_main}"
+    fi
+    if [ -n "${changed_file}" ] && [ -e "${changed_file}" ]; then
+        previous_copy=$(mktemp "/tmp/vps_sshd_prev.XXXXXX") || {
+            print_error "无法创建 SSH 配置回滚副本。"
+            return 1
+        }
+        cp -a -- "${changed_file}" "${previous_copy}"
+    fi
 
     if [ -d "${sshd_dropin_dir}" ]; then
         backup_target "${sshd_dropin_file}"
@@ -327,6 +386,18 @@ EOF
         print_warn "未找到 SSH 配置文件，跳过 SSH 优化。"
         return 0
     fi
+
+    if command_exists sshd && ! sshd -t >> "${LOG_FILE}" 2>&1; then
+        if [ -n "${previous_copy}" ]; then
+            cp -a -- "${previous_copy}" "${changed_file}"
+        else
+            rm -f -- "${changed_file}"
+        fi
+        [ -n "${previous_copy}" ] && rm -f -- "${previous_copy}"
+        print_error "sshd -t 校验失败，已还原 ${changed_file}，未重载 SSH。"
+        return 1
+    fi
+    [ -n "${previous_copy}" ] && rm -f -- "${previous_copy}"
 
     if command_exists systemctl; then
         run_logged_command "reload sshd" systemctl reload sshd || run_logged_command "reload ssh" systemctl reload ssh || true
@@ -379,7 +450,9 @@ run_selected_modules() {
 
     echo ""
     print_separator
-    if [ "${result}" -eq 0 ]; then
+    if [ "${DRY_RUN}" = true ]; then
+        print_warn "DRY-RUN 完成，未实际修改系统。"
+    elif [ "${result}" -eq 0 ]; then
         print_success "所选优化模块已完成。"
     else
         print_warn "优化已完成，但存在警告，请查看 ${LOG_FILE}。"
@@ -401,7 +474,7 @@ interactive_menu() {
         echo "6) 仅应用 SSH 安全基线"
         echo "0) 退出"
         echo ""
-        read -r -p "请选择 [0-6]: " selection
+        read -r -p "请选择 [0-6]: " selection || { echo ""; exit 0; }
 
         case "${selection}" in
             1) RUN_ALL=true; break ;;
@@ -426,6 +499,9 @@ parse_args() {
                 ;;
             --yes|-y)
                 AUTO_CONFIRM=true
+                ;;
+            --dry-run)
+                DRY_RUN=true
                 ;;
             --kernel)
                 RUN_KERNEL=true
@@ -458,6 +534,11 @@ parse_args() {
 
 main() {
     parse_args "$@"
+    if [ "${DRY_RUN}" = true ]; then
+        print_warn "DRY-RUN：以下仅为预览，不会修改系统。"
+        run_selected_modules
+        return $?
+    fi
     check_root
     ensure_runtime_dirs
     run_selected_modules

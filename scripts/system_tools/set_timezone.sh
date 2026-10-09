@@ -26,6 +26,7 @@ USE_TIMEDATECTL=false
 NTP_ENABLED=false
 SYNC_TIME=true
 AUTO_CONFIRM=false
+DRY_RUN=false
 SEARCH_KEYWORD=""
 SHOW_LIST=false
 SHOW_COMMON=false
@@ -108,7 +109,7 @@ else
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
     check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
-    read_input() { local prompt="$1"; local default="${2:-}"; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " REPLY; REPLY=${REPLY:-$default}; else read -r -p "${prompt}: " REPLY; fi; }
+    read_input() { local prompt="$1"; local default="${2:-}"; local var_name="${3:-REPLY}"; local input=""; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " input || return 1; input=${input:-$default}; else read -r -p "${prompt}: " input || return 1; fi; printf -v "${var_name}" '%s' "${input}"; }
 fi
 
 ensure_runtime_dirs() {
@@ -145,6 +146,7 @@ show_help() {
   --sync              强制同步时间后退出
   --info              显示当前时区和时钟信息
   --yes, -y           跳过确认提示
+  --dry-run           仅预览时区/NTP/同步将执行的操作，不修改系统（无需 root）
   --help, -h          显示此帮助信息
 
 常用别名：
@@ -260,6 +262,10 @@ get_timezone_by_number() {
 
 validate_timezone() {
     local timezone="$1"
+    if [[ ! ${timezone} =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ ]]; then
+        print_error "无效时区：${timezone}"
+        return 1
+    fi
     if [ -f "/usr/share/zoneinfo/${timezone}" ]; then
         return 0
     fi
@@ -352,11 +358,41 @@ EOF
     fi
 }
 
+preview_ntp() {
+    if [ "${USE_TIMEDATECTL}" = true ] && [ -f /etc/systemd/timesyncd.conf ]; then
+        printf '[DRY-RUN] 重写 /etc/systemd/timesyncd.conf（NTP=%s），重启并启用 systemd-timesyncd\n' "${NTP_SERVERS[*]}"
+    elif command_exists chronyd && [ -f /etc/chrony.conf ]; then
+        printf '[DRY-RUN] 备份并替换 /etc/chrony.conf 中的 server/pool 行，重启 chronyd\n'
+    elif command_exists ntpd && [ -f /etc/ntp.conf ]; then
+        printf '[DRY-RUN] 备份并替换 /etc/ntp.conf 中的 server/pool 行，重启 ntpd\n'
+    elif [ "${USE_TIMEDATECTL}" = true ]; then
+        printf '[DRY-RUN] timedatectl set-ntp true\n'
+    else
+        printf '[DRY-RUN] 未检测到受支持的 NTP 服务，将跳过\n'
+    fi
+}
+
+preview_sync() {
+    if command_exists ntpdate; then
+        printf '[DRY-RUN] 依次尝试 ntpdate -u %s\n' "${NTP_SERVERS[*]}"
+    elif command_exists chronyc; then
+        printf '[DRY-RUN] chronyc makestep\n'
+    elif [ "${USE_TIMEDATECTL}" = true ]; then
+        printf '[DRY-RUN] timedatectl set-ntp false/true 触发重新同步\n'
+    else
+        printf '[DRY-RUN] 当前主机无法自动同步时间，将跳过\n'
+    fi
+}
+
 configure_ntp() {
     local temp_file=""
     local server=""
 
     print_title "配置 NTP"
+    if [ "${DRY_RUN}" = true ]; then
+        preview_ntp
+        return 0
+    fi
 
     if [ "${USE_TIMEDATECTL}" = true ] && [ -f /etc/systemd/timesyncd.conf ]; then
         temp_file=$(mktemp "/tmp/vps_timesyncd.XXXXXX") || return 1
@@ -418,6 +454,10 @@ sync_time_manual() {
     fi
 
     print_title "时间同步"
+    if [ "${DRY_RUN}" = true ]; then
+        preview_sync
+        return 0
+    fi
 
     if command_exists ntpdate; then
         for server in "${NTP_SERVERS[@]}"; do
@@ -513,6 +553,22 @@ apply_timezone_flow() {
         return 0
     fi
 
+    if [ "${DRY_RUN}" = true ]; then
+        print_warn "DRY-RUN：以下仅为预览，不会修改系统。"
+        printf '[DRY-RUN] 时区 %s -> %s\n' "${CURRENT_TIMEZONE}" "${NEW_TIMEZONE}"
+        printf '[DRY-RUN] 备份 /etc/timezone、/etc/localtime 等到 %s/backup_<时间戳>\n' "${BACKUP_DIR}"
+        if [ "${USE_TIMEDATECTL}" = true ]; then
+            printf '[DRY-RUN] timedatectl set-timezone %s\n' "${NEW_TIMEZONE}"
+        else
+            printf '[DRY-RUN] ln -sfn /usr/share/zoneinfo/%s /etc/localtime\n' "${NEW_TIMEZONE}"
+        fi
+        if [ "${NTP_ENABLED}" = true ]; then
+            preview_ntp
+        fi
+        preview_sync
+        return 0
+    fi
+
     confirm_change || {
         print_info "已取消时区修改。"
         return 0
@@ -553,7 +609,7 @@ interactive_menu() {
         echo "5) 立即同步时间"
         echo "0) 退出"
         echo ""
-        read -r -p "请选择 [0-5]: " choice
+        read -r -p "请选择 [0-5]: " choice || { echo ""; exit 0; }
 
         case "${choice}" in
             1)
@@ -646,6 +702,9 @@ parse_args() {
                 AUTO_CONFIRM=true
                 NTP_ENABLED=true
                 ;;
+            --dry-run)
+                DRY_RUN=true
+                ;;
             --help|-h)
                 show_help
                 exit 0
@@ -692,16 +751,17 @@ main() {
         exit 0
     fi
 
-    if [ "${CONFIGURE_NTP_ONLY}" = true ]; then
+    if [ "${DRY_RUN}" != true ] && { [ "${CONFIGURE_NTP_ONLY}" = true ] || [ "${SYNC_ONLY}" = true ] || [ -n "${TIMEZONE_ARG}" ]; }; then
         check_root_or_exit
         ensure_runtime_dirs
+    fi
+
+    if [ "${CONFIGURE_NTP_ONLY}" = true ]; then
         configure_ntp
         exit 0
     fi
 
     if [ "${SYNC_ONLY}" = true ]; then
-        check_root_or_exit
-        ensure_runtime_dirs
         sync_time_manual
         exit 0
     fi
@@ -711,10 +771,13 @@ main() {
             NEW_TIMEZONE="${TIMEZONE_ARG}"
         fi
         NTP_ENABLED=true
-        check_root_or_exit
-        ensure_runtime_dirs
         apply_timezone_flow
         exit $?
+    fi
+
+    if [ "${DRY_RUN}" = true ]; then
+        print_error "--dry-run 需要配合时区参数、--ntp 或 --sync 使用。"
+        exit 1
     fi
 
     check_root_or_exit
