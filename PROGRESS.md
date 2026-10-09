@@ -2,7 +2,21 @@
 
 ## Current Phase
 
-Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools (optimize, hostname, timezone, update) and fixes several correctness bugs found along the way; 1.1.3 added the same preview model to every uninstall helper, the Nezha agent, and Docker. All previews are exercised by an executed dry-run behavior test. Remaining work is a per-category catalog review (adding popular maintained tools, deprioritizing outdated ones) and richer mocked pkg/systemd suites for real (non-preview) execution paths. The LDNMP installer stays a single combined installer.
+Version 1.1.6 finishes the catalog review of every third-party menu. 1.1.5 refreshed service install, other tools, and community (new self-hosted platforms, a first-party FRP installer, outdated entries moved last); 1.1.6 refreshed proxy tools. 1.1.3–1.1.4 completed `--dry-run` coverage for uninstall helpers, Nezha, Docker, and the state-changing system tools. The LDNMP installer stays a single combined installer.
+
+Next work targets the first-party categories (network test, performance test, system tools): look for feature gaps rather than link replacement, then add mocked pkg/systemd suites for real (non-preview) execution paths.
+
+## Catalog Review Status
+
+| Menu | Status | Release |
+|---|---|---|
+| Service install | Reviewed: Coolify, Dokploy, Dockge, Nginx Proxy Manager added; AMH moved last | 1.1.5 |
+| Other tools | Reviewed: Beszel, first-party FRP added; Uptime Kuma 2; FileBrowser labelled archived | 1.1.5 |
+| Community | Reviewed: NextTrace URL fixed; JCNF, BlueSkyXN, i-abc Speedtest labelled and moved last; re-checked in 1.1.6, no changes | 1.1.5 |
+| Proxy tools | Reviewed: S-UI, v2ray-agent, official Hysteria2/Xray added; x-ui-yg and X-Panel URLs updated | 1.1.6 |
+| Network test | First-party; feature-gap review pending | — |
+| Performance test | First-party; feature-gap review pending | — |
+| System tools | First-party; feature-gap review pending | — |
 
 ## Completed
 
@@ -64,7 +78,8 @@ Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools
 
 ## Next Modernization Round
 
-- Review each category for popular maintained tools to add and outdated entries to deprioritize
+- Feature-gap review of the first-party network test, performance test, and system tools categories
+- Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
 - Add mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Extend checksum or signature validation to other project-owned installer archives where upstream publishes verifiable metadata
 
