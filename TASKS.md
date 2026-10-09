@@ -111,7 +111,13 @@
 - [x] Add `--status`/`--dry-run` to the Docker installer wrapper
 - [x] Add executed dry-run behavior coverage (`tests/validate_dry_run_behavior.sh`)
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.3`
-- [ ] Add `--dry-run` to remaining state-changing system tools (optimize, hostname, timezone, update)
+
+## 1.1.4 release
+
+- [x] Add `--dry-run` to optimize, hostname, timezone, and update system tools
+- [x] Fix timezone path traversal, SSH baseline validation, yum/dnf reboot detection, and stdin-EOF menu loops
+- [x] Extend `tests/validate_dry_run_behavior.sh` to execute the system-tool previews
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.4`
 - [ ] Split the LDNMP facade into calls to focused installers
 
 ## Documentation

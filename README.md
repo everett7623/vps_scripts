@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.3-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.4-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -55,7 +55,15 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 - `service_install`：全部 21 个脚本已启用 `set -euo pipefail`；Docker 支持 `--status` / `--dry-run`
 - `other_tools`：BBR、Swap、Fail2ban、哪吒均支持 `--status` 与预览/非交互参数
 - `uninstall_scripts`：全部 4 个脚本支持 `--dry-run` 预览，备份统一到 `/var/backups/vps_scripts/`
+- `system_tools`：系统优化、主机名、时区、系统更新、系统清理均支持 `--dry-run`，预览无需 root
 - 下一步：LDNMP 兼容入口拆分到独立安装器、包管理器/systemd 的模拟行为测试
+
+```bash
+bash optimize_system.sh --auto --dry-run
+bash change_hostname.sh --dry-run new-host
+bash set_timezone.sh --dry-run shanghai
+bash update_system.sh --dry-run
+```
 
 ## 功能特性
 
@@ -327,6 +335,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.4`：系统优化、主机名、时区、系统更新四个工具新增 `--dry-run` 预览；修复时区路径穿越、SSH 基线未校验、yum/dnf 重启判断反向等问题
 - 发布 `1.1.3`：卸载/清理/回滚脚本新增 `--dry-run` 预览与持久化备份；修复哪吒 Agent 下载失效并加入 SHA-256 校验；Docker 安装支持 `--status` / `--dry-run`
 - 发布 `1.1.2`：修复 Issue #2 网络测试全挂；统一一键启动命令为常见一行格式；诊断脚本日志目录回退与软失败硬化
 - 发布 `1.1.1`：首次交互式 root 启动自动创建持久化 `vps` 命令，并提供禁用、非交互与同名命令冲突保护

@@ -37,14 +37,22 @@ EOF
     chmod +x "${STUB_DIR}/${cmd}"
 done
 
-cat > "${STUB_DIR}/systemctl" <<EOF
+write_readonly_stub() {
+    local cmd="$1"
+    local readonly_pattern="$2"
+    cat > "${STUB_DIR}/${cmd}" <<EOF
 #!/bin/bash
 case "\${1:-}" in
-    is-active|is-enabled|list-unit-files|cat|status) exit 1 ;;
+    ${readonly_pattern}) exit 1 ;;
 esac
-echo "systemctl \$*" >> "${CALL_LOG}"
+echo "${cmd} \$*" >> "${CALL_LOG}"
 exit 1
 EOF
+}
+
+write_readonly_stub systemctl 'is-active|is-enabled|list-unit-files|cat|status'
+write_readonly_stub hostnamectl '--static|status'
+write_readonly_stub timedatectl 'show|status'
 
 fail() {
     echo "$*" >&2
@@ -124,6 +132,39 @@ run_case fail "${DOCKER}" --bogus-flag
 if ! command -v docker >/dev/null 2>&1; then
     run_case ok "${DOCKER}" --dry-run
     expect_output "[DRY-RUN]"
+fi
+
+OPTIMIZE="${REPO_ROOT}/scripts/system_tools/optimize_system.sh"
+HOSTNAME_TOOL="${REPO_ROOT}/scripts/system_tools/change_hostname.sh"
+TIMEZONE_TOOL="${REPO_ROOT}/scripts/system_tools/set_timezone.sh"
+UPDATE_TOOL="${REPO_ROOT}/scripts/system_tools/update_system.sh"
+
+run_case ok "${OPTIMIZE}" --help
+expect_output "--dry-run"
+run_case ok "${OPTIMIZE}" --dry-run --auto
+expect_output "[DRY-RUN]"
+expect_output "99-vps-optimize.conf"
+expect_output "sshd -t"
+run_case ok "${OPTIMIZE}" --dry-run </dev/null
+
+run_case ok "${HOSTNAME_TOOL}" --dry-run vps-node-01
+expect_output "vps-node-01"
+run_case fail "${HOSTNAME_TOOL}" --dry-run 'bad_name!'
+run_case fail "${HOSTNAME_TOOL}" --dry-run
+
+run_case fail "${TIMEZONE_TOOL}" --dry-run '../../../etc/passwd'
+run_case ok "${TIMEZONE_TOOL}" --dry-run --ntp
+run_case ok "${TIMEZONE_TOOL}" --dry-run --sync
+run_case fail "${TIMEZONE_TOOL}" --dry-run
+if [ -f /usr/share/zoneinfo/Asia/Tokyo ]; then
+    run_case ok "${TIMEZONE_TOOL}" --dry-run tokyo
+    expect_output "Asia/Tokyo"
+fi
+
+run_case ok "${UPDATE_TOOL}" --help
+expect_output "--dry-run"
+if [ -f /etc/os-release ] && grep -Eq '^ID=(ubuntu|debian)$' /etc/os-release; then
+    run_case ok "${UPDATE_TOOL}" --dry-run
 fi
 
 echo "Dry-run behavior checks are valid."

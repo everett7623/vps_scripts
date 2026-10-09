@@ -4,6 +4,19 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.4 - 2026-10-09
+
+### Added
+- `--dry-run` for `optimize_system.sh`, `change_hostname.sh` (change and `--rollback`), `set_timezone.sh` (timezone, `--ntp`, `--sync`), and `update_system.sh`; previews run without root and write no logs, backups, or config.
+- `tests/validate_dry_run_behavior.sh` now executes these system-tool previews with stubbed `systemctl`, `hostnamectl`, `timedatectl`, and package managers.
+
+### Fixed
+- `set_timezone.sh` rejected nothing but missing files, so input such as `../../../etc/passwd` could point `/etc/localtime` at an arbitrary file; timezone names are now restricted to zoneinfo path characters.
+- `optimize_system.sh` SSH baseline now runs `sshd -t` after writing and restores the previous file instead of reloading SSH with an invalid config.
+- `update_system.sh` treated `needs-restarting -r` exit codes backwards on yum/dnf, and answering "n" to the reboot prompt aborted the run under `set -e` before the report was written.
+- Interactive menus in `optimize_system.sh`, `change_hostname.sh`, and `set_timezone.sh` no longer loop forever when stdin closes.
+- The inline `read_input` fallback in `change_hostname.sh` and `set_timezone.sh` ignored the target variable name, so menu input was silently dropped when the shared library was unavailable.
+
 ## 1.1.3 - 2026-10-09
 
 ### Added

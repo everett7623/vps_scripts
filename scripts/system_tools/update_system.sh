@@ -15,6 +15,7 @@ BACKUP_DIR="/var/backups/system_update"
 UPDATE_CACHE_AGE=3600
 
 AUTO_CONFIRM=false
+DRY_RUN=false
 UPDATE_KERNEL=false
 SECURITY_ONLY=false
 REBOOT_AFTER_UPDATE=false
@@ -50,6 +51,7 @@ else
 fi
 
 log() {
+    [ "${DRY_RUN}" = true ] && return 0
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "${LOG_FILE}"
 }
 
@@ -117,6 +119,7 @@ show_help() {
   --kernel, -k    在支持时包含内核或发行版升级
   --security, -s  在 yum/dnf 系统中仅安装安全更新
   --reboot        仅在更新后确实需要时自动重启
+  --dry-run       仅检查可用更新并预览将执行的命令，不安装、不备份、不重启
   --help, -h      显示此帮助信息
 EOF
 }
@@ -258,8 +261,21 @@ perform_update() {
     print_info "更新模式：${description}"
     log "Selected update mode: ${description}"
 
+    if [ "${DRY_RUN}" = "true" ]; then
+        printf '[DRY-RUN] %s\n' "${selected_cmd[*]}"
+        if [ ${#CLEANUP_CMD[@]} -gt 0 ]; then
+            printf '[DRY-RUN] %s\n' "${CLEANUP_CMD[*]}"
+        fi
+        if [ "${REBOOT_AFTER_UPDATE}" = "true" ]; then
+            printf '[DRY-RUN] 若更新后需要重启，将在 5 秒后自动重启\n'
+        fi
+        print_warn "DRY-RUN 完成，未安装更新、未创建备份。"
+        exit 0
+    fi
+
     if [ "${AUTO_CONFIRM}" = "false" ]; then
-        read -r -p "是否继续执行 ${description}？[y/N]: " confirm
+        local confirm=""
+        read -r -p "是否继续执行 ${description}？[y/N]: " confirm || confirm=""
         if [[ ! "${confirm}" =~ ^[Yy]$ ]]; then
             print_warn "已取消系统更新。"
             exit 0
@@ -302,7 +318,9 @@ check_reboot_needed() {
     if [ -f /var/run/reboot-required ]; then
         REBOOT_REQUIRED=true
     elif [[ "${PKG_MANAGER}" =~ ^(yum|dnf)$ ]] && command -v needs-restarting >/dev/null 2>&1; then
-        needs-restarting -r >/dev/null 2>&1 && REBOOT_REQUIRED=true
+        if ! needs-restarting -r >/dev/null 2>&1; then
+            REBOOT_REQUIRED=true
+        fi
     fi
 
     if [ "${REBOOT_REQUIRED}" != "true" ]; then
@@ -319,8 +337,11 @@ check_reboot_needed() {
     elif [ "${AUTO_CONFIRM}" = "true" ]; then
         print_warn "自动确认模式不会自动重启；请使用 --reboot 明确请求重启。"
     else
-        read -r -p "是否立即重启？[y/N]: " answer
-        [[ "${answer}" =~ ^[Yy]$ ]] && reboot
+        local answer=""
+        read -r -p "是否立即重启？[y/N]: " answer || answer=""
+        if [[ "${answer}" =~ ^[Yy]$ ]]; then
+            reboot
+        fi
     fi
 }
 
@@ -352,11 +373,21 @@ main() {
             --kernel|-k) UPDATE_KERNEL=true ;;
             --security|-s) SECURITY_ONLY=true ;;
             --reboot) REBOOT_AFTER_UPDATE=true ;;
+            --dry-run) DRY_RUN=true ;;
             --help|-h) show_help; exit 0 ;;
             *) print_error "未知参数：$1"; show_help; exit 1 ;;
         esac
         shift
     done
+
+    if [ "${DRY_RUN}" = true ]; then
+        print_header "系统更新工具（DRY-RUN）"
+        detect_system
+        print_info "DRY-RUN：跳过备份与元数据刷新，可用更新数量基于当前缓存。"
+        check_available_updates
+        perform_update
+        return 0
+    fi
 
     check_root
     if declare -F resolve_log_dir >/dev/null 2>&1; then
