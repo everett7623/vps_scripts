@@ -56,7 +56,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 - `other_tools`：BBR、Swap、Fail2ban、哪吒均支持 `--status` 与预览/非交互参数
 - `uninstall_scripts`：全部 4 个脚本支持 `--dry-run` 预览，备份统一到 `/var/backups/vps_scripts/`
 - `system_tools`：系统优化、主机名、时区、系统更新、系统清理均支持 `--dry-run`，预览无需 root
-- 下一步：LDNMP 兼容入口拆分到独立安装器、包管理器/systemd 的模拟行为测试
+- 下一步：逐个分类补充流行且活跃维护的新工具，适当下调过时工具的优先级；补充包管理器/systemd 的模拟行为测试
 
 ```bash
 bash optimize_system.sh --auto --dry-run
@@ -359,7 +359,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 欢迎继续完善这个项目。
 
 ### 建议的开发方向
-- 将 LDNMP 兼容入口拆分为调用独立维护的 Nginx/MySQL/PHP 安装器
+- 逐个分类引入流行、活跃维护的新工具或项目，过时工具下调优先级或标记为旧版
 - 为包管理器、systemd 与下载路径补充模拟行为测试
 - 进一步减少高风险远程执行模式
 - 提升 UTF-8 文档一致性与脚本可维护性

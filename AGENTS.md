@@ -26,6 +26,15 @@ This file describes how human contributors and coding agents should work in this
 - Validate user input before using it in commands, paths, or service names
 - When downloading first-party modules, download to a temp file and execute that file instead of process substitution
 
+## Catalog Freshness
+
+When optimizing a category or module, also review what it offers:
+
+- Popular, actively maintained tools or projects that fit the category may be added (as first-party scripts or confirmed third-party entries)
+- Outdated, unmaintained, or superseded entries may be moved lower in menus or marked as legacy instead of being removed outright
+- Note additions and priority changes in `CHANGELOG.md` and the README feature list
+- The LDNMP installer stays a single combined installer; it is not split into focused installers
+
 ## Remote Execution Policy
 
 - First-party launcher actions should point only to files that exist in this repository

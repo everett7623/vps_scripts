@@ -118,7 +118,12 @@
 - [x] Fix timezone path traversal, SSH baseline validation, yum/dnf reboot detection, and stdin-EOF menu loops
 - [x] Extend `tests/validate_dry_run_behavior.sh` to execute the system-tool previews
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.4`
-- [ ] Split the LDNMP facade into calls to focused installers
+
+## Ongoing
+
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness")
+- [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
+- Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
 ## Documentation
 
