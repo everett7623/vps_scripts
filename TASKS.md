@@ -102,6 +102,18 @@
 - [x] Synchronize version, date, changelog, README badge, VERSIONING, CLAUDE, and release validation at `1.1.2`
 - [x] Add `tests/validate_bootstrap_command.sh` to keep docs/launcher hints aligned
 
+## 1.1.3 release
+
+- [x] Add `--help`/`--list`/`--dry-run`/`--yes`/`--target` to the three legacy uninstall helpers
+- [x] Move uninstall backups to `/var/backups/vps_scripts` and make batch mode run in-process
+- [x] Limit swap rollback to `/swapfile`; keep data directories unless `--purge-data`
+- [x] Repair the Nezha installer for `nezhahq/agent` v1+ with SHA-256 verification and add `--status`/`--dry-run`/`--uninstall`
+- [x] Add `--status`/`--dry-run` to the Docker installer wrapper
+- [x] Add executed dry-run behavior coverage (`tests/validate_dry_run_behavior.sh`)
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.3`
+- [ ] Add `--dry-run` to remaining state-changing system tools (optimize, hostname, timezone, update)
+- [ ] Split the LDNMP facade into calls to focused installers
+
 ## Documentation
 
 - [x] Update `CLAUDE.md` with accurate architecture and test commands

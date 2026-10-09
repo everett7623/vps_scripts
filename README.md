@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.3-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -51,10 +51,11 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 - README、CHANGELOG、开发/发布文档补齐
 
 ### 当前优化阶段
-- `system_tools`：主脚本已完成首轮收口
-- `network_test`：已完成 `set -euo pipefail` 与 `mktemp` 安全加固
-- `performance_test`：已完成 `set -euo pipefail` 与 `mktemp` 安全加固
-- `service_install`：全部 21 个脚本已启用 `set -euo pipefail` 严格模式
+- `network_test` / `performance_test`：严格模式、日志目录回退与单项失败不中断（Issue #2 已修复）
+- `service_install`：全部 21 个脚本已启用 `set -euo pipefail`；Docker 支持 `--status` / `--dry-run`
+- `other_tools`：BBR、Swap、Fail2ban、哪吒均支持 `--status` 与预览/非交互参数
+- `uninstall_scripts`：全部 4 个脚本支持 `--dry-run` 预览，备份统一到 `/var/backups/vps_scripts/`
+- 下一步：LDNMP 兼容入口拆分到独立安装器、包管理器/systemd 的模拟行为测试
 
 ## 功能特性
 
@@ -240,6 +241,27 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 - “完全卸载”仅备份并删除 VPS Scripts 自身的快捷命令、启动器文件和项目日志。
 - 完全卸载备份保存在 `/var/backups/vps_scripts/`，不会落入临时隔离运行目录。
 - Docker、Web 服务、数据库等业务组件必须通过“服务残留清理”逐项确认，不会被完全卸载功能自动删除。
+- 服务残留清理默认保留 `/var/lib/docker`、`/var/lib/mysql` 与站点目录 `/var/www`；需要彻底删除数据时显式加 `--purge-data`。
+- 系统环境回滚的 Swap 项只处理 `/swapfile`，不会关闭或删除其他交换分区。
+- 所有卸载/清理/回滚脚本都可先预览再执行，例如：
+
+```bash
+bash clean_service_residues.sh --list
+bash clean_service_residues.sh --target docker --dry-run
+bash rollback_system_environment.sh --target swap --dry-run
+bash clear_configuration_files.sh --target nginx --yes
+```
+
+### 哪吒监控 Agent
+
+- 安装当前上游 `nezhahq/agent`（v1+）版本，下载后按官方 `checksums.txt` 校验 SHA-256。
+- 客户端密钥写入权限为 `600` 的配置文件，不出现在 systemd 命令行，也不会在终端回显。
+
+```bash
+bash nezha.sh --status
+NZ_CLIENT_SECRET=你的密钥 bash nezha.sh --server 面板地址 --port 8008 --yes
+bash nezha.sh --uninstall --dry-run
+```
 
 ## 项目结构
 
@@ -305,6 +327,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.3`：卸载/清理/回滚脚本新增 `--dry-run` 预览与持久化备份；修复哪吒 Agent 下载失效并加入 SHA-256 校验；Docker 安装支持 `--status` / `--dry-run`
 - 发布 `1.1.2`：修复 Issue #2 网络测试全挂；统一一键启动命令为常见一行格式；诊断脚本日志目录回退与软失败硬化
 - 发布 `1.1.1`：首次交互式 root 启动自动创建持久化 `vps` 命令，并提供禁用、非交互与同名命令冲突保护
 - 全部 21 个 service_install 脚本已启用 `set -euo pipefail` 严格模式
@@ -327,7 +350,8 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 欢迎继续完善这个项目。
 
 ### 建议的开发方向
-- 优先加固 BBR、Swap、Fail2ban、哪吒四个第一方 `other_tools` 脚本
+- 将 LDNMP 兼容入口拆分为调用独立维护的 Nginx/MySQL/PHP 安装器
+- 为包管理器、systemd 与下载路径补充模拟行为测试
 - 进一步减少高风险远程执行模式
 - 提升 UTF-8 文档一致性与脚本可维护性
 - 增加更多 repo-local 验证脚本

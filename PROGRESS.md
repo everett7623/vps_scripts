@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.2 ships the Issue #2 network-test fix, shared log-dir/soft-fail helpers, standardized one-line bootstrap commands, and synchronized release metadata. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites.
+Version 1.1.3 adds preview/status/non-interactive flags and persistent backups to every uninstall helper, repairs the Nezha agent installer for the current upstream release with SHA-256 verification, and adds Docker installer preview modes, covered by an executed dry-run behavior test. Remaining longer-term work includes deeper LDNMP delegation into focused installers and richer mocked pkg/systemd suites for real (non-preview) execution paths.
 
 ## Completed
 
@@ -37,6 +37,9 @@ Version 1.1.2 ships the Issue #2 network-test fix, shared log-dir/soft-fail help
 - Moved PostgreSQL WAL archives outside the primary data directory
 - Added shared `die()` and build-from-source helpers
 - Hardened the Nezha agent installer with input validation, isolated archive verification, systemd escaping, and unit verification
+- Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
+- Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
+- Added `--status`/`--dry-run` to the Docker installer wrapper
 - Replaced first-party remote shell pipelines in LDNMP, dependency installation, Jenkins build tooling, and bandwidth testing with validated temporary scripts
 - Routed third-party project installer entries through launcher confirmation, isolated download, syntax validation, and execution
 - Made the LDNMP compatibility installer validate requested PHP/database choices, protect generated credentials, and require explicit demo-site opt-in
@@ -52,16 +55,16 @@ Version 1.1.2 ships the Issue #2 network-test fix, shared log-dir/soft-fail help
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.2
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.3
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
 - Split the LDNMP compatibility facade into calls to focused maintained installers
-- Add mocked behavioral tests for package managers, systemd, downloads, and destructive cleanup paths
-- Add non-interactive dry-run/status modes to additional state-changing utilities
-- Review project-owned installer archives for checksum or signature validation where upstream publishes verifiable metadata
+- Add mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
+- Add `--dry-run` to the remaining state-changing system tools (optimize, hostname, timezone, update)
+- Extend checksum or signature validation to other project-owned installer archives where upstream publishes verifiable metadata
 
 ## Success Criteria For Next Release
 

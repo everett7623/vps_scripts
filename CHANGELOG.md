@@ -4,6 +4,28 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.3 - 2026-10-09
+
+### Added
+- `--help`, `--list`, `--dry-run`, `--yes`, and `--target` for `clean_service_residues.sh`, `clear_configuration_files.sh`, and `rollback_system_environment.sh`; plus `--wp-dir`/`--purge-data` and `--hostname` where relevant.
+- `--status`, `--dry-run`, `--uninstall`, `--yes`, and `--server`/`--port`/`--secret`/`--tls` (or `NZ_CLIENT_SECRET`) for `nezha.sh`.
+- `--help`, `--status`, and `--dry-run` for `scripts/service_install/docker.sh`.
+- `tests/validate_dry_run_behavior.sh`: runs preview paths as non-root with stubbed `systemctl`, package managers, `rm`, `swapoff`, and downloads, and fails if any is invoked or a backup directory is created.
+
+### Changed
+- Uninstall helpers back up to `/var/backups/vps_scripts/` (override with `VPS_BACKUP_ROOT`) instead of the launcher's temporary runtime directory, which was deleted after each run.
+- Batch ("全部") cleanup runs targets in-process instead of re-executing the script through piped answers.
+- Service cleanup keeps `/var/lib/docker` and `/var/lib/mysql` unless `--purge-data` is given, no longer deletes `/var/www/html`, and refuses to remove protected system paths.
+- Nezha agent now installs the current `nezhahq/agent` v1+ release with a `600` config file instead of passing the client secret on the command line, and the secret is no longer echoed after install.
+
+### Fixed
+- Uninstall helpers no longer abort midway under `set -e` when a service, package, or optional file is missing; packages are only removed if installed.
+- Swap rollback now only disables and removes `/swapfile` and its fstab line, instead of `swapoff -a` and deleting every fstab line containing "swap".
+- BBR rollback removes the project's `/etc/sysctl.d/99-vps-bbr.conf` drop-in; swap rollback removes the swappiness drop-in.
+- Hostname rollback validates the hostname and replaces only whole-word matches in `/etc/hosts`.
+- Restoring `sshd_config.bak` is validated with `sshd -t` and reverted if invalid before restarting SSH.
+- Nezha installer downloaded a retired release asset (`naiba/nezha` `.tar.gz`); it now uses `nezhahq/agent` zip assets verified against upstream `checksums.txt`.
+
 ## 1.1.2 - 2026-10-09
 
 ### Added
