@@ -46,9 +46,11 @@ Community scripts menu:
 - Legacy, listed last: JCNF toolbox (github.com/Netflixxp/jcnf-box), BlueSkyXN toolbox (github.com/BlueSkyXN/SKY-BOX), Speedtest multi-line (github.com/i-abc/Speedtest, archived)
 
 Proxy tools menu:
+- Proxy panels: 3x-ui (github.com/mhsanaei), S-UI (github.com/alireza0), X-Panel (github.com/xeefei), x-ui-yg (github.com/yonggekkk)
 - sing-box scripts (github.com/yonggekkk, github.com/fscarmen)
-- x-ui / 3x-ui panels (gitlab.com/rwkgyg, github.com/mhsanaei, github.com/xeefei)
-- Hysteria2 (github.com/everett7623/hy2)
+- v2ray-agent (github.com/mack-a)
+- Hysteria2 (github.com/everett7623/hy2; official installer get.hy2.sh from apernet/hysteria)
+- Xray-core official installer (github.com/XTLS/Xray-install)
 
 Other tools menu:
 - Komari Monitor (github.com/komari-monitor/komari)

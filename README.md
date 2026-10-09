@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.5-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.6-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -96,7 +96,7 @@ bash update_system.sh --dry-run
 - **开发环境** - Node.js、Python、Java、Go 等运行环境
 - **自托管平台** - Coolify、Dokploy（PaaS），Portainer、Dockge（容器管理），Nginx Proxy Manager（可视化反代）
 - **控制面板** - 1Panel、宝塔、aaPanel、CyberPanel 等
-- **代理服务** - sing-box、3x-ui、Hysteria2 等社区脚本
+- **代理服务** - 3x-ui、S-UI、X-Panel 面板；sing-box、v2ray-agent、Hysteria2 一键脚本；Xray / Hysteria2 官方核心安装
 
 ### 其他工具
 - **监控** - 哪吒探针（v1 Agent，SHA-256 校验）、Komari、Beszel、Uptime Kuma
@@ -345,6 +345,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.6`：代理工具菜单更新——新增 S-UI、mack-a 八合一、Hysteria2 官方与 Xray 官方核心安装；勇哥 x-ui、X-Panel 改用当前上游地址；面板在前、脚本在后。代理工具菜单编号有变化
 - 发布 `1.1.5`：菜单更新——新增 Coolify、Dokploy、Dockge、Nginx Proxy Manager、Beszel；FRP 改为官方 Release + SHA-256 校验的第一方安装器（原链接已失效）；Uptime Kuma 升级到 2.x；过时条目下移并标注。服务安装、其他工具、社区脚本三个子菜单编号有变化
 - 发布 `1.1.4`：系统优化、主机名、时区、系统更新四个工具新增 `--dry-run` 预览；修复时区路径穿越、SSH 基线未校验、yum/dnf 重启判断反向等问题
 - 发布 `1.1.3`：卸载/清理/回滚脚本新增 `--dry-run` 预览与持久化备份；修复哪吒 Agent 下载失效并加入 SHA-256 校验；Docker 安装支持 `--status` / `--dry-run`

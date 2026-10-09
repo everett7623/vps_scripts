@@ -60,6 +60,13 @@ if grep -Fq 'louislam/uptime-kuma:1' "${LAUNCHER}"; then
     echo "Uptime Kuma entry still pins the previous major version." >&2
     exit 1
 fi
+for stale_proxy_url in 'gitlab.com/rwkgyg/x-ui-yg' 'xeefei/3x-ui/'; do
+    if grep -Fq "${stale_proxy_url}" "${LAUNCHER}"; then
+        echo "Proxy menu still uses a superseded upstream URL: ${stale_proxy_url}" >&2
+        exit 1
+    fi
+done
+grep -Fq 'Xray-install/raw/main/install-release.sh" "Official Xray-core install" install' "${LAUNCHER}"
 
 grep -Fq 'https://ipapi.co/json/' "${BANDWIDTH_SCRIPT}"
 grep -Fq 'run_repo_setup_script()' "${BANDWIDTH_SCRIPT}"
