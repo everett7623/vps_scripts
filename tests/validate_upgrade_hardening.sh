@@ -20,9 +20,16 @@ if grep -Eq 'run_remote_command "[^"\n]*(\|[[:space:]]*(bash|sh)|bash[[:space:]]
     exit 1
 fi
 
-grep -Fq 'systemd-escape -- "${server}:${port}"' "${NEZHA_SCRIPT}"
-grep -Fq 'systemd-analyze verify /etc/systemd/system/nezha-agent.service' "${NEZHA_SCRIPT}"
-grep -Fq 'tar -tzf "${ARCHIVE_FILE}" | grep -qx '\''nezha-agent'\''' "${NEZHA_SCRIPT}"
+grep -Fq 'readonly RELEASE_BASE_URL="https://github.com/nezhahq/agent/releases/latest/download"' "${NEZHA_SCRIPT}"
+grep -Fq '"${RELEASE_BASE_URL}/checksums.txt"' "${NEZHA_SCRIPT}"
+grep -Fq 'sha256sum "${archive}"' "${NEZHA_SCRIPT}"
+grep -Fq 'systemd-analyze verify "${SERVICE_FILE}"' "${NEZHA_SCRIPT}"
+grep -Fq "unzip -Z1 \"\${archive}\" | grep -qx 'nezha-agent'" "${NEZHA_SCRIPT}"
+grep -Fq 'chmod 600 -- "${CONFIG_FILE}"' "${NEZHA_SCRIPT}"
+if grep -Eq 'naiba/nezha|ExecStart=.*-p ' "${NEZHA_SCRIPT}"; then
+    echo "Nezha installer still uses the retired release or passes the secret on the command line." >&2
+    exit 1
+fi
 grep -Fq 'run_remote_bash_installer()' "${LDNMP_SCRIPT}"
 grep -Fq 'signed-by=/usr/share/keyrings/nginx-signing.gpg' "${LDNMP_SCRIPT}"
 grep -Fq 'signed-by=/usr/share/keyrings/sury-php.gpg' "${LDNMP_SCRIPT}"
