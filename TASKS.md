@@ -119,9 +119,17 @@
 - [x] Extend `tests/validate_dry_run_behavior.sh` to execute the system-tool previews
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.4`
 
+## 1.1.5 release
+
+- [x] Catalog review of service install, other tools, and community menus (URL liveness + upstream activity)
+- [x] Add Coolify, Dokploy, Dockge, Nginx Proxy Manager, Beszel
+- [x] Replace the broken FRP entry with a first-party checksum-verified `frp.sh`
+- [x] Move archived/stale entries to the end with labels; Uptime Kuma to 2.x; Docker presence check for Docker-based entries
+- [x] Synchronize version, date, changelog, README, PRIVACY, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.5`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness")
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); done for service install, other tools, community in 1.1.5; next: proxy tools, network/performance tests, system tools
 - [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

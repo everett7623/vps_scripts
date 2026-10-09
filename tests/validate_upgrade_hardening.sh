@@ -38,6 +38,29 @@ if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)|apt-key' "${LDNMP_SCRIPT}"; then
     exit 1
 fi
 
+FRP_SCRIPT="${REPO_ROOT}/scripts/other_tools/frp.sh"
+bash -n "${FRP_SCRIPT}"
+grep -Fq 'readonly RELEASE_REPO_URL="https://github.com/fatedier/frp"' "${FRP_SCRIPT}"
+grep -Fq 'frp_sha256_checksums.txt' "${FRP_SCRIPT}"
+grep -Fq 'sha256sum "${WORK_DIR}/${asset}"' "${FRP_SCRIPT}"
+grep -Fq 'auth.method = "token"' "${FRP_SCRIPT}"
+grep -Fq 'run_repo_script "scripts/other_tools/frp.sh"' "${LAUNCHER}"
+if grep -Fq 'funnyzak/frpc' "${LAUNCHER}"; then
+    echo "Launcher still points FRP at the retired third-party installer." >&2
+    exit 1
+fi
+grep -Fq 'DOCKER_REQUIRED_CHECK="command -v docker' "${LAUNCHER}"
+while IFS= read -r docker_line; do
+    if [[ ${docker_line} != *'${DOCKER_REQUIRED_CHECK}'* ]]; then
+        echo "Docker-based launcher entry lacks the Docker presence check: ${docker_line}" >&2
+        exit 1
+    fi
+done < <(grep -E 'run_remote_command ".*docker (run|volume|compose)' "${LAUNCHER}")
+if grep -Fq 'louislam/uptime-kuma:1' "${LAUNCHER}"; then
+    echo "Uptime Kuma entry still pins the previous major version." >&2
+    exit 1
+fi
+
 grep -Fq 'https://ipapi.co/json/' "${BANDWIDTH_SCRIPT}"
 grep -Fq 'run_repo_setup_script()' "${BANDWIDTH_SCRIPT}"
 grep -Fq 'ID必须为数字' "${BANDWIDTH_SCRIPT}"

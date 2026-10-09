@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.4-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.5-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -94,8 +94,14 @@ bash update_system.sh --dry-run
 - **Docker 环境** - Docker 与 Compose 一键安装
 - **Web 环境** - Nginx、Apache、PHP、MySQL 等常见组件
 - **开发环境** - Node.js、Python、Java、Go 等运行环境
-- **代理服务** - Shadowsocks、V2Ray、WireGuard 等相关部署
-- **监控服务** - 哪吒监控等常见 VPS 运维组件
+- **自托管平台** - Coolify、Dokploy（PaaS），Portainer、Dockge（容器管理），Nginx Proxy Manager（可视化反代）
+- **控制面板** - 1Panel、宝塔、aaPanel、CyberPanel 等
+- **代理服务** - sing-box、3x-ui、Hysteria2 等社区脚本
+
+### 其他工具
+- **监控** - 哪吒探针（v1 Agent，SHA-256 校验）、Komari、Beszel、Uptime Kuma
+- **组网与穿透** - Tailscale、Cloudflare Tunnel、FRP（官方 frpc/frps，SHA-256 校验，默认 token 认证）
+- **系统增强** - BBR、Fail2ban、Swap、WARP、acme.sh、tmux、oh-my-zsh
 - **现代 CLI 工具包** - 从发行版仓库安装 btop、ripgrep、fd、bat、fzf、jq、ncdu、restic
 
 ## 系统要求
@@ -240,7 +246,11 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 - Docker 环境部署
 - Web 服务栈部署
 - 多语言开发环境安装
-- 代理与监控类服务安装
+- 自托管 PaaS（Coolify、Dokploy）与容器管理面板（Portainer、Dockge、Nginx Proxy Manager）
+- 依赖 Docker 的条目会先检查 Docker 是否已安装，未安装时提示先执行“服务安装 → 1”
+
+#### 菜单排序
+- 常用条目在前；较少使用或上游停止维护的条目移到末尾并标注“旧版 / 上游已归档”
 
 </details>
 
@@ -294,7 +304,7 @@ version.json               版本与元数据
 - `network_test`: 5
 - `performance_test`: 4
 - `service_install`: 21
-- `other_tools`: 5
+- `other_tools`: 6
 - `uninstall_scripts`: 4
 
 ## 验证与维护
@@ -335,6 +345,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.5`：菜单更新——新增 Coolify、Dokploy、Dockge、Nginx Proxy Manager、Beszel；FRP 改为官方 Release + SHA-256 校验的第一方安装器（原链接已失效）；Uptime Kuma 升级到 2.x；过时条目下移并标注。服务安装、其他工具、社区脚本三个子菜单编号有变化
 - 发布 `1.1.4`：系统优化、主机名、时区、系统更新四个工具新增 `--dry-run` 预览；修复时区路径穿越、SSH 基线未校验、yum/dnf 重启判断反向等问题
 - 发布 `1.1.3`：卸载/清理/回滚脚本新增 `--dry-run` 预览与持久化备份；修复哪吒 Agent 下载失效并加入 SHA-256 校验；Docker 安装支持 `--status` / `--dry-run`
 - 发布 `1.1.2`：修复 Issue #2 网络测试全挂；统一一键启动命令为常见一行格式；诊断脚本日志目录回退与软失败硬化

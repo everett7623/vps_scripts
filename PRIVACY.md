@@ -32,20 +32,18 @@ Community scripts menu:
 - YABS (github.com/masonr/yet-another-bench-script)
 - Bench.sh (bench.sh)
 - XY IP/Network Check (Check.Place)
-- NextTrace (github.com/sjlleo/nexttrace)
+- NextTrace (github.com/nxtrace/NTrace-core)
 - NodeLoc benchmark (abc.sd)
 - Nodequality (run.NodeQuality.com)
 - spiritLHLS ecs (gitlab.com/spiritysdx/za)
 - Media unlock test (media.ispvps.com)
 - Response time test (nodebench.mereith.com)
 - SSH tool (github.com/eooce/ssh_tool)
-- JCNF toolbox (github.com/Netflixxp/jcnf-box)
 - KejiLion toolbox (kejilion.sh)
-- BlueSkyXN toolbox (github.com/BlueSkyXN/SKY-BOX)
-- Speedtest multi-line (github.com/i-abc/Speedtest)
 - AutoTrace (github.com/Chennhaoo/Shell_Bash)
 - Oversell check (github.com/uselibrary/memoryCheck)
 - NodeScriptKit (sh.nodeseek.com)
+- Legacy, listed last: JCNF toolbox (github.com/Netflixxp/jcnf-box), BlueSkyXN toolbox (github.com/BlueSkyXN/SKY-BOX), Speedtest multi-line (github.com/i-abc/Speedtest, archived)
 
 Proxy tools menu:
 - sing-box scripts (github.com/yonggekkk, github.com/fscarmen)
@@ -54,22 +52,28 @@ Proxy tools menu:
 
 Other tools menu:
 - Komari Monitor (github.com/komari-monitor/komari)
+- Beszel hub (get.beszel.dev, github.com/henrygd/beszel)
+- Uptime Kuma (hub.docker.com louislam/uptime-kuma:2)
+- Tailscale (tailscale.com/install.sh)
+- Cloudflare Tunnel / cloudflared (github.com/cloudflare/cloudflared)
 - Cloudflare WARP (gitlab.com/fscarmen/warp)
-- DD System Reinstall (github.com/leitbogioro/Tools)
 - acme.sh (get.acme.sh)
 - oh-my-zsh (github.com/ohmyzsh/ohmyzsh)
-- Uptime Kuma (hub.docker.com louislam/uptime-kuma)
-- Tailscale (tailscale.com/install.sh)
-- FRP client (github.com/funnyzak/frpc)
-- Cloudflare Tunnel / cloudflared (github.com/cloudflare/cloudflared)
-- FileBrowser (github.com/filebrowser/get)
+- DD System Reinstall (github.com/leitbogioro/Tools)
 - Nezha cleaner (github.com/everett7623/Nezha-cleaner)
+- FileBrowser (github.com/filebrowser/get; upstream archived, listed last)
+
+The first-party FRP module (`scripts/other_tools/frp.sh`) downloads official releases from github.com/fatedier/frp and verifies them against the published `frp_sha256_checksums.txt`. The first-party Nezha module downloads from github.com/nezhahq/agent and verifies `checksums.txt`.
 
 The first-party modern CLI toolkit uses only the Linux distribution repositories already configured on the host. It does not add a third-party repository or execute a downloaded installer.
 
 Service install menu (third-party items):
 - Caddy (caddyserver.com)
+- Coolify (cdn.coollabs.io/coolify/install.sh)
+- Dokploy (dokploy.com/install.sh)
 - Portainer CE (hub.docker.com portainer/portainer-ce)
+- Dockge (github.com/louislam/dockge compose.yaml)
+- Nginx Proxy Manager (hub.docker.com jc21/nginx-proxy-manager)
 
 ## Current Safety Direction
 
