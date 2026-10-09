@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.4"
+PROJECT_VERSION="1.1.5"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -18,6 +18,7 @@ LAUNCHER_STYLE_VERSION="1.1.0"
 LOCAL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')"
 DOWNLOAD_CONNECT_TIMEOUT="${VPS_DOWNLOAD_CONNECT_TIMEOUT:-6}"
 DOWNLOAD_MAX_TIME="${VPS_DOWNLOAD_MAX_TIME:-60}"
+DOCKER_REQUIRED_CHECK="command -v docker >/dev/null 2>&1 || { echo '请先安装 Docker（服务安装 → 1）' >&2; exit 1; };"
 UI_WIDTH=80
 UI_MAX_WIDTH=88
 MENU_LABEL_WIDTH=20
@@ -782,55 +783,63 @@ service_install_menu() {
         print_menu_item 1  "Docker" "容器运行环境"
         print_menu_item 2  "LDNMP" "轻量网站环境"
         print_menu_item 3  "Nginx" "Web 服务器"
-        print_menu_item 4  "MySQL" "数据库服务器"
-        print_menu_item 5  "PostgreSQL" "数据库服务器"
-        print_menu_item 6  "Node.js" "JavaScript 运行环境"
-        print_menu_item 7  "Python" "Python 运行环境"
-        print_menu_item 8  "Redis" "缓存与队列"
-        print_menu_item 9  "Go" "Go 运行环境"
-        print_menu_item 10 "Java" "JDK 与开发工具"
-        print_menu_item 11 "Ruby" "Ruby 运行环境"
+        print_menu_item 4  "Caddy" "自动 HTTPS 服务器"
+        print_menu_item 5  "MySQL" "数据库服务器"
+        print_menu_item 6  "PostgreSQL" "数据库服务器"
+        print_menu_item 7  "Redis" "缓存与队列"
+        print_menu_item 8  "Node.js" "JavaScript 运行环境"
+        print_menu_item 9  "Python" "Python 运行环境"
+        print_menu_item 10 "Go" "Go 运行环境"
+        print_menu_item 11 "Java" "JDK 与开发工具"
         print_menu_item 12 "Rust" "Cargo 工具链"
-        print_menu_item 13 "WordPress" "CMS 部署"
-        print_menu_item 14 "aaPanel" "服务器控制面板"
-        print_menu_item 15 "宝塔面板" "服务器控制面板"
-        print_menu_item 16 "1Panel" "服务器控制面板"
-        print_menu_item 17 "AMH" "服务器控制面板"
-        print_menu_item 18 "CyberPanel" "服务器控制面板"
-        print_menu_item 19 "Jenkins" "自动化服务"
-        print_menu_item 20 "Kubernetes" "集群环境"
-        print_menu_item 21 "WP Panel" "WordPress 面板"
-        print_menu_item 22 "Caddy" "自动 HTTPS 服务器"
-        print_menu_item 23 "Portainer" "Docker 可视化面板"
+        print_menu_item 13 "Ruby" "Ruby 运行环境"
+        print_menu_item 14 "WordPress" "CMS 部署"
+        print_menu_item 15 "1Panel" "服务器控制面板"
+        print_menu_item 16 "宝塔面板" "服务器控制面板"
+        print_menu_item 17 "aaPanel" "服务器控制面板"
+        print_menu_item 18 "WP Panel" "WordPress 面板"
+        print_menu_item 19 "Coolify" "自托管 PaaS 部署平台"
+        print_menu_item 20 "Dokploy" "自托管 PaaS 部署平台"
+        print_menu_item 21 "Portainer" "Docker 可视化面板"
+        print_menu_item 22 "Dockge" "Compose 栈管理面板"
+        print_menu_item 23 "Nginx Proxy Manager" "可视化反代与证书"
+        print_menu_item 24 "CyberPanel" "服务器控制面板"
+        print_menu_item 25 "Jenkins" "自动化服务"
+        print_menu_item 26 "Kubernetes" "集群环境"
+        print_menu_item 27 "AMH" "小众控制面板"
         print_menu_item 0  "返回"
         echo ""
-        read_menu_choice "请选择 [0-23]: " || return 0
+        read_menu_choice "请选择 [0-27]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/service_install/docker.sh" ;;
             2) run_repo_script "scripts/service_install/ldnmp.sh" ;;
             3) run_repo_script "scripts/service_install/nginx.sh" ;;
-            4) run_repo_script "scripts/service_install/mysql.sh" ;;
-            5) run_repo_script "scripts/service_install/postgresql.sh" ;;
-            6) run_repo_script "scripts/service_install/nodejs.sh" ;;
-            7) run_repo_script "scripts/service_install/python.sh" ;;
-            8) run_repo_script "scripts/service_install/redis.sh" ;;
-            9) run_repo_script "scripts/service_install/go.sh" ;;
-            10) run_repo_script "scripts/service_install/java.sh" ;;
-            11) run_repo_script "scripts/service_install/ruby.sh" ;;
+            4) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o /usr/bin/caddy && chmod +x /usr/bin/caddy && /usr/bin/caddy version" "Caddy web server" ;;
+            5) run_repo_script "scripts/service_install/mysql.sh" ;;
+            6) run_repo_script "scripts/service_install/postgresql.sh" ;;
+            7) run_repo_script "scripts/service_install/redis.sh" ;;
+            8) run_repo_script "scripts/service_install/nodejs.sh" ;;
+            9) run_repo_script "scripts/service_install/python.sh" ;;
+            10) run_repo_script "scripts/service_install/go.sh" ;;
+            11) run_repo_script "scripts/service_install/java.sh" ;;
             12) run_repo_script "scripts/service_install/rust.sh" ;;
-            13) run_repo_script "scripts/service_install/wordpress.sh" ;;
-            14) run_repo_script "scripts/service_install/aapanel.sh" ;;
-            15) run_repo_script "scripts/service_install/btpanel.sh" ;;
-            16) run_repo_script "scripts/service_install/1panel.sh" ;;
-            17) run_repo_script "scripts/service_install/amh.sh" ;;
-            18) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
-            19) run_repo_script "scripts/service_install/jenkins.sh" ;;
-            20) run_repo_script "scripts/service_install/kubernetes.sh" ;;
-            21) run_repo_script "scripts/service_install/wppanel.sh" ;;
-            22) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o /usr/bin/caddy && chmod +x /usr/bin/caddy && /usr/bin/caddy version" "Caddy web server" ;;
-            23) run_remote_command "docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest" "Portainer CE" ;;
+            13) run_repo_script "scripts/service_install/ruby.sh" ;;
+            14) run_repo_script "scripts/service_install/wordpress.sh" ;;
+            15) run_repo_script "scripts/service_install/1panel.sh" ;;
+            16) run_repo_script "scripts/service_install/btpanel.sh" ;;
+            17) run_repo_script "scripts/service_install/aapanel.sh" ;;
+            18) run_repo_script "scripts/service_install/wppanel.sh" ;;
+            19) run_remote_script_url "https://cdn.coollabs.io/coolify/install.sh" "Coolify self-hosted PaaS" ;;
+            20) run_remote_script_url "https://dokploy.com/install.sh" "Dokploy self-hosted PaaS" ;;
+            21) run_remote_command "${DOCKER_REQUIRED_CHECK} docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest && echo 'Portainer: https://<服务器IP>:9443'" "Portainer CE" ;;
+            22) run_remote_command "${DOCKER_REQUIRED_CHECK} mkdir -p /opt/stacks /opt/dockge && curl -fsSL https://raw.githubusercontent.com/louislam/dockge/master/compose.yaml -o /opt/dockge/compose.yaml && docker compose -f /opt/dockge/compose.yaml up -d && echo 'Dockge: http://<服务器IP>:5001'" "Dockge compose manager" ;;
+            23) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --name nginx-proxy-manager --restart=unless-stopped -p 80:80 -p 81:81 -p 443:443 -v npm_data:/data -v npm_letsencrypt:/etc/letsencrypt jc21/nginx-proxy-manager:latest && echo 'Nginx Proxy Manager: http://<服务器IP>:81（需占用 80/443 端口）'" "Nginx Proxy Manager" ;;
+            24) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
+            25) run_repo_script "scripts/service_install/jenkins.sh" ;;
+            26) run_repo_script "scripts/service_install/kubernetes.sh" ;;
+            27) run_repo_script "scripts/service_install/amh.sh" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -854,13 +863,13 @@ community_menu() {
         print_menu_item 10 "流媒体解锁测试" "流媒体服务检测"
         print_menu_item 11 "响应时间测试" "curl 请求耗时"
         print_menu_item 12 "SSH 工具" "远程访问辅助"
-        print_menu_item 13 "JCNF 工具箱" "社区综合工具箱"
-        print_menu_item 14 "科技 Lion 工具箱" "社区综合工具箱"
-        print_menu_item 15 "BlueSkyXN 工具箱" "社区综合工具箱"
-        print_menu_item 16 "多线路测速" "多节点网络测速"
-        print_menu_item 17 "AutoTrace" "路由追踪工具"
-        print_menu_item 18 "超售检测" "内存压力测试"
-        print_menu_item 19 "NodeScriptKit" "NodeSeek 测试工具"
+        print_menu_item 13 "科技 Lion 工具箱" "社区综合工具箱"
+        print_menu_item 14 "AutoTrace" "路由追踪工具"
+        print_menu_item 15 "超售检测" "内存压力测试"
+        print_menu_item 16 "NodeScriptKit" "NodeSeek 测试工具"
+        print_menu_item 17 "JCNF 工具箱" "旧版（2023 后未更新）"
+        print_menu_item 18 "BlueSkyXN 工具箱" "旧版（2023 后未更新）"
+        print_menu_item 19 "多线路测速" "旧版（上游已归档）"
         print_menu_item 0  "返回"
         echo ""
         read_menu_choice "请选择 [0-19]: " || return 0
@@ -872,20 +881,20 @@ community_menu() {
             3) run_remote_script_url "https://Check.Place" "XY IP quality check" "-I" ;;
             4) run_remote_script_url "https://Check.Place" "XY network quality check" "-N" ;;
             5) run_remote_script_url "https://Check.Place" "XY hardware check" "-H" ;;
-            6) run_remote_script_url "https://raw.githubusercontent.com/sjlleo/nexttrace/main/nt_install.sh" "NextTrace installer" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/nxtrace/NTrace-core/main/nt_install.sh" "NextTrace installer" ;;
             7) run_remote_script_url "https://abc.sd" "NodeLoc benchmark" ;;
             8) run_remote_script_url "https://run.NodeQuality.com" "Nodequality test" ;;
             9) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
             10) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
             11) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
             12) run_remote_script_url "https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh" "SSH tool" ;;
-            13) run_remote_script_url "https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh" "JCNF toolbox" ;;
-            14) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
-            15) run_remote_script_url "https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh" "BlueSkyXN toolbox" ;;
-            16) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest" ;;
-            17) run_remote_script_url "https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh" "AutoTrace" ;;
-            18) run_remote_script_url "https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh" "Oversell check" ;;
-            19) run_remote_script_url "https://sh.nodeseek.com" "NodeScriptKit" ;;
+            13) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
+            14) run_remote_script_url "https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh" "AutoTrace" ;;
+            15) run_remote_script_url "https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh" "Oversell check" ;;
+            16) run_remote_script_url "https://sh.nodeseek.com" "NodeScriptKit" ;;
+            17) run_remote_script_url "https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh" "JCNF toolbox (legacy)" ;;
+            18) run_remote_script_url "https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh" "BlueSkyXN toolbox (legacy)" ;;
+            19) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest (upstream archived)" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -928,44 +937,46 @@ other_tools_menu() {
         print_panel_title "其他工具"
         print_menu_item 1 "BBR" "网络加速"
         print_menu_item 2 "Fail2ban" "基础安全防护"
-        print_menu_item 3 "哪吒探针" "服务器监控"
-        print_menu_item 4 "Komari 探针" "轻量级监控"
-        print_menu_item 5 "Swap" "虚拟内存管理"
-        print_menu_item 6 "哪吒清理工具" "第三方清理脚本"
-        print_menu_item 7 "WARP 一键脚本" "Cloudflare IPv6"
-        print_menu_item 8 "DD 系统重装" "一键重装系统"
-        print_menu_item 9 "acme.sh 证书" "免费 SSL 证书"
-        print_menu_item 10 "tmux 终端复用" "防断连必备"
-        print_menu_item 11 "oh-my-zsh" "Shell 增强"
-        print_menu_item 12 "Uptime Kuma" "自托管监控"
-        print_menu_item 13 "Tailscale" "WireGuard 组网"
-        print_menu_item 14 "FRP 内网穿透" "反向代理穿透"
-        print_menu_item 15 "Cloudflare Tunnel" "零IP暴露隧道"
-        print_menu_item 16 "FileBrowser" "Web 文件管理"
-        print_menu_item 17 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
+        print_menu_item 3 "Swap" "虚拟内存管理"
+        print_menu_item 4 "哪吒探针" "服务器监控"
+        print_menu_item 5 "Komari 探针" "轻量级监控"
+        print_menu_item 6 "Beszel" "轻量监控面板"
+        print_menu_item 7 "Uptime Kuma" "自托管可用性监控"
+        print_menu_item 8 "Tailscale" "WireGuard 组网"
+        print_menu_item 9 "Cloudflare Tunnel" "零IP暴露隧道"
+        print_menu_item 10 "FRP 内网穿透" "官方 frpc/frps"
+        print_menu_item 11 "WARP 一键脚本" "Cloudflare IPv6"
+        print_menu_item 12 "acme.sh 证书" "免费 SSL 证书"
+        print_menu_item 13 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
+        print_menu_item 14 "tmux 终端复用" "防断连必备"
+        print_menu_item 15 "oh-my-zsh" "Shell 增强"
+        print_menu_item 16 "DD 系统重装" "一键重装系统"
+        print_menu_item 17 "哪吒清理工具" "第三方清理脚本"
+        print_menu_item 18 "FileBrowser" "Web 文件管理（上游已归档）"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-17]: " || return 0
+        read_menu_choice "请选择 [0-18]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1) run_repo_script "scripts/other_tools/bbr.sh" ;;
             2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
-            3) run_repo_script "scripts/other_tools/nezha.sh" ;;
-            4) run_remote_script_url "https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh" "Komari monitor" ;;
-            5) run_repo_script "scripts/other_tools/swap.sh" ;;
-            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
-            7) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
-            8) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
-            9) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
-            10) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
-            11) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
-            12) run_remote_command "docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1" "Uptime Kuma monitor" ;;
-            13) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
-            14) run_remote_script_url "https://raw.githubusercontent.com/funnyzak/frpc/main/frpc_linux_install.sh" "FRP client (frpc)" ;;
-            15) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
-            16) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager" ;;
-            17) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
+            3) run_repo_script "scripts/other_tools/swap.sh" ;;
+            4) run_repo_script "scripts/other_tools/nezha.sh" ;;
+            5) run_remote_script_url "https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh" "Komari monitor" ;;
+            6) run_remote_script_url "https://get.beszel.dev/hub" "Beszel hub" ;;
+            7) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2 && echo 'Uptime Kuma: http://<服务器IP>:3001'" "Uptime Kuma monitor" ;;
+            8) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
+            9) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
+            10) run_repo_script "scripts/other_tools/frp.sh" ;;
+            11) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
+            12) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
+            13) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
+            14) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
+            15) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
+            16) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
+            17) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
+            18) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager (upstream archived)" ;;
             0) return ;;
             *) invalid_choice ;;
         esac

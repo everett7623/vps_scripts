@@ -134,6 +134,22 @@ if ! command -v docker >/dev/null 2>&1; then
     expect_output "[DRY-RUN]"
 fi
 
+FRP="${REPO_ROOT}/scripts/other_tools/frp.sh"
+
+run_case ok "${FRP}" --help
+expect_output "frp_sha256_checksums.txt"
+run_case ok "${FRP}" --status
+run_case ok "${FRP}" --install server --dry-run
+expect_output "token 认证"
+run_case ok "${FRP}" --install client --dry-run --server-addr frp.example.com --token abcdef123456
+expect_output "frpc"
+run_case fail "${FRP}" --install client --dry-run --yes
+run_case fail "${FRP}" --install server --dry-run --server-port 70000
+run_case fail "${FRP}" --install client --dry-run --server-addr 'bad host;rm' --token abcdef123456
+run_case fail "${FRP}" --install server --dry-run --token 'short'
+run_case ok "${FRP}" --uninstall server --dry-run
+run_case fail "${FRP}" --install --dry-run --yes
+
 OPTIMIZE="${REPO_ROOT}/scripts/system_tools/optimize_system.sh"
 HOSTNAME_TOOL="${REPO_ROOT}/scripts/system_tools/change_hostname.sh"
 TIMEZONE_TOOL="${REPO_ROOT}/scripts/system_tools/set_timezone.sh"

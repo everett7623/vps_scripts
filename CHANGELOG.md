@@ -4,6 +4,23 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.5 - 2026-10-09
+
+### Added
+- Service install menu: Coolify and Dokploy (self-hosted PaaS, official installers), Dockge (compose stack manager), and Nginx Proxy Manager (visual reverse proxy with certificates).
+- Other tools menu: Beszel hub (lightweight monitoring, official installer).
+- `scripts/other_tools/frp.sh`: first-party frpc/frps installer from official `fatedier/frp` releases with `frp_sha256_checksums.txt` verification, token auth enabled by default for frps, existing configs never overwritten, `frp verify` before start, and `--status`/`--dry-run`/`--uninstall`/non-interactive flags.
+
+### Changed
+- Reordered the service install, other tools, and community menus so commonly used entries come first and related items are grouped (web servers, databases, runtimes, panels, self-hosted platforms). **Menu numbers in these three submenus changed.**
+- Moved entries whose upstream is archived or unmaintained since 2023 to the end and labelled them: FileBrowser, multi-line speedtest (`i-abc/Speedtest`), JCNF toolbox, BlueSkyXN toolbox. AMH moved to the end of the service menu.
+- Uptime Kuma now installs the current `louislam/uptime-kuma:2` image (was `:1`).
+- Docker-based entries (Portainer, Dockge, Nginx Proxy Manager, Uptime Kuma) check that Docker is installed first and point to the Docker installer if not.
+- NextTrace entry points to its canonical `nxtrace/NTrace-core` repository.
+
+### Fixed
+- FRP menu entry downloaded a script that no longer exists (`funnyzak/frpc/.../frpc_linux_install.sh` returns 404); it now runs the first-party installer.
+
 ## 1.1.4 - 2026-10-09
 
 ### Added

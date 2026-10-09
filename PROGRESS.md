@@ -40,6 +40,7 @@ Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- Refreshed the service install, other tools, and community menus (1.1.5): added Coolify, Dokploy, Dockge, Nginx Proxy Manager, Beszel; replaced the dead FRP entry with a first-party checksum-verified installer; moved archived/stale entries to the end
 - Added `--dry-run` to optimize/hostname/timezone/update system tools; fixed timezone path traversal, unvalidated SSH baseline reloads, inverted yum/dnf reboot detection, and stdin-EOF menu loops
 - Replaced first-party remote shell pipelines in LDNMP, dependency installation, Jenkins build tooling, and bandwidth testing with validated temporary scripts
 - Routed third-party project installer entries through launcher confirmation, isolated download, syntax validation, and execution
@@ -56,7 +57,7 @@ Version 1.1.4 completes `--dry-run` coverage for the state-changing system tools
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.4
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.5
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
