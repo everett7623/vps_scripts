@@ -62,6 +62,7 @@ fi
 BASIC_MODE=false
 FULL_MODE=false
 PORT_SCAN=false
+SKIP_INSTALL=false
 
 # 测试参数
 PING_COUNT=10
@@ -137,15 +138,22 @@ check_dependencies() {
         fi
     done
     
-    if [ ${#missing[@]} -gt 0 ]; then
-        print_msg "$YELLOW" "缺少工具: ${missing[*]}，正在安装..."
+    if [ ${#missing[@]} -eq 0 ]; then
+        return 0
+    fi
 
-        if command -v apt-get &> /dev/null; then
-            apt-get update -qq &>> "$LOG_FILE" || true
-            apt-get install -y iputils-ping netcat-openbsd nmap dnsutils mtr-tiny iproute2 iperf3 &>> "$LOG_FILE" || true
-        elif command -v yum &> /dev/null; then
-            yum install -y iputils nc nmap bind-utils mtr iproute iperf3 &>> "$LOG_FILE" || true
-        fi
+    if [ "${SKIP_INSTALL}" = true ]; then
+        print_msg "$YELLOW" "缺少工具（已跳过安装）: ${missing[*]}"
+        return 0
+    fi
+
+    print_msg "$YELLOW" "缺少工具: ${missing[*]}，正在安装..."
+
+    if command -v apt-get &> /dev/null; then
+        apt-get update -qq &>> "$LOG_FILE" || true
+        apt-get install -y iputils-ping netcat-openbsd nmap dnsutils mtr-tiny iproute2 iperf3 &>> "$LOG_FILE" || true
+    elif command -v yum &> /dev/null; then
+        yum install -y iputils nc nmap bind-utils mtr iproute iperf3 &>> "$LOG_FILE" || true
     fi
 }
 
@@ -685,15 +693,17 @@ show_help() {
 使用方法: $0 [选项]
 
 选项:
-  --basic     基础测试模式
-  --full      完整测试模式
-  --port      包含端口扫描
-  --help, -h  显示此帮助信息
+  --basic         基础测试模式
+  --full          完整测试模式
+  --port          包含端口扫描
+  --skip-install  不自动安装缺失依赖
+  --help, -h      显示此帮助信息
 
 示例:
   $0              # 交互式菜单
   $0 --basic      # 运行基础测试
   $0 --full       # 运行完整测试
+  $0 --basic --skip-install
 
 测试项目:
   - 网络延迟和丢包率
@@ -727,6 +737,10 @@ parse_arguments() {
                 PORT_SCAN=true
                 shift
                 ;;
+            --skip-install)
+                SKIP_INSTALL=true
+                shift
+                ;;
             --help|-h)
                 show_help
                 exit 0
@@ -742,12 +756,9 @@ parse_arguments() {
 
 # 主函数
 main() {
-    # 初始化
+    parse_arguments "$@"
     create_directories
     check_dependencies
-    
-    # 解析参数
-    parse_arguments "$@"
     
     # 开始测试
     log "开始网络质量测试"

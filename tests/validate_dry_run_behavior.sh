@@ -183,4 +183,14 @@ if [ -f /etc/os-release ] && grep -Eq '^ID=(ubuntu|debian)$' /etc/os-release; th
     run_case ok "${UPDATE_TOOL}" --dry-run
 fi
 
+INSTALL_DEPS="${REPO_ROOT}/scripts/system_tools/install_deps.sh"
+run_case ok "${INSTALL_DEPS}" --help
+expect_output "--dry-run"
+expect_output "--basic"
+run_case fail "${INSTALL_DEPS}" --dry-run
+if [ -f /etc/os-release ] && grep -Eq '^ID=(ubuntu|debian|kali)$' /etc/os-release; then
+    run_case ok "${INSTALL_DEPS}" --dry-run --basic
+    expect_output "[DRY-RUN]"
+fi
+
 echo "Dry-run behavior checks are valid."

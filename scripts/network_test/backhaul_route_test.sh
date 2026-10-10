@@ -24,6 +24,7 @@ CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 # 默认开关
 TEST_MODE="standard" # standard, fast(ping only), full(include mtr)
 TRACE_METHOD="icmp"  # icmp, tcp, udp
+SKIP_INSTALL=false
 MAX_HOPS=30
 
 # 尝试加载公共库
@@ -107,16 +108,23 @@ check_dependencies() {
         if ! command -v "$dep" &>/dev/null; then missing+=("$dep"); fi
     done
     
-    if [ ${#missing[@]} -gt 0 ]; then
-        print_warn "安装缺失依赖: ${missing[*]}"
-        if command -v apt-get &>/dev/null; then
-            apt-get update -qq &>> "$LOG_FILE" || true
-            apt-get install -y traceroute mtr-tiny iputils-ping dnsutils bc curl jq &>> "$LOG_FILE" || true
-        elif command -v yum &>/dev/null; then
-            yum install -y traceroute mtr iputils bind-utils bc curl jq &>> "$LOG_FILE" || true
-        elif command -v apk &>/dev/null; then
-            apk add --no-cache traceroute mtr iputils bind-tools bc curl jq &>> "$LOG_FILE" || true
-        fi
+    if [ ${#missing[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    if [ "${SKIP_INSTALL}" = true ]; then
+        print_warn "缺少依赖（已跳过安装）: ${missing[*]}"
+        return 0
+    fi
+
+    print_warn "安装缺失依赖: ${missing[*]}"
+    if command -v apt-get &>/dev/null; then
+        apt-get update -qq &>> "$LOG_FILE" || true
+        apt-get install -y traceroute mtr-tiny iputils-ping dnsutils bc curl jq &>> "$LOG_FILE" || true
+    elif command -v yum &>/dev/null; then
+        yum install -y traceroute mtr iputils bind-utils bc curl jq &>> "$LOG_FILE" || true
+    elif command -v apk &>/dev/null; then
+        apk add --no-cache traceroute mtr iputils bind-tools bc curl jq &>> "$LOG_FILE" || true
     fi
 }
 
@@ -365,12 +373,38 @@ interactive_menu() {
 }
 
 main() {
+    local mode=""
+
+    while [ $# -gt 0 ]; do
+        case "${1}" in
+            --help|-h)
+                echo "Usage: bash backhaul_route_test.sh [--cn | --all | --fast] [--skip-install]"
+                return 0
+                ;;
+            --skip-install)
+                SKIP_INSTALL=true
+                shift
+                ;;
+            --cn|--all|--fast)
+                if [ -n "${mode}" ]; then
+                    print_error "只能指定一种测试模式"
+                    return 1
+                fi
+                mode="$1"
+                shift
+                ;;
+            *)
+                print_error "无效参数: $1"
+                return 1
+                ;;
+        esac
+    done
+
     if [ "$TRACE_METHOD" == "icmp" ]; then check_root; fi
     check_dependencies
 
-    # 命令行处理（${1:-} 避免 set -u 下无参崩溃）
-    if [ -n "${1:-}" ]; then
-        case "${1}" in
+    if [ -n "${mode}" ]; then
+        case "${mode}" in
             --cn) run_batch_test "cn" "China"; return 0 ;;
             --all)
                 run_batch_test "cn" "China"
@@ -379,10 +413,6 @@ main() {
                 run_batch_test "eu" "Europe"
                 return 0 ;;
             --fast) TEST_MODE="fast"; run_batch_test "cn" "China (Fast)"; return 0 ;;
-            --help|-h)
-                echo "Usage: bash backhaul_route_test.sh [--cn | --all | --fast]"
-                return 0 ;;
-            *) print_error "无效参数"; return 1 ;;
         esac
     else
         interactive_menu

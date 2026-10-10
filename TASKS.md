@@ -134,9 +134,17 @@
 - [x] Move x-ui-yg and X-Panel to current upstream URLs; group panels before scripts
 - [x] Synchronize version, date, changelog, README, PRIVACY, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.6`
 
+## 1.1.7 release
+
+- [x] Feature-gap review of first-party network test, performance test, and system tools
+- [x] `install_deps.sh`: `--dry-run` / `--yes` / `resolve_log_dir` / expanded help
+- [x] Soft-fail package installs + `--skip-install` for performance and auto-installing network tests
+- [x] Validate disk `--size` and network `--client` CLI arguments
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.7`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); done for service install, other tools, community in 1.1.5 and proxy tools in 1.1.6; next: feature gaps in first-party network/performance/system tools
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party install/test hardening in 1.1.7; next: mocked pkg/systemd suites for real execution paths
 - [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

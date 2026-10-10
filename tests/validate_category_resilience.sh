@@ -43,10 +43,12 @@ grep -Fq 'init_script_dirs()' "${REPO_ROOT}/lib/common_functions.sh" || fail "Mi
 grep -Fq 'run_soft()' "${REPO_ROOT}/lib/common_functions.sh" || fail "Missing run_soft()"
 
 # system_tools use resolve_log_dir in ensure/runtime paths
-for script in optimize_system.sh clean_system.sh change_hostname.sh set_timezone.sh update_system.sh; do
+for script in optimize_system.sh clean_system.sh change_hostname.sh set_timezone.sh update_system.sh install_deps.sh; do
     grep -Fq 'resolve_log_dir' "${REPO_ROOT}/scripts/system_tools/${script}" \
         || fail "system_tools/${script} missing resolve_log_dir"
 done
+grep -Fq -- '--dry-run' "${REPO_ROOT}/scripts/system_tools/install_deps.sh" \
+    || fail "install_deps.sh missing --dry-run"
 
 # uninstall dry-run
 grep -Fq -- '--dry-run' "${REPO_ROOT}/scripts/uninstall_scripts/full_uninstall.sh" \

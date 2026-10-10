@@ -9,15 +9,18 @@ SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
 
-LOG_FILE="/tmp/install_deps_$(date +%Y%m%d_%H%M%S).log"
+LOG_DIR="${VPS_LOG_DIR:-/var/log/vps_scripts}"
+LOG_FILE="${LOG_DIR}/install_deps.log"
 LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
 CONFIG_FILE="$PROJECT_ROOT/config/vps_scripts.conf"
+DRY_RUN=false
+AUTO_CONFIRM=false
+INSTALL_MODE=""
 
 if [ -f "$LIB_FILE" ]; then
     # shellcheck source=/dev/null
     source "$LIB_FILE"
     [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
-    [ -n "${LOG_DIR:-}" ] && LOG_FILE="${LOG_DIR}/install_deps.log"
 else
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; PURPLE='\033[0;35m'; NC='\033[0m'
     print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
@@ -30,7 +33,40 @@ else
     print_runtime_context() { print_key_value "脚本" "$1"; print_key_value "模式" "${2:-交互模式}"; [ -n "${3:-}" ] && print_key_value "日志" "$3"; echo ""; }
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
+    safe_mkdir() { [ -d "$1" ] || mkdir -p -- "$1"; }
 fi
+
+ensure_runtime_dirs() {
+    if [ "${DRY_RUN}" = true ]; then
+        LOG_FILE="/dev/null"
+        return 0
+    fi
+    if declare -F resolve_log_dir >/dev/null 2>&1; then
+        resolve_log_dir "${VPS_LOG_DIR:-/var/log/vps_scripts}" || true
+        LOG_FILE="${LOG_DIR}/install_deps.log"
+    else
+        safe_mkdir "${LOG_DIR}"
+        LOG_FILE="${LOG_DIR}/install_deps.log"
+    fi
+}
+
+show_help() {
+    cat <<'EOF'
+用法：bash install_deps.sh [选项]
+
+选项：
+  --basic         安装基础工具包
+  --dev           安装开发工具包
+  --monitor       安装监控工具包
+  --security      安装安全工具包
+  --all           安装全部软件包分组
+  --dry-run       预览将安装的软件包与命令，不写入系统
+  --yes, -y       非交互确认（跳过结束后的暂停）
+  --help, -h      显示此帮助信息
+
+未指定安装模式时进入交互菜单。
+EOF
+}
 
 [ -z "${BASIC_PACKAGES:-}" ] && BASIC_PACKAGES="curl wget git vim nano htop iotop iftop net-tools dnsutils mtr traceroute tcpdump telnet openssh-server ca-certificates gnupg lsb-release software-properties-common unzip zip tar gzip bzip2 screen tmux tree jq bc rsync cron logrotate"
 [ -z "${DEV_PACKAGES:-}" ] && DEV_PACKAGES="build-essential gcc g++ make cmake automake autoconf libtool pkg-config python3 python3-pip python3-dev nodejs npm golang default-jdk maven ruby perl php-cli composer docker.io docker-compose ansible terraform"
@@ -136,6 +172,10 @@ normalize_package_list() {
 }
 
 run_update_cache() {
+    if [ "${DRY_RUN}" = true ]; then
+        printf '[DRY-RUN] %s\n' "${UPDATE_CMD[*]}"
+        return 0
+    fi
     print_info "正在刷新软件包元数据..."
     if env DEBIAN_FRONTEND=noninteractive "${UPDATE_CMD[@]}" >> "$LOG_FILE" 2>&1; then
         print_success "软件包元数据刷新完成。"
@@ -146,11 +186,20 @@ run_update_cache() {
 
 install_one_package() {
     local package="$1"
+    if [ "${DRY_RUN}" = true ]; then
+        printf '[DRY-RUN] %s %s\n' "${INSTALL_CMD[*]}" "${package}"
+        return 0
+    fi
     env DEBIAN_FRONTEND=noninteractive "${INSTALL_CMD[@]}" "$package" >> "$LOG_FILE" 2>&1
 }
 
 run_nodejs_setup() {
     local setup_file=""
+
+    if [ "${DRY_RUN}" = true ]; then
+        printf '[DRY-RUN] download+bash -n+run https://deb.nodesource.com/setup_lts.x\n'
+        return 0
+    fi
 
     setup_file=$(mktemp "/tmp/nodesource-setup.XXXXXX") || return 1
     if ! curl -fsSL https://deb.nodesource.com/setup_lts.x -o "${setup_file}" ||
@@ -170,18 +219,22 @@ configure_extra_repos() {
     case "$OS_TYPE" in
         ubuntu|debian)
             if ! command -v docker >/dev/null 2>&1; then
-                install_one_package ca-certificates || true
-                install_one_package curl || true
-                install_one_package gnupg || true
-                install_one_package lsb-release || true
-
-                mkdir -p /usr/share/keyrings
-                if curl -fsSL "https://download.docker.com/linux/${OS_TYPE}/gpg" \
-                    | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg 2>/dev/null; then
-                    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/${OS_TYPE} $(lsb_release -cs) stable" \
-                        > /etc/apt/sources.list.d/docker.list
+                if [ "${DRY_RUN}" = true ]; then
+                    printf '[DRY-RUN] configure Docker apt repository for %s\n' "${OS_TYPE}"
                 else
-                    print_warn "Docker 软件源密钥配置失败。"
+                    install_one_package ca-certificates || true
+                    install_one_package curl || true
+                    install_one_package gnupg || true
+                    install_one_package lsb-release || true
+
+                    mkdir -p /usr/share/keyrings
+                    if curl -fsSL "https://download.docker.com/linux/${OS_TYPE}/gpg" \
+                        | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg 2>/dev/null; then
+                        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/${OS_TYPE} $(lsb_release -cs) stable" \
+                            > /etc/apt/sources.list.d/docker.list
+                    else
+                        print_warn "Docker 软件源密钥配置失败。"
+                    fi
                 fi
             fi
 
@@ -194,8 +247,12 @@ configure_extra_repos() {
                 install_one_package epel-release || print_warn "安装 epel-release 失败。"
             fi
             if ! command -v docker >/dev/null 2>&1 && command -v yum-config-manager >/dev/null 2>&1; then
-                yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo >> "$LOG_FILE" 2>&1 || \
-                    print_warn "添加 Docker CE 软件源失败。"
+                if [ "${DRY_RUN}" = true ]; then
+                    printf '[DRY-RUN] yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo\n'
+                else
+                    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo >> "$LOG_FILE" 2>&1 || \
+                        print_warn "添加 Docker CE 软件源失败。"
+                fi
             fi
             ;;
     esac
@@ -236,6 +293,14 @@ install_pkg_list() {
         return 0
     fi
 
+    if [ "${DRY_RUN}" = true ]; then
+        print_info "DRY-RUN：将安装 ${total} 个软件包：${to_install[*]}"
+        for package in "${to_install[@]}"; do
+            printf '[DRY-RUN] %s %s\n' "${INSTALL_CMD[*]}" "${package}"
+        done
+        return 0
+    fi
+
     print_info "正在安装 $total 个软件包..."
 
     for package in "${to_install[@]}"; do
@@ -265,6 +330,15 @@ post_install_setup() {
     local services=("ssh" "sshd" "cron" "crond" "docker")
 
     print_info "正在执行安装后的服务配置..."
+
+    if [ "${DRY_RUN}" = true ]; then
+        for service in "${services[@]}"; do
+            printf '[DRY-RUN] systemctl enable --now %s (若单元存在)\n' "${service}"
+        done
+        printf '[DRY-RUN] git config --global init.defaultBranch main\n'
+        printf '[DRY-RUN] git config --global color.ui auto\n'
+        return 0
+    fi
 
     if command -v systemctl >/dev/null 2>&1; then
         for service in "${services[@]}"; do
@@ -357,45 +431,76 @@ interactive_menu() {
         else
             print_warn "任务已完成，但存在警告，请查看：$LOG_FILE"
         fi
-        read -n 1 -s -r -p "按任意键返回..."
+        if [ "${AUTO_CONFIRM}" = true ]; then
+            continue
+        fi
+        read -n 1 -s -r -p "按任意键返回..." || true
     done
 }
 
-main() {
-    case "${1:-}" in
-        --help|-h)
-            echo "用法：bash install_deps.sh [--basic | --dev | --all]"
-            return 0
-            ;;
-    esac
+parse_arguments() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --basic|--dev|--monitor|--security|--all)
+                if [ -n "${INSTALL_MODE}" ]; then
+                    print_error "只能指定一种安装模式。"
+                    exit 1
+                fi
+                INSTALL_MODE="${1#--}"
+                ;;
+            --dry-run) DRY_RUN=true ;;
+            --yes|-y) AUTO_CONFIRM=true ;;
+            --help|-h) show_help; exit 0 ;;
+            *)
+                print_error "未知参数：$1"
+                show_help
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
 
-    check_root
+packages_for_mode() {
+    case "$1" in
+        basic) echo "$BASIC_PACKAGES" ;;
+        dev) echo "$DEV_PACKAGES" ;;
+        monitor) echo "$MONITOR_PACKAGES" ;;
+        security) echo "$SECURITY_PACKAGES" ;;
+        all) echo "$BASIC_PACKAGES $DEV_PACKAGES $MONITOR_PACKAGES $SECURITY_PACKAGES" ;;
+        *) return 1 ;;
+    esac
+}
+
+main() {
+    parse_arguments "$@"
+    ensure_runtime_dirs
+
+    if [ "${DRY_RUN}" != true ]; then
+        check_root
+    fi
+
     detect_package_manager
-    if [ -n "${1:-}" ]; then
-        print_header "常用依赖安装向导"
+
+    local header_title="常用依赖安装向导"
+    [ "${DRY_RUN}" = true ] && header_title="常用依赖安装向导（DRY-RUN）"
+
+    if [ -n "${INSTALL_MODE}" ]; then
+        print_header "${header_title}"
         print_runtime_context "install_deps.sh" "软件包安装" "${LOG_FILE}"
         print_key_value "当前系统" "$OS_TYPE ($PKG_MANAGER)"
         echo ""
+        run_install_flow "$(packages_for_mode "${INSTALL_MODE}")"
+        return $?
     fi
 
-    case "${1:-}" in
-        --basic)
-            run_install_flow "$BASIC_PACKAGES"
-            ;;
-        --dev)
-            run_install_flow "$DEV_PACKAGES"
-            ;;
-        --all)
-            run_install_flow "$BASIC_PACKAGES $DEV_PACKAGES $MONITOR_PACKAGES $SECURITY_PACKAGES"
-            ;;
-        "")
-            interactive_menu
-            ;;
-        *)
-            print_error "未知参数：$1"
-            exit 1
-            ;;
-    esac
+    if [ "${DRY_RUN}" = true ]; then
+        print_error "DRY-RUN 需配合 --basic / --dev / --monitor / --security / --all 使用。"
+        show_help
+        exit 1
+    fi
+
+    interactive_menu
 }
 
 main "$@"
