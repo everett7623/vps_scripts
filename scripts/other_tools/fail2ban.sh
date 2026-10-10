@@ -11,8 +11,9 @@ YELLOW='\033[0;33m'
 WHITE='\033[0;37m'
 NC='\033[0m'
 
-JAIL_FILE="/etc/fail2ban/jail.d/vps-scripts-sshd.local"
+JAIL_FILE="${VPS_FAIL2BAN_JAIL_FILE:-/etc/fail2ban/jail.d/vps-scripts-sshd.local}"
 DRY_RUN=false
+AUTO_YES=false
 
 require_root() {
     if [ "$(id -u)" != "0" ]; then
@@ -28,6 +29,7 @@ show_help() {
 选项：
   --status    显示 Fail2ban / SSH jail 状态
   --dry-run   预览安装与配置动作，不修改系统
+  --yes       非交互确认并执行安装（可与 --dry-run 联用）
   --help      显示帮助
 
 无参数时进入交互安装流程。
@@ -68,6 +70,10 @@ preview_plan() {
 }
 
 detect_system_type() {
+    if [ -n "${VPS_OS_TYPE:-}" ]; then
+        echo "${VPS_OS_TYPE}"
+        return 0
+    fi
     if [ -f /etc/redhat-release ]; then
         echo "centos"
     elif [ -f /etc/debian_version ]; then
@@ -84,6 +90,7 @@ detect_system_type() {
 install_fail2ban() {
     local system_type
     local confirm=""
+    local jail_dir=""
 
     echo -e "${WHITE}Fail2ban安全工具${NC}"
     echo "------------------------"
@@ -93,13 +100,17 @@ install_fail2ban() {
         return 0
     fi
 
-    echo -e "${YELLOW}警告: 安装Fail2ban将增强系统安全性，但可能影响正常访问${NC}"
-    read -r -p "确定要安装Fail2ban吗? (y/n): " confirm
-    case "${confirm}" in
-        y|Y) echo -e "${GREEN}开始安装Fail2ban...${NC}" ;;
-        n|N) echo -e "${YELLOW}已取消操作${NC}"; return 0 ;;
-        *) echo -e "${RED}无效选择，已取消操作${NC}"; return 1 ;;
-    esac
+    if [ "${AUTO_YES}" != true ]; then
+        echo -e "${YELLOW}警告: 安装Fail2ban将增强系统安全性，但可能影响正常访问${NC}"
+        read -r -p "确定要安装Fail2ban吗? (y/n): " confirm
+        case "${confirm}" in
+            y|Y) echo -e "${GREEN}开始安装Fail2ban...${NC}" ;;
+            n|N) echo -e "${YELLOW}已取消操作${NC}"; return 0 ;;
+            *) echo -e "${RED}无效选择，已取消操作${NC}"; return 1 ;;
+        esac
+    else
+        echo -e "${GREEN}开始安装Fail2ban（--yes）...${NC}"
+    fi
 
     system_type=$(detect_system_type)
     if [ -z "${system_type}" ]; then
@@ -123,7 +134,8 @@ install_fail2ban() {
     fi
 
     echo -e "${WHITE}配置Fail2ban...${NC}"
-    mkdir -p /etc/fail2ban/jail.d
+    jail_dir=$(dirname -- "${JAIL_FILE}")
+    mkdir -p -- "${jail_dir}"
     if [ -f "${JAIL_FILE}" ]; then
         cp -- "${JAIL_FILE}" "${JAIL_FILE}.bak"
     fi
@@ -170,31 +182,40 @@ EOF
 }
 
 main() {
-    case "${1:-}" in
-        --help|-h)
-            show_help
-            return 0
-            ;;
-        --status)
-            show_status
-            return 0
-            ;;
-        --dry-run)
-            DRY_RUN=true
-            require_root
-            preview_plan
-            return 0
-            ;;
-        "")
-            require_root
-            install_fail2ban
-            ;;
-        *)
-            echo -e "${RED}未知参数: ${1}${NC}"
-            show_help
-            return 1
-            ;;
-    esac
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --help|-h)
+                show_help
+                return 0
+                ;;
+            --status)
+                show_status
+                return 0
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --yes|-y)
+                AUTO_YES=true
+                shift
+                ;;
+            *)
+                echo -e "${RED}未知参数: $1${NC}"
+                show_help
+                return 1
+                ;;
+        esac
+    done
+
+    if [ "${DRY_RUN}" = true ]; then
+        require_root
+        preview_plan
+        return 0
+    fi
+
+    require_root
+    install_fail2ban
 }
 
 main "$@"

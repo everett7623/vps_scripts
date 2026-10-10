@@ -4,6 +4,19 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.8 - 2026-10-10
+
+### Added
+- `tests/validate_mocked_pkg_systemd.sh`: executes real (non-dry-run) BBR install/uninstall and Fail2ban `--yes` paths with succeeding package/systemd stubs and asserts call logs plus written configs.
+- `fail2ban.sh --yes` for non-interactive install; `VPS_FAIL2BAN_JAIL_FILE` and `VPS_OS_TYPE` overrides for tests.
+- `VPS_BBR_DROPIN` override so BBR drop-in writes are testable outside `/etc`.
+- Go installer verifies `dl.google.com` `*.tar.gz.sha256` before extract (also when the archive came from a mirror).
+- Node.js binary installer downloads from the versioned `nodejs.org/dist/<ver>/` path, verifies `SHASUMS256.txt`, and uses `mktemp` instead of a fixed `/tmp` working directory.
+- `tests/validate_nodejs_installer_safety.sh`.
+
+### Changed
+- BBR writes through `${VPS_BBR_DROPIN:-/etc/sysctl.d/99-vps-bbr.conf}` instead of a hard-coded path only.
+
 ## 1.1.7 - 2026-10-10
 
 ### Added

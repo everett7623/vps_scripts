@@ -20,6 +20,9 @@ grep -Fq 'work_dir=$(mktemp -d "/tmp/go-install.XXXXXX")' "${SCRIPT}"
 grep -Fq 'archive_file="${work_dir}/go.tar.gz"' "${SCRIPT}"
 grep -Fq 'safe_remove_go_tree' "${SCRIPT}"
 grep -Fq 'run_remote_installer "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" -b "${GOPATH}/bin"' "${SCRIPT}"
+grep -Fq 'https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz.sha256' "${SCRIPT}"
+grep -Fq 'sha256sum "${archive_file}"' "${SCRIPT}"
+grep -Fq 'Go 归档 SHA-256 校验失败' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)' "${SCRIPT}"; then
     echo "Go installer pipes remote content to a shell." >&2

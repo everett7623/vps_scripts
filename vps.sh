@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.7"
+PROJECT_VERSION="1.1.8"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
