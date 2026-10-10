@@ -286,6 +286,28 @@ install_go() {
         rm -rf -- "$work_dir"
         error_exit "Go下载失败"
     fi
+
+    # 使用 Google 官方 .sha256 校验（即使归档来自镜像）
+    local checksum_url="https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz.sha256"
+    local checksum_file="${work_dir}/go.tar.gz.sha256"
+    local expected=""
+    local actual=""
+    log "${YELLOW}正在校验 SHA-256...${NC}"
+    if ! curl -fsSL --retry 3 -o "${checksum_file}" "${checksum_url}"; then
+        rm -rf -- "$work_dir"
+        error_exit "下载 Go SHA-256 校验文件失败"
+    fi
+    expected=$(tr -d '[:space:]' < "${checksum_file}")
+    [[ ${expected} =~ ^[0-9a-fA-F]{64}$ ]] || {
+        rm -rf -- "$work_dir"
+        error_exit "Go SHA-256 校验文件格式无效"
+    }
+    actual=$(sha256sum "${archive_file}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "Go 归档 SHA-256 校验失败"
+    fi
+    log "${GREEN}SHA-256 校验通过${NC}"
     
     # 清理旧版本
     if [[ -d "${INSTALL_PATH}/go" ]]; then

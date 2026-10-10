@@ -236,36 +236,74 @@ install_nodejs_nodesource() {
 
 # 通过官方二进制文件安装Node.js
 install_nodejs_binary() {
+    local work_dir=""
+    local archive_file=""
+    local sums_file=""
+    local asset=""
+    local expected=""
+    local actual=""
+
     log_info "通过官方二进制文件安装 Node.js ${NODE_VERSION}..."
-    
+
     # 获取完整版本号
-    FULL_VERSION=$(curl -s https://nodejs.org/dist/latest-v${NODE_VERSION}.x/ | grep -oE 'node-v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    
+    FULL_VERSION=$(curl -fsSL "https://nodejs.org/dist/latest-v${NODE_VERSION}.x/" | grep -oE 'node-v[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+
     if [[ -z "$FULL_VERSION" ]]; then
         log_error "无法获取 Node.js ${NODE_VERSION} 的版本信息"
         exit 1
     fi
-    
-    # 下载二进制文件
-    DOWNLOAD_URL="https://nodejs.org/dist/latest-v${NODE_VERSION}.x/${FULL_VERSION}-linux-${ARCH}.tar.xz"
+
+    asset="${FULL_VERSION}-linux-${ARCH}.tar.xz"
+    DOWNLOAD_URL="https://nodejs.org/dist/${FULL_VERSION}/${asset}"
     log_info "下载 Node.js: $DOWNLOAD_URL"
-    
-    cd /tmp
-    wget -q "$DOWNLOAD_URL" -O nodejs.tar.xz
-    
+
+    work_dir=$(mktemp -d "/tmp/nodejs-install.XXXXXX") || {
+        log_error "创建临时目录失败"
+        exit 1
+    }
+    archive_file="${work_dir}/${asset}"
+    sums_file="${work_dir}/SHASUMS256.txt"
+
+    if ! wget -q "$DOWNLOAD_URL" -O "${archive_file}" || [[ ! -s "${archive_file}" ]]; then
+        rm -rf -- "${work_dir}"
+        log_error "Node.js 下载失败"
+        exit 1
+    fi
+
+    log_info "正在按官方 SHASUMS256.txt 校验 SHA-256..."
+    if ! curl -fsSL --retry 3 -o "${sums_file}" "https://nodejs.org/dist/${FULL_VERSION}/SHASUMS256.txt"; then
+        rm -rf -- "${work_dir}"
+        log_error "下载 Node.js SHASUMS256.txt 失败"
+        exit 1
+    fi
+    expected=$(awk -v f="${asset}" '$2 == f {print $1; exit}' "${sums_file}")
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{64}$ ]]; then
+        rm -rf -- "${work_dir}"
+        log_error "SHASUMS256.txt 中未找到 ${asset}"
+        exit 1
+    fi
+    actual=$(sha256sum "${archive_file}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "${work_dir}"
+        log_error "Node.js 归档 SHA-256 校验失败"
+        exit 1
+    fi
+
     # 解压并安装
-    tar -xf nodejs.tar.xz
-    cp -r "${FULL_VERSION}-linux-${ARCH}/"* /usr/local/
-    
+    if ! tar -xf "${archive_file}" -C "${work_dir}"; then
+        rm -rf -- "${work_dir}"
+        log_error "Node.js 解压失败"
+        exit 1
+    fi
+    cp -r "${work_dir}/${FULL_VERSION}-linux-${ARCH}/"* /usr/local/
+
     # 创建软链接
     ln -sf /usr/local/bin/node /usr/bin/node
     ln -sf /usr/local/bin/npm /usr/bin/npm
     ln -sf /usr/local/bin/npx /usr/bin/npx
-    
-    # 清理
-    rm -f -- nodejs.tar.xz
-    rm -rf -- "${FULL_VERSION}-linux-${ARCH}"
-    
+
+    rm -rf -- "${work_dir}"
+
     log_success "Node.js ${NODE_VERSION} 通过二进制文件安装完成"
 }
 

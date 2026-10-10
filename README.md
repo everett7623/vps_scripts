@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.7-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.8-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -345,6 +345,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.8`：mocked pkg/systemd 真实路径测试（BBR / Fail2ban）；Go 与 Node.js 官方 SHA-256 校验；Fail2ban `--yes`；Node 二进制安装改用临时目录
 - 发布 `1.1.7`：第一方加固——`install_deps` 支持 `--dry-run`/`--yes`；性能测试安装失败不再中断；网络/性能测试支持 `--skip-install`；磁盘 `--size` 与吞吐 `--client` 参数校验
 - 发布 `1.1.6`：代理工具菜单更新——新增 S-UI、mack-a 八合一、Hysteria2 官方与 Xray 官方核心安装；勇哥 x-ui、X-Panel 改用当前上游地址；面板在前、脚本在后。代理工具菜单编号有变化
 - 发布 `1.1.5`：菜单更新——新增 Coolify、Dokploy、Dockge、Nginx Proxy Manager、Beszel；FRP 改为官方 Release + SHA-256 校验的第一方安装器（原链接已失效）；Uptime Kuma 升级到 2.x；过时条目下移并标注。服务安装、其他工具、社区脚本三个子菜单编号有变化

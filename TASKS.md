@@ -142,9 +142,16 @@
 - [x] Validate disk `--size` and network `--client` CLI arguments
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.7`
 
+## 1.1.8 release
+
+- [x] Mocked pkg/systemd suite for real BBR install/uninstall and Fail2ban `--yes` paths
+- [x] Go official `.sha256` verification; Node.js `SHASUMS256.txt` verification + mktemp binary install
+- [x] Fail2ban `--yes` and testable path/OS overrides; BBR drop-in override
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.8`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party install/test hardening in 1.1.7; next: mocked pkg/systemd suites for real execution paths
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party hardening in 1.1.7; mocked pkg/systemd + Go/Node checksums in 1.1.8; next: extend checksums (e.g. Maven) and more mutator real-path mocks
 - [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

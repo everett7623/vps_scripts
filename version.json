@@ -2,7 +2,7 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "release_date": "2026-10-10",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "First-party hardening: install_deps --dry-run; performance soft-fail installs; --skip-install for auto-installing tests; disk --size and network --client validation."
+    "message": "Mocked pkg/systemd real-path tests for bbr/fail2ban; Go and Node.js official SHA-256 verification; fail2ban --yes and testable path overrides."
   },
   "compatibility": {
     "min_bash_version": "4.0",

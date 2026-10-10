@@ -18,6 +18,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.5 | #8 | Service install / other tools / community refresh; first-party `scripts/other_tools/frp.sh` replacing a 404 installer |
 | 1.1.6 | #9 | Proxy tools refresh: S-UI, v2ray-agent, official Hysteria2/Xray; x-ui-yg and X-Panel URL updates |
 | 1.1.7 | #10 | First-party hardening: install_deps dry-run; performance soft-fail installs; --skip-install; CLI validation |
+| 1.1.8 | (pending) | Mocked pkg/systemd real paths for bbr/fail2ban; Go/Node SHA-256 verification |
 
 ## Decisions
 
@@ -33,4 +34,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Mocked pkg/systemd suites for real (non-preview) execution paths; extend checksum verification to more project-owned installers.
+Extend checksum verification (Maven/Java) and grow mocked real-path coverage (swap `--size`/`--yes`, stubbable root for install_deps).

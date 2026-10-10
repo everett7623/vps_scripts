@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.7`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.8`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.7` is a backward-compatible patch release that hardens first-party system, network, and performance tools: `install_deps` gains `--dry-run`/`--yes` and stable logging; performance benchmarks soft-fail package installs; auto-installing test scripts gain `--skip-install`; disk `--size` and network `--client` arguments are validated. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.8` is a backward-compatible patch release that adds succeeding-stub mocked pkg/systemd coverage for BBR and Fail2ban real install paths, and verifies Go and Node.js official release archives with upstream SHA-256 metadata before extract. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

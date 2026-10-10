@@ -8,6 +8,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # 恢复默认颜色
 
+SYSCTL_CONF="${VPS_SYSCTL_CONF:-/etc/sysctl.conf}"
+BBR_DROPIN="${VPS_BBR_DROPIN:-/etc/sysctl.d/99-vps-bbr.conf}"
+SYSCTL_D=$(dirname -- "${BBR_DROPIN}")
+
 # 检查是否有root权限
 check_root() {
     if [ "$(id -u)" != "0" ]; then
@@ -75,19 +79,24 @@ check_bbr_status() {
 # 安装BBR
 install_bbr() {
     echo -e "${YELLOW}正在配置BBR网络优化...${NC}"
-    
-    # 备份原配置文件
-    if [ -f /etc/sysctl.conf ]; then
-        cp /etc/sysctl.conf /etc/sysctl.conf.bak
-        echo -e "${YELLOW}已备份原配置文件到 /etc/sysctl.conf.bak${NC}"
+
+    mkdir -p -- "${SYSCTL_D}"
+
+    # 仅在写入默认 drop-in 时尝试备份系统 sysctl.conf（测试覆盖路径时跳过）
+    if [ "${BBR_DROPIN}" = "/etc/sysctl.d/99-vps-bbr.conf" ] && [ -f "${SYSCTL_CONF}" ]; then
+        if cp -- "${SYSCTL_CONF}" "${SYSCTL_CONF}.bak" 2>/dev/null; then
+            echo -e "${YELLOW}已备份原配置文件到 ${SYSCTL_CONF}.bak${NC}"
+        else
+            echo -e "${YELLOW}无法备份 ${SYSCTL_CONF}，继续写入 drop-in。${NC}"
+        fi
     fi
-    
-    # 写入BBR配置
-    cat > /etc/sysctl.d/99-vps-bbr.conf << EOF
+
+    # 写入BBR配置（默认 /etc/sysctl.d/99-vps-bbr.conf）
+    cat > "${BBR_DROPIN}" << EOF
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
 EOF
-    
+
     # 应用配置
     if sysctl -p && sysctl --system; then
         echo -e "${GREEN}BBR配置已成功应用!${NC}"
@@ -101,16 +110,15 @@ EOF
 # 卸载BBR
 uninstall_bbr() {
     echo -e "${YELLOW}正在卸载BBR网络优化...${NC}"
-    
-    # 恢复备份配置
-    if [ -f /etc/sysctl.d/99-vps-bbr.conf ]; then
-        rm -f -- /etc/sysctl.d/99-vps-bbr.conf
+
+    # 移除本工具写入的 drop-in（默认 /etc/sysctl.d/99-vps-bbr.conf）
+    if [ -f "${BBR_DROPIN}" ]; then
+        rm -f -- "${BBR_DROPIN}"
         echo -e "${YELLOW}已移除本工具写入的BBR配置。${NC}"
     else
-        # 如果没有备份，则重置BBR相关配置
         echo -e "${YELLOW}未找到本工具写入的BBR配置。${NC}"
     fi
-    
+
     # 应用配置
     if sysctl -p && sysctl --system; then
         echo -e "${GREEN}BBR配置已成功卸载!${NC}"
