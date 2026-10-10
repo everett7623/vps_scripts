@@ -82,10 +82,13 @@ install_bbr() {
 
     mkdir -p -- "${SYSCTL_D}"
 
-    # 备份原配置文件（仅当指向系统默认路径时）
-    if [ -f "${SYSCTL_CONF}" ] && [ "${SYSCTL_CONF}" = "/etc/sysctl.conf" ]; then
-        cp -- "${SYSCTL_CONF}" "${SYSCTL_CONF}.bak"
-        echo -e "${YELLOW}已备份原配置文件到 ${SYSCTL_CONF}.bak${NC}"
+    # 仅在写入默认 drop-in 时尝试备份系统 sysctl.conf（测试覆盖路径时跳过）
+    if [ "${BBR_DROPIN}" = "/etc/sysctl.d/99-vps-bbr.conf" ] && [ -f "${SYSCTL_CONF}" ]; then
+        if cp -- "${SYSCTL_CONF}" "${SYSCTL_CONF}.bak" 2>/dev/null; then
+            echo -e "${YELLOW}已备份原配置文件到 ${SYSCTL_CONF}.bak${NC}"
+        else
+            echo -e "${YELLOW}无法备份 ${SYSCTL_CONF}，继续写入 drop-in。${NC}"
+        fi
     fi
 
     # 写入BBR配置（默认 /etc/sysctl.d/99-vps-bbr.conf）
