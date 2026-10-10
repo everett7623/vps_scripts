@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.6",
-    "release_date": "2026-10-09",
+    "version": "1.1.7",
+    "release_date": "2026-10-10",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Proxy menu refresh: S-UI, mack-a v2ray-agent, official Hysteria2 and Xray-core installers; x-ui-yg and X-Panel moved to current upstream URLs."
+    "message": "First-party hardening: install_deps --dry-run; performance soft-fail installs; --skip-install for auto-installing tests; disk --size and network --client validation."
   },
   "compatibility": {
     "min_bash_version": "4.0",

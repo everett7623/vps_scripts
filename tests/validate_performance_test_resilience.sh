@@ -31,7 +31,19 @@ for relative_path in "${FILES[@]}"; do
         fail "${relative_path} still uses set -e unsafe [ ! -d ] && mkdir"
     fi
     grep -Eq 'init_script_dirs' "${target}" || fail "${relative_path} missing init_script_dirs"
+    grep -Fq -- '--skip-install' "${target}" || fail "${relative_path} missing --skip-install"
+    grep -Fq 'SKIP_INSTALL' "${target}" || fail "${relative_path} missing SKIP_INSTALL"
+    # Package installs must soft-fail under set -e
+    if grep -E 'apt-get install|yum install|apk add' "${target}" | grep -v '\|\| true' | grep -q .; then
+        fail "${relative_path} has hard-fail package install lines"
+    fi
 done
+
+DISK_IO="${REPO_ROOT}/scripts/performance_test/disk_io_benchmark.sh"
+grep -Fq '1-64' "${DISK_IO}" || fail "disk_io_benchmark.sh missing --size bounds check"
+
+NET_TP="${REPO_ROOT}/scripts/performance_test/network_throughput_test.sh"
+grep -Fq -- '--client 需要目标' "${NET_TP}" || fail "network_throughput_test.sh missing --client presence check"
 
 # other_tools non-interactive flags
 grep -Fq -- '--status' "${REPO_ROOT}/scripts/other_tools/swap.sh" || fail "swap.sh missing --status"

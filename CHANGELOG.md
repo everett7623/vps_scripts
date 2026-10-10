@@ -4,6 +4,20 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.7 - 2026-10-10
+
+### Added
+- `scripts/system_tools/install_deps.sh`: `--dry-run` preview, `--yes`, `--monitor`/`--security` non-interactive modes, and `resolve_log_dir` logging (no longer writes under `/tmp` by default).
+- `--skip-install` on auto-installing network and performance test scripts so missing tools are skipped instead of package-manager side effects.
+
+### Changed
+- Performance benchmarks (`cpu`/`memory`/`disk_io`/`network_throughput`) soft-fail package installs under `set -e` and continue with available tools.
+- Network bandwidth / backhaul / quality tests accept `--skip-install` alongside their existing mode flags.
+- Disk IO `--size` requires an integer 1–64; network throughput `--client` requires a present IPv4 or hostname.
+
+### Fixed
+- Performance test scripts no longer abort the whole run when `apt-get`/`yum`/`apk` install fails.
+
 ## 1.1.6 - 2026-10-09
 
 ### Added

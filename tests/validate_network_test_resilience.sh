@@ -44,7 +44,7 @@ for relative_path in "${FILES[@]}"; do
 done
 
 BACKHAUL="${NETWORK_DIR}/backhaul_route_test.sh"
-grep -Fq '"${1:-}"' "${BACKHAUL}" || fail "backhaul_route_test.sh missing \${1:-} guard"
+grep -Fq 'while [ $# -gt 0 ]' "${BACKHAUL}" || fail "backhaul_route_test.sh missing safe CLI while-loop"
 if grep -Eq 'if \[ -n "\$1" \]' "${BACKHAUL}"; then
     fail "backhaul_route_test.sh still reads unbound \$1"
 fi
@@ -56,6 +56,10 @@ grep -Fq 'run_speedtest_single "$id" "$name" || true' "${BANDWIDTH}" || fail "ba
 # Function body must return 0 after logging node failure
 awk '/^run_speedtest_single\(\)/,/^}/ { if ($0 ~ /return 1/) bad=1 } END { exit bad ? 1 : 0 }' "${BANDWIDTH}" \
     || fail "bandwidth_test.sh run_speedtest_single still returns 1"
+grep -Fq -- '--skip-install' "${BANDWIDTH}" || fail "bandwidth_test.sh missing --skip-install"
+grep -Fq -- '--skip-install' "${BACKHAUL}" || fail "backhaul_route_test.sh missing --skip-install"
+grep -Fq -- '--skip-install' "${NETWORK_DIR}/network_quality_test.sh" \
+    || fail "network_quality_test.sh missing --skip-install"
 
 IP_QUALITY="${NETWORK_DIR}/ip_quality_test.sh"
 grep -Fq 'local arg1="${1:-}"' "${IP_QUALITY}" || fail "ip_quality_test.sh missing arg1=\${1:-} guard"

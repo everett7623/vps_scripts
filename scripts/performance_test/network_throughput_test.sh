@@ -62,6 +62,7 @@ fi
 SERVER_MODE=false
 CLIENT_MODE=false
 LOCAL_MODE=false
+SKIP_INSTALL=false
 SERVER_IP=""
 
 # 测试参数
@@ -109,19 +110,35 @@ check_dependencies() {
         fi
     done
     
-    if [ ${#missing[@]} -gt 0 ]; then
-        print_msg "$YELLOW" "缺少依赖工具，正在安装..."
-        
-        if command -v apt-get &> /dev/null; then
-            apt-get update -qq
-            apt-get install -y iperf3 netperf nuttcp ethtool iproute2 &>> "$LOG_FILE"
-            # sockperf可能需要从源编译
-        elif command -v yum &> /dev/null; then
-            yum install -y epel-release &>> "$LOG_FILE"
-            yum install -y iperf3 netperf nuttcp ethtool iproute &>> "$LOG_FILE"
-        elif command -v apk &> /dev/null; then
-            apk add --no-cache iperf3 ethtool iproute2 &>> "$LOG_FILE"
+    if [ ${#missing[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    if [ "${SKIP_INSTALL}" = true ]; then
+        print_msg "$YELLOW" "缺少依赖工具（已跳过安装）: ${missing[*]}"
+        return 0
+    fi
+
+    print_msg "$YELLOW" "缺少依赖工具，正在安装..."
+
+    if command -v apt-get &> /dev/null; then
+        apt-get update -qq &>> "$LOG_FILE" || true
+        apt-get install -y iperf3 netperf nuttcp ethtool iproute2 &>> "$LOG_FILE" || true
+    elif command -v yum &> /dev/null; then
+        yum install -y epel-release &>> "$LOG_FILE" || true
+        yum install -y iperf3 netperf nuttcp ethtool iproute &>> "$LOG_FILE" || true
+    elif command -v apk &> /dev/null; then
+        apk add --no-cache iperf3 ethtool iproute2 &>> "$LOG_FILE" || true
+    fi
+
+    missing=()
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            missing+=("$dep")
         fi
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        print_msg "$YELLOW" "仍缺少工具，相关测试将跳过: ${missing[*]}"
     fi
 }
 
@@ -762,8 +779,9 @@ show_help() {
 
 选项:
   --server            服务器模式
-  --client <IP>       客户端模式
+  --client <IP>       客户端模式（IPv4 或主机名）
   --local             本地测试模式
+  --skip-install      不自动安装缺失依赖
   --help, -h          显示此帮助信息
 
 示例:
@@ -771,6 +789,7 @@ show_help() {
   $0 --server         # 启动iperf3服务器
   $0 --client 1.2.3.4 # 连接到指定服务器
   $0 --local          # 执行本地测试
+  $0 --local --skip-install
 
 测试项目:
   - TCP/UDP吞吐量测试
@@ -796,12 +815,24 @@ parse_arguments() {
                 shift
                 ;;
             --client)
+                if [ -z "${2:-}" ] || [[ "${2}" == -* ]]; then
+                    print_msg "$RED" "--client 需要目标 IP 或主机名"
+                    exit 1
+                fi
+                if ! [[ "${2}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$|^[A-Za-z0-9]([A-Za-z0-9.-]{0,61}[A-Za-z0-9])?$ ]]; then
+                    print_msg "$RED" "无效的 --client 目标: $2"
+                    exit 1
+                fi
                 CLIENT_MODE=true
                 SERVER_IP=$2
                 shift 2
                 ;;
             --local)
                 LOCAL_MODE=true
+                shift
+                ;;
+            --skip-install)
+                SKIP_INSTALL=true
                 shift
                 ;;
             --help|-h)
@@ -819,12 +850,9 @@ parse_arguments() {
 
 # 主函数
 main() {
-    # 初始化
+    parse_arguments "$@"
     create_directories
     check_dependencies
-    
-    # 解析参数
-    parse_arguments "$@"
     
     # 开始测试
     log "开始网络吞吐量测试"

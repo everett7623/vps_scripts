@@ -2,7 +2,7 @@
 
 ## Date
 
-2026-10-09
+2026-10-10
 
 ## Scope
 
@@ -17,6 +17,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | — | #7 | AGENTS.md "Catalog Freshness" rule; LDNMP split marked not planned |
 | 1.1.5 | #8 | Service install / other tools / community refresh; first-party `scripts/other_tools/frp.sh` replacing a 404 installer |
 | 1.1.6 | #9 | Proxy tools refresh: S-UI, v2ray-agent, official Hysteria2/Xray; x-ui-yg and X-Panel URL updates |
+| 1.1.7 | (pending) | First-party hardening: install_deps dry-run; performance soft-fail installs; --skip-install; CLI validation |
 
 ## Decisions
 
@@ -32,4 +33,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Feature-gap review of the first-party network test, performance test, and system tools categories, then mocked pkg/systemd tests for real execution paths.
+Mocked pkg/systemd suites for real (non-preview) execution paths; extend checksum verification to more project-owned installers.

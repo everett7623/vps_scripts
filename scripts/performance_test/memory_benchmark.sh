@@ -62,6 +62,7 @@ fi
 QUICK_MODE=false
 FULL_MODE=false
 STRESS_MODE=false
+SKIP_INSTALL=false
 
 # 测试参数
 STRESS_DURATION=300  # 压力测试时长(秒)
@@ -104,18 +105,35 @@ check_dependencies() {
         fi
     done
     
-    if [ ${#missing[@]} -gt 0 ]; then
-        print_msg "$YELLOW" "缺少依赖工具，正在安装..."
-        
-        if command -v apt-get &> /dev/null; then
-            apt-get update -qq
-            apt-get install -y sysbench stress-ng bc gcc make &>> "$LOG_FILE"
-        elif command -v yum &> /dev/null; then
-            yum install -y epel-release &>> "$LOG_FILE"
-            yum install -y sysbench stress-ng bc gcc make &>> "$LOG_FILE"
-        elif command -v apk &> /dev/null; then
-            apk add --no-cache sysbench stress-ng bc gcc make &>> "$LOG_FILE"
+    if [ ${#missing[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    if [ "${SKIP_INSTALL}" = true ]; then
+        print_msg "$YELLOW" "缺少依赖工具（已跳过安装）: ${missing[*]}"
+        return 0
+    fi
+
+    print_msg "$YELLOW" "缺少依赖工具，正在安装..."
+
+    if command -v apt-get &> /dev/null; then
+        apt-get update -qq &>> "$LOG_FILE" || true
+        apt-get install -y sysbench stress-ng bc gcc make &>> "$LOG_FILE" || true
+    elif command -v yum &> /dev/null; then
+        yum install -y epel-release &>> "$LOG_FILE" || true
+        yum install -y sysbench stress-ng bc gcc make &>> "$LOG_FILE" || true
+    elif command -v apk &> /dev/null; then
+        apk add --no-cache sysbench stress-ng bc gcc make &>> "$LOG_FILE" || true
+    fi
+
+    missing=()
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            missing+=("$dep")
         fi
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        print_msg "$YELLOW" "仍缺少工具，相关测试将跳过: ${missing[*]}"
     fi
 }
 
@@ -817,16 +835,18 @@ show_help() {
 使用方法: $0 [选项]
 
 选项:
-  --quick     快速测试模式
-  --full      完整测试模式
-  --stress    包含压力测试
-  --help, -h  显示此帮助信息
+  --quick         快速测试模式
+  --full          完整测试模式
+  --stress        包含压力测试
+  --skip-install  不自动安装缺失依赖
+  --help, -h      显示此帮助信息
 
 示例:
   $0              # 交互式菜单
   $0 --quick      # 快速测试
   $0 --full       # 完整测试
   $0 --stress     # 压力测试
+  $0 --quick --skip-install
 
 测试项目:
   - Sysbench内存带宽测试
@@ -858,6 +878,10 @@ parse_arguments() {
                 STRESS_MODE=true
                 shift
                 ;;
+            --skip-install)
+                SKIP_INSTALL=true
+                shift
+                ;;
             --help|-h)
                 show_help
                 exit 0
@@ -873,12 +897,9 @@ parse_arguments() {
 
 # 主函数
 main() {
-    # 初始化
+    parse_arguments "$@"
     create_directories
     check_dependencies
-    
-    # 解析参数
-    parse_arguments "$@"
     
     # 开始测试
     log "开始内存性能测试"

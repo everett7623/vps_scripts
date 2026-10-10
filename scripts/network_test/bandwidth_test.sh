@@ -29,6 +29,7 @@ CURRENT_TIME=$(date +%Y%m%d_%H%M%S)
 # 默认参数
 TEST_MODE="unknown"
 VPS_LOCATION="unknown"
+SKIP_INSTALL=false
 
 # 加载公共库
 LIB_FILE="$PROJECT_ROOT/lib/common_functions.sh"
@@ -153,6 +154,11 @@ run_repo_setup_script() {
 }
 
 install_tools() {
+    if [ "${SKIP_INSTALL}" = true ]; then
+        print_info "已跳过自动安装依赖（--skip-install）"
+        return 0
+    fi
+
     # Speedtest
     if ! command -v speedtest &>/dev/null; then
         print_info "安装 Speedtest CLI..."
@@ -475,15 +481,37 @@ show_menu() {
 }
 
 main() {
-    # 命令行处理
-    if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-        echo "Usage: bash bandwidth_test.sh [--quick | --full]"
-        return 0
-    fi
-    if [ -n "${1:-}" ]; then
+    local mode=""
+
+    while [ $# -gt 0 ]; do
+        case "${1}" in
+            --help|-h)
+                echo "Usage: bash bandwidth_test.sh [--quick | --full] [--skip-install]"
+                return 0
+                ;;
+            --skip-install)
+                SKIP_INSTALL=true
+                shift
+                ;;
+            --quick|--full)
+                if [ -n "${mode}" ]; then
+                    print_error "只能指定一种测试模式"
+                    return 1
+                fi
+                mode="$1"
+                shift
+                ;;
+            *)
+                print_error "无效参数: $1"
+                return 1
+                ;;
+        esac
+    done
+
+    if [ -n "${mode}" ]; then
         detect_and_init_servers
         install_tools
-        case "$1" in
+        case "${mode}" in
             --quick)
                 for k in $(echo "${!SPEEDTEST_SERVERS[@]}" | head -5); do
                     IFS='|' read -r id name <<< "${SPEEDTEST_SERVERS[$k]}"
@@ -498,7 +526,6 @@ main() {
                 test_iperf3_batch || true
                 test_china_route || true
                 return 0 ;;
-            *) print_error "无效参数"; return 1 ;;
         esac
     else
         show_menu

@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.6 finishes the catalog review of every third-party menu. 1.1.5 refreshed service install, other tools, and community (new self-hosted platforms, a first-party FRP installer, outdated entries moved last); 1.1.6 refreshed proxy tools. 1.1.3–1.1.4 completed `--dry-run` coverage for uninstall helpers, Nezha, Docker, and the state-changing system tools. The LDNMP installer stays a single combined installer.
+Version 1.1.7 hardens the first-party system, network, and performance tools after the 1.1.5–1.1.6 third-party catalog refresh. `install_deps` now matches the mutator contract (`--dry-run`/`--yes`/`resolve_log_dir`); performance benchmarks soft-fail package installs; auto-installing test scripts gain `--skip-install`; disk `--size` and network `--client` are validated. The LDNMP installer stays a single combined installer.
 
-Next work targets the first-party categories (network test, performance test, system tools): look for feature gaps rather than link replacement, then add mocked pkg/systemd suites for real (non-preview) execution paths.
+Next work: mocked pkg/systemd suites for real (non-preview) execution paths, and extend checksum verification to more project-owned installers.
 
 ## Catalog Review Status
 
@@ -14,9 +14,9 @@ Next work targets the first-party categories (network test, performance test, sy
 | Other tools | Reviewed: Beszel, first-party FRP added; Uptime Kuma 2; FileBrowser labelled archived | 1.1.5 |
 | Community | Reviewed: NextTrace URL fixed; JCNF, BlueSkyXN, i-abc Speedtest labelled and moved last; re-checked in 1.1.6, no changes | 1.1.5 |
 | Proxy tools | Reviewed: S-UI, v2ray-agent, official Hysteria2/Xray added; x-ui-yg and X-Panel URLs updated | 1.1.6 |
-| Network test | First-party; feature-gap review pending | — |
-| Performance test | First-party; feature-gap review pending | — |
-| System tools | First-party; feature-gap review pending | — |
+| Network test | First-party; `--skip-install` on auto-installing scripts | 1.1.7 |
+| Performance test | First-party; soft-fail installs, `--skip-install`, CLI validation | 1.1.7 |
+| System tools | First-party; `install_deps` dry-run/yes/log-dir aligned with other mutators | 1.1.7 |
 
 ## Completed
 
@@ -54,6 +54,7 @@ Next work targets the first-party categories (network test, performance test, sy
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- Hardened first-party tools (1.1.7): install_deps `--dry-run`/`--yes`/`resolve_log_dir`; performance soft-fail installs; `--skip-install` for network/performance auto-install paths; disk `--size` and network `--client` validation
 - Refreshed the proxy tools menu (1.1.6): added S-UI, mack-a v2ray-agent, official Hysteria2/Xray-core installers; moved x-ui-yg and X-Panel to current upstream URLs
 - Refreshed the service install, other tools, and community menus (1.1.5): added Coolify, Dokploy, Dockge, Nginx Proxy Manager, Beszel; replaced the dead FRP entry with a first-party checksum-verified installer; moved archived/stale entries to the end
 - Added `--dry-run` to optimize/hostname/timezone/update system tools; fixed timezone path traversal, unvalidated SSH baseline reloads, inverted yum/dnf reboot detection, and stdin-EOF menu loops
@@ -72,13 +73,12 @@ Next work targets the first-party categories (network test, performance test, sy
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.6
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.7
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
-- Feature-gap review of the first-party network test, performance test, and system tools categories
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
 - Add mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Extend checksum or signature validation to other project-owned installer archives where upstream publishes verifiable metadata
