@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.8"
+PROJECT_VERSION="1.1.9"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -980,7 +980,7 @@ other_tools_menu() {
             11) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
             12) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
             13) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
-            14) run_remote_command "apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
+            14) run_remote_command "DEBIAN_FRONTEND=noninteractive apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
             15) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
             16) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
             17) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;

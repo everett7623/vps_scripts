@@ -20,6 +20,7 @@
 #==============================================================================
 
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 
 # 颜色定义
 readonly RED='\033[0;31m'
@@ -226,7 +227,7 @@ create_redis_user() {
 get_latest_redis_version() {
     log "${CYAN}获取最新Redis版本...${NC}"
     local latest=""
-    latest=$(curl -fsSL --connect-timeout 10 --max-time 30 http://download.redis.io/redis-stable/VERSION 2>/dev/null | head -1 || true)
+    latest=$(curl -fsSL --connect-timeout 10 --max-time 30 https://download.redis.io/redis-stable/VERSION 2>/dev/null | head -1 || true)
     if [[ -n "$latest" ]]; then
         REDIS_VERSION="$latest"
     else
@@ -250,7 +251,7 @@ install_redis() {
     work_dir=$(mktemp -d "/tmp/redis-build.XXXXXX") || error_exit "创建构建目录失败"
     archive_file="${work_dir}/redis-${REDIS_VERSION}.tar.gz"
 
-    if ! wget -O "$archive_file" "http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" 2>/dev/null; then
+    if ! wget -O "$archive_file" "https://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" 2>/dev/null; then
         rm -rf -- "$work_dir"
         error_exit "Redis源码下载失败"
     fi

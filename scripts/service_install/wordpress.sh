@@ -1323,6 +1323,7 @@ main() {
 
 # 捕获错误
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 trap 'log_error "脚本执行出错，错误代码: $?"' ERR
 
 # 执行主函数

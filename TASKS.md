@@ -53,7 +53,7 @@
 - [x] Refactor `network_test/` category for consistent structure and output
 - [x] Refactor `performance_test/` category for consistent structure and output
 - [x] Add validated arguments to the third-party script wrapper for official installer flags
-- [ ] Add more non-interactive safety flags where appropriate
+- [x] Add more non-interactive safety flags where appropriate (1.1.9: `DEBIAN_FRONTEND` everywhere, swap `--size/--yes/--remove`)
 
 ## P3 (new)
 
@@ -149,9 +149,20 @@
 - [x] Fail2ban `--yes` and testable path/OS overrides; BBR drop-in override
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.8`
 
+## 1.1.9 release
+
+- [x] Non-interactive apt across all first-party scripts; keep-config upgrades in `update_system.sh` (ported from the local working copy)
+- [x] Maven / Gradle / Oracle JDK 17/21 / GraalVM checksum verification before extract
+- [x] Remove TLS-verification bypasses; HTTPS for aaPanel, BT Panel (`download.bt.cn`), and Redis downloads
+- [x] `swap.sh --size/--yes/--remove`, disk-space precheck, abort on `swapoff` failure
+- [x] `install_deps.sh` adds Docker/NodeSource repos only when the selected packages need them
+- [x] Mocked real-path tests for swap and install_deps; host-independent dry-run test
+- [x] `run_all_tests.sh`
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.9`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party hardening in 1.1.7; mocked pkg/systemd + Go/Node checksums in 1.1.8; next: extend checksums (e.g. Maven) and more mutator real-path mocks
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party hardening in 1.1.7; mocked pkg/systemd + Go/Node checksums in 1.1.8; Java toolchain checksums + swap/install_deps mocks in 1.1.9; next: Redis source checksum, AMH / io.bt.sy HTTPS or replacement, mocks for optimize_system and clean_system real paths
 - [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

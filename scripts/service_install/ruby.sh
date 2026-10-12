@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 #==============================================================================
 # 脚本名称: ruby.sh
 # 脚本描述: Ruby 语言环境安装脚本 - 支持系统包、rbenv、rvm和源码编译安装

@@ -92,10 +92,10 @@ check_system() {
 select_install_script() {
     case $OS in
         ubuntu|debian)
-            INSTALL_SCRIPT="http://www.aapanel.com/script/install-ubuntu_6.0_en.sh"
+            INSTALL_SCRIPT="https://www.aapanel.com/script/install-ubuntu_6.0_en.sh"
             ;;
         centos|rhel|fedora|rocky|almalinux)
-            INSTALL_SCRIPT="http://www.aapanel.com/script/install_6.0_en.sh"
+            INSTALL_SCRIPT="https://www.aapanel.com/script/install_6.0_en.sh"
             ;;
         *)
             log "${RED}错误: 不支持的系统类型${NC}"
@@ -115,7 +115,7 @@ install_aapanel() {
     if command -v curl &> /dev/null; then
         curl -ksSL "$INSTALL_SCRIPT" -o "$install_script" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
     else
-        wget --no-check-certificate -O "$install_script" "$INSTALL_SCRIPT" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
+        wget -O "$install_script" "$INSTALL_SCRIPT" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
     fi
     
     # 执行安装

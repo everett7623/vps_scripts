@@ -2,7 +2,7 @@
 
 ## Date
 
-2026-10-10
+2026-10-10, continued 2026-10-12
 
 ## Scope
 
@@ -19,6 +19,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.6 | #9 | Proxy tools refresh: S-UI, v2ray-agent, official Hysteria2/Xray; x-ui-yg and X-Panel URL updates |
 | 1.1.7 | #10 | First-party hardening: install_deps dry-run; performance soft-fail installs; --skip-install; CLI validation |
 | 1.1.8 | #11 | Mocked pkg/systemd real paths for bbr/fail2ban; Go/Node SHA-256 verification |
+| 1.1.9 | — | Non-interactive apt (ported from local working copy); Java toolchain checksums; TLS/HTTP guard; swap `--size/--yes/--remove`; scoped install_deps repos; swap/install_deps mocks |
 
 ## Decisions
 
@@ -34,4 +35,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Extend checksum verification (Maven/Java) and grow mocked real-path coverage (swap `--size`/`--yes`, stubbable root for install_deps).
+Redis source checksum; HTTPS or replacement for AMH / io.bt.sy; mocked real paths for optimize_system and clean_system. Confirm on a real VPS that the Oracle JDK 17/21 and GraalVM `.sha256` URLs resolve (not reachable from the dev sandbox).

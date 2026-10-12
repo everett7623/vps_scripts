@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 # ==============================================================================
 # Script: scripts/system_tools/update_system.sh
 # Purpose: Safer system update workflow with backup, logging, and reboot checks.
@@ -23,6 +24,8 @@ REBOOT_REQUIRED=false
 
 PKG_MANAGER=""
 OS_TYPE=""
+# Keep locally modified configuration files during apt upgrades instead of prompting.
+declare -a APT_KEEP_CONF_OPTS=(-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 declare -a UPDATE_CMD=()
 declare -a FULL_UPDATE_CMD=()
 declare -a DIST_UPDATE_CMD=()
@@ -69,10 +72,10 @@ detect_system() {
     case "${OS_TYPE}" in
         ubuntu|debian|kali)
             PKG_MANAGER="apt"
-            UPDATE_CMD=(apt-get update -qq)
-            FULL_UPDATE_CMD=(apt-get upgrade -y)
-            DIST_UPDATE_CMD=(apt-get dist-upgrade -y)
-            CLEANUP_CMD=(apt-get autoremove -y)
+            UPDATE_CMD=(env DEBIAN_FRONTEND=noninteractive apt-get update -qq)
+            FULL_UPDATE_CMD=(env DEBIAN_FRONTEND=noninteractive apt-get "${APT_KEEP_CONF_OPTS[@]}" upgrade -y)
+            DIST_UPDATE_CMD=(env DEBIAN_FRONTEND=noninteractive apt-get "${APT_KEEP_CONF_OPTS[@]}" dist-upgrade -y)
+            CLEANUP_CMD=(env DEBIAN_FRONTEND=noninteractive apt-get autoremove -y)
             ;;
         centos|rhel|fedora|rocky|almalinux|amzn)
             if command -v dnf >/dev/null 2>&1; then
@@ -302,7 +305,7 @@ cleanup_system() {
     fi
 
     if [ "${PKG_MANAGER}" = "apt" ]; then
-        run_logged_command "apt autoclean" apt-get autoclean || true
+        run_logged_command "apt autoclean" env DEBIAN_FRONTEND=noninteractive apt-get autoclean || true
     elif [ "${PKG_MANAGER}" = "yum" ] || [ "${PKG_MANAGER}" = "dnf" ]; then
         run_logged_command "${PKG_MANAGER} clean all" "${PKG_MANAGER}" clean all || true
     elif [ "${PKG_MANAGER}" = "apk" ]; then

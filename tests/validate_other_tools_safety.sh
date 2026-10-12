@@ -20,8 +20,21 @@ if grep -Fq 'cat > /etc/sysctl.conf' "${BBR_SCRIPT}"; then
 fi
 
 grep -Fq '/etc/sysctl.d/99-vps-bbr.conf' "${BBR_SCRIPT}"
-grep -Fq 'sed -i '\''\|^/swapfile[[:space:]]|d'\''' "${SWAP_SCRIPT}"
-grep -Eq '\[\[ \$\{?swap_size\}? =~ \^\(\[1-9\]\[0-9\]\*\)G\$ \]\]' "${SWAP_SCRIPT}"
+# Swap: exact-path fstab dedup, project-file-only swapoff, validated sizes.
+grep -Fq "awk -v f=\"\${SWAP_FILE}\" '\$1 != f'" "${SWAP_SCRIPT}"
+grep -Fq 'swapoff -- "${SWAP_FILE}"' "${SWAP_SCRIPT}"
+grep -Fq '[[ ${1} =~ ^[1-9][0-9]*[GM]$ ]]' "${SWAP_SCRIPT}"
+if grep -Eq 'swapoff[[:space:]]+-a' "${SWAP_SCRIPT}"; then
+    echo "Swap tool must not disable all swap devices." >&2
+    exit 1
+fi
+if grep -Fq 'swapoff -- "${SWAP_FILE}" 2>/dev/null || true' "${SWAP_SCRIPT}"; then
+    echo "Swap tool must not ignore swapoff failure before deleting the swapfile." >&2
+    exit 1
+fi
+for swap_flag in --size --yes --remove --dry-run; do
+    grep -Fq -- "${swap_flag}" "${SWAP_SCRIPT}"
+done
 grep -Fq -- '--status' "${SWAP_SCRIPT}"
 grep -Fq '/etc/fail2ban/jail.d/vps-scripts-sshd.local' "${FAIL2BAN_SCRIPT}"
 grep -Fq 'fail2ban-client -t' "${FAIL2BAN_SCRIPT}"

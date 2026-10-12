@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.8-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.9-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -53,10 +53,10 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 ### 当前优化阶段
 - `network_test` / `performance_test`：严格模式、日志目录回退与单项失败不中断（Issue #2 已修复）
 - `service_install`：全部 21 个脚本已启用 `set -euo pipefail`；Docker 支持 `--status` / `--dry-run`
-- `other_tools`：BBR、Swap、Fail2ban、哪吒均支持 `--status` 与预览/非交互参数
+- `other_tools`：BBR、Swap、Fail2ban、哪吒均支持 `--status` 与预览/非交互参数；Swap 支持 `--size 2G --yes` 与 `--remove`
 - `uninstall_scripts`：全部 4 个脚本支持 `--dry-run` 预览，备份统一到 `/var/backups/vps_scripts/`
 - `system_tools`：系统优化、主机名、时区、系统更新、系统清理均支持 `--dry-run`，预览无需 root
-- 下一步：逐个分类补充流行且活跃维护的新工具，适当下调过时工具的优先级；补充包管理器/systemd 的模拟行为测试
+- 下一步：逐个分类补充流行且活跃维护的新工具，适当下调过时工具的优先级；继续扩展包管理器/systemd 模拟行为测试（BBR、Fail2ban、Swap、install_deps 已覆盖）
 
 ```bash
 bash optimize_system.sh --auto --dry-run
@@ -270,6 +270,14 @@ bash rollback_system_environment.sh --target swap --dry-run
 bash clear_configuration_files.sh --target nginx --yes
 ```
 
+Swap 工具也可非交互使用（仅操作 `/swapfile`，其他交换分区不受影响；`swapoff` 失败时不会删除正在使用的文件）：
+
+```bash
+bash swap.sh --size 2G --dry-run
+bash swap.sh --size 2G --yes
+bash swap.sh --remove --yes
+```
+
 ### 哪吒监控 Agent
 
 - 安装当前上游 `nezhahq/agent`（v1+）版本，下载后按官方 `checksums.txt` 校验 SHA-256。
@@ -345,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.9`：所有第一方 apt 调用改为非交互（系统升级保留本地修改的配置文件）；Maven / Gradle / Oracle JDK 17/21 / GraalVM 归档按官方摘要校验；移除 `--no-check-certificate`，aaPanel / 宝塔 / Redis 下载改用 HTTPS；Swap 新增 `--size` / `--yes` / `--remove` 与磁盘空间检查；`install_deps` 仅在需要 Docker/Node 时才添加对应软件源；新增 `run_all_tests.sh`
 - 发布 `1.1.8`：mocked pkg/systemd 真实路径测试（BBR / Fail2ban）；Go 与 Node.js 官方 SHA-256 校验；Fail2ban `--yes`；Node 二进制安装改用临时目录
 - 发布 `1.1.7`：第一方加固——`install_deps` 支持 `--dry-run`/`--yes`；性能测试安装失败不再中断；网络/性能测试支持 `--skip-install`；磁盘 `--size` 与吞吐 `--client` 参数校验
 - 发布 `1.1.6`：代理工具菜单更新——新增 S-UI、mack-a 八合一、Hysteria2 官方与 Xray 官方核心安装；勇哥 x-ui、X-Panel 改用当前上游地址；面板在前、脚本在后。代理工具菜单编号有变化

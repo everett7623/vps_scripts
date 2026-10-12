@@ -157,10 +157,21 @@ UPDATE_TOOL="${REPO_ROOT}/scripts/system_tools/update_system.sh"
 
 run_case ok "${OPTIMIZE}" --help
 expect_output "--dry-run"
+FAKE_SSHD_DIR="${TMP_ROOT}/etc_ssh"
+mkdir -p "${FAKE_SSHD_DIR}"
+: > "${FAKE_SSHD_DIR}/sshd_config"
+export VPS_SSHD_DIR="${FAKE_SSHD_DIR}"
 run_case ok "${OPTIMIZE}" --dry-run --auto
 expect_output "[DRY-RUN]"
 expect_output "99-vps-optimize.conf"
 expect_output "sshd -t"
+mkdir -p "${FAKE_SSHD_DIR}/sshd_config.d"
+run_case ok "${OPTIMIZE}" --dry-run --auto
+expect_output "99-vps-scripts.conf"
+export VPS_SSHD_DIR="${TMP_ROOT}/no_ssh"
+run_case ok "${OPTIMIZE}" --dry-run --auto
+expect_output "将跳过"
+unset VPS_SSHD_DIR
 run_case ok "${OPTIMIZE}" --dry-run </dev/null
 
 run_case ok "${HOSTNAME_TOOL}" --dry-run vps-node-01
@@ -188,9 +199,40 @@ run_case ok "${INSTALL_DEPS}" --help
 expect_output "--dry-run"
 expect_output "--basic"
 run_case fail "${INSTALL_DEPS}" --dry-run
-if [ -f /etc/os-release ] && grep -Eq '^ID=(ubuntu|debian|kali)$' /etc/os-release; then
-    run_case ok "${INSTALL_DEPS}" --dry-run --basic
-    expect_output "[DRY-RUN]"
-fi
+export VPS_OS_TYPE=debian
+run_case ok "${INSTALL_DEPS}" --dry-run --basic
+expect_output "[DRY-RUN]"
+# Groups without Docker/Node packages must not add third-party repositories.
+for mode in --basic --monitor --security; do
+    run_case ok "${INSTALL_DEPS}" --dry-run "${mode}"
+    if grep -Eq 'Docker apt repository|nodesource' "${OUTPUT}"; then
+        fail "install_deps ${mode} would configure Docker/NodeSource repositories"
+    fi
+done
+CLEAN_BIN="${TMP_ROOT}/clean_bin"
+mkdir -p "${CLEAN_BIN}"
+IFS=':' read -r -a path_dirs <<< "${PATH}"
+for dir in "${path_dirs[@]}"; do
+    [ -d "${dir}" ] || continue
+    for exe in "${dir}"/*; do
+        name=${exe##*/}
+        case "${name}" in docker|dockerd|node|nodejs|npm) continue ;; esac
+        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}"
+    done
+done
+SAVED_PATH="${PATH}"
+PATH="${CLEAN_BIN}"
+for mode in --basic --monitor --security; do
+    run_case ok "${INSTALL_DEPS}" --dry-run "${mode}"
+    if grep -Eq 'Docker apt repository|nodesource' "${OUTPUT}"; then
+        PATH="${SAVED_PATH}"
+        fail "install_deps ${mode} would configure Docker/NodeSource repositories (no docker/node on PATH)"
+    fi
+done
+run_case ok "${INSTALL_DEPS}" --dry-run --dev
+PATH="${SAVED_PATH}"
+expect_output "configure Docker apt repository"
+expect_output "deb.nodesource.com"
+unset VPS_OS_TYPE
 
 echo "Dry-run behavior checks are valid."
