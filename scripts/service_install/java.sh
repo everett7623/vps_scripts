@@ -16,6 +16,7 @@
 #==============================================================================
 
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 
 # 颜色定义
 RED='\033[0;31m'
@@ -78,6 +79,48 @@ download_to_file() {
         rm -f -- "$output"
         return 1
     fi
+}
+
+# 校验官方发布的归档摘要（支持 "hash" 或 "hash  filename" 两种格式）
+# 用法: verify_archive_checksum <sha256|sha512> <checksum_url> <archive_file>
+verify_archive_checksum() {
+    local algo="$1"
+    local checksum_url="$2"
+    local archive_file="$3"
+    local checksum_file="${archive_file}.${algo}"
+    local expected=""
+    local actual=""
+    local hex_len=""
+
+    case "$algo" in
+        sha256) hex_len=64 ;;
+        sha512) hex_len=128 ;;
+        *) log "${RED}错误: 不支持的摘要算法 ${algo}${NC}"; return 1 ;;
+    esac
+
+    if ! command -v "${algo}sum" >/dev/null 2>&1; then
+        log "${RED}错误: 缺少 ${algo}sum，无法校验归档${NC}"
+        return 1
+    fi
+
+    if ! download_to_file "$checksum_url" "$checksum_file" -q; then
+        log "${RED}错误: 下载校验文件失败: ${checksum_url}${NC}"
+        return 1
+    fi
+
+    expected=$(awk 'NF { print $1; exit }' "$checksum_file" | tr 'A-F' 'a-f') || true
+    if [[ ! ${expected} =~ ^[0-9a-f]+$ ]] || [[ ${#expected} -ne ${hex_len} ]]; then
+        log "${RED}错误: 校验文件格式无效: ${checksum_url}${NC}"
+        return 1
+    fi
+
+    actual=$("${algo}sum" "$archive_file" | awk '{ print $1 }')
+    if [[ "$actual" != "$expected" ]]; then
+        log "${RED}错误: ${archive_file##*/} ${algo} 校验失败${NC}"
+        return 1
+    fi
+
+    log "${GREEN}${archive_file##*/} ${algo} 校验通过${NC}"
 }
 
 # 显示标题
@@ -254,7 +297,7 @@ install_oracle_jdk() {
     archive_file="${work_dir}/oracle-jdk.tar.gz"
 
     log "${YELLOW}正在下载 Oracle JDK...${NC}"
-    if ! download_to_file "$JDK_URL" "$archive_file" --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie"; then
+    if ! download_to_file "$JDK_URL" "$archive_file" --header "Cookie: oraclelicense=accept-securebackup-cookie"; then
         rm -rf -- "$work_dir"
         log "${YELLOW}提示: Oracle JDK 需要接受许可协议，建议使用 OpenJDK${NC}"
         error_exit "Oracle JDK 下载失败"
@@ -264,6 +307,19 @@ install_oracle_jdk() {
         rm -rf -- "$work_dir"
         error_exit "Oracle JDK 下载文件为空"
     fi
+
+    # Oracle 仅为 /java/<ver>/latest/ 公开发布 .sha256；8/11 的 OTN 归档无公开摘要
+    case "$JAVA_VERSION" in
+        17|21)
+            if ! verify_archive_checksum sha256 "${JDK_URL}.sha256" "$archive_file"; then
+                rm -rf -- "$work_dir"
+                error_exit "Oracle JDK 校验失败"
+            fi
+            ;;
+        *)
+            log "${YELLOW}警告: Oracle JDK ${JAVA_VERSION} 无公开 SHA-256，仅依赖 HTTPS 证书校验${NC}"
+            ;;
+    esac
 
     # 解压到 /opt
     if ! tar -xzf "$archive_file" -C /opt/; then
@@ -323,6 +379,12 @@ install_graalvm() {
         error_exit "GraalVM 下载文件为空"
     fi
 
+    # GitHub Release 附带官方 .sha256
+    if ! verify_archive_checksum sha256 "${GRAALVM_URL}.sha256" "$archive_file"; then
+        rm -rf -- "$work_dir"
+        error_exit "GraalVM 校验失败"
+    fi
+
     # 解压到 /opt
     if ! tar -xzf "$archive_file" -C /opt/; then
         rm -rf -- "$work_dir"
@@ -360,7 +422,8 @@ install_maven() {
     work_dir=$(mktemp -d "/tmp/java-maven.XXXXXX")
     archive_file="${work_dir}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 
-    if ! download_to_file "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" "$archive_file"; then
+    local maven_url="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+    if ! download_to_file "$maven_url" "$archive_file"; then
         rm -rf -- "$work_dir"
         log "${RED}错误: Maven 下载失败${NC}"
         return 1
@@ -372,6 +435,12 @@ install_maven() {
         return 1
     fi
 
+    # 使用 Apache 官方 .sha512 校验后再解压
+    if ! verify_archive_checksum sha512 "${maven_url}.sha512" "$archive_file"; then
+        rm -rf -- "$work_dir"
+        return 1
+    fi
+
     # 解压到 /opt
     if ! tar -xzf "$archive_file" -C /opt/; then
         rm -rf -- "$work_dir"
@@ -380,7 +449,7 @@ install_maven() {
     fi
 
     # 创建软链接
-    ln -sf /opt/apache-maven-${MAVEN_VERSION} /opt/maven
+    ln -sfn "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven
 
     # 设置环境变量
     echo "export MAVEN_HOME=/opt/maven" > /etc/profile.d/maven.sh
@@ -423,7 +492,8 @@ install_gradle() {
     work_dir=$(mktemp -d "/tmp/java-gradle.XXXXXX")
     archive_file="${work_dir}/gradle-${GRADLE_VERSION}-bin.zip"
 
-    if ! download_to_file "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" "$archive_file"; then
+    local gradle_url="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+    if ! download_to_file "$gradle_url" "$archive_file"; then
         rm -rf -- "$work_dir"
         log "${RED}错误: Gradle 下载失败${NC}"
         return 1
@@ -435,6 +505,12 @@ install_gradle() {
         return 1
     fi
 
+    # 使用 Gradle 官方 .sha256 校验后再解压
+    if ! verify_archive_checksum sha256 "${gradle_url}.sha256" "$archive_file"; then
+        rm -rf -- "$work_dir"
+        return 1
+    fi
+
     # 解压到 /opt
     if ! unzip -q "$archive_file" -d /opt/; then
         rm -rf -- "$work_dir"
@@ -443,7 +519,7 @@ install_gradle() {
     fi
 
     # 创建软链接
-    ln -sf /opt/gradle-${GRADLE_VERSION} /opt/gradle
+    ln -sfn "/opt/gradle-${GRADLE_VERSION}" /opt/gradle
 
     # 设置环境变量
     echo "export GRADLE_HOME=/opt/gradle" > /etc/profile.d/gradle.sh

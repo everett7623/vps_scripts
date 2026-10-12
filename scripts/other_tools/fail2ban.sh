@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 # ==============================================================================
 # Script: scripts/other_tools/fail2ban.sh
 # Purpose: Install and configure Fail2ban SSH jail with status/dry-run modes.

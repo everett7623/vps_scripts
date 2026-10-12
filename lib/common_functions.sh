@@ -279,11 +279,11 @@ ensure_command() {
     print_warn "未找到命令 '${cmd}'，正在尝试安装软件包 '${package}'。"
 
     if command_exists apt-get; then
-        apt-get update -qq >/dev/null 2>&1 || {
+        env DEBIAN_FRONTEND=noninteractive apt-get update -qq >/dev/null 2>&1 || {
             print_error "apt-get update 执行失败。"
             return 1
         }
-        apt-get install -y "${package}" >/dev/null 2>&1
+        env DEBIAN_FRONTEND=noninteractive apt-get install -y "${package}" >/dev/null 2>&1
     elif command_exists yum; then
         yum install -y "${package}" >/dev/null 2>&1
     elif command_exists dnf; then

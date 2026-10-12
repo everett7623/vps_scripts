@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.8`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.9`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.8` is a backward-compatible patch release that adds succeeding-stub mocked pkg/systemd coverage for BBR and Fail2ban real install paths, and verifies Go and Node.js official release archives with upstream SHA-256 metadata before extract. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.9` is a backward-compatible patch release that makes every first-party apt call non-interactive, verifies Maven, Gradle, Oracle JDK 17/21, and GraalVM archives against upstream digests, removes TLS-verification bypasses and plain-HTTP installer downloads, adds non-interactive `swap.sh --size/--yes/--remove`, and limits `install_deps.sh` third-party repositories to the groups that need them. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

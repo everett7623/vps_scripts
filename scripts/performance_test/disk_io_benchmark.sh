@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 
 #==============================================================================
 # 脚本名称: disk_io_benchmark.sh

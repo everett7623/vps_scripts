@@ -95,14 +95,14 @@ select_install_script() {
             if [[ "$PANEL_VERSION" == "beta" ]]; then
                 INSTALL_SCRIPT="http://io.bt.sy/install/install-ubuntu_6.0.sh"
             else
-                INSTALL_SCRIPT="http://download.bt.cn/install/install-ubuntu_6.0.sh"
+                INSTALL_SCRIPT="https://download.bt.cn/install/install-ubuntu_6.0.sh"
             fi
             ;;
         centos|rhel|fedora|rocky|almalinux)
             if [[ "$PANEL_VERSION" == "beta" ]]; then
                 INSTALL_SCRIPT="http://io.bt.sy/install/install_6.0.sh"
             else
-                INSTALL_SCRIPT="http://download.bt.cn/install/install_6.0.sh"
+                INSTALL_SCRIPT="https://download.bt.cn/install/install_6.0.sh"
             fi
             ;;
         *)

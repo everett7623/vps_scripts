@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 # ==============================================================================
 # Script: scripts/system_tools/install_deps.sh
 # Purpose: Install baseline, development, monitoring, and security dependencies.
@@ -80,7 +81,7 @@ declare -a UPDATE_CMD=()
 declare -a INSTALL_CMD=()
 
 detect_package_manager() {
-    OS_TYPE=$(get_os_release)
+    OS_TYPE="${VPS_OS_TYPE:-$(get_os_release)}"
     case "$OS_TYPE" in
         ubuntu|debian|kali)
             PKG_MANAGER="apt"
@@ -213,12 +214,32 @@ run_nodejs_setup() {
     return "${exit_code}"
 }
 
+# Returns 0 when the whitespace-separated list contains any of the given names.
+list_contains_any() {
+    local list=" ${1} "
+    shift
+    local name=""
+    for name in "$@"; do
+        [[ "${list}" == *" ${name} "* ]] && return 0
+    done
+    return 1
+}
+
 configure_extra_repos() {
+    local package_list="${1:-}"
+    local need_docker=false
+    local need_node=false
+
+    # Only add third-party repositories for the groups that need them, so
+    # --basic / --monitor / --security never touch Docker or NodeSource.
+    list_contains_any "${package_list}" docker.io docker-ce docker-compose && need_docker=true
+    list_contains_any "${package_list}" nodejs npm && need_node=true
+
     print_info "正在按需配置附加软件源..."
 
     case "$OS_TYPE" in
         ubuntu|debian)
-            if ! command -v docker >/dev/null 2>&1; then
+            if [ "${need_docker}" = true ] && ! command -v docker >/dev/null 2>&1; then
                 if [ "${DRY_RUN}" = true ]; then
                     printf '[DRY-RUN] configure Docker apt repository for %s\n' "${OS_TYPE}"
                 else
@@ -238,7 +259,7 @@ configure_extra_repos() {
                 fi
             fi
 
-            if ! command -v node >/dev/null 2>&1; then
+            if [ "${need_node}" = true ] && ! command -v node >/dev/null 2>&1; then
                 run_nodejs_setup || print_warn "NodeSource 初始化失败。"
             fi
             ;;
@@ -246,7 +267,7 @@ configure_extra_repos() {
             if ! rpm -q epel-release >/dev/null 2>&1; then
                 install_one_package epel-release || print_warn "安装 epel-release 失败。"
             fi
-            if ! command -v docker >/dev/null 2>&1 && command -v yum-config-manager >/dev/null 2>&1; then
+            if [ "${need_docker}" = true ] && ! command -v docker >/dev/null 2>&1 && command -v yum-config-manager >/dev/null 2>&1; then
                 if [ "${DRY_RUN}" = true ]; then
                     printf '[DRY-RUN] yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo\n'
                 else
@@ -359,7 +380,7 @@ run_install_flow() {
     local package_groups="$1"
     local status=0
 
-    configure_extra_repos
+    configure_extra_repos "${package_groups}"
     run_update_cache
     install_pkg_list "$package_groups" || status=$?
     post_install_setup
@@ -476,7 +497,9 @@ main() {
     parse_arguments "$@"
     ensure_runtime_dirs
 
-    if [ "${DRY_RUN}" != true ]; then
+    # VPS_SKIP_ROOT_CHECK=1 only exists so tests can run the real path with
+    # stubbed package managers; real package operations still need root.
+    if [ "${DRY_RUN}" != true ] && [ "${VPS_SKIP_ROOT_CHECK:-0}" != 1 ]; then
         check_root
     fi
 

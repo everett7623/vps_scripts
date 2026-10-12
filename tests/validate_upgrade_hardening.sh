@@ -82,4 +82,25 @@ if grep -Fq -- '--no-check-certificate' "${BANDWIDTH_SCRIPT}"; then
     exit 1
 fi
 
+# No first-party script may disable TLS verification for downloads.
+tls_bypass=$(grep -rnE --include='*.sh' \
+    -e '(--no-check-certificate|curl[^#]*[[:space:]](-k|--insecure)([[:space:]]|$))' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" || true)
+if [ -n "${tls_bypass}" ]; then
+    echo "First-party scripts disable TLS certificate verification:" >&2
+    echo "${tls_bypass}" >&2
+    exit 1
+fi
+
+# Executable payloads (installers and source archives) must not be fetched over
+# plain HTTP. Legacy AMH and the io.bt.sy BT mirror have no confirmed HTTPS
+# endpoint and are explicitly allowlisted until they are replaced.
+plain_http=$(grep -rnE 'http://[^"[:space:]]+\.(sh|tar\.gz|tgz|zip)' \
+    --include='*.sh' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" \
+    | grep -vE 'http://(dl\.amh\.sh|io\.bt\.sy)/' || true)
+if [ -n "${plain_http}" ]; then
+    echo "Executable payloads downloaded over plain HTTP:" >&2
+    echo "${plain_http}" >&2
+    exit 1
+fi
+
 echo "Upgrade hardening checks are valid."

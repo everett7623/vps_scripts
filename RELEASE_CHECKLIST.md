@@ -32,7 +32,7 @@ The release commit must pass `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_rele
 - Run `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_core_assets.sh`
 - Run `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_ui_layout.sh`
 - Run `REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh`
-- Run the complete suite and require zero failures: `for f in tests/*.sh; do bash "$f" || exit 1; done`
+- Run the complete suite and require zero failures: `bash run_all_tests.sh`
 - Run `shellcheck` on changed scripts if available
 
 ## Release Content

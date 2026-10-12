@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 #==============================================================================
 # 脚本名称: jenkins.sh
 # 脚本描述: Jenkins CI/CD平台安装配置脚本 - 支持多种部署方式和插件管理

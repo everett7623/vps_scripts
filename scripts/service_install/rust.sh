@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 #==============================================================================
 # 脚本名称: rust.sh
 # 脚本描述: Rust 语言环境安装脚本 - 支持rustup、工具链管理和开发工具安装

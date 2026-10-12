@@ -10,6 +10,12 @@ This is the mainline repo. All tests, scripts, and docs live here; there is no s
 
 No build step — everything is Bash scripts. All test scripts accept `REPO_ROOT_OVERRIDE` (and `LAUNCHER_OVERRIDE` where relevant) so they can run from any directory. The commands below assume you are `cd`'d to the repo root; `$PWD` must be the repo root when used as the override value.
 
+### Full suite
+
+```bash
+bash run_all_tests.sh   # runs every tests/*.sh with the overrides set, prints TEST_TOTAL / TEST_FAILURES
+```
+
 ### Quick syntax checks
 
 ```bash
@@ -195,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.8`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.9`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -215,6 +221,9 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `CURRENT_LOG_LEVEL` | Common functions | Log verbosity (0=DEBUG, 1=INFO, 2=WARN, 3=ERROR) |
 | `UI_WIDTH` | Common functions | Terminal width for formatting (default 80) |
 | `UI_THEME` | Common functions | Theme identifier (default `neon-shell`) |
+| `VPS_SSHD_DIR` | `optimize_system.sh` | SSH config root for the SSH baseline (default `/etc/ssh`) |
+| `VPS_SWAP_FILE` / `VPS_FSTAB_FILE` / `VPS_PROC_SWAPS` / `VPS_SWAPPINESS_DROPIN` | `swap.sh` | Redirect swap paths for mocked real-path tests |
+| `VPS_OS_TYPE` / `VPS_SKIP_ROOT_CHECK` | `install_deps.sh`, `fail2ban.sh` | Test hooks: force OS family / skip the root guard with stubbed package managers |
 
 ### `vps.sh` menu structure
 

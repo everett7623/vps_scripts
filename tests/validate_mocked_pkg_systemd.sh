@@ -13,6 +13,8 @@ REPO_ROOT="${REPO_ROOT_OVERRIDE:-${REPO_ROOT_DEFAULT}}"
 
 BBR="${REPO_ROOT}/scripts/other_tools/bbr.sh"
 FAIL2BAN="${REPO_ROOT}/scripts/other_tools/fail2ban.sh"
+SWAP="${REPO_ROOT}/scripts/other_tools/swap.sh"
+INSTALL_DEPS="${REPO_ROOT}/scripts/system_tools/install_deps.sh"
 
 TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/vps_mocked_pkg.XXXXXX")
 trap 'rm -rf -- "${TMP_ROOT}"' EXIT
@@ -94,5 +96,158 @@ expect_call '^apt-get '
 expect_call '^fail2ban-client '
 expect_call '^systemctl enable fail2ban'
 expect_call '^systemctl restart fail2ban'
+
+# --- Swap real create / resize / remove with --size / --yes ---
+SWAP_ROOT="${TMP_ROOT}/swap"
+SWAP_FILE="${SWAP_ROOT}/swapfile"
+FSTAB="${SWAP_ROOT}/fstab"
+PROC_SWAPS="${SWAP_ROOT}/proc_swaps"
+SWAPPINESS="${SWAP_ROOT}/99-swappiness.conf"
+mkdir -p "${SWAP_ROOT}"
+printf 'UUID=abcd / ext4 defaults 0 1\n/dev/vdb1 none swap sw 0 0\n' > "${FSTAB}"
+printf 'Filename\tType\tSize\tUsed\tPriority\n/dev/vdb1\tpartition\t1048572\t0\t-2\n' > "${PROC_SWAPS}"
+
+# Stubs that model swap state through the fake /proc/swaps file.
+write_stub fallocate 'f="${@: -1}"; : > "${f}"; exit 0'
+write_stub mkswap 'exit 0'
+write_stub swapon 'f="${@: -1}"; printf "%s\tfile\t1024\t0\t-3\n" "${f}" >> "${VPS_PROC_SWAPS}"; exit 0'
+write_stub swapoff 'f="${@: -1}"; [ "${SWAPOFF_FAIL:-0}" = 1 ] && exit 1; grep -v "^${f}[[:space:]]" "${VPS_PROC_SWAPS}" > "${VPS_PROC_SWAPS}.n"; mv "${VPS_PROC_SWAPS}.n" "${VPS_PROC_SWAPS}"; exit 0'
+write_stub df 'printf "Filesystem 1M-blocks Used Available Capacity Mounted\n/dev/vda1 40000 1000 ${DF_AVAIL_MB:-30000} 3%% /\n"; exit 0'
+write_stub free 'printf "              total used free\nMem: 2048 512 1536\nSwap: 0 0 0\n"; exit 0'
+
+run_swap() {
+    PATH="${STUB_DIR}:${PATH}" \
+    VPS_SWAP_FILE="${SWAP_FILE}" VPS_FSTAB_FILE="${FSTAB}" \
+    VPS_PROC_SWAPS="${PROC_SWAPS}" VPS_SWAPPINESS_DROPIN="${SWAPPINESS}" \
+        bash "${SWAP}" "$@" </dev/null >"${OUTPUT}" 2>&1
+}
+
+swap_fstab_count() {
+    awk -v f="${SWAP_FILE}" '$1 == f' "${FSTAB}" | wc -l | tr -d ' '
+}
+
+# Preview creates nothing.
+run_swap --size 2G --dry-run || fail "swap --size --dry-run failed"
+[ ! -e "${SWAP_FILE}" ] || fail "swap dry-run created the swapfile"
+[ "$(swap_fstab_count)" = 0 ] || fail "swap dry-run touched fstab"
+
+# Invalid arguments are rejected before any change.
+for bad in '0G' '2T' '2G;rm -rf /' '-1G' ''; do
+    if run_swap --size "${bad}" --yes; then fail "swap accepted invalid size '${bad}'"; fi
+done
+if run_swap --yes; then fail "swap accepted --yes without --size/--remove"; fi
+if run_swap --remove --size 1G --yes; then fail "swap accepted --remove with --size"; fi
+if run_swap --size; then fail "swap accepted --size without a value"; fi
+[ ! -e "${SWAP_FILE}" ] || fail "invalid swap arguments created the swapfile"
+
+# Without --yes and with no input, nothing changes.
+run_swap --size 1G || fail "swap without confirmation should cancel cleanly"
+[ ! -e "${SWAP_FILE}" ] || fail "swap created a file without confirmation"
+
+# Not enough disk space: refuse before touching anything.
+if DF_AVAIL_MB=600 run_swap --size 1G --yes; then fail "swap ignored insufficient disk space"; fi
+[ ! -e "${SWAP_FILE}" ] || fail "swap created a file despite insufficient space"
+
+# Real create.
+: > "${CALL_LOG}"
+run_swap --size 2G --yes || fail "swap --size 2G --yes failed"
+[ -f "${SWAP_FILE}" ] || fail "swapfile was not created"
+[ "$(stat -c %a "${SWAP_FILE}")" = 600 ] || fail "swapfile mode is not 600"
+[ "$(swap_fstab_count)" = 1 ] || fail "fstab should contain exactly one swapfile entry"
+grep -Fq 'UUID=abcd / ext4' "${FSTAB}" || fail "swap removed an unrelated fstab line"
+grep -Fq '/dev/vdb1 none swap' "${FSTAB}" || fail "swap removed an unrelated swap partition"
+grep -Fxq 'vm.swappiness=10' "${SWAPPINESS}" || fail "swappiness drop-in not written"
+expect_call "^fallocate -l 2G ${SWAP_FILE}$"
+expect_call "^mkswap -- ${SWAP_FILE}$"
+expect_call "^swapon -- ${SWAP_FILE}$"
+
+# Re-run (resize) is idempotent and only turns off the project swapfile.
+: > "${CALL_LOG}"
+run_swap --size=1G --yes || fail "swap resize failed"
+[ "$(swap_fstab_count)" = 1 ] || fail "swap resize duplicated the fstab entry"
+expect_call "^swapoff -- ${SWAP_FILE}$"
+if grep -Eq '^swapoff .*(-a|/dev/vdb1)' "${CALL_LOG}"; then fail "swap disabled unrelated swap devices"; fi
+grep -q '^/dev/vdb1' "${PROC_SWAPS}" || fail "unrelated swap partition was turned off"
+
+# swapoff failure on an active swapfile must abort without deleting it.
+if SWAPOFF_FAIL=1 run_swap --size 2G --yes; then fail "swap continued after swapoff failure"; fi
+[ -f "${SWAP_FILE}" ] || fail "swap deleted an active swapfile after swapoff failure"
+if SWAPOFF_FAIL=1 run_swap --remove --yes; then fail "swap --remove continued after swapoff failure"; fi
+[ -f "${SWAP_FILE}" ] || fail "swap --remove deleted an active swapfile"
+
+# Remove.
+run_swap --remove --dry-run || fail "swap --remove --dry-run failed"
+[ -f "${SWAP_FILE}" ] || fail "swap --remove --dry-run deleted the swapfile"
+run_swap --remove --yes || fail "swap --remove --yes failed"
+[ ! -e "${SWAP_FILE}" ] || fail "swapfile still present after --remove"
+[ "$(swap_fstab_count)" = 0 ] || fail "fstab entry still present after --remove"
+[ ! -e "${SWAPPINESS}" ] || fail "swappiness drop-in still present after --remove"
+grep -Fq '/dev/vdb1 none swap' "${FSTAB}" || fail "swap --remove dropped an unrelated fstab line"
+
+# --- install_deps real install path with stubbed root and package manager ---
+DEPS_LOG_DIR="${TMP_ROOT}/deps_logs"
+write_stub dpkg 'case "${1:-}" in -s) case "${2:-}" in curl|wget|git) exit 0 ;; esac; exit 1 ;; --print-architecture) echo amd64; exit 0 ;; esac; exit 0'
+write_stub apt-get 'case " $* " in *" fail2ban "*) exit 100 ;; esac; exit 0'
+write_stub curl 'exit 22'
+write_stub git 'exit 0'
+write_stub gpg 'exit 0'
+write_stub lsb_release 'echo bookworm; exit 0'
+write_stub systemctl 'case "${1:-}" in list-unit-files) exit 1 ;; esac; exit 0'
+
+# Build a PATH without docker/node/npm so the repository-gating logic is
+# exercised even on hosts that already have them installed.
+CLEAN_BIN="${TMP_ROOT}/clean_bin"
+mkdir -p "${CLEAN_BIN}"
+IFS=':' read -r -a path_dirs <<< "${PATH}"
+for dir in "${path_dirs[@]}"; do
+    [ -d "${dir}" ] || continue
+    for exe in "${dir}"/*; do
+        name=${exe##*/}
+        case "${name}" in docker|dockerd|node|nodejs|npm) continue ;; esac
+        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}"
+    done
+done
+DEPS_PATH="${STUB_DIR}:${CLEAN_BIN}"
+
+run_deps() {
+    PATH="${DEPS_PATH}" HOME="${TMP_ROOT}/home" \
+    VPS_OS_TYPE=debian VPS_SKIP_ROOT_CHECK=1 VPS_LOG_DIR="${DEPS_LOG_DIR}" \
+        bash "${INSTALL_DEPS}" "$@" </dev/null >"${OUTPUT}" 2>&1
+}
+
+: > "${CALL_LOG}"
+run_deps --basic --yes || fail "install_deps --basic --yes failed"
+expect_call '^apt-get update -qq$'
+expect_call '^apt-get install -y -qq vim$'
+if grep -Eq '^apt-get install -y -qq (curl|wget|git)$' "${CALL_LOG}"; then
+    fail "install_deps reinstalled packages that dpkg reports as installed"
+fi
+if grep -Eq '^curl ' "${CALL_LOG}"; then
+    fail "install_deps --basic contacted Docker/NodeSource"
+fi
+[ -f "${DEPS_LOG_DIR}/install_deps.log" ] || fail "install_deps did not log to VPS_LOG_DIR"
+
+# A failing package is reported and returns non-zero, but other packages still install.
+: > "${CALL_LOG}"
+if run_deps --security --yes; then fail "install_deps --security should report the failed package"; fi
+grep -Fq 'fail2ban' "${OUTPUT}" || fail "install_deps did not name the failed package"
+expect_call '^apt-get install -y -qq ufw$'
+if grep -Eq '^curl ' "${CALL_LOG}"; then
+    fail "install_deps --security contacted Docker/NodeSource"
+fi
+
+# --dev does need Docker and NodeSource: both are attempted (curl stub fails safely).
+: > "${CALL_LOG}"
+run_deps --dev --yes || true
+expect_call '^curl .*download\.docker\.com'
+expect_call '^curl .*deb\.nodesource\.com'
+
+# Without the root check bypass the real path still requires root.
+if [ "$(id -u)" != 0 ]; then
+    if PATH="${DEPS_PATH}" VPS_OS_TYPE=debian VPS_LOG_DIR="${DEPS_LOG_DIR}" \
+        bash "${INSTALL_DEPS}" --basic --yes </dev/null >"${OUTPUT}" 2>&1; then
+        fail "install_deps ran the real path without root"
+    fi
+fi
 
 echo "Mocked pkg/systemd real-path checks are valid."

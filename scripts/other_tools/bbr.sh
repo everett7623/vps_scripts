@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 #/vps_scripts/scripts/other_tools/bbr.sh - VPS Scripts BBR网络加速工具
 
 # 定义颜色

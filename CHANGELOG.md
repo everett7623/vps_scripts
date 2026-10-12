@@ -4,6 +4,29 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.9 - 2026-10-12
+
+### Added
+- `swap.sh --size <N>G|M`, `--yes`, `--remove`, and `--dry-run` combinations for non-interactive use; disk-space precheck (keeps 512 MB free); `VPS_SWAP_FILE`, `VPS_FSTAB_FILE`, `VPS_PROC_SWAPS`, `VPS_SWAPPINESS_DROPIN` overrides for tests.
+- Java installer verifies Apache Maven (`.sha512`), Gradle (`.sha256`), Oracle JDK 17/21 (`.sha256`), and GraalVM CE (`.sha256`) archives before extract via a shared `verify_archive_checksum` helper.
+- `run_all_tests.sh` runs the whole validation suite and prints a pass/fail summary.
+- `tests/validate_noninteractive_package_ops.sh` keeps every first-party apt caller non-interactive.
+- Mocked real-path coverage for swap (create, resize, swapoff failure, low disk, remove) and `install_deps.sh` (`--basic`/`--security`/`--dev` with stubbed apt/dpkg); `VPS_OS_TYPE` and `VPS_SKIP_ROOT_CHECK` test hooks for `install_deps.sh`.
+- `VPS_SSHD_DIR` override for the system optimizer SSH baseline (dry-run test no longer depends on the host having `/etc/ssh/sshd_config`).
+- Upgrade-hardening test now rejects `--no-check-certificate` / `curl -k` and plain-HTTP installer or archive downloads anywhere in first-party code.
+
+### Changed
+- All first-party scripts that call apt export `DEBIAN_FRONTEND=noninteractive` (a caller-provided value is kept), so debconf prompts can no longer hang `--yes` or headless runs; `ensure_command` does the same.
+- `update_system.sh` apt upgrade / dist-upgrade pass `--force-confdef --force-confold`, keeping locally modified configuration files instead of prompting.
+- `install_deps.sh` only adds the Docker CE repository when the selected packages include Docker, and only runs the NodeSource setup when they include Node.js/npm; `--basic`, `--monitor`, and `--security` no longer touch third-party repositories.
+- Swap fstab handling matches the swap file path exactly and rewrites `/etc/fstab` in place, preserving unrelated entries.
+- Maven/Gradle `/opt` symlinks use `ln -sfn` so re-runs replace the link instead of nesting a new one inside the old directory.
+
+### Fixed
+- Swap no longer deletes an active swapfile when `swapoff` fails (for example under memory pressure); it aborts instead.
+- Oracle JDK downloads no longer disable TLS certificate verification.
+- aaPanel installer download no longer disables TLS verification and uses HTTPS; BT Panel (`download.bt.cn`) and Redis source downloads use HTTPS.
+
 ## 1.1.8 - 2026-10-10
 
 ### Added

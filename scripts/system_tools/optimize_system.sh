@@ -327,8 +327,9 @@ disable_low_value_services() {
 }
 
 apply_ssh_baseline() {
-    local sshd_main="/etc/ssh/sshd_config"
-    local sshd_dropin_dir="/etc/ssh/sshd_config.d"
+    local sshd_root="${VPS_SSHD_DIR:-/etc/ssh}"
+    local sshd_main="${sshd_root}/sshd_config"
+    local sshd_dropin_dir="${sshd_root}/sshd_config.d"
     local sshd_dropin_file="${sshd_dropin_dir}/99-vps-scripts.conf"
     local temp_file=""
     local changed_file=""

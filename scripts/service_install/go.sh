@@ -16,6 +16,7 @@
 #==============================================================================
 
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 
 # 颜色定义
 RED='\033[0;31m'

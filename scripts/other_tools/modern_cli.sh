@@ -5,6 +5,7 @@
 # ==============================================================================
 
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 
 SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")

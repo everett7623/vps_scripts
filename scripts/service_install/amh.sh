@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 #==============================================================================
 # 脚本名称: amh.sh
 # 脚本描述: AMH面板自动安装脚本 - 一键安装AMH服务器管理面板

@@ -91,8 +91,7 @@ shellcheck lib/common_functions.sh
 
 ### All tests in one command
 ```bash
-export REPO_ROOT_OVERRIDE="$PWD"
-for f in tests/*.sh; do bash "$f" || echo "FAIL: $f"; done
+bash run_all_tests.sh
 ```
 
 ## Architecture Patterns
@@ -184,5 +183,5 @@ See `RELEASE_CHECKLIST.md` and `VERSIONING.md`. Key steps:
 - Update `CHANGELOG.md` Unreleased section
 - Update `version.json` version and release_date
 - Review `TASKS.md` and `PROGRESS.md` for milestone completion
-- Run full test suite (34 tests)
+- Run full test suite (`bash run_all_tests.sh`)
 - Test remote launcher command from a clean environment

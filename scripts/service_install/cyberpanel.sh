@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 #==============================================================================
 # 脚本名称: cyberpanel.sh
 # 脚本描述: Cyberpanel面板安装脚本 - 提供交互式和半自动化安装Cyberpanel
