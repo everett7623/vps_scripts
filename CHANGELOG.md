@@ -4,6 +4,17 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.9 - 2026-10-14
+
+### Added
+- `swap.sh --size` / `--yes` for non-interactive SWAP creation; `VPS_SWAP_FILE` / `VPS_FSTAB_FILE` / `VPS_SWAPPINESS_DROPIN` overrides for tests.
+- Mocked real-path coverage for `swap --yes --size` in `tests/validate_mocked_pkg_systemd.sh`.
+- Maven installer verifies Apache Archive `.sha512` before extract.
+- Gradle installer verifies official `.sha256` before unzip.
+
+### Changed
+- Swap dry-run can preview a concrete size via `--dry-run --size 2G`.
+
 ## 1.1.8 - 2026-10-10
 
 ### Added

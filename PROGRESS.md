@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.8 adds succeeding-stub mocked coverage for real BBR and Fail2ban install paths, and verifies Go / Node.js official archives with upstream SHA-256 metadata. 1.1.7 hardened first-party install/test tools; 1.1.5–1.1.6 finished the third-party catalog refresh. The LDNMP installer stays a single combined installer.
+Version 1.1.9 adds non-interactive swap (`--size`/`--yes`) with mocked real-path coverage, and verifies Maven (SHA-512) and Gradle (SHA-256) against upstream checksum files. 1.1.8 covered BBR/Fail2ban mocks and Go/Node checksums. The LDNMP installer stays a single combined installer.
 
-Next work: extend checksum verification (e.g. Maven) and grow the mocked real-path suite to more mutators.
+Next work: stubbable root for install_deps real-path mocks; more archive checksums where upstream publishes them.
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: extend checksum verification (e.g. Maven) and grow the mocked real-pa
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- Added swap `--size`/`--yes` with mocked real-path coverage; Maven SHA-512 and Gradle SHA-256 verification (1.1.9)
 - Added mocked pkg/systemd real-path tests for BBR/Fail2ban; Go `.sha256` and Node.js `SHASUMS256.txt` verification (1.1.8)
 - Hardened first-party tools (1.1.7): install_deps `--dry-run`/`--yes`/`resolve_log_dir`; performance soft-fail installs; `--skip-install` for network/performance auto-install paths; disk `--size` and network `--client` validation
 - Refreshed the proxy tools menu (1.1.6): added S-UI, mack-a v2ray-agent, official Hysteria2/Xray-core installers; moved x-ui-yg and X-Panel to current upstream URLs
@@ -74,15 +75,15 @@ Next work: extend checksum verification (e.g. Maven) and grow the mocked real-pa
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.8
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.9
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
-- Grow mocked real-path coverage beyond BBR/Fail2ban (e.g. swap with `--size`/`--yes`, install_deps with stubbable root)
-- Extend checksum or signature validation to more archives (Maven/Java where upstream publishes hashes)
+- Grow mocked real-path coverage to install_deps (needs stubbable root / EUID hook)
+- Extend checksum or signature validation to remaining archive downloads where upstream publishes hashes
 
 ## Success Criteria For Next Release
 

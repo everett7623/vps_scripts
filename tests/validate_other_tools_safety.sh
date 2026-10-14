@@ -21,8 +21,12 @@ fi
 
 grep -Fq '/etc/sysctl.d/99-vps-bbr.conf' "${BBR_SCRIPT}"
 grep -Fq 'sed -i '\''\|^/swapfile[[:space:]]|d'\''' "${SWAP_SCRIPT}"
-grep -Eq '\[\[ \$\{?swap_size\}? =~ \^\(\[1-9\]\[0-9\]\*\)G\$ \]\]' "${SWAP_SCRIPT}"
 grep -Fq -- '--status' "${SWAP_SCRIPT}"
+grep -Fq -- '--size' "${SWAP_SCRIPT}"
+grep -Fq -- '--yes' "${SWAP_SCRIPT}"
+grep -Fq 'VPS_SWAP_FILE' "${SWAP_SCRIPT}"
+grep -Fq 'VPS_FSTAB_FILE' "${SWAP_SCRIPT}"
+grep -Fq 'validate_swap_size' "${SWAP_SCRIPT}"
 grep -Fq '/etc/fail2ban/jail.d/vps-scripts-sshd.local' "${FAIL2BAN_SCRIPT}"
 grep -Fq 'fail2ban-client -t' "${FAIL2BAN_SCRIPT}"
 grep -Fq -- '--status' "${FAIL2BAN_SCRIPT}"

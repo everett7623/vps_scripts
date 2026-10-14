@@ -193,4 +193,13 @@ if [ -f /etc/os-release ] && grep -Eq '^ID=(ubuntu|debian|kali)$' /etc/os-releas
     expect_output "[DRY-RUN]"
 fi
 
+SWAP="${REPO_ROOT}/scripts/other_tools/swap.sh"
+run_case ok "${SWAP}" --help
+expect_output "--size"
+expect_output "--yes"
+run_case ok "${SWAP}" --dry-run --size 2G
+expect_output "2G"
+run_case fail "${SWAP}" --yes
+run_case fail "${SWAP}" --yes --size bad
+
 echo "Dry-run behavior checks are valid."

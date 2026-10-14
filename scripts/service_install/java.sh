@@ -357,10 +357,16 @@ install_maven() {
 
     local work_dir=""
     local archive_file=""
+    local checksum_file=""
+    local expected=""
+    local actual=""
+    local base_url="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries"
+    local asset="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
     work_dir=$(mktemp -d "/tmp/java-maven.XXXXXX")
-    archive_file="${work_dir}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+    archive_file="${work_dir}/${asset}"
+    checksum_file="${work_dir}/${asset}.sha512"
 
-    if ! download_to_file "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" "$archive_file"; then
+    if ! download_to_file "${base_url}/${asset}" "$archive_file"; then
         rm -rf -- "$work_dir"
         log "${RED}错误: Maven 下载失败${NC}"
         return 1
@@ -371,6 +377,26 @@ install_maven() {
         log "${RED}错误: Maven 下载失败${NC}"
         return 1
     fi
+
+    log "${YELLOW}正在按官方 .sha512 校验...${NC}"
+    if ! curl -fsSL --retry 3 -o "${checksum_file}" "${base_url}/${asset}.sha512"; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Maven SHA-512 校验文件下载失败${NC}"
+        return 1
+    fi
+    expected=$(awk '{print $1; exit}' "${checksum_file}" | tr -d '[:space:]')
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{128}$ ]]; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Maven SHA-512 校验文件格式无效${NC}"
+        return 1
+    fi
+    actual=$(sha512sum "${archive_file}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Maven 归档 SHA-512 校验失败${NC}"
+        return 1
+    fi
+    log "${GREEN}Maven SHA-512 校验通过${NC}"
 
     # 解压到 /opt
     if ! tar -xzf "$archive_file" -C /opt/; then
@@ -420,10 +446,17 @@ install_gradle() {
 
     local work_dir=""
     local archive_file=""
+    local checksum_file=""
+    local expected=""
+    local actual=""
+    local asset="gradle-${GRADLE_VERSION}-bin.zip"
+    local archive_url="https://services.gradle.org/distributions/${asset}"
+    local checksum_url="https://services.gradle.org/distributions/${asset}.sha256"
     work_dir=$(mktemp -d "/tmp/java-gradle.XXXXXX")
-    archive_file="${work_dir}/gradle-${GRADLE_VERSION}-bin.zip"
+    archive_file="${work_dir}/${asset}"
+    checksum_file="${work_dir}/${asset}.sha256"
 
-    if ! download_to_file "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" "$archive_file"; then
+    if ! download_to_file "${archive_url}" "$archive_file"; then
         rm -rf -- "$work_dir"
         log "${RED}错误: Gradle 下载失败${NC}"
         return 1
@@ -434,6 +467,26 @@ install_gradle() {
         log "${RED}错误: Gradle 下载失败${NC}"
         return 1
     fi
+
+    log "${YELLOW}正在按官方 .sha256 校验...${NC}"
+    if ! curl -fsSL --retry 3 -o "${checksum_file}" "${checksum_url}"; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Gradle SHA-256 校验文件下载失败${NC}"
+        return 1
+    fi
+    expected=$(tr -d '[:space:]' < "${checksum_file}")
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{64}$ ]]; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Gradle SHA-256 校验文件格式无效${NC}"
+        return 1
+    fi
+    actual=$(sha256sum "${archive_file}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "$work_dir"
+        log "${RED}错误: Gradle 归档 SHA-256 校验失败${NC}"
+        return 1
+    fi
+    log "${GREEN}Gradle SHA-256 校验通过${NC}"
 
     # 解压到 /opt
     if ! unzip -q "$archive_file" -d /opt/; then

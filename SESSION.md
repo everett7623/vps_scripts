@@ -2,7 +2,7 @@
 
 ## Date
 
-2026-10-10
+2026-10-14
 
 ## Scope
 
@@ -19,6 +19,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.6 | #9 | Proxy tools refresh: S-UI, v2ray-agent, official Hysteria2/Xray; x-ui-yg and X-Panel URL updates |
 | 1.1.7 | #10 | First-party hardening: install_deps dry-run; performance soft-fail installs; --skip-install; CLI validation |
 | 1.1.8 | #11 | Mocked pkg/systemd real paths for bbr/fail2ban; Go/Node SHA-256 verification |
+| 1.1.9 | (pending) | Swap --size/--yes + mocked path; Maven SHA-512 and Gradle SHA-256 |
 
 ## Decisions
 
@@ -34,4 +35,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Extend checksum verification (Maven/Java) and grow mocked real-path coverage (swap `--size`/`--yes`, stubbable root for install_deps).
+Stubbable root/EUID hook for install_deps real-path mocks; more archive checksums where upstream publishes them.

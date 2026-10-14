@@ -149,9 +149,15 @@
 - [x] Fail2ban `--yes` and testable path/OS overrides; BBR drop-in override
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.8`
 
+## 1.1.9 release
+
+- [x] Swap `--size`/`--yes` + path overrides; mocked real-path coverage
+- [x] Maven SHA-512 and Gradle SHA-256 verification
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.9`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party hardening in 1.1.7; mocked pkg/systemd + Go/Node checksums in 1.1.8; next: extend checksums (e.g. Maven) and more mutator real-path mocks
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); catalog + first-party hardening through 1.1.8; swap mocks + Maven/Gradle checksums in 1.1.9; next: stubbable root for install_deps real-path mocks, more archive checksums where upstream publishes them
 - [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

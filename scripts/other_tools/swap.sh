@@ -11,9 +11,12 @@ YELLOW='\033[0;33m'
 WHITE='\033[0;37m'
 NC='\033[0m'
 
-SWAP_FILE="/swapfile"
-SWAPPINESS_DROPIN="/etc/sysctl.d/99-swappiness.conf"
+SWAP_FILE="${VPS_SWAP_FILE:-/swapfile}"
+SWAPPINESS_DROPIN="${VPS_SWAPPINESS_DROPIN:-/etc/sysctl.d/99-swappiness.conf}"
+FSTAB_FILE="${VPS_FSTAB_FILE:-/etc/fstab}"
 DRY_RUN=false
+AUTO_YES=false
+SWAP_SIZE=""
 
 require_root() {
     if [ "$(id -u)" != "0" ]; then
@@ -27,12 +30,22 @@ show_help() {
 用法：bash swap.sh [选项]
 
 选项：
-  --status    仅显示当前 SWAP 状态，不修改系统
-  --dry-run   预览将执行的变更，不写入
-  --help      显示帮助
+  --status       仅显示当前 SWAP 状态，不修改系统
+  --size SIZE    SWAP 大小（如 1G、512M）；与 --yes / --dry-run 联用
+  --yes          非交互确认并按 --size 创建/替换 SWAP
+  --dry-run      预览将执行的变更，不写入
+  --help         显示帮助
 
 无参数时进入交互配置流程。
 EOF
+}
+
+validate_swap_size() {
+    local size="$1"
+    if [[ ! ${size} =~ ^([1-9][0-9]*)[GM]$ ]]; then
+        echo -e "${RED}无效的大小格式，请使用正整数和 G 或 M 后缀（例如 1G、512M）${NC}" 1>&2
+        return 1
+    fi
 }
 
 show_status() {
@@ -50,10 +63,10 @@ show_status() {
         echo -e "${GREEN}swappiness 配置:${NC}"
         cat -- "${SWAPPINESS_DROPIN}"
     fi
-    if grep -qE '^/swapfile[[:space:]]' /etc/fstab 2>/dev/null; then
-        echo -e "${GREEN}/etc/fstab:${NC} 已包含 /swapfile 条目"
+    if [ -f "${FSTAB_FILE}" ] && grep -qE "^${SWAP_FILE}[[:space:]]" "${FSTAB_FILE}" 2>/dev/null; then
+        echo -e "${GREEN}${FSTAB_FILE}:${NC} 已包含 ${SWAP_FILE} 条目"
     else
-        echo -e "${YELLOW}/etc/fstab:${NC} 未包含 /swapfile 条目"
+        echo -e "${YELLOW}${FSTAB_FILE}:${NC} 未包含 ${SWAP_FILE} 条目"
     fi
 }
 
@@ -63,7 +76,7 @@ preview_plan() {
     echo "------------------------"
     echo "将创建/替换: ${SWAP_FILE} (${size_label})"
     echo "将仅 swapoff ${SWAP_FILE}（不会关闭全部交换分区）"
-    echo "将更新 /etc/fstab 中唯一的 /swapfile 行"
+    echo "将更新 ${FSTAB_FILE} 中唯一的 ${SWAP_FILE} 行"
     echo "将写入 ${SWAPPINESS_DROPIN} (vm.swappiness=10)"
     echo -e "${YELLOW}未实际修改系统。${NC}"
 }
@@ -71,6 +84,7 @@ preview_plan() {
 apply_swap() {
     local swap_size="${1}"
     local current_swap
+    local dropin_dir=""
     current_swap=$(free -m | awk '/Swap/ {print $2}')
 
     if [ "${DRY_RUN}" = true ]; then
@@ -107,12 +121,22 @@ apply_swap() {
     swapon -- "${SWAP_FILE}"
 
     echo -e "${WHITE}配置开机自动挂载...${NC}"
-    if [ -f /etc/fstab ]; then
-        sed -i '\|^/swapfile[[:space:]]|d' /etc/fstab
+    if [ -f "${FSTAB_FILE}" ]; then
+        # Default path keeps the historic /^\/swapfile/ sed form for safety tests.
+        if [ "${SWAP_FILE}" = "/swapfile" ]; then
+            sed -i '\|^/swapfile[[:space:]]|d' "${FSTAB_FILE}"
+        else
+            sed -i "\|^${SWAP_FILE}[[:space:]]|d" "${FSTAB_FILE}"
+        fi
+    else
+        mkdir -p -- "$(dirname -- "${FSTAB_FILE}")"
+        : > "${FSTAB_FILE}"
     fi
-    echo '/swapfile none swap defaults 0 0' >> /etc/fstab
+    echo "${SWAP_FILE} none swap defaults 0 0" >> "${FSTAB_FILE}"
 
     echo -e "${WHITE}配置SWAP参数...${NC}"
+    dropin_dir=$(dirname -- "${SWAPPINESS_DROPIN}")
+    mkdir -p -- "${dropin_dir}"
     printf '%s\n' 'vm.swappiness=10' > "${SWAPPINESS_DROPIN}"
     sysctl -p "${SWAPPINESS_DROPIN}" >/dev/null 2>&1 || true
 
@@ -170,8 +194,7 @@ interactive_configure() {
         *) echo -e "${RED}无效选择，已取消操作${NC}"; return 1 ;;
     esac
 
-    if [[ ! ${swap_size} =~ ^([1-9][0-9]*)[GM]$ ]]; then
-        echo -e "${RED}无效的大小格式，请使用正整数和G或M后缀${NC}"
+    if ! validate_swap_size "${swap_size}"; then
         return 1
     fi
 
@@ -187,31 +210,69 @@ interactive_configure() {
 }
 
 main() {
-    case "${1:-}" in
-        --help|-h)
-            show_help
-            return 0
-            ;;
-        --status)
-            show_status
-            return 0
-            ;;
-        --dry-run)
-            DRY_RUN=true
-            require_root
-            preview_plan "1G (示例；交互模式中可选大小)"
-            return 0
-            ;;
-        "")
-            require_root
-            interactive_configure
-            ;;
-        *)
-            echo -e "${RED}未知参数: ${1}${NC}"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --help|-h)
+                show_help
+                return 0
+                ;;
+            --status)
+                show_status
+                return 0
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --yes|-y)
+                AUTO_YES=true
+                shift
+                ;;
+            --size)
+                if [ -z "${2:-}" ] || [[ "${2}" == -* ]]; then
+                    echo -e "${RED}--size 需要大小参数（例如 1G）${NC}" 1>&2
+                    return 1
+                fi
+                SWAP_SIZE="$2"
+                shift 2
+                ;;
+            *)
+                echo -e "${RED}未知参数: $1${NC}"
+                show_help
+                return 1
+                ;;
+        esac
+    done
+
+    if [ -n "${SWAP_SIZE}" ]; then
+        validate_swap_size "${SWAP_SIZE}" || return 1
+    fi
+
+    if [ "${DRY_RUN}" = true ]; then
+        preview_plan "${SWAP_SIZE:-1G (示例；交互模式中可选大小)}"
+        return 0
+    fi
+
+    if [ "${AUTO_YES}" = true ]; then
+        if [ -z "${SWAP_SIZE}" ]; then
+            echo -e "${RED}--yes 需要同时指定 --size${NC}" 1>&2
             show_help
             return 1
-            ;;
-    esac
+        fi
+        require_root
+        echo -e "${GREEN}开始创建 ${SWAP_SIZE} SWAP（--yes）...${NC}"
+        apply_swap "${SWAP_SIZE}"
+        return $?
+    fi
+
+    if [ -n "${SWAP_SIZE}" ]; then
+        echo -e "${RED}--size 需配合 --yes 或 --dry-run 使用${NC}" 1>&2
+        show_help
+        return 1
+    fi
+
+    require_root
+    interactive_configure
 }
 
 main "$@"

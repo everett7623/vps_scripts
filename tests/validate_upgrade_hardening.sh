@@ -48,9 +48,14 @@ grep -Fq 'run_repo_script "scripts/other_tools/frp.sh"' "${LAUNCHER}"
 
 GO_SCRIPT="${REPO_ROOT}/scripts/service_install/go.sh"
 NODE_SCRIPT="${REPO_ROOT}/scripts/service_install/nodejs.sh"
+JAVA_SCRIPT="${REPO_ROOT}/scripts/service_install/java.sh"
 grep -Fq 'https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz.sha256' "${GO_SCRIPT}"
 grep -Fq 'https://nodejs.org/dist/${FULL_VERSION}/SHASUMS256.txt' "${NODE_SCRIPT}"
 grep -Fq 'work_dir=$(mktemp -d "/tmp/nodejs-install.XXXXXX")' "${NODE_SCRIPT}"
+grep -Fq '${base_url}/${asset}.sha512' "${JAVA_SCRIPT}"
+grep -Fq 'sha512sum "${archive_file}"' "${JAVA_SCRIPT}"
+grep -Fq 'distributions/${asset}.sha256' "${JAVA_SCRIPT}"
+grep -Fq 'sha256sum "${archive_file}"' "${JAVA_SCRIPT}"
 if grep -Fq 'funnyzak/frpc' "${LAUNCHER}"; then
     echo "Launcher still points FRP at the retired third-party installer." >&2
     exit 1

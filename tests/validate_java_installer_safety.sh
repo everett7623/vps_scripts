@@ -20,6 +20,12 @@ grep -Fq 'mktemp -d "/tmp/java-graalvm.XXXXXX"' "${SCRIPT}"
 grep -Fq 'mktemp -d "/tmp/java-maven.XXXXXX"' "${SCRIPT}"
 grep -Fq 'mktemp -d "/tmp/java-gradle.XXXXXX"' "${SCRIPT}"
 grep -Fq 'JAVA_PATH=$(readlink -f "$(command -v java)")' "${SCRIPT}"
+grep -Fq '${base_url}/${asset}.sha512' "${SCRIPT}"
+grep -Fq 'sha512sum "${archive_file}"' "${SCRIPT}"
+grep -Fq 'Maven 归档 SHA-512 校验失败' "${SCRIPT}"
+grep -Fq '${asset}.sha256' "${SCRIPT}"
+grep -Fq 'sha256sum "${archive_file}"' "${SCRIPT}"
+grep -Fq 'Gradle 归档 SHA-256 校验失败' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)' "${SCRIPT}"; then
     echo "Java installer pipes remote content to a shell." >&2

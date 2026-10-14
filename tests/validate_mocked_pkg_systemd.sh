@@ -13,6 +13,7 @@ REPO_ROOT="${REPO_ROOT_OVERRIDE:-${REPO_ROOT_DEFAULT}}"
 
 BBR="${REPO_ROOT}/scripts/other_tools/bbr.sh"
 FAIL2BAN="${REPO_ROOT}/scripts/other_tools/fail2ban.sh"
+SWAP="${REPO_ROOT}/scripts/other_tools/swap.sh"
 
 TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/vps_mocked_pkg.XXXXXX")
 trap 'rm -rf -- "${TMP_ROOT}"' EXIT
@@ -21,9 +22,13 @@ STUB_DIR="${TMP_ROOT}/bin"
 CALL_LOG="${TMP_ROOT}/calls.log"
 SYSCTL_D="${TMP_ROOT}/sysctl.d"
 JAIL_FILE="${TMP_ROOT}/fail2ban/jail.d/vps-scripts-sshd.local"
+SWAP_FILE="${TMP_ROOT}/swapfile"
+FSTAB_FILE="${TMP_ROOT}/fstab"
+SWAPPINESS_DROPIN="${SYSCTL_D}/99-swappiness.conf"
 OUTPUT="${TMP_ROOT}/output.txt"
 mkdir -p "${STUB_DIR}" "${SYSCTL_D}"
 : > "${CALL_LOG}"
+: > "${FSTAB_FILE}"
 
 fail() {
     echo "$*" >&2
@@ -54,6 +59,12 @@ write_stub lsmod 'exit 0'
 write_stub fail2ban-server 'exit 0'
 write_stub fail2ban-client 'exit 0'
 write_stub systemctl 'case "${1:-}" in is-active) exit 0 ;; esac; exit 0'
+write_stub fallocate ": > \"\${@: -1}\"; exit 0"
+write_stub mkswap 'exit 0'
+write_stub swapon 'exit 0'
+write_stub swapoff 'exit 0'
+write_stub dd 'exit 0'
+write_stub free "if [ -f '${SWAP_FILE}' ]; then echo 'Mem: 2048 100 1900'; echo 'Swap: 1024 0 1024'; else echo 'Mem: 2048 100 1900'; echo 'Swap: 0 0 0'; fi; exit 0"
 
 expect_call() {
     grep -Eq -- "$1" "${CALL_LOG}" || fail "Missing expected call matching: $1"
@@ -94,5 +105,28 @@ expect_call '^apt-get '
 expect_call '^fail2ban-client '
 expect_call '^systemctl enable fail2ban'
 expect_call '^systemctl restart fail2ban'
+
+# --- Swap real install with --yes --size ---
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SWAP_FILE="${SWAP_FILE}" \
+VPS_FSTAB_FILE="${FSTAB_FILE}" \
+VPS_SWAPPINESS_DROPIN="${SWAPPINESS_DROPIN}" \
+    bash "${SWAP}" --yes --size 1G </dev/null >"${OUTPUT}" 2>&1 || fail "swap --yes --size 1G failed"
+
+[ -f "${SWAP_FILE}" ] || fail "Swap file was not created"
+grep -Fq "${SWAP_FILE} none swap defaults 0 0" "${FSTAB_FILE}" || fail "fstab missing swap entry"
+[ -f "${SWAPPINESS_DROPIN}" ] || fail "swappiness drop-in missing"
+grep -Fq 'vm.swappiness=10' "${SWAPPINESS_DROPIN}" || fail "swappiness value missing"
+expect_call '^fallocate '
+expect_call '^mkswap '
+expect_call '^swapon '
+expect_call '^sysctl '
+
+# Validation failures
+PATH="${STUB_DIR}:${PATH}" \
+    bash "${SWAP}" --yes </dev/null >"${OUTPUT}" 2>&1 && fail "swap --yes without --size should fail"
+PATH="${STUB_DIR}:${PATH}" \
+    bash "${SWAP}" --yes --size bad </dev/null >"${OUTPUT}" 2>&1 && fail "swap --yes --size bad should fail"
 
 echo "Mocked pkg/systemd real-path checks are valid."
