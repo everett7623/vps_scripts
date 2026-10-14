@@ -15,7 +15,7 @@ All notable changes to this repository are documented here.
 ### Changed
 - AMH installer downloads use `https://dl.amh.sh/`; BT Panel beta installers use `https://io.bt.sy/`.
 - `optimize_system.sh` always writes the systemd limits drop-in (creating the directory when needed) instead of skipping when `/etc/systemd/system.conf.d` is absent.
-- Mocked / dry-run tests use a minimal `STUB_DIR:/usr/bin:/bin` PATH instead of scanning and symlinking the whole host PATH (avoids hangs on Windows Git Bash).
+- Mocked / dry-run tests build a PATH from stubs plus `/usr/bin` and `/bin` (excluding host docker/node) instead of scanning the whole host PATH (avoids hangs on Windows Git Bash; hides CI-preinstalled docker).
 
 ### Fixed
 - Upgrade-hardening test no longer allowlists plain-HTTP AMH / io.bt.sy URLs; Redis / AMH / BT HTTPS endpoints are asserted.

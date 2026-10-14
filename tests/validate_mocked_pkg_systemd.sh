@@ -202,9 +202,19 @@ write_stub gpg 'exit 0'
 write_stub lsb_release 'echo bookworm; exit 0'
 write_stub systemctl 'case "${1:-}" in list-unit-files) exit 1 ;; esac; exit 0'
 
-# Prefer stubs, then a minimal system PATH that excludes host docker/node.
-# Avoid scanning the whole PATH (very slow on Windows Git Bash).
-DEPS_PATH="${STUB_DIR}:/usr/bin:/bin"
+# Prefer stubs, then /usr/bin+/bin without host docker/node.
+# Only those two dirs (not the whole PATH — slow on Windows Git Bash).
+CLEAN_BIN="${TMP_ROOT}/clean_bin"
+mkdir -p "${CLEAN_BIN}"
+for dir in /usr/bin /bin; do
+    [ -d "${dir}" ] || continue
+    for exe in "${dir}"/*; do
+        name=${exe##*/}
+        case "${name}" in docker|dockerd|node|nodejs|npm) continue ;; esac
+        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}" 2>/dev/null || true
+    done
+done
+DEPS_PATH="${STUB_DIR}:${CLEAN_BIN}"
 DEPS_KEYRINGS="${TMP_ROOT}/keyrings"
 DEPS_DOCKER_LIST="${TMP_ROOT}/apt/docker.list"
 mkdir -p "${DEPS_KEYRINGS}" "$(dirname -- "${DEPS_DOCKER_LIST}")"

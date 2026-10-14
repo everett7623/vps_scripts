@@ -210,8 +210,19 @@ for mode in --basic --monitor --security; do
     fi
 done
 SAVED_PATH="${PATH}"
-# Minimal PATH without host docker/node; stubs stay first for package tools.
-PATH="${STUB_DIR}:/usr/bin:/bin"
+# Hide host docker/node by linking only /usr/bin and /bin (not the full PATH —
+# scanning Windows Git Bash PATH is too slow). Stubs stay first.
+CLEAN_BIN="${TMP_ROOT}/clean_bin"
+mkdir -p "${CLEAN_BIN}"
+for dir in /usr/bin /bin; do
+    [ -d "${dir}" ] || continue
+    for exe in "${dir}"/*; do
+        name=${exe##*/}
+        case "${name}" in docker|dockerd|node|nodejs|npm) continue ;; esac
+        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}" 2>/dev/null || true
+    done
+done
+PATH="${STUB_DIR}:${CLEAN_BIN}"
 for mode in --basic --monitor --security; do
     run_case ok "${INSTALL_DEPS}" --dry-run "${mode}"
     if grep -Eq 'Docker apt repository|nodesource' "${OUTPUT}"; then
