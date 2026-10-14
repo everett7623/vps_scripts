@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.9 makes every first-party apt call non-interactive, verifies the Java toolchain archives (Maven, Gradle, Oracle JDK 17/21, GraalVM) against upstream digests, removes TLS-verification bypasses and plain-HTTP installer downloads, adds non-interactive swap sizing/removal, and limits `install_deps.sh` third-party repositories to the groups that need them. 1.1.8 added mocked BBR/Fail2ban real paths and Go / Node.js checksums. 1.1.7 hardened first-party install/test tools; 1.1.5–1.1.6 finished the third-party catalog refresh. The LDNMP installer stays a single combined installer.
+Version 1.1.10 verifies Redis source tarballs against official `redis-hashes` SHA-256 digests, switches AMH and BT Panel beta installers to HTTPS, and adds mocked real-path coverage for `optimize_system.sh` and `clean_system.sh`. 1.1.9 made apt non-interactive, verified the Java toolchain, and scoped `install_deps` third-party repos. The LDNMP installer stays a single combined installer.
 
-Next work: Redis source checksum, HTTPS or replacement for the legacy AMH / io.bt.sy downloads, and mocked real paths for `optimize_system.sh` and `clean_system.sh`.
+Next work: re-run the third-party catalog URL/liveness check; grow mocked coverage for remaining mutators; confirm Oracle/GraalVM checksum URLs on a real VPS.
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: Redis source checksum, HTTPS or replacement for the legacy AMH / io.b
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- Redis `redis-hashes` SHA-256; AMH / BT beta HTTPS; optimize/clean mocked real paths; `VPS_APT_*` install_deps overrides (1.1.10)
 - Non-interactive apt everywhere; Java toolchain checksums; TLS/HTTP download guard; swap `--size/--yes/--remove`; scoped `install_deps` repositories; swap and install_deps mocked real paths (1.1.9)
 - Added mocked pkg/systemd real-path tests for BBR/Fail2ban; Go `.sha256` and Node.js `SHASUMS256.txt` verification (1.1.8)
 - Hardened first-party tools (1.1.7): install_deps `--dry-run`/`--yes`/`resolve_log_dir`; performance soft-fail installs; `--skip-install` for network/performance auto-install paths; disk `--size` and network `--client` validation
@@ -75,15 +76,15 @@ Next work: Redis source checksum, HTTPS or replacement for the legacy AMH / io.b
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.9
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.10
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
-- Grow mocked real-path coverage to `optimize_system.sh` and `clean_system.sh`
-- Verify the Redis source tarball (upstream `redis-hashes`) and replace or upgrade the remaining plain-HTTP legacy installers (AMH, io.bt.sy)
+- Grow mocked real-path coverage for remaining first-party mutators
+- Confirm Oracle JDK / GraalVM checksum URLs resolve on a real VPS
 
 ## Success Criteria For Next Release
 

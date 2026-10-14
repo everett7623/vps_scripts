@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.9-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.10-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -353,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.10`：Redis 源码按官方 `redis-hashes` SHA-256 校验（默认 7.2.16）；AMH 与宝塔测试版安装改为 HTTPS；`optimize_system` / `clean_system` 增加 mocked 真实路径覆盖；`install_deps` 支持 apt keyrings/sources 测试覆盖
 - 发布 `1.1.9`：所有第一方 apt 调用改为非交互（系统升级保留本地修改的配置文件）；Maven / Gradle / Oracle JDK 17/21 / GraalVM 归档按官方摘要校验；移除 `--no-check-certificate`，aaPanel / 宝塔 / Redis 下载改用 HTTPS；Swap 新增 `--size` / `--yes` / `--remove` 与磁盘空间检查；`install_deps` 仅在需要 Docker/Node 时才添加对应软件源；新增 `run_all_tests.sh`
 - 发布 `1.1.8`：mocked pkg/systemd 真实路径测试（BBR / Fail2ban）；Go 与 Node.js 官方 SHA-256 校验；Fail2ban `--yes`；Node 二进制安装改用临时目录
 - 发布 `1.1.7`：第一方加固——`install_deps` 支持 `--dry-run`/`--yes`；性能测试安装失败不再中断；网络/性能测试支持 `--skip-install`；磁盘 `--size` 与吞吐 `--client` 参数校验

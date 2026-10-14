@@ -188,11 +188,11 @@ download_amh() {
     TEMP_DIR=$(mktemp -d "/tmp/amh_install.XXXXXX") || { log_error "创建临时目录失败"; exit 1; }
     cd "$TEMP_DIR"
     
-    # 下载安装脚本
+    # 下载安装脚本（HTTPS）
     if [[ "$DEFAULT_VERSION" == "latest" ]]; then
-        wget -O amh.sh http://dl.amh.sh/amh.sh
+        wget -O amh.sh https://dl.amh.sh/amh.sh
     else
-        wget -O amh.sh http://dl.amh.sh/amh-${DEFAULT_VERSION}.sh
+        wget -O amh.sh "https://dl.amh.sh/amh-${DEFAULT_VERSION}.sh"
     fi
     
     if [[ ! -f amh.sh ]]; then

@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.9",
-    "release_date": "2026-10-12",
+    "version": "1.1.10",
+    "release_date": "2026-10-14",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Non-interactive apt everywhere; Maven/Gradle/Oracle/GraalVM checksum verification; TLS/HTTP download hardening; swap --size/--yes/--remove; install_deps adds Docker/NodeSource repos only when needed."
+    "message": "Redis source SHA-256 via redis-hashes; AMH and BT beta installers on HTTPS; mocked optimize_system/clean_system real paths; install_deps apt path overrides for tests."
   },
   "compatibility": {
     "min_bash_version": "4.0",

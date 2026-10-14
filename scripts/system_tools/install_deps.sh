@@ -248,11 +248,16 @@ configure_extra_repos() {
                     install_one_package gnupg || true
                     install_one_package lsb-release || true
 
-                    mkdir -p /usr/share/keyrings
+                    # VPS_APT_* overrides exist so mocked tests can exercise the
+                    # real path without writing into the host /usr or /etc.
+                    local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+                    local docker_list="${VPS_APT_DOCKER_LIST:-/etc/apt/sources.list.d/docker.list}"
+                    local keyring_file="${keyrings_dir}/docker-archive-keyring.gpg"
+                    mkdir -p "${keyrings_dir}" "$(dirname -- "${docker_list}")"
                     if curl -fsSL "https://download.docker.com/linux/${OS_TYPE}/gpg" \
-                        | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg 2>/dev/null; then
-                        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/${OS_TYPE} $(lsb_release -cs) stable" \
-                            > /etc/apt/sources.list.d/docker.list
+                        | gpg --dearmor -o "${keyring_file}" 2>/dev/null; then
+                        echo "deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] https://download.docker.com/linux/${OS_TYPE} $(lsb_release -cs) stable" \
+                            > "${docker_list}"
                     else
                         print_warn "Docker 软件源密钥配置失败。"
                     fi

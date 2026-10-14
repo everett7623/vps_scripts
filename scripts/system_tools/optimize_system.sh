@@ -16,7 +16,10 @@ CONFIG_FILE="${PROJECT_ROOT}/config/vps_scripts.conf"
 
 LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="${LOG_DIR}/optimize_system.log"
-BACKUP_DIR="/var/backups/system_optimize"
+BACKUP_DIR="${VPS_OPTIMIZE_BACKUP_DIR:-/var/backups/system_optimize}"
+SYSCTL_FILE="${VPS_OPTIMIZE_SYSCTL_FILE:-/etc/sysctl.d/99-vps-optimize.conf}"
+LIMITS_FILE="${VPS_OPTIMIZE_LIMITS_FILE:-/etc/security/limits.d/99-vps-scripts.conf}"
+SYSTEMD_LIMITS_FILE="${VPS_OPTIMIZE_SYSTEMD_LIMITS_FILE:-/etc/systemd/system.conf.d/99-vps-scripts.conf}"
 
 AUTO_CONFIRM=false
 DRY_RUN=false
@@ -44,7 +47,11 @@ else
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
+    check_root() {
+        [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] && return 0
+        [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }
+        return 0
+    }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     get_total_memory() { free -m | awk '/^Mem:/ {print $2}'; }
 fi
@@ -118,8 +125,9 @@ write_file_atomically() {
 }
 
 apply_kernel_tuning() {
-    local sysctl_file="/etc/sysctl.d/99-vps-optimize.conf"
+    local sysctl_file="${SYSCTL_FILE}"
     local temp_file=""
+    local sysctl_dir=""
 
     print_title "内核参数优化"
     if [ "${DRY_RUN}" = true ]; then
@@ -128,8 +136,12 @@ apply_kernel_tuning() {
         return 0
     fi
     ensure_runtime_dirs
+    sysctl_dir=$(dirname -- "${sysctl_file}")
+    safe_mkdir "${sysctl_dir}"
     backup_target "${sysctl_file}"
-    [ -f /etc/sysctl.conf ] && backup_target "/etc/sysctl.conf"
+    if [ "${sysctl_file}" = "/etc/sysctl.d/99-vps-optimize.conf" ] && [ -f /etc/sysctl.conf ]; then
+        backup_target "/etc/sysctl.conf"
+    fi
 
     temp_file=$(mktemp "/tmp/vps_sysctl.XXXXXX") || {
         print_error "无法创建临时 sysctl 文件。"
@@ -163,20 +175,20 @@ EOF
 }
 
 apply_limits_tuning() {
-    local limits_file="/etc/security/limits.d/99-vps-scripts.conf"
-    local systemd_dir="/etc/systemd/system.conf.d"
-    local systemd_file="${systemd_dir}/99-vps-scripts.conf"
+    local limits_file="${LIMITS_FILE}"
+    local systemd_file="${SYSTEMD_LIMITS_FILE}"
+    local systemd_dir=""
     local temp_file=""
 
     print_title "系统限制优化"
+    systemd_dir=$(dirname -- "${systemd_file}")
     if [ "${DRY_RUN}" = true ]; then
         preview "备份并写入 ${limits_file}（nofile/nproc = 65535）"
-        if [ -d "${systemd_dir}" ]; then
-            preview "写入 ${systemd_file} 并执行 systemctl daemon-reexec"
-        fi
+        preview "写入 ${systemd_file} 并执行 systemctl daemon-reexec"
         return 0
     fi
     ensure_runtime_dirs
+    safe_mkdir "$(dirname -- "${limits_file}")"
     backup_target "${limits_file}"
     backup_target "${systemd_file}"
 
@@ -199,21 +211,20 @@ EOF
 
     write_file_atomically "${limits_file}" "${temp_file}"
 
-    if [ -d "${systemd_dir}" ]; then
-        temp_file=$(mktemp "/tmp/vps_systemd_limits.XXXXXX") || {
-            print_error "无法创建临时 systemd limits 文件。"
-            return 1
-        }
+    safe_mkdir "${systemd_dir}"
+    temp_file=$(mktemp "/tmp/vps_systemd_limits.XXXXXX") || {
+        print_error "无法创建临时 systemd limits 文件。"
+        return 1
+    }
 
-        cat > "${temp_file}" <<'EOF'
+    cat > "${temp_file}" <<'EOF'
 [Manager]
 DefaultLimitNOFILE=65535
 DefaultLimitNPROC=65535
 EOF
 
-        write_file_atomically "${systemd_file}" "${temp_file}"
-        run_logged_command "reload systemd manager" systemctl daemon-reexec || true
-    fi
+    write_file_atomically "${systemd_file}" "${temp_file}"
+    run_logged_command "reload systemd manager" systemctl daemon-reexec || true
 
     print_success "系统限制优化已应用。"
 }

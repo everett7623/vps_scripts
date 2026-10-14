@@ -46,7 +46,7 @@ readonly SCRIPT_VERSION="1.0.0"
 readonly LOG_FILE="/tmp/redis_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置
-readonly DEFAULT_REDIS_VERSION="7.2.3"
+readonly DEFAULT_REDIS_VERSION="7.2.16"
 readonly REDIS_USER="redis"
 readonly CONFIG_DIR="/etc/redis"
 readonly LOG_DIR="/var/log/redis"
@@ -260,6 +260,29 @@ install_redis() {
         rm -rf -- "$work_dir"
         error_exit "Redis源码下载为空"
     fi
+
+    # Verify against the official redis-hashes digest list before compile.
+    local hashes_file="${work_dir}/redis-hashes.txt"
+    local asset="redis-${REDIS_VERSION}.tar.gz"
+    local expected=""
+    local actual=""
+    log "${YELLOW}正在按 redis-hashes 校验 SHA-256...${NC}"
+    if ! curl -fsSL --retry 3 -o "${hashes_file}" \
+        "https://raw.githubusercontent.com/redis/redis-hashes/master/README"; then
+        rm -rf -- "$work_dir"
+        error_exit "下载 redis-hashes 校验列表失败"
+    fi
+    expected=$(awk -v f="${asset}" '$1 == "hash" && $2 == f && $3 == "sha256" { print $4; exit }' "${hashes_file}")
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{64}$ ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "redis-hashes 中未找到 ${asset} 的 sha256（请指定已发布版本）"
+    fi
+    actual=$(sha256sum "${archive_file}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "$work_dir"
+        error_exit "Redis 源码归档 SHA-256 校验失败"
+    fi
+    log "${GREEN}Redis SHA-256 校验通过${NC}"
 
     tar -xzf "$archive_file" -C "$work_dir"
     cd "${work_dir}/redis-${REDIS_VERSION}"

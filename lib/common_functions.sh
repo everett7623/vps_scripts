@@ -256,6 +256,10 @@ wait_with_animation() {
 }
 
 check_root() {
+    # VPS_SKIP_ROOT_CHECK=1 is only for mocked real-path tests.
+    if [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ]; then
+        return 0
+    fi
     if [[ ${EUID} -ne 0 ]]; then
         print_error "此脚本需要 root 权限。"
         print_info "请切换到 root 用户或使用 sudo 运行。"

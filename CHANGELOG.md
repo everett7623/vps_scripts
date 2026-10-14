@@ -4,6 +4,22 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.10 - 2026-10-14
+
+### Added
+- Redis installer verifies the source tarball against the official `redis/redis-hashes` README SHA-256 list before compile; default version is `7.2.16`.
+- Mocked real-path coverage for `optimize_system.sh --kernel --limits --yes` and `clean_system.sh --auto --yes` via `VPS_OPTIMIZE_*`, `VPS_OS_TYPE`, and `VPS_SKIP_ROOT_CHECK`.
+- `VPS_APT_KEYRINGS_DIR` / `VPS_APT_DOCKER_LIST` overrides so `install_deps.sh` can configure the Docker apt repository under stubs without writing host `/usr` or `/etc`.
+- Shared `check_root` honors `VPS_SKIP_ROOT_CHECK=1` for mocked real-path tests.
+
+### Changed
+- AMH installer downloads use `https://dl.amh.sh/`; BT Panel beta installers use `https://io.bt.sy/`.
+- `optimize_system.sh` always writes the systemd limits drop-in (creating the directory when needed) instead of skipping when `/etc/systemd/system.conf.d` is absent.
+- Mocked / dry-run tests build a PATH from stubs plus `/usr/bin` and `/bin` (excluding host docker/node) instead of scanning the whole host PATH (avoids hangs on Windows Git Bash; hides CI-preinstalled docker).
+
+### Fixed
+- Upgrade-hardening test no longer allowlists plain-HTTP AMH / io.bt.sy URLs; Redis / AMH / BT HTTPS endpoints are asserted.
+
 ## 1.1.9 - 2026-10-12
 
 ### Added

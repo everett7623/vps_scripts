@@ -209,19 +209,20 @@ for mode in --basic --monitor --security; do
         fail "install_deps ${mode} would configure Docker/NodeSource repositories"
     fi
 done
+SAVED_PATH="${PATH}"
+# Hide host docker/node by linking only /usr/bin and /bin (not the full PATH —
+# scanning Windows Git Bash PATH is too slow). Stubs stay first.
 CLEAN_BIN="${TMP_ROOT}/clean_bin"
 mkdir -p "${CLEAN_BIN}"
-IFS=':' read -r -a path_dirs <<< "${PATH}"
-for dir in "${path_dirs[@]}"; do
+for dir in /usr/bin /bin; do
     [ -d "${dir}" ] || continue
     for exe in "${dir}"/*; do
         name=${exe##*/}
         case "${name}" in docker|dockerd|node|nodejs|npm) continue ;; esac
-        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}"
+        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}" 2>/dev/null || true
     done
 done
-SAVED_PATH="${PATH}"
-PATH="${CLEAN_BIN}"
+PATH="${STUB_DIR}:${CLEAN_BIN}"
 for mode in --basic --monitor --security; do
     run_case ok "${INSTALL_DEPS}" --dry-run "${mode}"
     if grep -Eq 'Docker apt repository|nodesource' "${OUTPUT}"; then
