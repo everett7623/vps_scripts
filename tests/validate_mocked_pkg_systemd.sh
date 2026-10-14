@@ -152,7 +152,15 @@ if DF_AVAIL_MB=600 run_swap --size 1G --yes; then fail "swap ignored insufficien
 : > "${CALL_LOG}"
 run_swap --size 2G --yes || fail "swap --size 2G --yes failed"
 [ -f "${SWAP_FILE}" ] || fail "swapfile was not created"
-[ "$(stat -c %a "${SWAP_FILE}")" = 600 ] || fail "swapfile mode is not 600"
+# GNU/Linux enforces chmod; NTFS via Git Bash often ignores mode bits.
+if mode=$(stat -c %a "${SWAP_FILE}" 2>/dev/null); then
+    if [ "${mode}" != "600" ]; then
+        case "$(uname -o 2>/dev/null || true)" in
+            Msys|Cygwin) ;;
+            *) fail "swapfile mode is not 600 (got ${mode})" ;;
+        esac
+    fi
+fi
 [ "$(swap_fstab_count)" = 1 ] || fail "fstab should contain exactly one swapfile entry"
 grep -Fq 'UUID=abcd / ext4' "${FSTAB}" || fail "swap removed an unrelated fstab line"
 grep -Fq '/dev/vdb1 none swap' "${FSTAB}" || fail "swap removed an unrelated swap partition"
@@ -194,24 +202,18 @@ write_stub gpg 'exit 0'
 write_stub lsb_release 'echo bookworm; exit 0'
 write_stub systemctl 'case "${1:-}" in list-unit-files) exit 1 ;; esac; exit 0'
 
-# Build a PATH without docker/node/npm so the repository-gating logic is
-# exercised even on hosts that already have them installed.
-CLEAN_BIN="${TMP_ROOT}/clean_bin"
-mkdir -p "${CLEAN_BIN}"
-IFS=':' read -r -a path_dirs <<< "${PATH}"
-for dir in "${path_dirs[@]}"; do
-    [ -d "${dir}" ] || continue
-    for exe in "${dir}"/*; do
-        name=${exe##*/}
-        case "${name}" in docker|dockerd|node|nodejs|npm) continue ;; esac
-        [ -x "${exe}" ] && [ ! -e "${CLEAN_BIN}/${name}" ] && ln -s "${exe}" "${CLEAN_BIN}/${name}"
-    done
-done
-DEPS_PATH="${STUB_DIR}:${CLEAN_BIN}"
+# Prefer stubs, then a minimal system PATH that excludes host docker/node.
+# Avoid scanning the whole PATH (very slow on Windows Git Bash).
+DEPS_PATH="${STUB_DIR}:/usr/bin:/bin"
+DEPS_KEYRINGS="${TMP_ROOT}/keyrings"
+DEPS_DOCKER_LIST="${TMP_ROOT}/apt/docker.list"
+mkdir -p "${DEPS_KEYRINGS}" "$(dirname -- "${DEPS_DOCKER_LIST}")"
 
 run_deps() {
     PATH="${DEPS_PATH}" HOME="${TMP_ROOT}/home" \
     VPS_OS_TYPE=debian VPS_SKIP_ROOT_CHECK=1 VPS_LOG_DIR="${DEPS_LOG_DIR}" \
+    VPS_APT_KEYRINGS_DIR="${DEPS_KEYRINGS}" \
+    VPS_APT_DOCKER_LIST="${DEPS_DOCKER_LIST}" \
         bash "${INSTALL_DEPS}" "$@" </dev/null >"${OUTPUT}" 2>&1
 }
 
@@ -249,5 +251,56 @@ if [ "$(id -u)" != 0 ]; then
         fail "install_deps ran the real path without root"
     fi
 fi
+
+# --- optimize_system real path (kernel + limits) ---
+OPTIMIZE="${REPO_ROOT}/scripts/system_tools/optimize_system.sh"
+OPT_ROOT="${TMP_ROOT}/optimize"
+OPT_SYSCTL="${OPT_ROOT}/sysctl.d/99-vps-optimize.conf"
+OPT_LIMITS="${OPT_ROOT}/limits.d/99-vps-scripts.conf"
+OPT_SYSTEMD="${OPT_ROOT}/systemd/99-vps-scripts.conf"
+OPT_BACKUP="${OPT_ROOT}/backups"
+OPT_LOGS="${OPT_ROOT}/logs"
+mkdir -p "${OPT_ROOT}/sysctl.d" "${OPT_ROOT}/limits.d" "${OPT_ROOT}/systemd" "${OPT_BACKUP}" "${OPT_LOGS}"
+write_stub sysctl 'exit 0'
+write_stub systemctl 'exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SKIP_ROOT_CHECK=1 \
+VPS_LOG_DIR="${OPT_LOGS}" \
+VPS_OPTIMIZE_BACKUP_DIR="${OPT_BACKUP}" \
+VPS_OPTIMIZE_SYSCTL_FILE="${OPT_SYSCTL}" \
+VPS_OPTIMIZE_LIMITS_FILE="${OPT_LIMITS}" \
+VPS_OPTIMIZE_SYSTEMD_LIMITS_FILE="${OPT_SYSTEMD}" \
+    bash "${OPTIMIZE}" --kernel --limits --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "optimize_system --kernel --limits --yes failed"
+
+[ -f "${OPT_SYSCTL}" ] || fail "optimize sysctl drop-in missing"
+grep -Fq 'tcp_congestion_control = bbr' "${OPT_SYSCTL}" || fail "optimize sysctl missing bbr"
+[ -f "${OPT_LIMITS}" ] || fail "optimize limits drop-in missing"
+grep -Fq 'nofile 65535' "${OPT_LIMITS}" || fail "optimize limits missing nofile"
+[ -f "${OPT_SYSTEMD}" ] || fail "optimize systemd limits missing"
+expect_call '^sysctl -p '
+
+# --- clean_system real path (package cache via apt stubs; find is no-op) ---
+CLEAN="${REPO_ROOT}/scripts/system_tools/clean_system.sh"
+CLEAN_LOGS="${TMP_ROOT}/clean_logs"
+mkdir -p "${CLEAN_LOGS}"
+write_stub find 'exit 0'
+write_stub journalctl 'exit 0'
+write_stub docker 'exit 0'
+write_stub du 'echo 0; exit 0'
+write_stub df 'echo "/dev/sda1 100 50 50 50% /"; exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SKIP_ROOT_CHECK=1 \
+VPS_OS_TYPE=debian \
+VPS_LOG_DIR="${CLEAN_LOGS}" \
+    bash "${CLEAN}" --auto --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean_system --auto --yes failed"
+expect_call '^apt-get clean'
+expect_call '^apt-get autoclean'
+expect_call '^apt-get autoremove -y'
 
 echo "Mocked pkg/systemd real-path checks are valid."

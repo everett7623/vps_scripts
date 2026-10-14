@@ -201,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.9`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.10`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -223,7 +223,9 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `UI_THEME` | Common functions | Theme identifier (default `neon-shell`) |
 | `VPS_SSHD_DIR` | `optimize_system.sh` | SSH config root for the SSH baseline (default `/etc/ssh`) |
 | `VPS_SWAP_FILE` / `VPS_FSTAB_FILE` / `VPS_PROC_SWAPS` / `VPS_SWAPPINESS_DROPIN` | `swap.sh` | Redirect swap paths for mocked real-path tests |
-| `VPS_OS_TYPE` / `VPS_SKIP_ROOT_CHECK` | `install_deps.sh`, `fail2ban.sh` | Test hooks: force OS family / skip the root guard with stubbed package managers |
+| `VPS_OS_TYPE` / `VPS_SKIP_ROOT_CHECK` | `install_deps.sh`, `fail2ban.sh`, `optimize_system.sh`, `clean_system.sh`, `check_root` | Test hooks: force OS family / skip the root guard with stubbed package managers |
+| `VPS_OPTIMIZE_*` | `optimize_system.sh` | Redirect backup / sysctl / limits / systemd drop-in paths for mocked real-path tests |
+| `VPS_APT_KEYRINGS_DIR` / `VPS_APT_DOCKER_LIST` | `install_deps.sh` | Redirect Docker apt keyring and sources.list paths for mocked tests |
 
 ### `vps.sh` menu structure
 

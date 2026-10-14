@@ -48,7 +48,11 @@ else
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
+    check_root() {
+        [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] && return 0
+        [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }
+        return 0
+    }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "${ID}" || echo "unknown"; }
 fi
@@ -130,7 +134,11 @@ add_freed_bytes() {
 }
 
 detect_system() {
-    OS_TYPE=$(get_os_release)
+    if [ -n "${VPS_OS_TYPE:-}" ]; then
+        OS_TYPE="${VPS_OS_TYPE}"
+    else
+        OS_TYPE=$(get_os_release)
+    fi
 
     case "${OS_TYPE}" in
         ubuntu|debian|kali)

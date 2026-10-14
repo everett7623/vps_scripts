@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.9`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.10`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.9` is a backward-compatible patch release that makes every first-party apt call non-interactive, verifies Maven, Gradle, Oracle JDK 17/21, and GraalVM archives against upstream digests, removes TLS-verification bypasses and plain-HTTP installer downloads, adds non-interactive `swap.sh --size/--yes/--remove`, and limits `install_deps.sh` third-party repositories to the groups that need them. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.10` is a backward-compatible patch release that verifies Redis source tarballs against the official `redis-hashes` SHA-256 list (default 7.2.16), switches AMH and BT Panel beta installers to HTTPS, adds mocked real-path coverage for `optimize_system.sh` and `clean_system.sh`, and introduces `VPS_APT_*` path overrides so `install_deps.sh` Docker repository setup can be exercised under stubs. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

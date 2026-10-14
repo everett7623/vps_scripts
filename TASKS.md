@@ -160,10 +160,17 @@
 - [x] `run_all_tests.sh`
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.9`
 
+## 1.1.10 release
+
+- [x] Redis source SHA-256 via official `redis-hashes`; default version `7.2.16`
+- [x] AMH (`dl.amh.sh`) and BT Panel beta (`io.bt.sy`) installers on HTTPS
+- [x] Mocked real-path tests for `optimize_system` and `clean_system`; `VPS_OPTIMIZE_*` / `VPS_APT_*` overrides
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.10`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); third-party menus done in 1.1.5–1.1.6; first-party hardening in 1.1.7; mocked pkg/systemd + Go/Node checksums in 1.1.8; Java toolchain checksums + swap/install_deps mocks in 1.1.9; next: Redis source checksum, AMH / io.bt.sy HTTPS or replacement, mocks for optimize_system and clean_system real paths
-- [ ] Mocked behavioral tests for real (non-preview) package-manager, systemd, and download paths
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Redis checksum + AMH/BT HTTPS + optimize/clean mocks done in 1.1.10; next: catalog URL liveness re-check and more mocked mutator paths
+- [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
 ## Documentation

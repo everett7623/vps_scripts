@@ -92,14 +92,24 @@ if [ -n "${tls_bypass}" ]; then
 fi
 
 # Executable payloads (installers and source archives) must not be fetched over
-# plain HTTP. Legacy AMH and the io.bt.sy BT mirror have no confirmed HTTPS
-# endpoint and are explicitly allowlisted until they are replaced.
+# plain HTTP.
 plain_http=$(grep -rnE 'http://[^"[:space:]]+\.(sh|tar\.gz|tgz|zip)' \
-    --include='*.sh' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" \
-    | grep -vE 'http://(dl\.amh\.sh|io\.bt\.sy)/' || true)
+    --include='*.sh' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" || true)
 if [ -n "${plain_http}" ]; then
     echo "Executable payloads downloaded over plain HTTP:" >&2
     echo "${plain_http}" >&2
+    exit 1
+fi
+
+REDIS_SCRIPT="${REPO_ROOT}/scripts/service_install/redis.sh"
+grep -Fq 'redis/redis-hashes/master/README' "${REDIS_SCRIPT}"
+grep -Fq 'Redis 源码归档 SHA-256 校验失败' "${REDIS_SCRIPT}"
+grep -Fq 'https://dl.amh.sh/' "${REPO_ROOT}/scripts/service_install/amh.sh"
+grep -Fq 'https://io.bt.sy/' "${REPO_ROOT}/scripts/service_install/btpanel.sh"
+if grep -Eq 'http://(dl\.amh\.sh|io\.bt\.sy)/' \
+    "${REPO_ROOT}/scripts/service_install/amh.sh" \
+    "${REPO_ROOT}/scripts/service_install/btpanel.sh"; then
+    echo "AMH/BT panel installers still use plain HTTP download URLs." >&2
     exit 1
 fi
 

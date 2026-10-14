@@ -21,6 +21,11 @@ grep -Fq 'validate_inputs()' "${SCRIPT}"
 # Isolated build directory (mktemp -d), not /tmp wildcards
 grep -Fq 'mktemp -d' "${SCRIPT}"
 
+# Official redis-hashes SHA-256 verification before compile
+grep -Fq 'redis/redis-hashes/master/README' "${SCRIPT}"
+grep -Fq 'sha256sum "${archive_file}"' "${SCRIPT}"
+grep -Fq 'Redis 源码归档 SHA-256 校验失败' "${SCRIPT}"
+
 # No wildcard /tmp removal of redis build artifacts
 if grep -Eq 'rm[[:space:]]+-rf[[:space:]]+/tmp/redis-[^*]*\*' "${SCRIPT}"; then
     echo "Redis installer uses wildcard /tmp removal." >&2
