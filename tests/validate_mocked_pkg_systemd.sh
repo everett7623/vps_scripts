@@ -767,6 +767,84 @@ ls -1d "${CLN_BACKUP}"/service_clean_*/1panel >/dev/null 2>&1 \
     || fail "1panel backup missing"
 expect_call '^systemctl daemon-reload$'
 
+# --- clean_service_residues nginx / apache / mysql / php ---
+CLN_SHARE_NGINX="${CLN_ROOT}/usr_share_nginx"
+CLN_MYSQL_LOG="${CLN_ROOT}/var_log_mysql"
+mkdir -p "${CLN_ETC}/nginx/conf.d" "${CLN_SHARE_NGINX}" \
+    "${CLN_ETC}/httpd/conf" "${CLN_ETC}/apache2/sites-enabled" \
+    "${CLN_ETC}/mysql/conf.d" "${CLN_VARLIB}/mysql" "${CLN_MYSQL_LOG}" \
+    "${CLN_ETC}/php/8.2/fpm" "${CLN_VARLIB}/php"
+printf 'nginx\n' > "${CLN_ETC}/nginx/nginx.conf"
+printf 'html\n' > "${CLN_SHARE_NGINX}/index.html"
+printf 'httpd\n' > "${CLN_ETC}/httpd/conf/httpd.conf"
+printf 'apache2\n' > "${CLN_ETC}/apache2/apache2.conf"
+printf 'mysql\n' > "${CLN_ETC}/mysql/my.cnf"
+printf 'data\n' > "${CLN_VARLIB}/mysql/ibdata1"
+printf 'log\n' > "${CLN_MYSQL_LOG}/error.log"
+printf 'php\n' > "${CLN_ETC}/php/8.2/fpm/php.ini"
+printf 'sessions\n' > "${CLN_VARLIB}/php/sessions"
+write_stub dpkg-query 'exit 1'
+write_stub systemctl 'case "${1:-}" in list-unit-files) exit 0 ;; esac; exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_USR_SHARE_NGINX="${CLN_SHARE_NGINX}" \
+    bash "${CLEAN_SVC}" --target nginx --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean nginx --yes failed"
+[ ! -e "${CLN_ETC}/nginx" ] || fail "nginx config still present"
+[ ! -e "${CLN_SHARE_NGINX}" ] || fail "nginx share dir still present"
+ls -1d "${CLN_BACKUP}"/service_clean_*/nginx >/dev/null 2>&1 \
+    || fail "nginx backup missing"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+    bash "${CLEAN_SVC}" --target apache --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean apache --yes failed"
+[ ! -e "${CLN_ETC}/httpd" ] || fail "httpd config still present"
+[ ! -e "${CLN_ETC}/apache2" ] || fail "apache2 config still present"
+ls -1d "${CLN_BACKUP}"/service_clean_*/apache >/dev/null 2>&1 \
+    || fail "apache backup missing"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_VAR_LIB_ROOT="${CLN_VARLIB}" \
+VPS_VAR_LOG_MYSQL="${CLN_MYSQL_LOG}" \
+    bash "${CLEAN_SVC}" --target mysql --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean mysql --yes failed"
+[ ! -e "${CLN_ETC}/mysql" ] || fail "mysql config still present"
+[ ! -e "${CLN_MYSQL_LOG}" ] || fail "mysql log still present"
+[ -e "${CLN_VARLIB}/mysql/ibdata1" ] || fail "mysql data removed without --purge-data"
+ls -1d "${CLN_BACKUP}"/service_clean_*/mysql_config >/dev/null 2>&1 \
+    || fail "mysql config backup missing"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_VAR_LIB_ROOT="${CLN_VARLIB}" \
+VPS_VAR_LOG_MYSQL="${CLN_MYSQL_LOG}" \
+    bash "${CLEAN_SVC}" --target mysql --purge-data --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean mysql --purge-data --yes failed"
+[ ! -e "${CLN_VARLIB}/mysql" ] || fail "mysql data still present after --purge-data"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_VAR_LIB_ROOT="${CLN_VARLIB}" \
+    bash "${CLEAN_SVC}" --target php --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean php --yes failed"
+[ ! -e "${CLN_ETC}/php" ] || fail "php config still present"
+[ ! -e "${CLN_VARLIB}/php" ] || fail "php var/lib still present"
+ls -1d "${CLN_BACKUP}"/service_clean_*/php_config >/dev/null 2>&1 \
+    || fail "php config backup missing"
+
 # --- full_uninstall managed install ---
 FULL_UNINSTALL="${REPO_ROOT}/scripts/uninstall_scripts/full_uninstall.sh"
 FU_ROOT="${TMP_ROOT}/full_uninstall"

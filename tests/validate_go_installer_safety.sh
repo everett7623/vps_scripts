@@ -23,6 +23,7 @@ grep -Fq 'run_remote_installer "https://raw.githubusercontent.com/golangci/golan
 grep -Fq 'https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz.sha256' "${SCRIPT}"
 grep -Fq 'sha256sum "${archive_file}"' "${SCRIPT}"
 grep -Fq 'Go 归档 SHA-256 校验失败' "${SCRIPT}"
+grep -Fq 'bash -n "$installer_file"' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)' "${SCRIPT}"; then
     echo "Go installer pipes remote content to a shell." >&2

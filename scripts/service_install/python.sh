@@ -70,8 +70,87 @@ run_remote_installer() {
         return 1
     fi
 
+    if ! bash -n "${installer}"; then
+        rm -f -- "${installer}"
+        log "${RED}Error: installer syntax check failed: ${url}${NC}"
+        return 1
+    fi
+
     bash "${installer}"
     rm -f -- "${installer}"
+}
+
+# Verify Python-*.tgz against the official python.org downloads API digest.
+# Prefer sha256_sum when present; otherwise require md5_sum.
+verify_python_source_digest() {
+    local version="$1"
+    local archive_path="$2"
+    local release_json=""
+    local files_json=""
+    local release_id=""
+    local entry=""
+    local expected=""
+    local actual=""
+    local algo=""
+
+    release_json=$(mktemp "/tmp/python-release.XXXXXX") || return 1
+    files_json=$(mktemp "/tmp/python-files.XXXXXX") || {
+        rm -f -- "${release_json}"
+        return 1
+    }
+
+    if ! curl -fsSL --connect-timeout 10 --max-time 60 \
+        "https://www.python.org/api/v2/downloads/release/?name=Python%20${version}" \
+        -o "${release_json}"; then
+        rm -f -- "${release_json}" "${files_json}"
+        log "${RED}错误: 下载 python.org release API 失败${NC}"
+        return 1
+    fi
+
+    release_id=$(grep -o 'downloads/release/[0-9]*' "${release_json}" | head -1 | grep -o '[0-9]*$' || true)
+    if [[ -z "${release_id}" ]]; then
+        rm -f -- "${release_json}" "${files_json}"
+        log "${RED}错误: python.org API 中未找到 Python ${version}${NC}"
+        return 1
+    fi
+
+    if ! curl -fsSL --connect-timeout 10 --max-time 60 \
+        "https://www.python.org/api/v2/downloads/release_file/?release=${release_id}" \
+        -o "${files_json}"; then
+        rm -f -- "${release_json}" "${files_json}"
+        log "${RED}错误: 下载 python.org release_file API 失败${NC}"
+        return 1
+    fi
+
+    entry=$(tr '}' '\n' < "${files_json}" | grep "Python-${version}.tgz\"" | head -1 || true)
+    rm -f -- "${release_json}" "${files_json}"
+
+    if [[ -z "${entry}" ]]; then
+        log "${RED}错误: python.org API 中未找到 Python-${version}.tgz${NC}"
+        return 1
+    fi
+
+    expected=$(printf '%s' "${entry}" | sed -n 's/.*"sha256_sum":"\([^"]*\)".*/\1/p')
+    if [[ -n "${expected}" ]]; then
+        algo="sha256"
+        actual=$(sha256sum "${archive_path}" | awk '{print $1}')
+    else
+        expected=$(printf '%s' "${entry}" | sed -n 's/.*"md5_sum":"\([^"]*\)".*/\1/p')
+        if [[ -z "${expected}" ]]; then
+            log "${RED}错误: python.org API 未提供 Python-${version}.tgz 的校验摘要${NC}"
+            return 1
+        fi
+        algo="md5"
+        actual=$(md5sum "${archive_path}" | awk '{print $1}')
+    fi
+
+    if [[ "${actual}" != "${expected}" ]]; then
+        log "${RED}错误: Python 源码归档 ${algo} 校验失败${NC}"
+        return 1
+    fi
+
+    log "${GREEN}Python 源码归档 ${algo} 校验通过${NC}"
+    return 0
 }
 
 initialize_pyenv_path() {
@@ -296,7 +375,12 @@ install_from_source() {
         log "${RED}错误: 下载Python源码失败${NC}"
         exit 1
     fi
-    
+
+    log "${YELLOW}正在按 python.org downloads API 校验源码归档...${NC}"
+    if ! verify_python_source_digest "${PYTHON_VERSION}" "Python-${PYTHON_VERSION}.tgz"; then
+        exit 1
+    fi
+
     # 解压并编译
     tar -xzf "Python-${PYTHON_VERSION}.tgz"
     cd "Python-${PYTHON_VERSION}"

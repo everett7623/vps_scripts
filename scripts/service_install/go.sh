@@ -107,6 +107,10 @@ run_remote_installer() {
     local installer_file=""
 
     installer_file=$(download_to_temp "$url") || return 1
+    if ! bash -n "$installer_file"; then
+        rm -f -- "$installer_file"
+        return 1
+    fi
     if ! bash "$installer_file" "$@"; then
         rm -f -- "$installer_file"
         return 1

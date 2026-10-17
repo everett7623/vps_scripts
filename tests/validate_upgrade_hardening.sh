@@ -177,6 +177,14 @@ grep -Fq 'ruby/www.ruby-lang.org/master/_data/releases.yml' \
     "${REPO_ROOT}/scripts/service_install/ruby.sh"
 grep -Fq 'Ruby 源码归档 SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/ruby.sh"
 
+# Python source installs verify against the official python.org downloads API.
+PYTHON_SCRIPT="${REPO_ROOT}/scripts/service_install/python.sh"
+grep -Fq 'api/v2/downloads/release/?name=Python%20' "${PYTHON_SCRIPT}"
+grep -Fq 'verify_python_source_digest' "${PYTHON_SCRIPT}"
+grep -Fq 'bash -n "${installer}"' "${PYTHON_SCRIPT}"
+grep -Fq 'bash -n "${installer}"' "${REPO_ROOT}/scripts/service_install/nodejs.sh"
+grep -Fq 'bash -n "$installer_file"' "${REPO_ROOT}/scripts/service_install/go.sh"
+
 # Oracle JDK 17 / GraalVM community download URLs stay on live endpoints.
 # Oracle 8/11 OTN soft-404s are refused in favor of openjdk.
 JAVA_SCRIPT="${REPO_ROOT}/scripts/service_install/java.sh"

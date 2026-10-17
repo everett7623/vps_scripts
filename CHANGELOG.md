@@ -4,6 +4,16 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.21 - 2026-10-17
+
+### Added
+- Python source installs verify `Python-*.tgz` against the official python.org downloads API digest (SHA-256 when published, otherwise MD5).
+- `bash -n` syntax checks before executing downloaded installers in Python (pyenv), Node.js (NVM/NodeSource), and Go (golangci-lint) helpers.
+- Mocked real-path coverage for `clean_service_residues --target nginx|apache|mysql|php`.
+
+### Changed
+- Document `VPS_VAR_LOG_MYSQL` override for MySQL cleanup tests.
+
 ## 1.1.20 - 2026-10-17
 
 ### Changed

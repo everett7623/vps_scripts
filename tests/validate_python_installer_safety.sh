@@ -16,9 +16,19 @@ grep -Fq 'validate_inputs' "${SCRIPT}"
 grep -Fq 'run_remote_installer "https://pyenv.run"' "${SCRIPT}"
 grep -Fq 'WORK_DIR=$(mktemp -d "/tmp/python-build.XXXXXX")' "${SCRIPT}"
 grep -Fq 'trap cleanup_work_dir EXIT' "${SCRIPT}"
+grep -Fq 'bash -n "${installer}"' "${SCRIPT}"
+grep -Fq 'verify_python_source_digest' "${SCRIPT}"
+grep -Fq 'api/v2/downloads/release/?name=Python%20' "${SCRIPT}"
+grep -Fq 'Python 源码归档' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*bash' "${SCRIPT}"; then
     echo "Python installer still pipes remote content to bash." >&2
+    exit 1
+fi
+
+if grep -Eq 'tar -xzf "Python-\$\{PYTHON_VERSION\}\.tgz"' "${SCRIPT}" && \
+   ! grep -Fq 'verify_python_source_digest' "${SCRIPT}"; then
+    echo "Python source install extracts without digest verification." >&2
     exit 1
 fi
 

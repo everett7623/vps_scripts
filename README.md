@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.20-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.21-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -353,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.21`：Python 源码按 python.org API 校验摘要；pyenv/NVM/Go 远程安装脚本执行前 `bash -n`；nginx/apache/mysql/php 清理 mocked 覆盖
 - 发布 `1.1.20`：宝塔清理支持 `VPS_BT_*` 路径覆盖与仅本地 vendor uninstall；补充 1Panel mocked 覆盖；第三方目录 URL 复查全部可达
 - 发布 `1.1.19`：Nginx / MariaDB / PostgreSQL apt 全部改用 `signed-by` keyring，清除第一方安装器残留 `apt-key add`
 - 发布 `1.1.18`：Jenkins / Kubernetes apt 改用 `signed-by` keyring；K8s 仓库迁移到 `pkgs.k8s.io`（国内 Aliyun kubernetes-new）
