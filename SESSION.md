@@ -28,7 +28,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.15 | #24 | Nezha/FRP path mocks; Jenkins WAR SHA-256 |
 | 1.1.16 | #26 | uninstall rollback/clear/clean mocks; swap fstab fix |
 | 1.1.17 | #28 | catalog pins; Oracle 8/11 refuse; CRI-O/ELF guards |
-| 1.1.18 | (pending) | jenkins/k8s apt signed-by; pkgs.k8s.io migration |
+| 1.1.18 | #30 | jenkins/k8s apt signed-by; pkgs.k8s.io migration |
 
 ## Decisions
 
