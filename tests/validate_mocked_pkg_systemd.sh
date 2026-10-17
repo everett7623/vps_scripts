@@ -370,4 +370,69 @@ VPS_ZONEINFO_DIR="${TZ_ZONEINFO}" \
 [ -e "${TZ_LOCAL}" ] || fail "localtime target missing"
 ls -1d "${TZ_BACKUP}"/backup_* >/dev/null 2>&1 || fail "timezone backup was not created"
 
+# --- update_system real path (apt stubs; no host reboot) ---
+UPDATE_SCRIPT="${REPO_ROOT}/scripts/system_tools/update_system.sh"
+UPD_ROOT="${TMP_ROOT}/update"
+UPD_BACKUP="${UPD_ROOT}/backups"
+UPD_LOGS="${UPD_ROOT}/logs"
+UPD_REBOOT="${UPD_ROOT}/reboot-required"
+UPD_CACHE="${UPD_ROOT}/pkgcache.bin"
+mkdir -p "${UPD_BACKUP}" "${UPD_LOGS}"
+: > "${UPD_REBOOT}"
+: > "${UPD_CACHE}"
+write_stub apt 'case "$*" in *list*--upgradable*|*"list --upgradable"*) printf "vim/stable 2.0 [upgradable from: 1.0]\n"; exit 0 ;; esac; exit 0'
+write_stub apt-get 'exit 0'
+# Forward "env VAR=value cmd ..." to the stubbed command so call logs stay on apt-get.
+write_stub env '
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        [A-Za-z_]*=*) shift ;;
+        *) exec "$@" ;;
+    esac
+done
+exit 0
+'
+write_stub dpkg 'case "$*" in *--get-selections*) printf "vim\tinstall\n"; exit 0 ;; esac; exit 0'
+write_stub ping 'exit 0'
+write_stub curl 'exit 0'
+write_stub reboot 'echo "reboot $*" >> "'"${CALL_LOG}"'"; exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SKIP_ROOT_CHECK=1 \
+VPS_SKIP_NETWORK_CHECK=1 \
+VPS_OS_TYPE=debian \
+VPS_LOG_DIR="${UPD_LOGS}" \
+VPS_UPDATE_BACKUP_DIR="${UPD_BACKUP}" \
+VPS_REBOOT_REQUIRED_FILE="${UPD_REBOOT}" \
+VPS_APT_CACHE_FILE="${UPD_CACHE}" \
+    bash "${UPDATE_SCRIPT}" --auto </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "update_system --auto failed"
+ls -1d "${UPD_BACKUP}"/backup_* >/dev/null 2>&1 || fail "update_system backup was not created"
+ls -1 "${UPD_BACKUP}"/backup_*/packages.list >/dev/null 2>&1 || fail "update_system packages.list missing"
+expect_call '^apt-get .* upgrade -y$'
+expect_call '^apt-get autoremove -y$'
+grep -Fq '自动确认模式不会自动重启' "${OUTPUT}" \
+    || fail "update_system --auto should not reboot without --reboot"
+if grep -Eq '^reboot ' "${CALL_LOG}"; then
+    fail "update_system --auto invoked reboot"
+fi
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SKIP_ROOT_CHECK=1 \
+VPS_SKIP_NETWORK_CHECK=1 \
+VPS_OS_TYPE=debian \
+VPS_LOG_DIR="${UPD_LOGS}" \
+VPS_UPDATE_BACKUP_DIR="${UPD_BACKUP}" \
+VPS_REBOOT_REQUIRED_FILE="${UPD_REBOOT}" \
+VPS_APT_CACHE_FILE="${UPD_CACHE}" \
+    bash "${UPDATE_SCRIPT}" --auto --reboot </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "update_system --auto --reboot failed"
+grep -Fq '跳过实际 reboot' "${OUTPUT}" \
+    || fail "update_system --reboot under test hooks should skip reboot"
+if grep -Eq '^reboot ' "${CALL_LOG}"; then
+    fail "update_system --reboot under test hooks still called reboot"
+fi
+
 echo "Mocked pkg/systemd real-path checks are valid."

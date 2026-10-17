@@ -138,4 +138,14 @@ grep -Fq 'ruby/www.ruby-lang.org/master/_data/releases.yml' \
     "${REPO_ROOT}/scripts/service_install/ruby.sh"
 grep -Fq 'Ruby 源码归档 SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/ruby.sh"
 
+# Oracle JDK 17 / GraalVM community download URLs stay on live endpoints.
+JAVA_SCRIPT="${REPO_ROOT}/scripts/service_install/java.sh"
+grep -Fq 'java/17/archive/jdk-17.0.12_linux-' "${JAVA_SCRIPT}"
+grep -Fq 'graalvm_jdk_tag="17.0.9"' "${JAVA_SCRIPT}"
+grep -Fq 'graalvm_jdk_tag="21.0.2"' "${JAVA_SCRIPT}"
+if grep -Fq 'java/17/latest/jdk-17_linux-' "${JAVA_SCRIPT}"; then
+    echo "Java installer still uses retired Oracle JDK 17 latest URL." >&2
+    exit 1
+fi
+
 echo "Upgrade hardening checks are valid."

@@ -279,8 +279,9 @@ install_oracle_jdk() {
             JDK_FOLDER="jdk-11.0.21"
             ;;
         17)
-            JDK_URL="https://download.oracle.com/java/17/latest/jdk-17_linux-${ARCH_TYPE}_bin.tar.gz"
-            JDK_FOLDER="jdk-17"
+            # Oracle retired /java/17/latest/; use the current archive build.
+            JDK_URL="https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-${ARCH_TYPE}_bin.tar.gz"
+            JDK_FOLDER="jdk-17.0.12"
             ;;
         21)
             JDK_URL="https://download.oracle.com/java/21/latest/jdk-21_linux-${ARCH_TYPE}_bin.tar.gz"
@@ -308,7 +309,7 @@ install_oracle_jdk() {
         error_exit "Oracle JDK 下载文件为空"
     fi
 
-    # Oracle 仅为 /java/<ver>/latest/ 公开发布 .sha256；8/11 的 OTN 归档无公开摘要
+    # Oracle publishes .sha256 for /java/<ver>/latest/ and /java/17/archive/; OTN 8/11 do not.
     case "$JAVA_VERSION" in
         17|21)
             if ! verify_archive_checksum sha256 "${JDK_URL}.sha256" "$archive_file"; then
@@ -347,21 +348,21 @@ install_oracle_jdk() {
 install_graalvm() {
     log "${CYAN}安装 GraalVM ${JAVA_VERSION}...${NC}"
 
-    # GraalVM 版本映射
+    # Pin to a published jdk-* tag that still hosts community builds + .sha256.
+    local graalvm_jdk_tag=""
     case $JAVA_VERSION in
         17)
-            GRAALVM_VERSION="23.0.3"
+            graalvm_jdk_tag="17.0.9"
             ;;
         21)
-            GRAALVM_VERSION="23.1.2"
+            graalvm_jdk_tag="21.0.2"
             ;;
         *)
             error_exit "GraalVM 仅支持 Java 17 和 21"
             ;;
     esac
 
-    # 下载URL
-    GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JAVA_VERSION}.0.2/graalvm-community-jdk-${JAVA_VERSION}.0.2_linux-${ARCH_TYPE}_bin.tar.gz"
+    GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${graalvm_jdk_tag}/graalvm-community-jdk-${graalvm_jdk_tag}_linux-${ARCH_TYPE}_bin.tar.gz"
 
     local work_dir=""
     local archive_file=""

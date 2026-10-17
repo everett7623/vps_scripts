@@ -4,6 +4,15 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.13 - 2026-10-17
+
+### Added
+- Mocked real-path coverage for `update_system.sh --auto` / `--reboot` via `VPS_UPDATE_BACKUP_DIR`, `VPS_REBOOT_REQUIRED_FILE`, `VPS_APT_CACHE_FILE`, and `VPS_SKIP_NETWORK_CHECK`; reboot is skipped under test hooks.
+
+### Fixed
+- Oracle JDK 17 downloads use `https://download.oracle.com/java/17/archive/jdk-17.0.12_...` (the `/latest/` path returned 404).
+- GraalVM community installs pin to published tags `jdk-17.0.9` and `jdk-21.0.2` instead of the broken `jdk-${version}.0.2` template.
+
 ## 1.1.12 - 2026-10-17
 
 ### Added

@@ -2,7 +2,7 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.12",
+    "version": "1.1.13",
     "release_date": "2026-10-17",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Ruby source SHA-256 via releases.yml (default 3.3.12); mocked hostname/timezone real paths; VPS_HOSTNAME_* and VPS_TIMEZONE_* overrides."
+    "message": "Mocked update_system real paths; fix Oracle JDK 17 archive URL and GraalVM jdk-17.0.9/21.0.2 tags; VPS_UPDATE_* / reboot-required overrides."
   },
   "compatibility": {
     "min_bash_version": "4.0",

@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.12`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.13`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.12` is a backward-compatible patch release that verifies Ruby source tarballs against the official `releases.yml` SHA-256 digests (default 3.3.12), and adds mocked real-path coverage for `change_hostname.sh` and `set_timezone.sh` via `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides (applied after config source so they are not clobbered by `BACKUP_DIR`). Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.13` is a backward-compatible patch release that adds mocked real-path coverage for `update_system.sh` (`VPS_UPDATE_BACKUP_DIR`, `VPS_REBOOT_REQUIRED_FILE`, `VPS_APT_CACHE_FILE`, `VPS_SKIP_NETWORK_CHECK`), moves Oracle JDK 17 downloads to the current archive URL with `.sha256`, and pins GraalVM community builds to live `jdk-17.0.9` / `jdk-21.0.2` release tags. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

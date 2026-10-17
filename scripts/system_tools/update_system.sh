@@ -12,7 +12,6 @@ PROJECT_ROOT=$(dirname "$(dirname "$SCRIPT_DIR")")
 
 LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="${LOG_DIR}/system_update.log"
-BACKUP_DIR="/var/backups/system_update"
 UPDATE_CACHE_AGE=3600
 
 AUTO_CONFIRM=false
@@ -49,9 +48,18 @@ else
     print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
     print_key_value() { printf "%b%-14s%b %s\n" "${CYAN}" "${1}:" "${NC}" "${2:-}"; }
     print_runtime_context() { print_key_value "脚本" "$1"; print_key_value "模式" "${2:-交互模式}"; [ -n "${3:-}" ] && print_key_value "日志" "$3"; echo ""; }
-    check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
+    check_root() {
+        [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] && return 0
+        [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }
+        return 0
+    }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
 fi
+
+# Apply after config source: vps_scripts.conf also defines BACKUP_DIR.
+BACKUP_DIR="${VPS_UPDATE_BACKUP_DIR:-/var/backups/system_update}"
+REBOOT_REQUIRED_FILE="${VPS_REBOOT_REQUIRED_FILE:-/var/run/reboot-required}"
+APT_CACHE_FILE="${VPS_APT_CACHE_FILE:-/var/cache/apt/pkgcache.bin}"
 
 log() {
     [ "${DRY_RUN}" = true ] && return 0
@@ -67,7 +75,11 @@ run_logged_command() {
 }
 
 detect_system() {
-    OS_TYPE=$(get_os_release)
+    if [ -n "${VPS_OS_TYPE:-}" ]; then
+        OS_TYPE="${VPS_OS_TYPE}"
+    else
+        OS_TYPE=$(get_os_release)
+    fi
 
     case "${OS_TYPE}" in
         ubuntu|debian|kali)
@@ -128,6 +140,12 @@ EOF
 }
 
 check_network() {
+    # VPS_SKIP_NETWORK_CHECK=1 is for mocked real-path tests.
+    if [ "${VPS_SKIP_NETWORK_CHECK:-0}" = 1 ]; then
+        print_info "已跳过网络连接检查（测试钩子）。"
+        return 0
+    fi
+
     print_info "正在检查网络连接..."
 
     if command -v ping >/dev/null 2>&1; then
@@ -189,8 +207,8 @@ refresh_cache() {
 
     print_info "正在刷新软件包元数据..."
 
-    if [ "${PKG_MANAGER}" = "apt" ] && [ -f /var/cache/apt/pkgcache.bin ]; then
-        last_update=$(stat -c %Y /var/cache/apt/pkgcache.bin 2>/dev/null || echo 0)
+    if [ "${PKG_MANAGER}" = "apt" ] && [ -f "${APT_CACHE_FILE}" ]; then
+        last_update=$(stat -c %Y "${APT_CACHE_FILE}" 2>/dev/null || echo 0)
         now=$(date +%s)
         if [ $((now - last_update)) -lt "${UPDATE_CACHE_AGE}" ]; then
             print_info "apt 元数据仍然较新，跳过缓存刷新。"
@@ -318,7 +336,7 @@ cleanup_system() {
 }
 
 check_reboot_needed() {
-    if [ -f /var/run/reboot-required ]; then
+    if [ -f "${REBOOT_REQUIRED_FILE}" ]; then
         REBOOT_REQUIRED=true
     elif [[ "${PKG_MANAGER}" =~ ^(yum|dnf)$ ]] && command -v needs-restarting >/dev/null 2>&1; then
         if ! needs-restarting -r >/dev/null 2>&1; then
@@ -335,6 +353,11 @@ check_reboot_needed() {
 
     if [ "${REBOOT_AFTER_UPDATE}" = "true" ]; then
         print_warn "已指定 --reboot，系统将在 5 秒后重启..."
+        # Never reboot under mocked path overrides / root-check bypass.
+        if [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] || [ -n "${VPS_UPDATE_BACKUP_DIR:-}" ]; then
+            print_warn "测试钩子已启用：跳过实际 reboot。"
+            return 0
+        fi
         sleep 5
         reboot
     elif [ "${AUTO_CONFIRM}" = "true" ]; then
@@ -343,6 +366,10 @@ check_reboot_needed() {
         local answer=""
         read -r -p "是否立即重启？[y/N]: " answer || answer=""
         if [[ "${answer}" =~ ^[Yy]$ ]]; then
+            if [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] || [ -n "${VPS_UPDATE_BACKUP_DIR:-}" ]; then
+                print_warn "测试钩子已启用：跳过实际 reboot。"
+                return 0
+            fi
             reboot
         fi
     fi

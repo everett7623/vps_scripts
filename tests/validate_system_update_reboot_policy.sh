@@ -14,6 +14,9 @@ grep -Fq -- '--reboot) REBOOT_AFTER_UPDATE=true' "${SCRIPT}"
 grep -Fq '[ "${REBOOT_AFTER_UPDATE}" = "true" ]' "${SCRIPT}"
 grep -Fq '自动确认模式不会自动重启；请使用 --reboot 明确请求重启。' "${SCRIPT}"
 grep -Fq 'Reboot Requested: ${REBOOT_AFTER_UPDATE}' "${SCRIPT}"
+grep -Fq 'VPS_UPDATE_BACKUP_DIR' "${SCRIPT}"
+grep -Fq 'VPS_REBOOT_REQUIRED_FILE' "${SCRIPT}"
+grep -Fq '跳过实际 reboot' "${SCRIPT}"
 
 if grep -Fq 'if [ "${AUTO_CONFIRM}" = "true" ]; then' "${SCRIPT}" && \
    grep -Fq '已启用自动模式，系统将在 5 秒后重启...' "${SCRIPT}"; then

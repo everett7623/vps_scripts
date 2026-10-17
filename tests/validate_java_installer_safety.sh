@@ -47,6 +47,18 @@ grep -Fq 'verify_archive_checksum sha512 "${maven_url}.sha512" "$archive_file"' 
 grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256" "$archive_file"' "${SCRIPT}"
 grep -Fq 'verify_archive_checksum sha256 "${JDK_URL}.sha256" "$archive_file"' "${SCRIPT}"
 grep -Fq 'verify_archive_checksum sha256 "${GRAALVM_URL}.sha256" "$archive_file"' "${SCRIPT}"
+# Oracle 17 latest was retired; pin archive build. GraalVM uses published jdk-* tags.
+grep -Fq 'java/17/archive/jdk-17.0.12_linux-' "${SCRIPT}"
+grep -Fq 'graalvm_jdk_tag="17.0.9"' "${SCRIPT}"
+grep -Fq 'graalvm_jdk_tag="21.0.2"' "${SCRIPT}"
+if grep -Fq 'java/17/latest/jdk-17_linux-' "${SCRIPT}"; then
+    echo "Java installer still uses retired Oracle JDK 17 latest URL." >&2
+    exit 1
+fi
+if grep -Fq 'jdk-${JAVA_VERSION}.0.2/graalvm-community' "${SCRIPT}"; then
+    echo "Java installer still uses the broken GraalVM .0.2 URL template." >&2
+    exit 1
+fi
 if grep -Fq -- '--no-check-certificate' "${SCRIPT}"; then
     echo "Java installer disables TLS certificate verification." >&2
     exit 1
