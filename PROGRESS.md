@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.19 finishes migrating first-party apt installers (Nginx, MariaDB, PostgreSQL) to `signed-by` keyrings with no remaining `apt-key add`. 1.1.18 covered Jenkins/Kubernetes. The LDNMP installer stays a single combined installer.
+Version 1.1.20 hardens BT Panel cleanup with `VPS_BT_*` path overrides, local-only vendor uninstall, and mocked real-path coverage (plus 1Panel clean mocks). Catalog third-party URLs were re-checked and remain live. The LDNMP installer stays a single combined installer.
 
-Next work: periodic catalog URL re-check each release; remaining niche edges (BT cleanup vendor uninstall).
+Next work: periodic catalog URL re-check each release; remaining niche edges (kernel rollback stays interactive-only).
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: periodic catalog URL re-check each release; remaining niche edges (BT
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrappe
+- BT cleanup `VPS_BT_*` overrides, local-only vendor uninstall, bt/1panel mocked coverage; catalog URL re-check (1.1.20)
 - Nginx/MariaDB/PostgreSQL apt signed-by; last first-party apt-key add removed (1.1.19)
 - Jenkins/Kubernetes apt signed-by keyrings; k8s pkgs.k8s.io migration (1.1.18)
 - Catalog URL pins + liveness re-check; Oracle 8/11 OTN refuse; CRI-O 1.29+ guard; Caddy/cloudflared ELF checks (1.1.17)

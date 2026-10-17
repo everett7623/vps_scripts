@@ -23,6 +23,10 @@ VAR_LOG_MYSQL="${VPS_VAR_LOG_MYSQL:-/var/log/mysql}"
 SYSTEMD_DIR="${VPS_SYSTEMD_DIR:-/etc/systemd/system}"
 PANEL_1PANEL_DIR="${VPS_1PANEL_DIR:-/opt/1panel}"
 USR_SHARE_NGINX="${VPS_USR_SHARE_NGINX:-/usr/share/nginx}"
+BT_ROOT="${VPS_BT_ROOT:-/www}"
+BT_PANEL_DIR="${VPS_BT_PANEL_DIR:-${BT_ROOT}/server/panel}"
+BT_WWWROOT_DEFAULT="${VPS_BT_WWWROOT_DEFAULT:-${BT_ROOT}/wwwroot/default}"
+BT_SERVER_DIR="${BT_ROOT}/server"
 DRY_RUN=false
 AUTO_YES=false
 PURGE_DATA=false
@@ -60,6 +64,7 @@ show_help() {
   --help               显示帮助
 
 备份目录默认位于 /var/backups/vps_scripts，可用 VPS_BACKUP_ROOT 覆盖。
+宝塔路径可用 VPS_BT_ROOT / VPS_BT_PANEL_DIR / VPS_BT_WWWROOT_DEFAULT 覆盖（测试用）。
 EOF
 }
 
@@ -136,6 +141,8 @@ is_protected_path() {
     [ "${path}" = "${ETC_ROOT%/}" ] && return 0
     [ "${path}" = "${VAR_LIB_ROOT%/}" ] && return 0
     [ "${path}" = "${SYSTEMD_DIR%/}" ] && return 0
+    [ "${path}" = "${BT_ROOT%/}" ] && return 0
+    [ "${path}" = "${BT_SERVER_DIR%/}" ] && return 0
     return 1
 }
 
@@ -183,19 +190,42 @@ purge_data_dir() {
     remove_path "${dir}"
 }
 
+# Run a local BT vendor uninstall helper if present under the panel dir.
+# Never downloads remote uninstall scripts (download.bt.cn/bt-uninstall.sh, etc.).
+run_bt_vendor_uninstall() {
+    local panel_dir="$1"
+    local candidate=""
+    for candidate in \
+        "${panel_dir}/install.sh" \
+        "${panel_dir}/script/uninstall.sh"
+    do
+        case "${candidate}" in
+            "${panel_dir}"/*) ;;
+            *) continue ;;
+        esac
+        if [ -f "${candidate}" ]; then
+            run_optional bash "${candidate}" uninstall
+            return 0
+        fi
+    done
+    return 0
+}
+
 clean_bt() {
+    local panel_dir="${BT_PANEL_DIR}"
+    local server_dir="${BT_SERVER_DIR}"
     print_info "清理宝塔面板..."
     stop_services bt
-    backup_path /www/server/panel bt_panel
-    if [ -f /www/server/panel/install.sh ]; then
-        run_optional bash /www/server/panel/install.sh uninstall
-    fi
-    remove_path /www/server/panel
-    remove_path /www/wwwroot/default
-    remove_path /www/server/nginx
-    remove_path /www/server/mysql
-    remove_path /www/server/php
-    remove_path /www/server/apache
+    backup_path "${panel_dir}" bt_panel
+    run_bt_vendor_uninstall "${panel_dir}"
+    remove_path "${panel_dir}"
+    remove_path "${BT_WWWROOT_DEFAULT}"
+    remove_path "${server_dir}/nginx"
+    remove_path "${server_dir}/mysql"
+    remove_path "${server_dir}/php"
+    remove_path "${server_dir}/apache"
+    remove_path "${ETC_ROOT}/init.d/bt"
+    remove_path "${SYSTEMD_DIR}/bt.service"
     print_ok "宝塔面板清理完成"
 }
 

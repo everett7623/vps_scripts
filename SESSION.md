@@ -30,6 +30,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.17 | #28 | catalog pins; Oracle 8/11 refuse; CRI-O/ELF guards |
 | 1.1.18 | #30 | jenkins/k8s apt signed-by; pkgs.k8s.io migration |
 | 1.1.19 | #32 | nginx/mariadb/postgresql signed-by; last apt-key gone |
+| 1.1.20 | (pending) | BT cleanup VPS_BT_* + local vendor uninstall; catalog re-check |
 
 ## Decisions
 

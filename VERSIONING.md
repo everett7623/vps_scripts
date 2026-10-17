@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.19`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.20`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.19` is a backward-compatible patch release that finishes migrating first-party apt installers (Nginx, MariaDB, PostgreSQL) off deprecated `apt-key add` onto `signed-by` keyrings. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.20` is a backward-compatible patch release that hardens BT Panel cleanup with `VPS_BT_*` path overrides, local-only vendor uninstall helpers, and mocked real-path coverage (plus a catalog URL liveness re-check). Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
