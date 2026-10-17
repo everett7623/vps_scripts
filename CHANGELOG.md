@@ -4,6 +4,18 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.17 - 2026-10-17
+
+### Added
+- Caddy and cloudflared launcher installs download to a temp file and require ELF magic (`7f454c46`) before install.
+- Kubernetes CRI-O path refuses OpenSUSE kubic streams for 1.29+ (404) and points users at containerd or 1.28.x.
+
+### Changed
+- Catalog: pin `bench.sh` / `kejilion.sh` to raw GitHub URLs to avoid UA-dependent HTML landers; third-party catalog URL liveness re-check (all probed entries still reachable).
+
+### Fixed
+- Oracle JDK `--type oracle --version 8|11` no longer follows OTN soft-404 login HTML; refuse with guidance to `--type openjdk`.
+
 ## 1.1.16 - 2026-10-17
 
 ### Added

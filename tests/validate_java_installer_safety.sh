@@ -48,11 +48,18 @@ grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256" "$archive_file"'
 grep -Fq 'verify_archive_checksum sha256 "${JDK_URL}.sha256" "$archive_file"' "${SCRIPT}"
 grep -Fq 'verify_archive_checksum sha256 "${GRAALVM_URL}.sha256" "$archive_file"' "${SCRIPT}"
 # Oracle 17 latest was retired; pin archive build. GraalVM uses published jdk-* tags.
+# Oracle 8/11 OTN soft-404s to login HTML — refuse and point users at openjdk.
 grep -Fq 'java/17/archive/jdk-17.0.12_linux-' "${SCRIPT}"
 grep -Fq 'graalvm_jdk_tag="17.0.9"' "${SCRIPT}"
 grep -Fq 'graalvm_jdk_tag="21.0.2"' "${SCRIPT}"
+grep -Fq 'Oracle JDK ${JAVA_VERSION} 已无法匿名下载' "${SCRIPT}"
+grep -Fq -- '--type openjdk --version ${JAVA_VERSION}' "${SCRIPT}"
 if grep -Fq 'java/17/latest/jdk-17_linux-' "${SCRIPT}"; then
     echo "Java installer still uses retired Oracle JDK 17 latest URL." >&2
+    exit 1
+fi
+if grep -Eq 'download\.oracle\.com/otn/java/jdk/' "${SCRIPT}"; then
+    echo "Java installer still uses Oracle OTN JDK 8/11 URLs that soft-404 to login HTML." >&2
     exit 1
 fi
 if grep -Fq 'jdk-${JAVA_VERSION}.0.2/graalvm-community' "${SCRIPT}"; then

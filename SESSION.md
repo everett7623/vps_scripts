@@ -27,6 +27,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.14 | #22 | rustup-init SHA-256; seedloc→docs; catalog URL re-check |
 | 1.1.15 | #24 | Nezha/FRP path mocks; Jenkins WAR SHA-256 |
 | 1.1.16 | #26 | uninstall rollback/clear/clean mocks; swap fstab fix |
+| 1.1.17 | (pending) | catalog pins; Oracle 8/11 refuse; CRI-O/ELF guards |
 
 ## Decisions
 
@@ -42,4 +43,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Keep catalog URL liveness on each release; extend niche mutator mocks only where residual risk remains.
+Migrate remaining apt-key paths (k8s/jenkins); keep catalog URL liveness on each release.

@@ -452,6 +452,14 @@ install_crio() {
     
     # 确定CRI-O版本（与K8s版本匹配）
     CRIO_VERSION=$(echo $K8S_VERSION | cut -d. -f1,2)
+
+    # OpenSUSE kubic cri-o streams for 1.29+ return 404; keep cri-o on <=1.28.
+    local crio_minor=""
+    crio_minor=$(echo "${CRIO_VERSION}" | cut -d. -f2)
+    if [[ ! ${crio_minor} =~ ^[0-9]+$ ]] || [ "${crio_minor}" -ge 29 ]; then
+        log "${RED}错误: CRI-O OpenSUSE 仓库已不提供 ${CRIO_VERSION}（kubic 路径 404）。请改用 --container-runtime containerd，或将 --version 降到 1.28.x${NC}"
+        exit 1
+    fi
     
     case $OS in
         ubuntu|debian)

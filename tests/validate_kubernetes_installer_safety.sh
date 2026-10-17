@@ -15,6 +15,8 @@ bash -n "${SCRIPT}"
 grep -Fq 'validate_inputs' "${SCRIPT}"
 grep -Fq 'read -r -a join_args <<< "${JOIN_CMD}"' "${SCRIPT}"
 grep -Fq 'if "${join_args[@]}"; then' "${SCRIPT}"
+grep -Fq 'crio_minor' "${SCRIPT}"
+grep -Fq 'kubic 路径 404' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2
