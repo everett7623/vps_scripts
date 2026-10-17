@@ -2,7 +2,7 @@
 
 ## Date
 
-2026-10-10, continued 2026-10-14
+2026-10-10, continued 2026-10-17
 
 ## Scope
 
@@ -21,6 +21,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.8 | #11 | Mocked pkg/systemd real paths for bbr/fail2ban; Go/Node SHA-256 verification |
 | 1.1.9 | #12 | Non-interactive apt (ported from local working copy); Java toolchain checksums; TLS/HTTP guard; swap `--size/--yes/--remove`; scoped install_deps repos; swap/install_deps mocks |
 | 1.1.10 | #14 | Redis redis-hashes SHA-256; AMH / BT beta HTTPS; optimize/clean mocked real paths; VPS_APT_* overrides |
+| 1.1.11 | (pending) | aaPanel TLS fix; Jenkins/PostgreSQL/K8s HTTPS; tighter upgrade-hardening |
 
 ## Decisions
 
@@ -36,4 +37,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Re-run third-party catalog URL/liveness check; grow mocked coverage for remaining mutators; confirm Oracle JDK 17/21 and GraalVM `.sha256` URLs on a real VPS.
+Mocked real paths for hostname/timezone/update_system; Ruby source checksum; confirm Oracle JDK 17/21 and GraalVM `.sha256` URLs on a real VPS.

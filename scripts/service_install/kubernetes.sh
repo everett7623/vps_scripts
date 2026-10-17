@@ -457,7 +457,7 @@ install_crio() {
         ubuntu|debian)
             # 添加CRI-O仓库
             echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$(lsb_release -rs)/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-            echo "deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$CRIO_VERSION/xUbuntu_$(lsb_release -rs)/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$CRIO_VERSION.list
+            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$CRIO_VERSION/xUbuntu_$(lsb_release -rs)/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$CRIO_VERSION.list
             
             curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$(lsb_release -rs)/Release.key | apt-key add -
             curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$CRIO_VERSION/xUbuntu_$(lsb_release -rs)/Release.key | apt-key add -
@@ -841,7 +841,7 @@ install_helm() {
     helm repo add bitnami https://charts.bitnami.com/bitnami
     
     if [[ "$USE_CHINA_MIRROR" = true ]]; then
-        helm repo add azure http://mirror.azure.cn/kubernetes/charts/
+        helm repo add azure https://mirror.azure.cn/kubernetes/charts/
     fi
     
     helm repo update

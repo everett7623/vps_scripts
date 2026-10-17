@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.10 verifies Redis source tarballs against official `redis-hashes` SHA-256 digests, switches AMH and BT Panel beta installers to HTTPS, and adds mocked real-path coverage for `optimize_system.sh` and `clean_system.sh`. 1.1.9 made apt non-interactive, verified the Java toolchain, and scoped `install_deps` third-party repos. The LDNMP installer stays a single combined installer.
+Version 1.1.11 removes the aaPanel TLS bypass, moves Jenkins WAR / PostgreSQL apt / Kubernetes CRI-O and Azure Helm mirrors to HTTPS, and tightens upgrade-hardening guards. 1.1.10 added Redis `redis-hashes` verification and optimize/clean mocks. The LDNMP installer stays a single combined installer.
 
-Next work: re-run the third-party catalog URL/liveness check; grow mocked coverage for remaining mutators; confirm Oracle/GraalVM checksum URLs on a real VPS.
+Next work: grow mocked coverage for hostname/timezone/update mutators; Ruby source checksum; confirm Oracle/GraalVM checksum URLs on a real VPS.
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: re-run the third-party catalog URL/liveness check; grow mocked covera
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- aaPanel TLS bypass removed; Jenkins / PostgreSQL / K8s CRI-O / Azure Helm HTTPS; tighter TLS/HTTP hardening guards (1.1.11)
 - Redis `redis-hashes` SHA-256; AMH / BT beta HTTPS; optimize/clean mocked real paths; `VPS_APT_*` install_deps overrides (1.1.10)
 - Non-interactive apt everywhere; Java toolchain checksums; TLS/HTTP download guard; swap `--size/--yes/--remove`; scoped `install_deps` repositories; swap and install_deps mocked real paths (1.1.9)
 - Added mocked pkg/systemd real-path tests for BBR/Fail2ban; Go `.sha256` and Node.js `SHASUMS256.txt` verification (1.1.8)
@@ -76,15 +77,15 @@ Next work: re-run the third-party catalog URL/liveness check; grow mocked covera
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.10
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.11
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
-- Grow mocked real-path coverage for remaining first-party mutators
-- Confirm Oracle JDK / GraalVM checksum URLs resolve on a real VPS
+- Grow mocked real-path coverage for hostname / timezone / update_system
+- Ruby source SHA-256; confirm Oracle JDK / GraalVM checksum URLs on a real VPS
 
 ## Success Criteria For Next Release
 

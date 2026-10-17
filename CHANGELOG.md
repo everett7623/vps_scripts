@@ -4,6 +4,17 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.11 - 2026-10-17
+
+### Changed
+- aaPanel installer download uses `curl -fsSL` (no TLS bypass).
+- Jenkins WAR installs download from `https://get.jenkins.io/` (HTTPS CDN); China mirror unchanged.
+- PostgreSQL apt repository uses HTTPS and prefers `signed-by=` keyrings over deprecated `apt-key` (`VPS_APT_KEYRINGS_DIR` / `VPS_APT_PGDG_LIST` overrides for tests).
+- Kubernetes CRI-O apt line and Azure Helm China mirror use HTTPS.
+
+### Fixed
+- Upgrade-hardening test now catches `curl -k` when combined with other short flags (e.g. `-ksSL`) and plain-HTTP `.war`/`.rpm`/`.deb` payload downloads.
+
 ## 1.1.10 - 2026-10-14
 
 ### Added

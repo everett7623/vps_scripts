@@ -83,8 +83,11 @@ if grep -Fq -- '--no-check-certificate' "${BANDWIDTH_SCRIPT}"; then
 fi
 
 # No first-party script may disable TLS verification for downloads.
+# Match curl -k even when combined with other short flags (e.g. curl -ksSL).
 tls_bypass=$(grep -rnE --include='*.sh' \
-    -e '(--no-check-certificate|curl[^#]*[[:space:]](-k|--insecure)([[:space:]]|$))' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" || true)
+    -e '--no-check-certificate' \
+    -e 'curl[^\n]*[[:space:]](-[A-Za-z0-9]*k[A-Za-z0-9]*|--insecure)([[:space:]=]|$)' \
+    "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" || true)
 if [ -n "${tls_bypass}" ]; then
     echo "First-party scripts disable TLS certificate verification:" >&2
     echo "${tls_bypass}" >&2
@@ -92,8 +95,8 @@ if [ -n "${tls_bypass}" ]; then
 fi
 
 # Executable payloads (installers and source archives) must not be fetched over
-# plain HTTP.
-plain_http=$(grep -rnE 'http://[^"[:space:]]+\.(sh|tar\.gz|tgz|zip)' \
+# plain HTTP. Include .war (Jenkins) and common package suffixes.
+plain_http=$(grep -rnE 'http://[^"[:space:]]+\.(sh|tar\.gz|tgz|zip|war|rpm|deb)' \
     --include='*.sh' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" || true)
 if [ -n "${plain_http}" ]; then
     echo "Executable payloads downloaded over plain HTTP:" >&2
@@ -112,5 +115,22 @@ if grep -Eq 'http://(dl\.amh\.sh|io\.bt\.sy)/' \
     echo "AMH/BT panel installers still use plain HTTP download URLs." >&2
     exit 1
 fi
+
+# aaPanel must not bypass TLS; Jenkins WAR and PostgreSQL apt use HTTPS.
+grep -Fq 'curl -fsSL "$INSTALL_SCRIPT"' "${REPO_ROOT}/scripts/service_install/aapanel.sh"
+if grep -Eq 'curl[[:space:]]+-[A-Za-z0-9]*k' "${REPO_ROOT}/scripts/service_install/aapanel.sh"; then
+    echo "aaPanel installer still disables TLS verification." >&2
+    exit 1
+fi
+grep -Fq 'https://get.jenkins.io/war-stable/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
+if grep -Eq 'http://mirrors\.jenkins\.io/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"; then
+    echo "Jenkins installer still downloads WAR over plain HTTP." >&2
+    exit 1
+fi
+grep -Fq 'https://apt.postgresql.org/pub/repos/apt' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
+grep -Fq 'signed-by=' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
+grep -Fq 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:' \
+    "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'https://mirror.azure.cn/kubernetes/charts/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 
 echo "Upgrade hardening checks are valid."

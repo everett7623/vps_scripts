@@ -167,9 +167,17 @@
 - [x] Mocked real-path tests for `optimize_system` and `clean_system`; `VPS_OPTIMIZE_*` / `VPS_APT_*` overrides
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.10`
 
+## 1.1.11 release
+
+- [x] Remove aaPanel `curl -k`; Jenkins WAR via `get.jenkins.io` HTTPS
+- [x] PostgreSQL apt `signed-by` + HTTPS; Kubernetes CRI-O / Azure Helm HTTPS
+- [x] Upgrade-hardening catches combined `-k` and `.war` plain HTTP
+- [x] Catalog URL liveness spot-check (Coolify, Dokploy, 3x-ui, S-UI, Hysteria2, Xray, Beszel, etc. OK)
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.11`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Redis checksum + AMH/BT HTTPS + optimize/clean mocks done in 1.1.10; next: catalog URL liveness re-check and more mocked mutator paths
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); TLS/HTTP panel installer hardening done in 1.1.11; next: hostname/timezone/update mocks, Ruby checksum
 - [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
