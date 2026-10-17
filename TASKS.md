@@ -181,9 +181,15 @@
 - [x] Mocked real-path tests for `change_hostname` and `set_timezone`; `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.12`
 
+## 1.1.13 release
+
+- [x] Mocked real-path tests for `update_system` (`VPS_UPDATE_*`, reboot-required override, skip-network hook)
+- [x] Fix Oracle JDK 17 archive URL and GraalVM `jdk-17.0.9` / `jdk-21.0.2` tags
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.13`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Ruby checksum + hostname/timezone mocks done in 1.1.12; next: update_system mocks
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); update_system mocks + Oracle/GraalVM URL fixes done in 1.1.13; next: catalog liveness / Rust checksums
 - [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

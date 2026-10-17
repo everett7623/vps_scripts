@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.12-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.13-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -353,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.13`：`update_system` mocked 真实路径与重启钩子；Oracle JDK 17 改用 archive URL；GraalVM 固定到仍可用的 `jdk-17.0.9` / `jdk-21.0.2` 标签
 - 发布 `1.1.12`：Ruby 源码按官方 `releases.yml` SHA-256 校验（默认 3.3.12）；`change_hostname` / `set_timezone` 增加 mocked 真实路径与 `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` 覆盖
 - 发布 `1.1.11`：移除 aaPanel `curl -k`；Jenkins WAR 改用 `get.jenkins.io` HTTPS；PostgreSQL apt 使用 `signed-by` + HTTPS；Kubernetes CRI-O / Azure Helm 镜像改为 HTTPS；加固测试覆盖合并短选项 `-k` 与 `.war` 明文下载
 - 发布 `1.1.10`：Redis 源码按官方 `redis-hashes` SHA-256 校验（默认 7.2.16）；AMH 与宝塔测试版安装改为 HTTPS；`optimize_system` / `clean_system` 增加 mocked 真实路径覆盖；`install_deps` 支持 apt keyrings/sources 测试覆盖

@@ -201,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.12`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.13`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -229,6 +229,7 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `VPS_APT_KEYRINGS_DIR` / `VPS_APT_PGDG_LIST` | `postgresql.sh` | Redirect PostgreSQL apt keyring and `pgdg.list` paths for mocked tests |
 | `VPS_HOSTNAME_BACKUP_DIR` / `VPS_HOSTNAME_FILE` / `VPS_HOSTS_FILE` | `change_hostname.sh` | Redirect hostname/hosts/backup paths for mocked real-path tests |
 | `VPS_TIMEZONE_BACKUP_DIR` / `VPS_TIMEZONE_FILE` / `VPS_LOCALTIME_FILE` / `VPS_ZONEINFO_DIR` | `set_timezone.sh` | Redirect timezone paths for mocked real-path tests |
+| `VPS_UPDATE_BACKUP_DIR` / `VPS_REBOOT_REQUIRED_FILE` / `VPS_APT_CACHE_FILE` / `VPS_SKIP_NETWORK_CHECK` | `update_system.sh` | Redirect backup/reboot/cache paths and skip network probe for mocked tests |
 
 ### `vps.sh` menu structure
 

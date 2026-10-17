@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.12 verifies Ruby source against official `releases.yml` SHA-256 digests and adds mocked real-path coverage for hostname and timezone tools. 1.1.11 hardened panel/Jenkins/PostgreSQL/K8s TLS. The LDNMP installer stays a single combined installer.
+Version 1.1.13 adds mocked real-path coverage for `update_system.sh` and repairs broken Oracle JDK 17 / GraalVM download URLs. 1.1.12 added Ruby checksums and hostname/timezone mocks. The LDNMP installer stays a single combined installer.
 
-Next work: mocked coverage for `update_system`; confirm Oracle/GraalVM checksum URLs on a real VPS; re-run catalog URL liveness.
+Next work: re-run third-party catalog URL liveness; grow remaining mutator mocks; optional Rust toolchain checksum hardening.
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: mocked coverage for `update_system`; confirm Oracle/GraalVM checksum 
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- update_system mocked real paths; Oracle JDK 17 archive + GraalVM live tags (1.1.13)
 - Ruby `releases.yml` SHA-256; hostname/timezone mocked real paths; `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides (1.1.12)
 - aaPanel TLS bypass removed; Jenkins / PostgreSQL / K8s CRI-O / Azure Helm HTTPS; tighter TLS/HTTP hardening guards (1.1.11)
 - Redis `redis-hashes` SHA-256; AMH / BT beta HTTPS; optimize/clean mocked real paths; `VPS_APT_*` install_deps overrides (1.1.10)
@@ -78,15 +79,15 @@ Next work: mocked coverage for `update_system`; confirm Oracle/GraalVM checksum 
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.12
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.13
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
-- Grow mocked real-path coverage for `update_system`
-- Confirm Oracle JDK / GraalVM checksum URLs on a real VPS
+- Grow mocked real-path coverage for remaining first-party mutators
+- Optional Rust toolchain checksum hardening
 
 ## Success Criteria For Next Release
 
