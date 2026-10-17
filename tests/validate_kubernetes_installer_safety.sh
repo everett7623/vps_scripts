@@ -17,9 +17,23 @@ grep -Fq 'read -r -a join_args <<< "${JOIN_CMD}"' "${SCRIPT}"
 grep -Fq 'if "${join_args[@]}"; then' "${SCRIPT}"
 grep -Fq 'crio_minor' "${SCRIPT}"
 grep -Fq 'kubic 路径 404' "${SCRIPT}"
+grep -Fq 'pkgs.k8s.io/core:/stable:/v' "${SCRIPT}"
+grep -Fq 'kubernetes-new/core/stable/v' "${SCRIPT}"
+grep -Fq 'kubernetes-apt-keyring.gpg' "${SCRIPT}"
+grep -Fq 'docker-archive-keyring.gpg' "${SCRIPT}"
+grep -Fq 'libcontainers-cri-o-keyring.gpg' "${SCRIPT}"
+grep -Fq 'signed-by=%s' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2
+    exit 1
+fi
+if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
+if grep -Fq 'kubernetes-xenial' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses retired kubernetes-xenial apt repo." >&2
     exit 1
 fi
 

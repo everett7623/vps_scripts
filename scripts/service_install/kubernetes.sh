@@ -358,21 +358,48 @@ install_container_runtime() {
 # 安装Docker
 install_docker() {
     log "${CYAN}安装Docker CE...${NC}"
+    local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+    local docker_list="${VPS_APT_DOCKER_LIST:-/etc/apt/sources.list.d/docker.list}"
+    local keyring_file="${keyrings_dir}/docker-archive-keyring.gpg"
+    local key_tmp=""
+    local key_url=""
+    local repo_base=""
+    local docker_os=""
     
     # 安装依赖
     case $OS in
         ubuntu|debian)
             apt-get update
             apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-            
-            # 添加Docker仓库
+
+            docker_os="$OS"
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | apt-key add -
-                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+                key_url="https://mirrors.aliyun.com/docker-ce/linux/${docker_os}/gpg"
+                repo_base="https://mirrors.aliyun.com/docker-ce/linux/${docker_os}"
             else
-                curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-                add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+                key_url="https://download.docker.com/linux/${docker_os}/gpg"
+                repo_base="https://download.docker.com/linux/${docker_os}"
             fi
+
+            key_tmp=$(mktemp "/tmp/docker-apt-key.XXXXXX") || {
+                log "${RED}错误: 创建临时密钥文件失败${NC}"
+                exit 1
+            }
+            mkdir -p "${keyrings_dir}" "$(dirname -- "${docker_list}")"
+            if ! curl -fsSL "${key_url}" -o "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: Docker apt 密钥下载失败${NC}"
+                exit 1
+            fi
+            if ! gpg --dearmor -o "${keyring_file}" < "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: Docker apt 密钥转换失败${NC}"
+                exit 1
+            fi
+            rm -f -- "${key_tmp}"
+            printf 'deb [arch=%s signed-by=%s] %s %s stable\n' \
+                "$(dpkg --print-architecture)" "${keyring_file}" "${repo_base}" "$(lsb_release -cs)" \
+                > "${docker_list}"
             
             apt-get update
             apt-get install -y docker-ce docker-ce-cli containerd.io
@@ -463,12 +490,46 @@ install_crio() {
     
     case $OS in
         ubuntu|debian)
-            # 添加CRI-O仓库
-            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$(lsb_release -rs)/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-            echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$CRIO_VERSION/xUbuntu_$(lsb_release -rs)/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$CRIO_VERSION.list
-            
-            curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$(lsb_release -rs)/Release.key | apt-key add -
-            curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$CRIO_VERSION/xUbuntu_$(lsb_release -rs)/Release.key | apt-key add -
+            local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+            local ubuntu_ver=""
+            local stable_list=""
+            local crio_list=""
+            local stable_keyring=""
+            local crio_keyring=""
+            local key_tmp=""
+            local stable_url=""
+            local crio_url=""
+
+            apt-get update
+            apt-get install -y ca-certificates curl gnupg lsb-release
+            ubuntu_ver=$(lsb_release -rs)
+            stable_list="${VPS_APT_CRIO_STABLE_LIST:-/etc/apt/sources.list.d/devel-kubic-libcontainers-stable.list}"
+            crio_list="${VPS_APT_CRIO_LIST:-/etc/apt/sources.list.d/devel-kubic-libcontainers-cri-o.list}"
+            stable_keyring="${keyrings_dir}/libcontainers-stable-keyring.gpg"
+            crio_keyring="${keyrings_dir}/libcontainers-cri-o-keyring.gpg"
+            stable_url="https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${ubuntu_ver}"
+            crio_url="https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${CRIO_VERSION}/xUbuntu_${ubuntu_ver}"
+
+            mkdir -p "${keyrings_dir}" "$(dirname -- "${stable_list}")" "$(dirname -- "${crio_list}")"
+            key_tmp=$(mktemp "/tmp/crio-apt-key.XXXXXX") || {
+                log "${RED}错误: 创建临时密钥文件失败${NC}"
+                exit 1
+            }
+            if ! curl -fsSL "${stable_url}/Release.key" -o "${key_tmp}" || \
+               ! gpg --dearmor -o "${stable_keyring}" < "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: CRI-O stable apt 密钥配置失败${NC}"
+                exit 1
+            fi
+            if ! curl -fsSL "${crio_url}/Release.key" -o "${key_tmp}" || \
+               ! gpg --dearmor -o "${crio_keyring}" < "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: CRI-O ${CRIO_VERSION} apt 密钥配置失败${NC}"
+                exit 1
+            fi
+            rm -f -- "${key_tmp}"
+            printf 'deb [signed-by=%s] %s/ /\n' "${stable_keyring}" "${stable_url}" > "${stable_list}"
+            printf 'deb [signed-by=%s] %s/ /\n' "${crio_keyring}" "${crio_url}" > "${crio_list}"
             
             apt-get update
             apt-get install -y cri-o cri-o-runc
@@ -499,21 +560,56 @@ install_kubernetes() {
     
     case $OS in
         ubuntu|debian)
-            # 添加Kubernetes仓库
+            # pkgs.k8s.io (and Aliyun kubernetes-new) replace the retired legacy Google apt repo.
+            local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+            local k8s_list="${VPS_APT_K8S_LIST:-/etc/apt/sources.list.d/kubernetes.list}"
+            local keyring_file="${keyrings_dir}/kubernetes-apt-keyring.gpg"
+            local key_tmp=""
+            local k8s_stream=""
+            local repo_url=""
+            local key_url=""
+            local pkg_ver=""
+
+            apt-get update
+            apt-get install -y ca-certificates curl gnupg
+            k8s_stream=$(echo "${K8S_VERSION}" | cut -d. -f1,2)
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add -
-                cat > /etc/apt/sources.list.d/kubernetes.list << EOF
-deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
-EOF
+                repo_url="https://mirrors.aliyun.com/kubernetes-new/core/stable/v${k8s_stream}/deb/"
+                key_url="${repo_url}Release.key"
             else
-                curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-                cat > /etc/apt/sources.list.d/kubernetes.list << EOF
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
+                repo_url="https://pkgs.k8s.io/core:/stable:/v${k8s_stream}/deb/"
+                key_url="${repo_url}Release.key"
             fi
+
+            key_tmp=$(mktemp "/tmp/k8s-apt-key.XXXXXX") || {
+                log "${RED}错误: 创建临时密钥文件失败${NC}"
+                exit 1
+            }
+            mkdir -p "${keyrings_dir}" "$(dirname -- "${k8s_list}")"
+            if ! curl -fsSL "${key_url}" -o "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: Kubernetes apt 密钥下载失败${NC}"
+                exit 1
+            fi
+            if ! gpg --dearmor -o "${keyring_file}" < "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: Kubernetes apt 密钥转换失败${NC}"
+                exit 1
+            fi
+            rm -f -- "${key_tmp}"
+            printf 'deb [signed-by=%s] %s /\n' "${keyring_file}" "${repo_url}" > "${k8s_list}"
             
             apt-get update
-            apt-get install -y kubelet=${K8S_VERSION}-00 kubeadm=${K8S_VERSION}-00 kubectl=${K8S_VERSION}-00
+            # pkgs.k8s.io package revisions use suffixes like -1.1 (not legacy -00).
+            pkg_ver="${K8S_VERSION}-1.1"
+            if ! apt-cache show "kubeadm=${pkg_ver}" >/dev/null 2>&1; then
+                pkg_ver=$(apt-cache madison kubeadm 2>/dev/null | awk -v v="${K8S_VERSION}" '$3 ~ ("^" v "-") {print $3; exit}')
+            fi
+            if [[ -z "${pkg_ver}" ]]; then
+                log "${RED}错误: 未找到 Kubernetes ${K8S_VERSION} 对应的 apt 包版本${NC}"
+                exit 1
+            fi
+            apt-get install -y "kubelet=${pkg_ver}" "kubeadm=${pkg_ver}" "kubectl=${pkg_ver}"
             apt-mark hold kubelet kubeadm kubectl
             ;;
         centos|rhel|rocky|almalinux)

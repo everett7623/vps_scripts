@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.17-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.18-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -353,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.18`：Jenkins / Kubernetes apt 改用 `signed-by` keyring；K8s 仓库迁移到 `pkgs.k8s.io`（国内 Aliyun kubernetes-new）
 - 发布 `1.1.17`：目录短链钉死 raw GitHub；拒绝 Oracle JDK 8/11 OTN 软 404；CRI-O 限制 ≤1.28；Caddy/cloudflared 安装前做 ELF 校验
 - 发布 `1.1.16`：卸载回滚 / 清配置 / 清服务残渣增加 mocked 真实路径覆盖；Swap fstab 回滚改用 `VPS_SWAP_FILE`；`full_uninstall` 纳入 mocked 套件
 - 发布 `1.1.15`：Nezha / FRP 增加 mocked 真实路径覆盖（`VPS_NEZHA_*` / `VPS_FRP_*`）；Jenkins WAR 安装前按官方 `.sha256` 校验
