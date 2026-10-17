@@ -25,7 +25,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.12 | #17 | Ruby releases.yml SHA-256; hostname/timezone mocked real paths |
 | 1.1.13 | #20 | update_system mocks; Oracle 17 archive; GraalVM live tags |
 | 1.1.14 | #22 | rustup-init SHA-256; seedloc→docs; catalog URL re-check |
-| 1.1.15 | (pending) | Nezha/FRP path mocks; Jenkins WAR SHA-256 |
+| 1.1.15 | #24 | Nezha/FRP path mocks; Jenkins WAR SHA-256 |
 
 ## Decisions
 
