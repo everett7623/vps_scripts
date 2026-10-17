@@ -41,7 +41,8 @@ SCRIPT_VERSION="1.0.0"
 LOG_FILE="/tmp/ruby_install_$(date +%Y%m%d_%H%M%S).log"
 
 # 默认配置
-DEFAULT_RUBY_VERSION="3.2.2"
+DEFAULT_RUBY_VERSION="3.3.12"
+readonly RUBY_RELEASES_URL="https://raw.githubusercontent.com/ruby/www.ruby-lang.org/master/_data/releases.yml"
 RBENV_ROOT="$HOME/.rbenv"
 RVM_PATH="$HOME/.rvm"
 
@@ -340,18 +341,54 @@ install_from_source() {
     }
     cd "${build_dir}" || { log "${RED}错误: 无法进入构建目录${NC}"; rm -rf -- "${build_dir}"; exit 1; }
 
-    # 下载源码
+    # 下载源码并按官方 releases.yml SHA-256 校验
     RUBY_MAJOR=$(echo "$RUBY_VERSION" | cut -d. -f1,2)
-    wget "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz"
+    local archive="ruby-${RUBY_VERSION}.tar.gz"
+    local archive_path="${build_dir}/${archive}"
+    local releases_file="${build_dir}/ruby-releases.yml"
+    local expected=""
+    local actual=""
 
-    if [[ ! -f "ruby-${RUBY_VERSION}.tar.gz" ]]; then
+    if ! wget -O "${archive_path}" \
+        "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/${archive}"; then
         log "${RED}错误: Ruby源码下载失败${NC}"
         rm -rf -- "${build_dir}"
         exit 1
     fi
 
+    if [[ ! -s "${archive_path}" ]]; then
+        log "${RED}错误: Ruby源码下载为空${NC}"
+        rm -rf -- "${build_dir}"
+        exit 1
+    fi
+
+    log "${YELLOW}正在按官方 releases.yml 校验 SHA-256...${NC}"
+    if ! curl -fsSL --retry 3 -o "${releases_file}" "${RUBY_RELEASES_URL}"; then
+        log "${RED}错误: 下载 Ruby releases.yml 失败${NC}"
+        rm -rf -- "${build_dir}"
+        exit 1
+    fi
+    expected=$(awk -v ver="${RUBY_VERSION}" '
+        $1 == "-" && $2 == "version:" && $3 == ver { in_ver = 1; next }
+        in_ver && $1 == "-" && $2 == "version:" { exit }
+        in_ver && $1 == "sha256:" { in_sha = 1; next }
+        in_ver && in_sha && $1 == "gz:" { print $2; exit }
+    ' "${releases_file}")
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{64}$ ]]; then
+        log "${RED}错误: releases.yml 中未找到 ${archive} 的 sha256（请指定已发布版本）${NC}"
+        rm -rf -- "${build_dir}"
+        exit 1
+    fi
+    actual=$(sha256sum "${archive_path}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        log "${RED}错误: Ruby 源码归档 SHA-256 校验失败${NC}"
+        rm -rf -- "${build_dir}"
+        exit 1
+    fi
+    log "${GREEN}Ruby SHA-256 校验通过${NC}"
+
     # 解压并编译
-    tar -xzf "ruby-${RUBY_VERSION}.tar.gz"
+    tar -xzf "${archive_path}"
     cd "ruby-${RUBY_VERSION}" || { log "${RED}错误: 无法进入源码目录${NC}"; rm -rf -- "${build_dir}"; exit 1; }
 
     # 配置编译选项

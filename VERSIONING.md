@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.11`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.12`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.11` is a backward-compatible patch release that removes the aaPanel `curl -k` TLS bypass, downloads Jenkins WAR packages from `get.jenkins.io` over HTTPS, configures the PostgreSQL apt repository with `signed-by` keyrings and HTTPS, switches Kubernetes CRI-O and Azure Helm mirror URLs to HTTPS, and tightens upgrade-hardening checks for combined short-option `-k` and `.war` plain-HTTP downloads. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.12` is a backward-compatible patch release that verifies Ruby source tarballs against the official `releases.yml` SHA-256 digests (default 3.3.12), and adds mocked real-path coverage for `change_hostname.sh` and `set_timezone.sh` via `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides (applied after config source so they are not clobbered by `BACKUP_DIR`). Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

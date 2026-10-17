@@ -313,4 +313,61 @@ expect_call '^apt-get clean'
 expect_call '^apt-get autoclean'
 expect_call '^apt-get autoremove -y'
 
+# --- change_hostname real path ---
+HOSTNAME_SCRIPT="${REPO_ROOT}/scripts/system_tools/change_hostname.sh"
+HN_ROOT="${TMP_ROOT}/hostname"
+HN_FILE="${HN_ROOT}/hostname"
+HN_HOSTS="${HN_ROOT}/hosts"
+HN_BACKUP="${HN_ROOT}/backups"
+HN_LOGS="${HN_ROOT}/logs"
+mkdir -p "${HN_ROOT}" "${HN_BACKUP}" "${HN_LOGS}"
+printf 'oldhost\n' > "${HN_FILE}"
+printf '127.0.0.1\tlocalhost\n127.0.1.1\toldhost\n' > "${HN_HOSTS}"
+write_stub hostnamectl 'case "$*" in *set-hostname*) exit 0 ;; *) echo oldhost; exit 0 ;; esac'
+write_stub hostname 'exit 0'
+write_stub systemctl 'exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SKIP_ROOT_CHECK=1 \
+VPS_LOG_DIR="${HN_LOGS}" \
+VPS_HOSTNAME_BACKUP_DIR="${HN_BACKUP}" \
+VPS_HOSTNAME_FILE="${HN_FILE}" \
+VPS_HOSTS_FILE="${HN_HOSTS}" \
+    bash "${HOSTNAME_SCRIPT}" --yes newhost </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "change_hostname --yes failed"
+[ "$(tr -d '[:space:]' <"${HN_FILE}")" = "newhost" ] || fail "hostname file not updated"
+grep -Eq '^127\.0\.1\.1[[:space:]]+newhost' "${HN_HOSTS}" || fail "hosts file missing newhost"
+ls -1d "${HN_BACKUP}"/backup_* >/dev/null 2>&1 || fail "hostname backup was not created"
+expect_call '^hostnamectl set-hostname newhost'
+
+# --- set_timezone real path (traditional file path under overrides) ---
+TZ_SCRIPT="${REPO_ROOT}/scripts/system_tools/set_timezone.sh"
+TZ_ROOT="${TMP_ROOT}/timezone"
+TZ_FILE="${TZ_ROOT}/timezone"
+TZ_LOCAL="${TZ_ROOT}/localtime"
+TZ_ZONEINFO="${TZ_ROOT}/zoneinfo"
+TZ_BACKUP="${TZ_ROOT}/backups"
+TZ_LOGS="${TZ_ROOT}/logs"
+mkdir -p "${TZ_ZONEINFO}/Asia" "${TZ_BACKUP}" "${TZ_LOGS}"
+: > "${TZ_ZONEINFO}/Asia/Shanghai"
+: > "${TZ_ZONEINFO}/UTC"
+printf 'UTC\n' > "${TZ_FILE}"
+ln -sfn "${TZ_ZONEINFO}/UTC" "${TZ_LOCAL}"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_SKIP_ROOT_CHECK=1 \
+VPS_LOG_DIR="${TZ_LOGS}" \
+VPS_TIMEZONE_BACKUP_DIR="${TZ_BACKUP}" \
+VPS_TIMEZONE_FILE="${TZ_FILE}" \
+VPS_LOCALTIME_FILE="${TZ_LOCAL}" \
+VPS_ZONEINFO_DIR="${TZ_ZONEINFO}" \
+    bash "${TZ_SCRIPT}" --yes Asia/Shanghai </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "set_timezone --yes Asia/Shanghai failed"
+[ "$(tr -d '[:space:]' <"${TZ_FILE}")" = "Asia/Shanghai" ] || fail "timezone file not updated"
+# On Windows Git Bash ln -s may copy instead of symlink; require the target exists.
+[ -e "${TZ_LOCAL}" ] || fail "localtime target missing"
+ls -1d "${TZ_BACKUP}"/backup_* >/dev/null 2>&1 || fail "timezone backup was not created"
+
 echo "Mocked pkg/systemd real-path checks are valid."
