@@ -113,7 +113,7 @@ install_aapanel() {
     install_script=$(mktemp "/tmp/aapanel_install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
     
     if command -v curl &> /dev/null; then
-        curl -ksSL "$INSTALL_SCRIPT" -o "$install_script" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
+        curl -fsSL "$INSTALL_SCRIPT" -o "$install_script" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
     else
         wget -O "$install_script" "$INSTALL_SCRIPT" || { log "${RED}错误: 下载安装脚本失败${NC}"; rm -f -- "$install_script"; exit 1; }
     fi

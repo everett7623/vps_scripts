@@ -35,6 +35,15 @@ fi
 grep -Fq 'key_file=$(download_to_temp' "${SCRIPT}"
 grep -Fq 'rpm_file=$(download_to_temp' "${SCRIPT}"
 
+# Apt repository uses HTTPS and prefers signed-by keyrings
+grep -Fq 'https://apt.postgresql.org/pub/repos/apt' "${SCRIPT}"
+grep -Fq 'signed-by=' "${SCRIPT}"
+grep -Fq 'postgresql-archive-keyring.gpg' "${SCRIPT}"
+if grep -Eq 'deb http://apt\.postgresql\.org/' "${SCRIPT}"; then
+    echo "PostgreSQL installer still uses plain-HTTP apt repository." >&2
+    exit 1
+fi
+
 # No wildcard systemctl service names
 if grep -Eq 'systemctl[[:space:]]+(stop|start|restart|status)[[:space:]]+postgresql\*' "${SCRIPT}"; then
     echo "PostgreSQL installer uses wildcard service name." >&2

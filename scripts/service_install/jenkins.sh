@@ -307,19 +307,19 @@ install_war() {
     # 创建目录
     mkdir -p /usr/share/jenkins
     
-    # 下载Jenkins WAR
+    # 下载 Jenkins WAR（官方 HTTPS CDN；国内可选清华镜像）
     if [[ "$JENKINS_VERSION" == "lts" ]]; then
-        DOWNLOAD_URL="http://mirrors.jenkins.io/war-stable/latest/jenkins.war"
+        DOWNLOAD_URL="https://get.jenkins.io/war-stable/latest/jenkins.war"
         if [[ "$USE_CHINA_MIRROR" = true ]]; then
             DOWNLOAD_URL="https://mirrors.tuna.tsinghua.edu.cn/jenkins/war-stable/latest/jenkins.war"
         fi
     elif [[ "$JENKINS_VERSION" == "weekly" ]]; then
-        DOWNLOAD_URL="http://mirrors.jenkins.io/war/latest/jenkins.war"
+        DOWNLOAD_URL="https://get.jenkins.io/war/latest/jenkins.war"
         if [[ "$USE_CHINA_MIRROR" = true ]]; then
             DOWNLOAD_URL="https://mirrors.tuna.tsinghua.edu.cn/jenkins/war/latest/jenkins.war"
         fi
     else
-        DOWNLOAD_URL="http://mirrors.jenkins.io/war-stable/${JENKINS_VERSION}/jenkins.war"
+        DOWNLOAD_URL="https://get.jenkins.io/war-stable/${JENKINS_VERSION}/jenkins.war"
         if [[ "$USE_CHINA_MIRROR" = true ]]; then
             DOWNLOAD_URL="https://mirrors.tuna.tsinghua.edu.cn/jenkins/war-stable/${JENKINS_VERSION}/jenkins.war"
         fi
