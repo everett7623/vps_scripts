@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.15`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.16`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.15` is a backward-compatible patch release that adds mocked real-path coverage for Nezha and FRP (`VPS_NEZHA_*` / `VPS_FRP_*`), and verifies Jenkins WAR downloads with the official `get.jenkins.io` SHA-256 sidecar before install. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.16` is a backward-compatible patch release that adds mocked real-path coverage for uninstall rollback/clear/clean helpers (`VPS_ETC_ROOT`, shared mutator path overrides), fixes swap fstab rollback to honor `VPS_SWAP_FILE`, and covers `full_uninstall` managed-install removal under test hooks. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.15 adds mocked real-path coverage for Nezha and FRP, and Jenkins WAR SHA-256 verification. 1.1.14 covered rustup-init checksums and catalog URL refresh. The LDNMP installer stays a single combined installer.
+Version 1.1.16 adds mocked real-path coverage for uninstall rollback/clear/clean and full_uninstall. 1.1.15 covered Nezha/FRP path mocks and Jenkins WAR checksums. The LDNMP installer stays a single combined installer.
 
-Next work: grow remaining mutator mocks (e.g. uninstall rollback); periodic catalog URL re-check each release.
+Next work: periodic catalog URL re-check each release; remaining niche mutator edges (BT cleanup, kernel rollback stays interactive-only).
 
 ## Catalog Review Status
 
@@ -53,7 +53,8 @@ Next work: grow remaining mutator mocks (e.g. uninstall rollback); periodic cata
 - Hardened the Nezha agent installer with input validation, isolated archive verification, systemd escaping, and unit verification
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
-- Added `--status`/`--dry-run` to the Docker installer wrapper
+- Added `--status`/`--dry-run` to the Docker installer wrappe
+- Uninstall rollback/clear/clean/full_uninstall mocked real-path coverage; swap fstab rollback honors VPS_SWAP_FILE (1.1.16)
 - Nezha/FRP mocked real-path overrides; Jenkins WAR SHA-256 before install (1.1.15)
 - Rust rustup-init SHA-256; seedloc blog replaced with project docs; catalog URL liveness re-check (1.1.14)
 - update_system mocked real paths; Oracle JDK 17 archive + GraalVM live tags (1.1.13)
@@ -81,14 +82,14 @@ Next work: grow remaining mutator mocks (e.g. uninstall rollback); periodic cata
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.15
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.16
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
 ## Next Modernization Round
 
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
-- Grow mocked real-path coverage for remaining first-party mutators
+- Keep catalog URL liveness checks each release; extend mocks only where residual risk remains
 
 ## Success Criteria For Next Release
 

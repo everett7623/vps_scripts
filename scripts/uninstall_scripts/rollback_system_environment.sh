@@ -16,16 +16,26 @@ NC='\033[0m'
 
 BACKUP_ROOT="${VPS_BACKUP_ROOT:-/var/backups/vps_scripts}"
 BACKUP_DIR="${BACKUP_ROOT}/environment_rollback_$(date +%Y%m%d_%H%M%S)"
-BBR_DROPIN="/etc/sysctl.d/99-vps-bbr.conf"
-SWAP_FILE="/swapfile"
-SWAPPINESS_DROPIN="/etc/sysctl.d/99-swappiness.conf"
+# Path overrides align with first-party mutators for mocked real-path tests.
+BBR_DROPIN="${VPS_BBR_DROPIN:-/etc/sysctl.d/99-vps-bbr.conf}"
+SYSCTL_CONF="${VPS_SYSCTL_CONF:-/etc/sysctl.conf}"
+SWAP_FILE="${VPS_SWAP_FILE:-/swapfile}"
+SWAPPINESS_DROPIN="${VPS_SWAPPINESS_DROPIN:-/etc/sysctl.d/99-swappiness.conf}"
+FSTAB_FILE="${VPS_FSTAB_FILE:-/etc/fstab}"
+PROC_SWAPS="${VPS_PROC_SWAPS:-/proc/swaps}"
+FAIL2BAN_DIR="${VPS_FAIL2BAN_DIR:-/etc/fail2ban}"
+HOSTNAME_FILE="${VPS_HOSTNAME_FILE:-/etc/hostname}"
+HOSTS_FILE="${VPS_HOSTS_FILE:-/etc/hosts}"
+TIMEZONE_FILE="${VPS_TIMEZONE_FILE:-/etc/timezone}"
+LOCALTIME_FILE="${VPS_LOCALTIME_FILE:-/etc/localtime}"
+ZONEINFO_DIR="${VPS_ZONEINFO_DIR:-/usr/share/zoneinfo}"
 DRY_RUN=false
 AUTO_YES=false
 TARGET=""
 ORIGINAL_HOSTNAME=""
 
 TARGET_IDS=(bbr fail2ban swap timezone hostname kernel all)
-TARGET_LABELS=("BBR网络加速" "Fail2ban安全防护" "Swap空间（仅 /swapfile）" "系统时区（重置为 UTC）" "系统主机名" "系统内核（仅交互模式）" "全部环境（不含主机名和内核）")
+TARGET_LABELS=("BBR网络加速" "Fail2ban安全防护" "Swap空间（仅项目 swapfile）" "系统时区（重置为 UTC）" "系统主机名" "系统内核（仅交互模式）" "全部环境（不含主机名和内核）")
 
 print_info() { echo -e "${WHITE}$*${NC}"; }
 print_ok() {
@@ -121,13 +131,13 @@ reload_sysctl() {
 
 rollback_bbr() {
     print_info "回滚BBR网络加速..."
-    backup_path /etc/sysctl.conf sysctl.conf.bak
+    backup_path "${SYSCTL_CONF}" sysctl.conf.bak
     backup_path "${BBR_DROPIN}" "$(basename "${BBR_DROPIN}")"
     if [ -f "${BBR_DROPIN}" ]; then
         run rm -f -- "${BBR_DROPIN}"
     fi
-    if [ -f /etc/sysctl.conf ] && grep -Eq '^[[:space:]]*net\.(core\.default_qdisc|ipv4\.tcp_congestion_control)[[:space:]]*=' /etc/sysctl.conf; then
-        run sed -i -E '/^[[:space:]]*net\.(core\.default_qdisc|ipv4\.tcp_congestion_control)[[:space:]]*=/d' /etc/sysctl.conf
+    if [ -f "${SYSCTL_CONF}" ] && grep -Eq '^[[:space:]]*net\.(core\.default_qdisc|ipv4\.tcp_congestion_control)[[:space:]]*=' "${SYSCTL_CONF}"; then
+        run sed -i -E '/^[[:space:]]*net\.(core\.default_qdisc|ipv4\.tcp_congestion_control)[[:space:]]*=/d' "${SYSCTL_CONF}"
     fi
     reload_sysctl
     print_ok "BBR网络加速已回滚（重启后完全生效）"
@@ -135,7 +145,7 @@ rollback_bbr() {
 
 rollback_fail2ban() {
     print_info "回滚Fail2ban安全防护..."
-    backup_path /etc/fail2ban fail2ban
+    backup_path "${FAIL2BAN_DIR}" fail2ban
     if command -v systemctl >/dev/null 2>&1; then
         run_optional systemctl stop fail2ban
         run_optional systemctl disable fail2ban
@@ -149,20 +159,25 @@ rollback_fail2ban() {
             run_optional yum remove -y fail2ban
         fi
     fi
-    if [ -d /etc/fail2ban ]; then
-        run rm -rf -- /etc/fail2ban
+    if [ -d "${FAIL2BAN_DIR}" ]; then
+        run rm -rf -- "${FAIL2BAN_DIR}"
     fi
     print_ok "Fail2ban安全防护已回滚"
 }
 
 rollback_swap() {
     print_info "回滚Swap空间（仅 ${SWAP_FILE}）..."
-    backup_path /etc/fstab fstab.bak
-    if [ -r /proc/swaps ] && awk 'NR > 1 {print $1}' /proc/swaps | grep -Fxq "${SWAP_FILE}"; then
+    backup_path "${FSTAB_FILE}" fstab.bak
+    if [ -r "${PROC_SWAPS}" ] && awk 'NR > 1 {print $1}' "${PROC_SWAPS}" | grep -Fxq "${SWAP_FILE}"; then
         run swapoff -- "${SWAP_FILE}"
     fi
-    if [ -f /etc/fstab ] && grep -Eq '^/swapfile[[:space:]]' /etc/fstab; then
-        run sed -i '\|^/swapfile[[:space:]]|d' /etc/fstab
+    if [ -f "${FSTAB_FILE}" ] && awk -v f="${SWAP_FILE}" '$1 == f {found=1} END {exit !found}' "${FSTAB_FILE}"; then
+        if [ "${DRY_RUN}" = true ]; then
+            printf '[DRY-RUN] 从 %s 移除 %s\n' "${FSTAB_FILE}" "${SWAP_FILE}"
+        else
+            awk -v f="${SWAP_FILE}" '$1 != f' "${FSTAB_FILE}" > "${FSTAB_FILE}.tmp"
+            mv -- "${FSTAB_FILE}.tmp" "${FSTAB_FILE}"
+        fi
     fi
     if [ -f "${SWAP_FILE}" ]; then
         run rm -f -- "${SWAP_FILE}"
@@ -177,14 +192,20 @@ rollback_swap() {
 
 rollback_timezone() {
     print_info "回滚系统时区..."
-    backup_path /etc/timezone timezone.bak
-    backup_path /etc/localtime localtime.bak
+    backup_path "${TIMEZONE_FILE}" timezone.bak
+    backup_path "${LOCALTIME_FILE}" localtime.bak
     if [ "${DRY_RUN}" = true ]; then
-        printf '[DRY-RUN] 设置时区为 UTC（timedatectl 或 /etc/localtime）\n'
+        printf '[DRY-RUN] 设置时区为 UTC（timedatectl 或 %s）\n' "${LOCALTIME_FILE}"
+    elif [ -n "${VPS_TIMEZONE_FILE:-}${VPS_LOCALTIME_FILE:-}${VPS_ZONEINFO_DIR:-}" ]; then
+        # Under path overrides, prefer file updates and skip host-shared timedatectl.
+        [ -f "${ZONEINFO_DIR}/UTC" ] || error_exit "未找到 UTC 时区文件: ${ZONEINFO_DIR}/UTC"
+        printf 'UTC\n' > "${TIMEZONE_FILE}"
+        run ln -sfn "${ZONEINFO_DIR}/UTC" "${LOCALTIME_FILE}"
     elif command -v timedatectl >/dev/null 2>&1; then
         run timedatectl set-timezone UTC
-    elif [ -f /usr/share/zoneinfo/UTC ]; then
-        run ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+    elif [ -f "${ZONEINFO_DIR}/UTC" ]; then
+        run ln -sfn "${ZONEINFO_DIR}/UTC" "${LOCALTIME_FILE}"
+        printf 'UTC\n' > "${TIMEZONE_FILE}" 2>/dev/null || true
     else
         error_exit "未找到 timedatectl 或 UTC 时区文件"
     fi
@@ -208,29 +229,38 @@ rollback_hostname() {
     fi
     is_valid_hostname "${original_hostname}" || error_exit "主机名格式无效: ${original_hostname}"
 
-    backup_path /etc/hostname hostname.bak
-    backup_path /etc/hosts hosts.bak
+    backup_path "${HOSTNAME_FILE}" hostname.bak
+    backup_path "${HOSTS_FILE}" hosts.bak
 
-    current_hostname=$(hostname)
+    if [ -n "${VPS_HOSTNAME_FILE:-}" ] && [ -f "${HOSTNAME_FILE}" ]; then
+        current_hostname=$(tr -d '[:space:]' < "${HOSTNAME_FILE}")
+    else
+        current_hostname=$(hostname)
+    fi
     if [ "${current_hostname}" = "${original_hostname}" ]; then
         print_warn "当前主机名已是 ${original_hostname}，无需回滚"
         return 0
     fi
 
-    if command -v hostnamectl >/dev/null 2>&1; then
-        run hostnamectl set-hostname "${original_hostname}"
-    else
-        run hostname "${original_hostname}"
-        if [ "${DRY_RUN}" = true ]; then
-            printf '[DRY-RUN] 写入 /etc/hostname: %s\n' "${original_hostname}"
+    if [ "${DRY_RUN}" = true ]; then
+        printf '[DRY-RUN] 写入 %s: %s\n' "${HOSTNAME_FILE}" "${original_hostname}"
+        if command -v hostnamectl >/dev/null 2>&1; then
+            printf '[DRY-RUN] hostnamectl set-hostname %s\n' "${original_hostname}"
         else
-            printf '%s\n' "${original_hostname}" > /etc/hostname
+            printf '[DRY-RUN] hostname %s\n' "${original_hostname}"
+        fi
+    else
+        printf '%s\n' "${original_hostname}" > "${HOSTNAME_FILE}"
+        if command -v hostnamectl >/dev/null 2>&1; then
+            run hostnamectl set-hostname "${original_hostname}"
+        else
+            run hostname "${original_hostname}"
         fi
     fi
 
-    if is_valid_hostname "${current_hostname}" && [ -f /etc/hosts ]; then
+    if is_valid_hostname "${current_hostname}" && [ -f "${HOSTS_FILE}" ]; then
         escaped_current=${current_hostname//./\\.}
-        run sed -i -E "s/(^|[[:space:]])${escaped_current}([[:space:]]|$)/\\1${original_hostname}\\2/g" /etc/hosts
+        run sed -i -E "s/(^|[[:space:]])${escaped_current}([[:space:]]|$)/\\1${original_hostname}\\2/g" "${HOSTS_FILE}"
     fi
     print_ok "系统主机名已回滚为: ${original_hostname}"
 }

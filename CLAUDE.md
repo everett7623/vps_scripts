@@ -201,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.15`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.16`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -232,6 +232,9 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `VPS_UPDATE_BACKUP_DIR` / `VPS_REBOOT_REQUIRED_FILE` / `VPS_APT_CACHE_FILE` / `VPS_SKIP_NETWORK_CHECK` | `update_system.sh` | Redirect backup/reboot/cache paths and skip network probe for mocked tests |
 | `VPS_NEZHA_INSTALL_DIR` / `VPS_NEZHA_SYSTEMD_DIR` | `nezha.sh` | Redirect agent install and unit paths for mocked real-path tests |
 | `VPS_FRP_BIN_DIR` / `VPS_FRP_CONFIG_DIR` / `VPS_FRP_SYSTEMD_DIR` | `frp.sh` | Redirect frp binary/config/unit paths for mocked real-path tests |
+| `VPS_SYSCTL_CONF` / `VPS_FAIL2BAN_DIR` | `rollback_system_environment.sh` | Redirect sysctl.conf and Fail2ban tree for mocked rollback tests |
+| `VPS_ETC_ROOT` / `VPS_SSHD_DIR` | `clear_configuration_files.sh` | Redirect `/etc` tree and sshd dir for mocked clear tests |
+| `VPS_ETC_ROOT` / `VPS_VAR_LIB_ROOT` / `VPS_SYSTEMD_DIR` / `VPS_1PANEL_DIR` / `VPS_USR_SHARE_NGINX` | `clean_service_residues.sh` | Redirect service config/data/unit paths for mocked clean tests |
 
 ### `vps.sh` menu structure
 

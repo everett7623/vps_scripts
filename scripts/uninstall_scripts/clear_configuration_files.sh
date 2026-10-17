@@ -15,6 +15,9 @@ NC='\033[0m'
 
 BACKUP_ROOT="${VPS_BACKUP_ROOT:-/var/backups/vps_scripts}"
 BACKUP_DIR="${BACKUP_ROOT}/config_clean_$(date +%Y%m%d_%H%M%S)"
+# Path overrides for mocked real-path tests (defaults match production).
+ETC_ROOT="${VPS_ETC_ROOT:-/etc}"
+SSHD_DIR="${VPS_SSHD_DIR:-${ETC_ROOT}/ssh}"
 DRY_RUN=false
 AUTO_YES=false
 TARGET=""
@@ -121,10 +124,11 @@ restore_from_bak() {
 
 clear_directory_contents() {
     local target_dir="$1"
+    local etc_prefix="${ETC_ROOT%/}"
 
     [ -d "${target_dir}" ] || return 0
     case "${target_dir%/}" in
-        /etc/*/*) ;;
+        "${etc_prefix}"/*/*) ;;
         *) error_exit "拒绝清空非预期目录: ${target_dir}" ;;
     esac
     if [ "${DRY_RUN}" = true ]; then
@@ -137,61 +141,61 @@ clear_directory_contents() {
 clear_nginx() {
     print_info "清理Nginx配置..."
     stop_services nginx
-    backup_path /etc/nginx nginx
-    clear_directory_contents /etc/nginx/conf.d
-    clear_directory_contents /etc/nginx/sites-available
-    clear_directory_contents /etc/nginx/sites-enabled
-    restore_from_bak /etc/nginx/nginx.conf.bak /etc/nginx/nginx.conf
+    backup_path "${ETC_ROOT}/nginx" nginx
+    clear_directory_contents "${ETC_ROOT}/nginx/conf.d"
+    clear_directory_contents "${ETC_ROOT}/nginx/sites-available"
+    clear_directory_contents "${ETC_ROOT}/nginx/sites-enabled"
+    restore_from_bak "${ETC_ROOT}/nginx/nginx.conf.bak" "${ETC_ROOT}/nginx/nginx.conf"
     print_ok "Nginx配置清理完成"
 }
 
 clear_apache() {
     print_info "清理Apache配置..."
     stop_services httpd apache2
-    backup_path /etc/httpd apache
-    backup_path /etc/apache2 apache2
-    clear_directory_contents /etc/httpd/conf.d
-    clear_directory_contents /etc/apache2/sites-available
-    clear_directory_contents /etc/apache2/sites-enabled
-    restore_from_bak /etc/httpd/conf/httpd.conf.bak /etc/httpd/conf/httpd.conf
+    backup_path "${ETC_ROOT}/httpd" apache
+    backup_path "${ETC_ROOT}/apache2" apache2
+    clear_directory_contents "${ETC_ROOT}/httpd/conf.d"
+    clear_directory_contents "${ETC_ROOT}/apache2/sites-available"
+    clear_directory_contents "${ETC_ROOT}/apache2/sites-enabled"
+    restore_from_bak "${ETC_ROOT}/httpd/conf/httpd.conf.bak" "${ETC_ROOT}/httpd/conf/httpd.conf"
     print_ok "Apache配置清理完成"
 }
 
 clear_mysql() {
     print_info "清理MySQL/MariaDB配置..."
     stop_services mysql mysqld mariadb
-    backup_path /etc/mysql mysql
-    backup_path /etc/my.cnf.d my.cnf.d
-    backup_path /etc/my.cnf my.cnf
-    clear_directory_contents /etc/mysql/conf.d
-    clear_directory_contents /etc/mysql/mariadb.conf.d
-    clear_directory_contents /etc/my.cnf.d
-    restore_from_bak /etc/mysql/my.cnf.bak /etc/mysql/my.cnf
-    restore_from_bak /etc/my.cnf.bak /etc/my.cnf
+    backup_path "${ETC_ROOT}/mysql" mysql
+    backup_path "${ETC_ROOT}/my.cnf.d" my.cnf.d
+    backup_path "${ETC_ROOT}/my.cnf" my.cnf
+    clear_directory_contents "${ETC_ROOT}/mysql/conf.d"
+    clear_directory_contents "${ETC_ROOT}/mysql/mariadb.conf.d"
+    clear_directory_contents "${ETC_ROOT}/my.cnf.d"
+    restore_from_bak "${ETC_ROOT}/mysql/my.cnf.bak" "${ETC_ROOT}/mysql/my.cnf"
+    restore_from_bak "${ETC_ROOT}/my.cnf.bak" "${ETC_ROOT}/my.cnf"
     print_ok "MySQL/MariaDB配置清理完成"
 }
 
 clear_php() {
-    local php_config_dir
+    local php_config_di
     print_info "清理PHP配置..."
     stop_services php-fpm
-    backup_path /etc/php php
-    for php_config_dir in /etc/php/*/fpm/pool.d /etc/php/*/conf.d; do
+    backup_path "${ETC_ROOT}/php" php
+    for php_config_dir in "${ETC_ROOT}"/php/*/fpm/pool.d "${ETC_ROOT}"/php/*/conf.d; do
         [ -d "${php_config_dir}" ] || continue
         clear_directory_contents "${php_config_dir}"
     done
-    restore_from_bak /etc/php.ini.bak /etc/php.ini
+    restore_from_bak "${ETC_ROOT}/php.ini.bak" "${ETC_ROOT}/php.ini"
     print_ok "PHP配置清理完成"
 }
 
 clear_docker() {
     print_info "清理Docker配置..."
-    stop_services docker
-    backup_path /etc/docker docker
-    if [ -f /etc/docker/daemon.json.bak ]; then
-        restore_from_bak /etc/docker/daemon.json.bak /etc/docker/daemon.json
-    elif [ -f /etc/docker/daemon.json ]; then
-        run rm -f -- /etc/docker/daemon.json
+    stop_services docke
+    backup_path "${ETC_ROOT}/docker" docke
+    if [ -f "${ETC_ROOT}/docker/daemon.json.bak" ]; then
+        restore_from_bak "${ETC_ROOT}/docker/daemon.json.bak" "${ETC_ROOT}/docker/daemon.json"
+    elif [ -f "${ETC_ROOT}/docker/daemon.json" ]; then
+        run rm -f -- "${ETC_ROOT}/docker/daemon.json"
     fi
     print_ok "Docker配置清理完成"
 }
@@ -199,14 +203,14 @@ clear_docker() {
 clear_network() {
     local netplan_file
     print_info "清理系统网络配置..."
-    backup_path /etc/network/interfaces interfaces.bak
-    for netplan_file in /etc/netplan/*.yaml; do
+    backup_path "${ETC_ROOT}/network/interfaces" interfaces.bak
+    for netplan_file in "${ETC_ROOT}"/netplan/*.yaml; do
         [ -f "${netplan_file}" ] || continue
         backup_path "${netplan_file}" "$(basename "${netplan_file}")"
     done
-    backup_path /etc/sysctl.conf sysctl.conf.bak
-    restore_from_bak /etc/network/interfaces.bak /etc/network/interfaces
-    restore_from_bak /etc/sysctl.conf.bak /etc/sysctl.conf
+    backup_path "${ETC_ROOT}/sysctl.conf" sysctl.conf.bak
+    restore_from_bak "${ETC_ROOT}/network/interfaces.bak" "${ETC_ROOT}/network/interfaces"
+    restore_from_bak "${ETC_ROOT}/sysctl.conf.bak" "${ETC_ROOT}/sysctl.conf"
     command -v sysctl >/dev/null 2>&1 && run_optional sysctl -p
     print_ok "系统网络配置清理完成"
 }
@@ -223,20 +227,20 @@ restart_ssh_service() {
 clear_security() {
     local current_copy=""
     print_info "清理系统安全配置..."
-    backup_path /etc/ssh/sshd_config sshd_config.bak
-    backup_path /etc/fail2ban/jail.local jail.local.bak
-    backup_path /etc/firewalld/zones/public.xml public.xml.bak
-    backup_path /etc/ufw/applications.d ufw_applications.d
+    backup_path "${SSHD_DIR}/sshd_config" sshd_config.bak
+    backup_path "${ETC_ROOT}/fail2ban/jail.local" jail.local.bak
+    backup_path "${ETC_ROOT}/firewalld/zones/public.xml" public.xml.bak
+    backup_path "${ETC_ROOT}/ufw/applications.d" ufw_applications.d
 
-    if [ -f /etc/ssh/sshd_config.bak ]; then
+    if [ -f "${SSHD_DIR}/sshd_config.bak" ]; then
         if [ "${DRY_RUN}" = true ]; then
-            printf '[DRY-RUN] 恢复 /etc/ssh/sshd_config.bak 并以 sshd -t 校验\n'
+            printf '[DRY-RUN] 恢复 %s/sshd_config.bak 并以 sshd -t 校验\n' "${SSHD_DIR}"
         else
             current_copy=$(mktemp "/tmp/sshd_config.XXXXXX")
-            cp -a -- /etc/ssh/sshd_config "${current_copy}"
-            cp -- /etc/ssh/sshd_config.bak /etc/ssh/sshd_config
+            cp -a -- "${SSHD_DIR}/sshd_config" "${current_copy}"
+            cp -- "${SSHD_DIR}/sshd_config.bak" "${SSHD_DIR}/sshd_config"
             if command -v sshd >/dev/null 2>&1 && ! sshd -t >/dev/null 2>&1; then
-                cp -a -- "${current_copy}" /etc/ssh/sshd_config
+                cp -a -- "${current_copy}" "${SSHD_DIR}/sshd_config"
                 rm -f -- "${current_copy}"
                 error_exit "恢复后的 sshd_config 校验失败，已还原当前配置"
             fi
@@ -244,7 +248,7 @@ clear_security() {
             restart_ssh_service
         fi
     else
-        print_warn "[跳过] 未找到 /etc/ssh/sshd_config.bak"
+        print_warn "[跳过] 未找到 ${SSHD_DIR}/sshd_config.bak"
     fi
     print_ok "系统安全配置清理完成"
 }
