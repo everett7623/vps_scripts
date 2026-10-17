@@ -133,4 +133,9 @@ grep -Fq 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers
     "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'https://mirror.azure.cn/kubernetes/charts/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 
+# Ruby source installs verify against the official releases.yml digests.
+grep -Fq 'ruby/www.ruby-lang.org/master/_data/releases.yml' \
+    "${REPO_ROOT}/scripts/service_install/ruby.sh"
+grep -Fq 'Ruby 源码归档 SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/ruby.sh"
+
 echo "Upgrade hardening checks are valid."

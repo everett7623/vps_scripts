@@ -16,7 +16,6 @@ CONFIG_FILE="${PROJECT_ROOT}/config/vps_scripts.conf"
 
 LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="${LOG_DIR}/hostname_change.log"
-BACKUP_DIR="/var/backups/hostname_change"
 SCRIPT_VERSION="1.0.0"
 
 AUTO_CONFIRM=false
@@ -41,10 +40,19 @@ else
     print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 28 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
+    check_root() {
+        [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] && return 0
+        [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }
+        return 0
+    }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     read_input() { local prompt="$1"; local default="${2:-}"; local var_name="${3:-REPLY}"; local input=""; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " input || return 1; input=${input:-$default}; else read -r -p "${prompt}: " input || return 1; fi; printf -v "${var_name}" '%s' "${input}"; }
 fi
+
+# Apply after config source: vps_scripts.conf also defines BACKUP_DIR.
+BACKUP_DIR="${VPS_HOSTNAME_BACKUP_DIR:-/var/backups/hostname_change}"
+HOSTNAME_FILE="${VPS_HOSTNAME_FILE:-/etc/hostname}"
+HOSTS_FILE="${VPS_HOSTS_FILE:-/etc/hosts}"
 
 ensure_runtime_dirs() {
     if declare -F resolve_log_dir >/dev/null 2>&1; then
@@ -79,6 +87,12 @@ EOF
 }
 
 current_hostname() {
+    # Prefer the configured hostname file under test overrides; otherwise
+    # fall back to hostnamectl/hostname for live system state.
+    if [ -n "${VPS_HOSTNAME_FILE:-}" ] && [ -f "${HOSTNAME_FILE}" ]; then
+        tr -d '[:space:]' < "${HOSTNAME_FILE}"
+        return 0
+    fi
     if command_exists hostnamectl; then
         hostnamectl --static 2>/dev/null || hostname
     else
@@ -131,8 +145,8 @@ create_backup() {
     local backup_path="${BACKUP_DIR}/backup_$(date +%Y%m%d_%H%M%S)"
     local file=""
     local files=(
-        "/etc/hostname"
-        "/etc/hosts"
+        "${HOSTNAME_FILE}"
+        "${HOSTS_FILE}"
         "/etc/sysconfig/network"
         "/etc/mailname"
         "/etc/postfix/main.cf"
@@ -163,7 +177,7 @@ update_hosts_file() {
     local new_name="$1"
     local temp_file=""
 
-    [ -f /etc/hosts ] || return 0
+    [ -f "${HOSTS_FILE}" ] || return 0
 
     temp_file=$(mktemp "/tmp/vps_hosts.XXXXXX") || {
         print_error "无法创建临时 hosts 文件。"
@@ -189,9 +203,9 @@ update_hosts_file() {
                 print "127.0.1.1\t" new_name
             }
         }
-    ' /etc/hosts > "${temp_file}"
+    ' "${HOSTS_FILE}" > "${temp_file}"
 
-    cat "${temp_file}" > /etc/hosts
+    cat "${temp_file}" > "${HOSTS_FILE}"
     rm -f -- "${temp_file}"
 }
 
@@ -269,18 +283,21 @@ restart_related_services() {
 perform_change() {
     local new_name="$1"
 
-    printf '%s\n' "${new_name}" > /etc/hostname
+    printf '%s\n' "${new_name}" > "${HOSTNAME_FILE}"
     update_hosts_file "${new_name}" || return 1
 
-    if [ -f /etc/sysconfig/network ] || [ -d /etc/sysconfig ]; then
-        update_key_value_file "/etc/sysconfig/network" "HOSTNAME" "${new_name}" || return 1
-    fi
+    # Skip host-shared paths when running under mocked path overrides.
+    if [ -z "${VPS_HOSTNAME_FILE:-}" ]; then
+        if [ -f /etc/sysconfig/network ] || [ -d /etc/sysconfig ]; then
+            update_key_value_file "/etc/sysconfig/network" "HOSTNAME" "${new_name}" || return 1
+        fi
 
-    if [ -f /etc/mailname ]; then
-        printf '%s\n' "${new_name}" > /etc/mailname
-    fi
+        if [ -f /etc/mailname ]; then
+            printf '%s\n' "${new_name}" > /etc/mailname
+        fi
 
-    update_cloud_init || return 1
+        update_cloud_init || return 1
+    fi
 
     if command_exists hostnamectl; then
         hostnamectl set-hostname "${new_name}" >/dev/null 2>&1 || true
@@ -288,11 +305,13 @@ perform_change() {
 
     hostname "${new_name}" >/dev/null 2>&1 || true
 
-    if command_exists postconf && [ -f /etc/postfix/main.cf ]; then
+    if [ -z "${VPS_HOSTNAME_FILE:-}" ] && command_exists postconf && [ -f /etc/postfix/main.cf ]; then
         postconf -e "myhostname = ${new_name}" >/dev/null 2>&1 || true
     fi
 
-    restart_related_services
+    if [ -z "${VPS_HOSTNAME_FILE:-}" ]; then
+        restart_related_services
+    fi
     log "INFO" "Applied hostname change to ${new_name}"
 }
 
@@ -312,17 +331,17 @@ verify_change() {
         verified=false
     fi
 
-    if [ -f /etc/hostname ] && [ "$(tr -d '[:space:]' </etc/hostname)" = "${target_name}" ]; then
-        print_success "/etc/hostname 已更新。"
+    if [ -f "${HOSTNAME_FILE}" ] && [ "$(tr -d '[:space:]' <"${HOSTNAME_FILE}")" = "${target_name}" ]; then
+        print_success "${HOSTNAME_FILE} 已更新。"
     else
-        print_error "/etc/hostname 中未找到目标主机名。"
+        print_error "${HOSTNAME_FILE} 中未找到目标主机名。"
         verified=false
     fi
 
-    if [ -f /etc/hosts ] && grep -Eq "^127\.0\.1\.1[[:space:]]+${target_name}([[:space:]]|$)" /etc/hosts; then
-        print_success "/etc/hosts 已更新。"
+    if [ -f "${HOSTS_FILE}" ] && grep -Eq "^127\.0\.1\.1[[:space:]]+${target_name}([[:space:]]|$)" "${HOSTS_FILE}"; then
+        print_success "${HOSTS_FILE} 已更新。"
     else
-        print_warn "/etc/hosts 未包含 ${target_name} 对应的独立 127.0.1.1 映射。"
+        print_warn "${HOSTS_FILE} 未包含 ${target_name} 对应的独立 127.0.1.1 映射。"
         verified=false
     fi
 
@@ -366,19 +385,25 @@ restore_backup() {
         return 1
     }
 
-    [ -f "${backup_path}/hostname" ] && cp -a "${backup_path}/hostname" /etc/hostname
-    [ -f "${backup_path}/hosts" ] && cp -a "${backup_path}/hosts" /etc/hosts
-    [ -f "${backup_path}/network" ] && cp -a "${backup_path}/network" /etc/sysconfig/network
-    [ -f "${backup_path}/mailname" ] && cp -a "${backup_path}/mailname" /etc/mailname
-    [ -f "${backup_path}/main.cf" ] && cp -a "${backup_path}/main.cf" /etc/postfix/main.cf
-    [ -f "${backup_path}/cloud.cfg" ] && cp -a "${backup_path}/cloud.cfg" /etc/cloud/cloud.cfg
+    [ -f "${backup_path}/$(basename -- "${HOSTNAME_FILE}")" ] && \
+        cp -a "${backup_path}/$(basename -- "${HOSTNAME_FILE}")" "${HOSTNAME_FILE}"
+    [ -f "${backup_path}/$(basename -- "${HOSTS_FILE}")" ] && \
+        cp -a "${backup_path}/$(basename -- "${HOSTS_FILE}")" "${HOSTS_FILE}"
+    if [ -z "${VPS_HOSTNAME_FILE:-}" ]; then
+        [ -f "${backup_path}/network" ] && cp -a "${backup_path}/network" /etc/sysconfig/network
+        [ -f "${backup_path}/mailname" ] && cp -a "${backup_path}/mailname" /etc/mailname
+        [ -f "${backup_path}/main.cf" ] && cp -a "${backup_path}/main.cf" /etc/postfix/main.cf
+        [ -f "${backup_path}/cloud.cfg" ] && cp -a "${backup_path}/cloud.cfg" /etc/cloud/cloud.cfg
+    fi
 
     if command_exists hostnamectl; then
         hostnamectl set-hostname "${old_name}" >/dev/null 2>&1 || true
     fi
     hostname "${old_name}" >/dev/null 2>&1 || true
 
-    restart_related_services
+    if [ -z "${VPS_HOSTNAME_FILE:-}" ]; then
+        restart_related_services
+    fi
     log "ROLLBACK" "Rolled back hostname using backup ${backup_path}"
 
     if verify_change "${old_name}"; then
@@ -445,7 +470,7 @@ preview_change() {
     print_warn "DRY-RUN：以下仅为预览，不会修改系统。"
     printf '[DRY-RUN] 主机名 %s -> %s\n' "${old_name}" "${new_name}"
     printf '[DRY-RUN] 备份到 %s/backup_<时间戳>\n' "${BACKUP_DIR}"
-    for file in /etc/hostname /etc/hosts /etc/sysconfig/network /etc/mailname /etc/postfix/main.cf /etc/cloud/cloud.cfg; do
+    for file in "${HOSTNAME_FILE}" "${HOSTS_FILE}" /etc/sysconfig/network /etc/mailname /etc/postfix/main.cf /etc/cloud/cloud.cfg; do
         [ -f "${file}" ] && printf '[DRY-RUN] 更新 %s\n' "${file}"
     done
     printf '[DRY-RUN] hostnamectl set-hostname %s，重启 systemd-hostnamed/rsyslog（postfix 若运行）\n' "${new_name}"

@@ -175,9 +175,15 @@
 - [x] Catalog URL liveness spot-check (Coolify, Dokploy, 3x-ui, S-UI, Hysteria2, Xray, Beszel, etc. OK)
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.11`
 
+## 1.1.12 release
+
+- [x] Ruby source SHA-256 via official `releases.yml`; default version `3.3.12`
+- [x] Mocked real-path tests for `change_hostname` and `set_timezone`; `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.12`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); TLS/HTTP panel installer hardening done in 1.1.11; next: hostname/timezone/update mocks, Ruby checksum
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Ruby checksum + hostname/timezone mocks done in 1.1.12; next: update_system mocks
 - [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

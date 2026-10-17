@@ -16,7 +16,6 @@ CONFIG_FILE="${PROJECT_ROOT}/config/vps_scripts.conf"
 
 LOG_DIR="/var/log/vps_scripts"
 LOG_FILE="${LOG_DIR}/set_timezone.log"
-BACKUP_DIR="/var/backups/timezone_change"
 
 OS_TYPE="unknown"
 OS_VERSION="unknown"
@@ -107,10 +106,20 @@ else
     print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
-    check_root() { [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }; }
+    check_root() {
+        [ "${VPS_SKIP_ROOT_CHECK:-0}" = 1 ] && return 0
+        [[ ${EUID} -ne 0 ]] && { print_error "此脚本需要 root 权限。"; exit 1; }
+        return 0
+    }
     ask_yes_no() { local prompt="$1"; local answer=""; read -r -p "${prompt} [y/N]: " answer; [[ "${answer}" =~ ^[Yy]$ ]]; }
     read_input() { local prompt="$1"; local default="${2:-}"; local var_name="${3:-REPLY}"; local input=""; if [ -n "${default}" ]; then read -r -p "${prompt} [${default}]: " input || return 1; input=${input:-$default}; else read -r -p "${prompt}: " input || return 1; fi; printf -v "${var_name}" '%s' "${input}"; }
 fi
+
+# Apply after config source: vps_scripts.conf also defines BACKUP_DIR.
+BACKUP_DIR="${VPS_TIMEZONE_BACKUP_DIR:-/var/backups/timezone_change}"
+TIMEZONE_FILE="${VPS_TIMEZONE_FILE:-/etc/timezone}"
+LOCALTIME_FILE="${VPS_LOCALTIME_FILE:-/etc/localtime}"
+ZONEINFO_DIR="${VPS_ZONEINFO_DIR:-/usr/share/zoneinfo}"
 
 ensure_runtime_dirs() {
     if declare -F resolve_log_dir >/dev/null 2>&1; then
@@ -175,22 +184,27 @@ detect_os() {
         OS_VERSION=$(rpm -q --queryformat '%{VERSION}' centos-release 2>/dev/null || echo "unknown")
     fi
 
-    if command_exists timedatectl; then
+    # Path overrides force the traditional file-based path so tests never
+    # call host timedatectl against real /etc.
+    if [ -n "${VPS_TIMEZONE_FILE:-}${VPS_LOCALTIME_FILE:-}${VPS_ZONEINFO_DIR:-}" ]; then
+        USE_TIMEDATECTL=false
+    elif command_exists timedatectl; then
         USE_TIMEDATECTL=true
     fi
 }
 
 get_current_timezone() {
+    CURRENT_TIMEZONE=""
     if [ "${USE_TIMEDATECTL}" = true ]; then
         CURRENT_TIMEZONE=$(timedatectl show -p Timezone --value 2>/dev/null || true)
     fi
 
-    if [ -z "${CURRENT_TIMEZONE}" ] && [ -f /etc/timezone ]; then
-        CURRENT_TIMEZONE=$(cat /etc/timezone)
+    if [ -z "${CURRENT_TIMEZONE}" ] && [ -f "${TIMEZONE_FILE}" ]; then
+        CURRENT_TIMEZONE=$(tr -d '[:space:]' < "${TIMEZONE_FILE}")
     fi
 
-    if [ -z "${CURRENT_TIMEZONE}" ] && [ -L /etc/localtime ]; then
-        CURRENT_TIMEZONE=$(readlink /etc/localtime | sed 's|.*zoneinfo/||')
+    if [ -z "${CURRENT_TIMEZONE}" ] && [ -L "${LOCALTIME_FILE}" ]; then
+        CURRENT_TIMEZONE=$(readlink "${LOCALTIME_FILE}" | sed 's|.*zoneinfo/||')
     fi
 
     CURRENT_TIMEZONE=${CURRENT_TIMEZONE:-unknown}
@@ -266,7 +280,7 @@ validate_timezone() {
         print_error "无效时区：${timezone}"
         return 1
     fi
-    if [ -f "/usr/share/zoneinfo/${timezone}" ]; then
+    if [ -f "${ZONEINFO_DIR}/${timezone}" ]; then
         return 0
     fi
     print_error "无效时区：${timezone}"
@@ -296,8 +310,8 @@ backup_configs() {
     local backup_path="${BACKUP_DIR}/backup_$(date +%Y%m%d_%H%M%S)"
     local file=""
     local files_to_backup=(
-        "/etc/timezone"
-        "/etc/localtime"
+        "${TIMEZONE_FILE}"
+        "${LOCALTIME_FILE}"
         "/etc/sysconfig/clock"
         "/etc/ntp.conf"
         "/etc/chrony.conf"
@@ -336,13 +350,17 @@ set_timezone_value() {
         timedatectl set-timezone "${timezone}" >> "${LOG_FILE}" 2>&1
     else
         log "INFO" "Using traditional timezone configuration for ${timezone}"
-        ln -sfn "/usr/share/zoneinfo/${timezone}" /etc/localtime
+        safe_mkdir "$(dirname -- "${LOCALTIME_FILE}")"
+        ln -sfn "${ZONEINFO_DIR}/${timezone}" "${LOCALTIME_FILE}"
 
-        if [ -f /etc/timezone ] || [ "${OS_TYPE}" = "ubuntu" ] || [ "${OS_TYPE}" = "debian" ]; then
-            printf '%s\n' "${timezone}" > /etc/timezone
+        if [ -f "${TIMEZONE_FILE}" ] || [ -n "${VPS_TIMEZONE_FILE:-}" ] || \
+           [ "${OS_TYPE}" = "ubuntu" ] || [ "${OS_TYPE}" = "debian" ]; then
+            safe_mkdir "$(dirname -- "${TIMEZONE_FILE}")"
+            printf '%s\n' "${timezone}" > "${TIMEZONE_FILE}"
         fi
 
-        if [ -f /etc/sysconfig/clock ] || [[ "${OS_TYPE}" =~ ^(centos|rhel|fedora|rocky|almalinux)$ ]]; then
+        if [ -z "${VPS_TIMEZONE_FILE:-}" ] && \
+           { [ -f /etc/sysconfig/clock ] || [[ "${OS_TYPE}" =~ ^(centos|rhel|fedora|rocky|almalinux)$ ]]; }; then
             temp_file=$(mktemp "/tmp/vps_clock.XXXXXX") || return 1
             cat > "${temp_file}" <<EOF
 ZONE="${timezone}"
@@ -353,7 +371,7 @@ EOF
         fi
     fi
 
-    if command_exists hwclock; then
+    if [ -z "${VPS_TIMEZONE_FILE:-}" ] && command_exists hwclock; then
         hwclock --systohc >> "${LOG_FILE}" 2>&1 || true
     fi
 }
@@ -577,11 +595,12 @@ apply_timezone_flow() {
     backup_path=$(backup_configs)
     set_timezone_value "${NEW_TIMEZONE}" || return 1
 
-    if [ "${NTP_ENABLED}" = true ]; then
-        configure_ntp || return 1
+    if [ -z "${VPS_TIMEZONE_FILE:-}" ]; then
+        if [ "${NTP_ENABLED}" = true ]; then
+            configure_ntp || return 1
+        fi
+        sync_time_manual || true
     fi
-
-    sync_time_manual || true
 
     if verify_timezone "${NEW_TIMEZONE}"; then
         generate_report "${backup_path}"

@@ -4,6 +4,17 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.12 - 2026-10-17
+
+### Added
+- Ruby source installs verify SHA-256 against the official `ruby/www.ruby-lang.org` `releases.yml` list before compile; default version is `3.3.12`.
+- Mocked real-path coverage for `change_hostname.sh --yes` and `set_timezone.sh --yes` via `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides.
+- `tests/validate_ruby_installer_safety.sh`.
+
+### Changed
+- Hostname and timezone backup path overrides are applied after sourcing `vps_scripts.conf` so they are not overwritten by the shared `BACKUP_DIR` config key.
+- Under path overrides, hostname/timezone mutators skip host-shared side effects (cloud-init, postfix, NTP, hwclock).
+
 ## 1.1.11 - 2026-10-17
 
 ### Changed

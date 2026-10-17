@@ -2,7 +2,7 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.11",
+    "version": "1.1.12",
     "release_date": "2026-10-17",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Remove aaPanel curl -k; Jenkins WAR via get.jenkins.io HTTPS; PostgreSQL apt signed-by + HTTPS; Kubernetes CRI-O/Azure Helm HTTPS; tighter TLS/HTTP upgrade-hardening guards."
+    "message": "Ruby source SHA-256 via releases.yml (default 3.3.12); mocked hostname/timezone real paths; VPS_HOSTNAME_* and VPS_TIMEZONE_* overrides."
   },
   "compatibility": {
     "min_bash_version": "4.0",
