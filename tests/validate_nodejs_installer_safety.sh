@@ -18,6 +18,7 @@ grep -Fq 'https://nodejs.org/dist/${FULL_VERSION}/SHASUMS256.txt' "${SCRIPT}"
 grep -Fq 'sha256sum "${archive_file}"' "${SCRIPT}"
 grep -Fq 'Node.js 归档 SHA-256 校验失败' "${SCRIPT}"
 grep -Fq 'https://nodejs.org/dist/${FULL_VERSION}/${asset}' "${SCRIPT}"
+grep -Fq 'bash -n "${installer}"' "${SCRIPT}"
 
 if grep -Eq 'cd /tmp' "${SCRIPT}"; then
     echo "Node.js installer still uses a fixed /tmp working directory." >&2

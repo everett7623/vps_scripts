@@ -59,6 +59,12 @@ run_remote_installer() {
         exit 1
     fi
 
+    if ! bash -n "${installer}"; then
+        rm -f -- "${installer}"
+        log_error "安装脚本语法校验失败: ${url}"
+        exit 1
+    fi
+
     bash "${installer}"
     rm -f -- "${installer}"
 }

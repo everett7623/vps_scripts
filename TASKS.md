@@ -231,9 +231,15 @@
 - [x] Catalog URL liveness re-check (all probed third-party script URLs live)
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.20`
 
+## 1.1.21 release
+
+- [x] Python source digest via python.org downloads API; `bash -n` on Python/Node/Go remote installers
+- [x] Mocked cleanup coverage for nginx/apache/mysql/php
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.21`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); BT cleanup mocks done in 1.1.20; next: catalog re-check each release
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); cleanup mocks complete through 1.1.21; next: catalog freshness / URL re-check
 - [ ] Kernel rollback stays interactive-only (no mocked non-interactive path planned)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
