@@ -141,6 +141,23 @@ if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/jenki
 fi
 grep -Fq 'https://apt.postgresql.org/pub/repos/apt' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
 grep -Fq 'signed-by=' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
+grep -Fq 'postgresql-archive-keyring.gpg' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
+if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/postgresql.sh"; then
+    echo "PostgreSQL installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
+grep -Fq 'nginx-signing.gpg' "${REPO_ROOT}/scripts/service_install/nginx.sh"
+grep -Fq 'signed-by=%s' "${REPO_ROOT}/scripts/service_install/nginx.sh"
+if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/nginx.sh"; then
+    echo "Nginx installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
+grep -Fq 'mariadb-keyring.gpg' "${REPO_ROOT}/scripts/service_install/mysql.sh"
+grep -Fq 'signed-by=%s' "${REPO_ROOT}/scripts/service_install/mysql.sh"
+if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/mysql.sh"; then
+    echo "MySQL/MariaDB installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
 grep -Fq 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:' \
     "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'https://mirror.azure.cn/kubernetes/charts/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"

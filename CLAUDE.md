@@ -201,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.18`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.19`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -227,6 +227,8 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `VPS_OPTIMIZE_*` | `optimize_system.sh` | Redirect backup / sysctl / limits / systemd drop-in paths for mocked real-path tests |
 | `VPS_APT_KEYRINGS_DIR` / `VPS_APT_DOCKER_LIST` | `install_deps.sh` | Redirect Docker apt keyring and sources.list paths for mocked tests |
 | `VPS_APT_KEYRINGS_DIR` / `VPS_APT_PGDG_LIST` | `postgresql.sh` | Redirect PostgreSQL apt keyring and `pgdg.list` paths for mocked tests |
+| `VPS_APT_KEYRINGS_DIR` / `VPS_APT_NGINX_LIST` | `nginx.sh` | Redirect Nginx apt keyring and `nginx.list` paths for mocked tests |
+| `VPS_APT_KEYRINGS_DIR` / `VPS_APT_MARIADB_LIST` | `mysql.sh` | Redirect MariaDB apt keyring and `mariadb.list` paths for mocked tests |
 | `VPS_APT_KEYRINGS_DIR` / `VPS_APT_JENKINS_LIST` | `jenkins.sh` | Redirect Jenkins apt keyring and `jenkins.list` paths for mocked tests |
 | `VPS_APT_KEYRINGS_DIR` / `VPS_APT_DOCKER_LIST` / `VPS_APT_K8S_LIST` / `VPS_APT_CRIO_*` | `kubernetes.sh` | Redirect Docker/K8s/CRI-O apt keyring and sources.list paths for mocked tests |
 | `VPS_HOSTNAME_BACKUP_DIR` / `VPS_HOSTNAME_FILE` / `VPS_HOSTS_FILE` | `change_hostname.sh` | Redirect hostname/hosts/backup paths for mocked real-path tests |

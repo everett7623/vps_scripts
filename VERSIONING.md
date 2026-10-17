@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.18`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.19`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.18` is a backward-compatible patch release that replaces deprecated `apt-key add` in Jenkins and Kubernetes Debian/Ubuntu paths with `signed-by` keyrings, and migrates Kubernetes apt packages to `pkgs.k8s.io` (Aliyun `kubernetes-new` for China mirrors). Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.19` is a backward-compatible patch release that finishes migrating first-party apt installers (Nginx, MariaDB, PostgreSQL) off deprecated `apt-key add` onto `signed-by` keyrings. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

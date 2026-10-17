@@ -279,6 +279,10 @@ add_mariadb_repo() {
     log "${CYAN}添加MariaDB官方仓库...${NC}"
     local key_file=""
     local repo_codename=""
+    local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+    local mariadb_list="${VPS_APT_MARIADB_LIST:-/etc/apt/sources.list.d/mariadb.list}"
+    local keyring_file="${keyrings_dir}/mariadb-keyring.gpg"
+    local repo_url=""
 
     if [[ -z "$DB_VERSION" ]]; then
         DB_VERSION="10.11"
@@ -286,18 +290,21 @@ add_mariadb_repo() {
 
     case $OS in
         ubuntu|debian)
-            apt-get install -y software-properties-common gnupg
+            apt-get install -y ca-certificates curl gnupg lsb-release
             key_file=$(download_to_temp "https://mariadb.org/mariadb_release_signing_key.asc") || \
                 error_exit "MariaDB签名密钥下载失败"
-            apt-key add "$key_file"
+            mkdir -p "${keyrings_dir}" "$(dirname -- "${mariadb_list}")"
+            if ! gpg --dearmor -o "${keyring_file}" < "${key_file}"; then
+                rm -f -- "$key_file"
+                error_exit "MariaDB apt 密钥转换失败"
+            fi
             rm -f -- "$key_file"
 
             repo_codename=$(lsb_release -cs)
-            if [[ "$OS" == "ubuntu" ]]; then
-                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/ubuntu ${repo_codename} main"
-            else
-                add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/debian ${repo_codename} main"
-            fi
+            repo_url="https://mirrors.aliyun.com/mariadb/repo/${DB_VERSION}/${OS}"
+            printf 'deb [arch=%s signed-by=%s] %s %s main\n' \
+                "$(dpkg --print-architecture)" "${keyring_file}" "${repo_url}" "${repo_codename}" \
+                > "${mariadb_list}"
             apt-get update
             ;;
         centos|rhel|fedora|rocky|almalinux)

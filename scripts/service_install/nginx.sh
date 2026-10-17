@@ -141,21 +141,32 @@ check_nginx_installed() {
 install_nginx_repo() {
     local version_type=$1
     local key_file=""
+    local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+    local nginx_list="${VPS_APT_NGINX_LIST:-/etc/apt/sources.list.d/nginx.list}"
+    local keyring_file="${keyrings_dir}/nginx-signing.gpg"
+    local repo_path=""
     log_info "从官方仓库安装Nginx $version_type 版本..."
     
     case $OS in
         ubuntu|debian)
-            # 添加Nginx官方仓库
+            # Prefer signed-by keyrings over deprecated apt-key.
+            apt-get install -y ca-certificates curl gnupg lsb-release
             key_file=$(mktemp "/tmp/nginx-key.XXXXXX")
             download_to_file "https://nginx.org/keys/nginx_signing.key" "$key_file" || error_exit "Nginx signing key download failed"
-            apt-key add "$key_file"
-            rm -f -- "$key_file"
-            
-            if [[ "$version_type" == "stable" ]]; then
-                echo "deb https://nginx.org/packages/$OS/ $(lsb_release -cs) nginx" > /etc/apt/sources.list.d/nginx.list
-            else
-                echo "deb https://nginx.org/packages/mainline/$OS/ $(lsb_release -cs) nginx" > /etc/apt/sources.list.d/nginx.list
+            mkdir -p "${keyrings_dir}" "$(dirname -- "${nginx_list}")"
+            if ! gpg --dearmor -o "${keyring_file}" < "${key_file}"; then
+                rm -f -- "$key_file"
+                error_exit "Nginx apt 密钥转换失败"
             fi
+            rm -f -- "$key_file"
+
+            if [[ "$version_type" == "stable" ]]; then
+                repo_path="https://nginx.org/packages/${OS}/"
+            else
+                repo_path="https://nginx.org/packages/mainline/${OS}/"
+            fi
+            printf 'deb [signed-by=%s] %s %s nginx\n' \
+                "${keyring_file}" "${repo_path}" "$(lsb_release -cs)" > "${nginx_list}"
             
             apt-get update -qq
             apt-get install -y nginx

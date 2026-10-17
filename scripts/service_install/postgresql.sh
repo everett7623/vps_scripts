@@ -226,19 +226,19 @@ add_postgresql_repo() {
             apt-get install -y wget ca-certificates gnupg
             key_file=$(download_to_temp "https://www.postgresql.org/media/keys/ACCC4CF8.asc") || \
                 error_exit "PostgreSQL签名密钥下载失败"
-            # Prefer signed-by keyrings over deprecated apt-key when gpg is available.
+            # Require signed-by keyrings; do not fall back to deprecated apt-key.
             mkdir -p "${keyrings_dir}" "$(dirname -- "${pgdg_list}")"
-            if command -v gpg >/dev/null 2>&1 && \
-                gpg --dearmor -o "${keyring_file}" < "${key_file}" 2>/dev/null; then
-                repo_codename=$(lsb_release -cs)
-                printf 'deb [signed-by=%s] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' \
-                    "${keyring_file}" "${repo_codename}" > "${pgdg_list}"
-            else
-                apt-key add "$key_file"
-                repo_codename=$(lsb_release -cs)
-                printf 'deb https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$repo_codename" \
-                    > "${pgdg_list}"
+            if ! command -v gpg >/dev/null 2>&1; then
+                rm -f -- "$key_file"
+                error_exit "需要 gpg 以配置 PostgreSQL apt 密钥环"
             fi
+            if ! gpg --dearmor -o "${keyring_file}" < "${key_file}"; then
+                rm -f -- "$key_file"
+                error_exit "PostgreSQL apt 密钥转换失败"
+            fi
+            repo_codename=$(lsb_release -cs)
+            printf 'deb [signed-by=%s] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' \
+                "${keyring_file}" "${repo_codename}" > "${pgdg_list}"
             rm -f -- "$key_file"
             apt-get update
             ;;

@@ -4,6 +4,16 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.19 - 2026-10-17
+
+### Changed
+- Nginx apt installs use `signed-by` keyrings (`nginx-signing.gpg`) instead of `apt-key add`.
+- MariaDB apt installs write `signed-by` sources (`mariadb-keyring.gpg`) instead of `apt-key` + `add-apt-repository`.
+- PostgreSQL apt installs require `signed-by` keyrings and no longer fall back to `apt-key add`.
+
+### Fixed
+- Removed the last `apt-key add` call sites from first-party service installers (nginx, mysql/mariadb, postgresql).
+
 ## 1.1.18 - 2026-10-17
 
 ### Changed

@@ -29,6 +29,10 @@ if grep -Eq 'wget[^\n]*-O[[:space:]]*-[[:space:]]*\|[[:space:]]*apt-key' "${SCRI
     echo "MySQL installer pipes wget to apt-key." >&2
     exit 1
 fi
+if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
+    echo "MySQL installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
 
 # No direct remote RPM installs
 if grep -Eq 'rpm[[:space:]]+-Uvh[[:space:]]+https?://' "${SCRIPT}"; then
@@ -40,6 +44,9 @@ fi
 grep -Fq 'deb_file=$(download_to_temp' "${SCRIPT}"
 grep -Fq 'rpm_file=$(download_rpm_to_temp' "${SCRIPT}"
 grep -Fq 'key_file=$(download_to_temp' "${SCRIPT}"
+grep -Fq 'mariadb-keyring.gpg' "${SCRIPT}"
+grep -Fq 'signed-by=%s' "${SCRIPT}"
+grep -Fq 'VPS_APT_MARIADB_LIST' "${SCRIPT}"
 
 # No wildcard temp file removal
 if grep -Eq 'rm[[:space:]]+-rf?[[:space:]]+/tmp/(mysql|mariadb)[^/]*\*' "${SCRIPT}"; then
