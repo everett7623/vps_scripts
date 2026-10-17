@@ -23,7 +23,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.10 | #14 | Redis redis-hashes SHA-256; AMH / BT beta HTTPS; optimize/clean mocked real paths; VPS_APT_* overrides |
 | 1.1.11 | #15 | aaPanel TLS fix; Jenkins/PostgreSQL/K8s HTTPS; tighter upgrade-hardening |
 | 1.1.12 | #17 | Ruby releases.yml SHA-256; hostname/timezone mocked real paths |
-| 1.1.13 | (pending) | update_system mocks; Oracle 17 archive; GraalVM live tags |
+| 1.1.13 | #20 | update_system mocks; Oracle 17 archive; GraalVM live tags |
 
 ## Decisions
 
