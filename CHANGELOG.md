@@ -4,6 +4,15 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.15 - 2026-10-17
+
+### Added
+- Mocked real-path coverage for Nezha and FRP status/uninstall via `VPS_NEZHA_*` / `VPS_FRP_*` path overrides.
+- Jenkins WAR installs download to a temp file, verify SHA-256 against the official `get.jenkins.io` `.sha256` sidecar, then install; `tests/validate_jenkins_installer_safety.sh`.
+
+### Changed
+- Nezha and FRP install/unit/config paths are overridable for tests without changing production defaults.
+
 ## 1.1.14 - 2026-10-17
 
 ### Added

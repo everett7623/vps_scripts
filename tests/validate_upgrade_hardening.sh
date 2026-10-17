@@ -94,7 +94,7 @@ if [ -n "${tls_bypass}" ]; then
     exit 1
 fi
 
-# Executable payloads (installers and source archives) must not be fetched over
+# Executable payloads (installers and source archives) must not be fetched ove
 # plain HTTP. Include .war (Jenkins) and common package suffixes.
 plain_http=$(grep -rnE 'http://[^"[:space:]]+\.(sh|tar\.gz|tgz|zip|war|rpm|deb)' \
     --include='*.sh' "${REPO_ROOT}/scripts" "${REPO_ROOT}/lib" "${LAUNCHER}" || true)
@@ -123,8 +123,14 @@ if grep -Eq 'curl[[:space:]]+-[A-Za-z0-9]*k' "${REPO_ROOT}/scripts/service_insta
     exit 1
 fi
 grep -Fq 'https://get.jenkins.io/war-stable/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
+grep -Fq 'checksum_url="${official_war_url}.sha256"' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
+grep -Fq 'Jenkins WAR SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 if grep -Eq 'http://mirrors\.jenkins\.io/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"; then
     echo "Jenkins installer still downloads WAR over plain HTTP." >&2
+    exit 1
+fi
+if grep -Eq 'wget -O "\$JENKINS_WAR"' "${REPO_ROOT}/scripts/service_install/jenkins.sh"; then
+    echo "Jenkins installer still writes the WAR path before checksum verification." >&2
     exit 1
 fi
 grep -Fq 'https://apt.postgresql.org/pub/repos/apt' "${REPO_ROOT}/scripts/service_install/postgresql.sh"

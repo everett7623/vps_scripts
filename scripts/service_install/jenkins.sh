@@ -37,7 +37,7 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[0;37m'
-NC='\033[0m' # No Color
+NC='\033[0m' # No Colo
 
 # 全局变量
 INSTALL_TYPE="package"
@@ -125,7 +125,7 @@ log() {
 
 # 显示标题
 show_title() {
-    clear
+    clea
     echo -e "${PURPLE}======================================${NC}"
     echo -e "${CYAN}   Jenkins CI/CD平台安装脚本 v${SCRIPT_VERSION}${NC}"
     echo -e "${PURPLE}======================================${NC}"
@@ -211,7 +211,7 @@ check_jenkins_installed() {
             if command -v jenkins &> /dev/null; then
                 jenkins --version 2>/dev/null || true
             fi
-            read -p "是否继续安装? (y/n): " -n 1 -r
+            read -p "是否继续安装? (y/n): " -n 1 -
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
                 log "${YELLOW}安装已取消${NC}"
@@ -303,36 +303,81 @@ install_package() {
 # WAR包方式安装
 install_war() {
     log "${CYAN}使用WAR包安装Jenkins...${NC}"
-    
-    # 创建目录
-    mkdir -p /usr/share/jenkins
-    
+
+    local work_dir=""
+    local war_tmp=""
+    local checksum_file=""
+    local checksum_url=""
+    local official_war_url=""
+    local expected=""
+    local actual=""
+
     # 下载 Jenkins WAR（官方 HTTPS CDN；国内可选清华镜像）
+    # SHA-256 始终取自 get.jenkins.io，即使 WAR 来自镜像。
     if [[ "$JENKINS_VERSION" == "lts" ]]; then
-        DOWNLOAD_URL="https://get.jenkins.io/war-stable/latest/jenkins.war"
+        official_war_url="https://get.jenkins.io/war-stable/latest/jenkins.war"
+        DOWNLOAD_URL="${official_war_url}"
         if [[ "$USE_CHINA_MIRROR" = true ]]; then
             DOWNLOAD_URL="https://mirrors.tuna.tsinghua.edu.cn/jenkins/war-stable/latest/jenkins.war"
         fi
     elif [[ "$JENKINS_VERSION" == "weekly" ]]; then
-        DOWNLOAD_URL="https://get.jenkins.io/war/latest/jenkins.war"
+        official_war_url="https://get.jenkins.io/war/latest/jenkins.war"
+        DOWNLOAD_URL="${official_war_url}"
         if [[ "$USE_CHINA_MIRROR" = true ]]; then
             DOWNLOAD_URL="https://mirrors.tuna.tsinghua.edu.cn/jenkins/war/latest/jenkins.war"
         fi
     else
-        DOWNLOAD_URL="https://get.jenkins.io/war-stable/${JENKINS_VERSION}/jenkins.war"
+        official_war_url="https://get.jenkins.io/war-stable/${JENKINS_VERSION}/jenkins.war"
+        DOWNLOAD_URL="${official_war_url}"
         if [[ "$USE_CHINA_MIRROR" = true ]]; then
             DOWNLOAD_URL="https://mirrors.tuna.tsinghua.edu.cn/jenkins/war-stable/${JENKINS_VERSION}/jenkins.war"
         fi
     fi
-    
+    checksum_url="${official_war_url}.sha256"
+
+    work_dir=$(mktemp -d "/tmp/jenkins-war.XXXXXX") || {
+        log "${RED}错误: 创建临时目录失败${NC}"
+        exit 1
+    }
+    war_tmp="${work_dir}/jenkins.war"
+    checksum_file="${work_dir}/jenkins.war.sha256"
+
     log "${YELLOW}下载Jenkins WAR包...${NC}"
-    wget -O "$JENKINS_WAR" "$DOWNLOAD_URL" || { log "${RED}错误: Jenkins WAR包下载失败${NC}"; exit 1; }
-    
-    if [[ ! -f "$JENKINS_WAR" ]]; then
+    if ! wget -O "$war_tmp" "$DOWNLOAD_URL"; then
+        rm -rf -- "${work_dir}"
         log "${RED}错误: Jenkins WAR包下载失败${NC}"
         exit 1
     fi
-    
+    if [[ ! -s "$war_tmp" ]]; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: Jenkins WAR包下载失败${NC}"
+        exit 1
+    fi
+
+    log "${YELLOW}正在校验 SHA-256...${NC}"
+    if ! curl -fsSL --retry 3 -o "${checksum_file}" "${checksum_url}"; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: 下载 Jenkins WAR SHA-256 校验文件失败${NC}"
+        exit 1
+    fi
+    expected=$(awk 'NF {print $1; exit}' "${checksum_file}")
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{64}$ ]]; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: Jenkins WAR SHA-256 校验文件格式无效${NC}"
+        exit 1
+    fi
+    actual=$(sha256sum "${war_tmp}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: Jenkins WAR SHA-256 校验失败${NC}"
+        exit 1
+    fi
+    log "${GREEN}SHA-256 校验通过${NC}"
+
+    mkdir -p /usr/share/jenkins
+    install -m 0644 "${war_tmp}" "${JENKINS_WAR}"
+    rm -rf -- "${work_dir}"
+
     # 创建systemd服务文件
     create_systemd_service
 }
@@ -382,7 +427,7 @@ create_systemd_service() {
     
     cat > /etc/systemd/system/jenkins.service << EOF
 [Unit]
-Description=Jenkins Continuous Integration Server
+Description=Jenkins Continuous Integration Serve
 After=network.target
 
 [Service]
@@ -481,7 +526,7 @@ configure_security() {
     # 创建安全配置脚本
     cat > "$JENKINS_INIT_DIR/02-security-config.groovy" << 'EOF'
 import jenkins.model.*
-import hudson.security.csrf.DefaultCrumbIssuer
+import hudson.security.csrf.DefaultCrumbIssue
 import jenkins.security.s2m.AdminWhitelistRule
 
 def instance = Jenkins.getInstance()
@@ -524,7 +569,7 @@ install_plugins() {
     # 创建插件安装脚本
     cat > "$JENKINS_INIT_DIR/03-install-plugins.groovy" << EOF
 import jenkins.model.*
-import java.util.logging.Logger
+import java.util.logging.Logge
 
 def logger = Logger.getLogger("")
 def installed = false
@@ -1177,7 +1222,7 @@ main() {
     install_java
     
     # 创建Jenkins用户
-    create_jenkins_user
+    create_jenkins_use
     
     # 根据类型安装Jenkins
     case $INSTALL_TYPE in
@@ -1185,10 +1230,10 @@ main() {
             install_package
             ;;
         war)
-            install_war
+            install_wa
             ;;
         docker)
-            install_docker
+            install_docke
             ;;
         *)
             log "${RED}错误: 无效的安装类型 ${INSTALL_TYPE}${NC}"
@@ -1202,7 +1247,7 @@ main() {
         
         # 创建管理员用户
         if [[ "$SKIP_SETUP_WIZARD" = true ]] || [[ -n "$ADMIN_PASSWORD" ]]; then
-            create_admin_user
+            create_admin_use
         fi
         
         # 配置安全

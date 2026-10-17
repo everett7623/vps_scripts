@@ -201,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.14`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.15`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -230,6 +230,8 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `VPS_HOSTNAME_BACKUP_DIR` / `VPS_HOSTNAME_FILE` / `VPS_HOSTS_FILE` | `change_hostname.sh` | Redirect hostname/hosts/backup paths for mocked real-path tests |
 | `VPS_TIMEZONE_BACKUP_DIR` / `VPS_TIMEZONE_FILE` / `VPS_LOCALTIME_FILE` / `VPS_ZONEINFO_DIR` | `set_timezone.sh` | Redirect timezone paths for mocked real-path tests |
 | `VPS_UPDATE_BACKUP_DIR` / `VPS_REBOOT_REQUIRED_FILE` / `VPS_APT_CACHE_FILE` / `VPS_SKIP_NETWORK_CHECK` | `update_system.sh` | Redirect backup/reboot/cache paths and skip network probe for mocked tests |
+| `VPS_NEZHA_INSTALL_DIR` / `VPS_NEZHA_SYSTEMD_DIR` | `nezha.sh` | Redirect agent install and unit paths for mocked real-path tests |
+| `VPS_FRP_BIN_DIR` / `VPS_FRP_CONFIG_DIR` / `VPS_FRP_SYSTEMD_DIR` | `frp.sh` | Redirect frp binary/config/unit paths for mocked real-path tests |
 
 ### `vps.sh` menu structure
 

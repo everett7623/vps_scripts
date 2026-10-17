@@ -435,4 +435,79 @@ if grep -Eq '^reboot ' "${CALL_LOG}"; then
     fail "update_system --reboot under test hooks still called reboot"
 fi
 
+# --- Nezha status / uninstall with path overrides ---
+NEZHA="${REPO_ROOT}/scripts/other_tools/nezha.sh"
+NZ_ROOT="${TMP_ROOT}/nezha"
+NZ_INSTALL="${NZ_ROOT}/agent"
+NZ_SYSTEMD="${NZ_ROOT}/systemd"
+NZ_BACKUP="${NZ_ROOT}/backups"
+mkdir -p "${NZ_INSTALL}" "${NZ_SYSTEMD}" "${NZ_BACKUP}"
+printf 'server: "panel.example:8008"\nclient_secret: "secret"\ntls: false\n' > "${NZ_INSTALL}/config.yml"
+: > "${NZ_INSTALL}/nezha-agent"
+chmod +x "${NZ_INSTALL}/nezha-agent"
+printf '[Unit]\nDescription=Nezha Agent\n' > "${NZ_SYSTEMD}/nezha-agent.service"
+write_stub systemctl 'exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_NEZHA_INSTALL_DIR="${NZ_INSTALL}" \
+VPS_NEZHA_SYSTEMD_DIR="${NZ_SYSTEMD}" \
+VPS_BACKUP_ROOT="${NZ_BACKUP}" \
+    bash "${NEZHA}" --status </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "nezha --status failed"
+grep -Fq "${NZ_INSTALL}/nezha-agent" "${OUTPUT}" || fail "nezha --status missing install path"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_NEZHA_INSTALL_DIR="${NZ_INSTALL}" \
+VPS_NEZHA_SYSTEMD_DIR="${NZ_SYSTEMD}" \
+VPS_BACKUP_ROOT="${NZ_BACKUP}" \
+    bash "${NEZHA}" --uninstall --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "nezha --uninstall --yes failed"
+[ ! -e "${NZ_INSTALL}" ] || fail "nezha install dir still present after uninstall"
+[ ! -f "${NZ_SYSTEMD}/nezha-agent.service" ] || fail "nezha unit still present after uninstall"
+ls -1 "${NZ_BACKUP}"/nezha_*/config.yml >/dev/null 2>&1 \
+    || fail "nezha config backup was not created"
+expect_call '^systemctl disable --now nezha-agent'
+expect_call '^systemctl daemon-reload'
+
+# --- FRP status / uninstall with path overrides ---
+FRP="${REPO_ROOT}/scripts/other_tools/frp.sh"
+FRP_ROOT="${TMP_ROOT}/frp"
+FRP_BIN="${FRP_ROOT}/bin"
+FRP_CFG="${FRP_ROOT}/etc"
+FRP_SYSTEMD="${FRP_ROOT}/systemd"
+FRP_BACKUP="${FRP_ROOT}/backups"
+mkdir -p "${FRP_BIN}" "${FRP_CFG}" "${FRP_SYSTEMD}" "${FRP_BACKUP}"
+printf '#!/bin/bash\necho frpc 0.0.0\n' > "${FRP_BIN}/frpc"
+chmod +x "${FRP_BIN}/frpc"
+printf 'serverAddr = "1.2.3.4"\nserverPort = 7000\nauth.token = "tok"\n' > "${FRP_CFG}/frpc.toml"
+printf '[Unit]\nDescription=frp frpc\n' > "${FRP_SYSTEMD}/frpc.service"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_FRP_BIN_DIR="${FRP_BIN}" \
+VPS_FRP_CONFIG_DIR="${FRP_CFG}" \
+VPS_FRP_SYSTEMD_DIR="${FRP_SYSTEMD}" \
+VPS_BACKUP_ROOT="${FRP_BACKUP}" \
+    bash "${FRP}" --status </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "frp --status failed"
+grep -Fq 'frpc' "${OUTPUT}" || fail "frp --status missing frpc"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_FRP_BIN_DIR="${FRP_BIN}" \
+VPS_FRP_CONFIG_DIR="${FRP_CFG}" \
+VPS_FRP_SYSTEMD_DIR="${FRP_SYSTEMD}" \
+VPS_BACKUP_ROOT="${FRP_BACKUP}" \
+    bash "${FRP}" --uninstall client --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "frp --uninstall client --yes failed"
+[ ! -e "${FRP_BIN}/frpc" ] || fail "frpc binary still present after uninstall"
+[ ! -f "${FRP_SYSTEMD}/frpc.service" ] || fail "frpc unit still present after uninstall"
+[ ! -f "${FRP_CFG}/frpc.toml" ] || fail "frpc config still present after uninstall"
+ls -1 "${FRP_BACKUP}"/frp_*/frpc.toml >/dev/null 2>&1 \
+    || fail "frp config backup was not created"
+expect_call '^systemctl disable --now frpc'
+expect_call '^systemctl daemon-reload'
+
 echo "Mocked pkg/systemd real-path checks are valid."

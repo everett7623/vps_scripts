@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.14`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.15`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.14` is a backward-compatible patch release that installs Rust via the official `rustup-init` binary with SHA-256 verification (instead of `sh.rustup.rs`), replaces the offline `seedloc.com` blog link with project documentation, and records a third-party catalog URL liveness re-check. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.15` is a backward-compatible patch release that adds mocked real-path coverage for Nezha and FRP (`VPS_NEZHA_*` / `VPS_FRP_*`), and verifies Jenkins WAR downloads with the official `get.jenkins.io` SHA-256 sidecar before install. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

@@ -8,9 +8,11 @@ REPO_ROOT="${REPO_ROOT_OVERRIDE:-${REPO_ROOT_DEFAULT}}"
 BBR_SCRIPT="${REPO_ROOT}/scripts/other_tools/bbr.sh"
 SWAP_SCRIPT="${REPO_ROOT}/scripts/other_tools/swap.sh"
 FAIL2BAN_SCRIPT="${REPO_ROOT}/scripts/other_tools/fail2ban.sh"
+NEZHA_SCRIPT="${REPO_ROOT}/scripts/other_tools/nezha.sh"
+FRP_SCRIPT="${REPO_ROOT}/scripts/other_tools/frp.sh"
 LAUNCHER="${LAUNCHER_OVERRIDE:-${REPO_ROOT}/vps.sh}"
 
-for script in "${BBR_SCRIPT}" "${SWAP_SCRIPT}" "${FAIL2BAN_SCRIPT}" "${LAUNCHER}"; do
+for script in "${BBR_SCRIPT}" "${SWAP_SCRIPT}" "${FAIL2BAN_SCRIPT}" "${NEZHA_SCRIPT}" "${FRP_SCRIPT}" "${LAUNCHER}"; do
     bash -n "${script}"
 done
 
@@ -43,6 +45,11 @@ grep -Fq -- '--yes' "${FAIL2BAN_SCRIPT}"
 grep -Fq 'VPS_FAIL2BAN_JAIL_FILE' "${FAIL2BAN_SCRIPT}"
 grep -Fq 'VPS_BBR_DROPIN' "${BBR_SCRIPT}"
 grep -Fq 'VPS_OS_TYPE' "${FAIL2BAN_SCRIPT}"
+grep -Fq 'VPS_NEZHA_INSTALL_DIR' "${NEZHA_SCRIPT}"
+grep -Fq 'VPS_NEZHA_SYSTEMD_DIR' "${NEZHA_SCRIPT}"
+grep -Fq 'VPS_FRP_BIN_DIR' "${FRP_SCRIPT}"
+grep -Fq 'VPS_FRP_CONFIG_DIR' "${FRP_SCRIPT}"
+grep -Fq 'VPS_FRP_SYSTEMD_DIR' "${FRP_SCRIPT}"
 grep -Fq 'return "${exit_code}"' "${LAUNCHER}"
 grep -Fq 'aarch64|arm64) arch=arm64' "${LAUNCHER}"
 grep -Fq '模块被中断' "${LAUNCHER}"
