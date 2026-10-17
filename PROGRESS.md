@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.13 adds mocked real-path coverage for `update_system.sh` and repairs broken Oracle JDK 17 / GraalVM download URLs. 1.1.12 added Ruby checksums and hostname/timezone mocks. The LDNMP installer stays a single combined installer.
+Version 1.1.14 installs Rust via checksum-verified `rustup-init`, replaces the offline seedloc blog link with project docs, and re-checks third-party catalog URL liveness. 1.1.13 added update_system mocks and Java URL fixes. The LDNMP installer stays a single combined installer.
 
-Next work: re-run third-party catalog URL liveness; grow remaining mutator mocks; optional Rust toolchain checksum hardening.
+Next work: grow remaining mutator mocks; periodic catalog URL re-check each release.
 
 ## Catalog Review Status
 
@@ -12,7 +12,7 @@ Next work: re-run third-party catalog URL liveness; grow remaining mutator mocks
 |---|---|---|
 | Service install | Reviewed: Coolify, Dokploy, Dockge, Nginx Proxy Manager added; AMH moved last | 1.1.5 |
 | Other tools | Reviewed: Beszel, first-party FRP added; Uptime Kuma 2; FileBrowser labelled archived | 1.1.5 |
-| Community | Reviewed: NextTrace URL fixed; JCNF, BlueSkyXN, i-abc Speedtest labelled and moved last; re-checked in 1.1.6, no changes | 1.1.5 |
+| Community | Reviewed: NextTrace URL fixed; JCNF, BlueSkyXN, i-abc Speedtest labelled and moved last; URL liveness re-check in 1.1.14 (seedloc blog retired) | 1.1.5 / 1.1.14 |
 | Proxy tools | Reviewed: S-UI, v2ray-agent, official Hysteria2/Xray added; x-ui-yg and X-Panel URLs updated | 1.1.6 |
 | Network test | First-party; `--skip-install` on auto-installing scripts | 1.1.7 |
 | Performance test | First-party; soft-fail installs, `--skip-install`, CLI validation | 1.1.7 |
@@ -54,6 +54,7 @@ Next work: re-run third-party catalog URL liveness; grow remaining mutator mocks
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrapper
+- Rust rustup-init SHA-256; seedloc blog replaced with project docs; catalog URL liveness re-check (1.1.14)
 - update_system mocked real paths; Oracle JDK 17 archive + GraalVM live tags (1.1.13)
 - Ruby `releases.yml` SHA-256; hostname/timezone mocked real paths; `VPS_HOSTNAME_*` / `VPS_TIMEZONE_*` overrides (1.1.12)
 - aaPanel TLS bypass removed; Jenkins / PostgreSQL / K8s CRI-O / Azure Helm HTTPS; tighter TLS/HTTP hardening guards (1.1.11)
@@ -79,7 +80,7 @@ Next work: re-run third-party catalog URL liveness; grow remaining mutator mocks
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.13
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.14
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 
@@ -87,7 +88,6 @@ Next work: re-run third-party catalog URL liveness; grow remaining mutator mocks
 
 - Re-run the third-party catalog check (URL liveness, archived/stale upstreams) each release
 - Grow mocked real-path coverage for remaining first-party mutators
-- Optional Rust toolchain checksum hardening
 
 ## Success Criteria For Next Release
 

@@ -120,6 +120,7 @@ main() {
     require_file "tests/validate_dry_run_behavior.sh"
     require_file "tests/validate_nodejs_installer_safety.sh"
     require_file "tests/validate_ruby_installer_safety.sh"
+    require_file "tests/validate_rust_installer_safety.sh"
 
     for doc in "${required_docs[@]}"; do
         require_file "${doc}"

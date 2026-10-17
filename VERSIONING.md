@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.13`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.14`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.13` is a backward-compatible patch release that adds mocked real-path coverage for `update_system.sh` (`VPS_UPDATE_BACKUP_DIR`, `VPS_REBOOT_REQUIRED_FILE`, `VPS_APT_CACHE_FILE`, `VPS_SKIP_NETWORK_CHECK`), moves Oracle JDK 17 downloads to the current archive URL with `.sha256`, and pins GraalVM community builds to live `jdk-17.0.9` / `jdk-21.0.2` release tags. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.14` is a backward-compatible patch release that installs Rust via the official `rustup-init` binary with SHA-256 verification (instead of `sh.rustup.rs`), replaces the offline `seedloc.com` blog link with project documentation, and records a third-party catalog URL liveness re-check. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

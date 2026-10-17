@@ -23,8 +23,12 @@ require_text "vps.sh" "论坛推荐"
 require_text "vps.sh" "https://nodeloc.com"
 require_text "vps.sh" "VPS 推荐"
 require_text "vps.sh" "https://vpsknow.com"
-require_text "vps.sh" "博客推荐"
-require_text "vps.sh" "https://seedloc.com"
+require_text "vps.sh" "项目文档"
+require_text "vps.sh" "https://github.com/everett7623/vps_scripts/blob/main/README.md"
+if grep -Fq 'https://seedloc.com' "${REPO_ROOT}/vps.sh"; then
+    echo "Launcher still points to the offline seedloc.com blog." >&2
+    exit 1
+fi
 require_text "vps.sh" "模块路径"
 require_text "vps.sh" "运行模式"
 require_text "vps.sh" "安全校验"

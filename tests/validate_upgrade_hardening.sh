@@ -148,4 +148,18 @@ if grep -Fq 'java/17/latest/jdk-17_linux-' "${JAVA_SCRIPT}"; then
     exit 1
 fi
 
+# Rust installs official rustup-init with SHA-256; seedloc blog URL retired.
+RUST_SCRIPT="${REPO_ROOT}/scripts/service_install/rust.sh"
+grep -Fq 'static.rust-lang.org/rustup/dist' "${RUST_SCRIPT}"
+grep -Fq 'rustup-init SHA-256 校验失败' "${RUST_SCRIPT}"
+if grep -Fq 'https://sh.rustup.rs' "${RUST_SCRIPT}"; then
+    echo "Rust installer still uses the sh.rustup.rs wrapper." >&2
+    exit 1
+fi
+if grep -Fq 'https://seedloc.com' "${LAUNCHER}"; then
+    echo "Launcher still links the offline seedloc.com blog." >&2
+    exit 1
+fi
+grep -Fq 'github.com/everett7623/vps_scripts/blob/main/README.md' "${LAUNCHER}"
+
 echo "Upgrade hardening checks are valid."
