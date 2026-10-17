@@ -214,9 +214,15 @@
 - [x] Guard CRI-O against OpenSUSE kubic 1.29+ 404; ELF-check Caddy/cloudflared
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.17`
 
+## 1.1.18 release
+
+- [x] Jenkins apt: `signed-by` keyring (`jenkins.io-2023.key`); no `apt-key add`
+- [x] Kubernetes apt: migrate to `pkgs.k8s.io` / Aliyun `kubernetes-new`; Docker CE + CRI-O use `signed-by`
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.18`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); catalog pins done in 1.1.17; next: apt-key migration / BT niche paths
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); apt-key migration done for jenkins/k8s in 1.1.18; next: nginx/mysql apt-key leftovers / BT niche paths
 - [ ] Mocked behavioral tests for remaining niche paths (BT cleanup vendor uninstall; kernel rollback stays interactive)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

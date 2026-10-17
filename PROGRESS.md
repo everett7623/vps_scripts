@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.17 pins catalog short URLs, refuses Oracle JDK 8/11 OTN soft-404s, guards CRI-O against OpenSUSE 1.29+ 404s, and ELF-checks Caddy/cloudflared. 1.1.16 covered uninstall mocks. The LDNMP installer stays a single combined installer.
+Version 1.1.18 migrates Jenkins and Kubernetes Debian/Ubuntu apt installs off `apt-key` onto `signed-by` keyrings, and moves Kubernetes packages to `pkgs.k8s.io`. 1.1.17 covered catalog pins and download guards. The LDNMP installer stays a single combined installer.
 
-Next work: periodic catalog URL re-check each release; remaining niche edges (BT cleanup, apt-key migration in k8s/jenkins).
+Next work: periodic catalog URL re-check each release; remaining niche edges (BT cleanup, nginx/mysql apt-key leftovers).
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: periodic catalog URL re-check each release; remaining niche edges (BT
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrappe
+- Jenkins/Kubernetes apt signed-by keyrings; k8s pkgs.k8s.io migration (1.1.18)
 - Catalog URL pins + liveness re-check; Oracle 8/11 OTN refuse; CRI-O 1.29+ guard; Caddy/cloudflared ELF checks (1.1.17)
 - Uninstall rollback/clear/clean/full_uninstall mocked real-path coverage; swap fstab rollback honors VPS_SWAP_FILE (1.1.16)
 - Nezha/FRP mocked real-path overrides; Jenkins WAR SHA-256 before install (1.1.15)
@@ -83,7 +84,7 @@ Next work: periodic catalog URL re-check each release; remaining niche edges (BT
 
 ### Documentation and release metadata
 
-- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.17
+- Updated `version.json`, config, launcher, README badge, and version policy to 1.1.18
 - Updated `CHANGELOG.md`, `TASKS.md`, `PROGRESS.md`, `PRIVACY.md`, and development guidance
 - Recorded the next safety round around the four first-party `other_tools` scripts
 

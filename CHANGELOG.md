@@ -4,6 +4,16 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.18 - 2026-10-17
+
+### Changed
+- Jenkins apt installs use `signed-by` keyrings (`jenkins.io-2023.key`); signing key always from `pkg.jenkins.io` (TUNA packages still used with `--china-mirror`).
+- Kubernetes apt installs migrate from retired `kubernetes-xenial` + `apt-key` to `pkgs.k8s.io` / Aliyun `kubernetes-new` with `signed-by` keyrings; package revisions use `-1.1` style suffixes.
+- Kubernetes Docker CE and CRI-O apt repos also use `signed-by` keyrings instead of `apt-key add`.
+
+### Fixed
+- Removed deprecated `apt-key add` pipelines from Jenkins and Kubernetes Debian/Ubuntu install paths.
+
 ## 1.1.17 - 2026-10-17
 
 ### Added

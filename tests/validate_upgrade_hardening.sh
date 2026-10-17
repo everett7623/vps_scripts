@@ -125,6 +125,8 @@ fi
 grep -Fq 'https://get.jenkins.io/war-stable/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'checksum_url="${official_war_url}.sha256"' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'Jenkins WAR SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
+grep -Fq 'jenkins.io-2023.key' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
+grep -Fq 'jenkins-keyring.gpg' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 if grep -Eq 'http://mirrors\.jenkins\.io/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"; then
     echo "Jenkins installer still downloads WAR over plain HTTP." >&2
     exit 1
@@ -133,11 +135,25 @@ if grep -Eq 'wget -O "\$JENKINS_WAR"' "${REPO_ROOT}/scripts/service_install/jenk
     echo "Jenkins installer still writes the WAR path before checksum verification." >&2
     exit 1
 fi
+if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/jenkins.sh"; then
+    echo "Jenkins installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
 grep -Fq 'https://apt.postgresql.org/pub/repos/apt' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
 grep -Fq 'signed-by=' "${REPO_ROOT}/scripts/service_install/postgresql.sh"
 grep -Fq 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:' \
     "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'https://mirror.azure.cn/kubernetes/charts/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'pkgs.k8s.io/core:/stable:/v' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'kubernetes-apt-keyring.gpg' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
+    echo "Kubernetes installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
+if grep -Fq 'kubernetes-xenial' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
+    echo "Kubernetes installer still uses retired kubernetes-xenial apt repo." >&2
+    exit 1
+fi
 
 # Ruby source installs verify against the official releases.yml digests.
 grep -Fq 'ruby/www.ruby-lang.org/master/_data/releases.yml' \

@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.17`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.18`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.17` is a backward-compatible patch release that pins catalog short URLs to raw GitHub, refuses Oracle JDK 8/11 OTN soft-404 downloads, guards CRI-O installs against missing OpenSUSE 1.29+ streams, and verifies Caddy/cloudflared downloads are ELF binaries before install. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.18` is a backward-compatible patch release that replaces deprecated `apt-key add` in Jenkins and Kubernetes Debian/Ubuntu paths with `signed-by` keyrings, and migrates Kubernetes apt packages to `pkgs.k8s.io` (Aliyun `kubernetes-new` for China mirrors). Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

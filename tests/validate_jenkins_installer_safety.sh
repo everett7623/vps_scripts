@@ -18,6 +18,10 @@ grep -Fq 'checksum_url="${official_war_url}.sha256"' "${SCRIPT}"
 grep -Fq 'Jenkins WAR SHA-256 校验失败' "${SCRIPT}"
 grep -Fq 'mktemp -d "/tmp/jenkins-war.XXXXXX"' "${SCRIPT}"
 grep -Fq 'install -m 0644 "${war_tmp}" "${JENKINS_WAR}"' "${SCRIPT}"
+grep -Fq 'jenkins.io-2023.key' "${SCRIPT}"
+grep -Fq 'signed-by=%s' "${SCRIPT}"
+grep -Fq 'jenkins-keyring.gpg' "${SCRIPT}"
+grep -Fq 'VPS_APT_JENKINS_LIST' "${SCRIPT}"
 
 # Must not stream or install the WAR before checksum verification.
 if grep -Eq 'wget -O "\$JENKINS_WAR"' "${SCRIPT}"; then
@@ -26,6 +30,10 @@ if grep -Eq 'wget -O "\$JENKINS_WAR"' "${SCRIPT}"; then
 fi
 if grep -Eq 'http://mirrors\.jenkins\.io/' "${SCRIPT}"; then
     echo "Jenkins installer still downloads WAR over plain HTTP." >&2
+    exit 1
+fi
+if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
+    echo "Jenkins installer still uses deprecated apt-key add." >&2
     exit 1
 fi
 

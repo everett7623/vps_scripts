@@ -266,17 +266,44 @@ create_jenkins_user() {
 # 系统包方式安装
 install_package() {
     log "${CYAN}使用系统包安装Jenkins...${NC}"
+
+    local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
+    local jenkins_list="${VPS_APT_JENKINS_LIST:-/etc/apt/sources.list.d/jenkins.list}"
+    local keyring_file="${keyrings_dir}/jenkins-keyring.gpg"
+    local key_tmp=""
+    local key_url=""
+    local repo_url=""
     
     case $OS in
         ubuntu|debian)
-            # 添加Jenkins仓库
+            apt-get update
+            apt-get install -y ca-certificates curl gnupg
+
+            # Signing key always comes from pkg.jenkins.io (TUNA does not mirror the key file).
+            key_url="https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key"
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                wget -q -O - https://mirrors.tuna.tsinghua.edu.cn/jenkins/debian-stable/jenkins.io.key | apt-key add - || true
-                echo "deb https://mirrors.tuna.tsinghua.edu.cn/jenkins/debian-stable binary/" > /etc/apt/sources.list.d/jenkins.list
+                repo_url="https://mirrors.tuna.tsinghua.edu.cn/jenkins/debian-stable"
             else
-                wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | apt-key add - || true
-                echo "deb https://pkg.jenkins.io/debian-stable binary/" > /etc/apt/sources.list.d/jenkins.list
+                repo_url="https://pkg.jenkins.io/debian-stable"
             fi
+
+            key_tmp=$(mktemp "/tmp/jenkins-apt-key.XXXXXX") || {
+                log "${RED}错误: 创建临时密钥文件失败${NC}"
+                exit 1
+            }
+            mkdir -p "${keyrings_dir}" "$(dirname -- "${jenkins_list}")"
+            if ! curl -fsSL "${key_url}" -o "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: Jenkins apt 密钥下载失败${NC}"
+                exit 1
+            fi
+            if ! gpg --dearmor -o "${keyring_file}" < "${key_tmp}"; then
+                rm -f -- "${key_tmp}"
+                log "${RED}错误: Jenkins apt 密钥转换失败${NC}"
+                exit 1
+            fi
+            rm -f -- "${key_tmp}"
+            printf 'deb [signed-by=%s] %s binary/\n' "${keyring_file}" "${repo_url}" > "${jenkins_list}"
             
             apt-get update
             if [[ "$JENKINS_VERSION" == "lts" ]]; then
