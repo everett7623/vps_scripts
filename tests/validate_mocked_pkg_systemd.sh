@@ -510,4 +510,229 @@ ls -1 "${FRP_BACKUP}"/frp_*/frpc.toml >/dev/null 2>&1 \
 expect_call '^systemctl disable --now frpc'
 expect_call '^systemctl daemon-reload'
 
+# --- uninstall rollback real paths ---
+ROLLBACK="${REPO_ROOT}/scripts/uninstall_scripts/rollback_system_environment.sh"
+RB_ROOT="${TMP_ROOT}/rollback"
+RB_BACKUP="${RB_ROOT}/backups"
+RB_SYSCTL="${RB_ROOT}/sysctl.conf"
+RB_BBR="${RB_ROOT}/sysctl.d/99-vps-bbr.conf"
+RB_SWAP="${RB_ROOT}/swapfile"
+RB_FSTAB="${RB_ROOT}/fstab"
+RB_PROC_SWAPS="${RB_ROOT}/proc_swaps"
+RB_SWAPPINESS="${RB_ROOT}/sysctl.d/99-swappiness.conf"
+RB_FAIL2BAN="${RB_ROOT}/fail2ban"
+RB_HOSTNAME="${RB_ROOT}/hostname"
+RB_HOSTS="${RB_ROOT}/hosts"
+RB_TZ="${RB_ROOT}/timezone"
+RB_LOCALTIME="${RB_ROOT}/localtime"
+RB_ZONEINFO="${RB_ROOT}/zoneinfo"
+mkdir -p "${RB_ROOT}/sysctl.d" "${RB_BACKUP}" "${RB_FAIL2BAN}/jail.d" "${RB_ZONEINFO}"
+printf 'net.core.somaxconn = 1024\nnet.ipv4.tcp_congestion_control=bbr\nnet.core.default_qdisc=fq\n' > "${RB_SYSCTL}"
+printf 'net.ipv4.tcp_congestion_control=bbr\nnet.core.default_qdisc=fq\n' > "${RB_BBR}"
+: > "${RB_SWAP}"
+printf 'UUID=abcd / ext4 defaults 0 1\n%s none swap sw 0 0\n/dev/vdb1 none swap sw 0 0\n' "${RB_SWAP}" > "${RB_FSTAB}"
+printf 'Filename\tType\tSize\tUsed\tPriority\n%s\tfile\t1024\t0\t-3\n/dev/vdb1\tpartition\t1048572\t0\t-2\n' "${RB_SWAP}" > "${RB_PROC_SWAPS}"
+printf 'vm.swappiness=10\n' > "${RB_SWAPPINESS}"
+printf 'enabled\n' > "${RB_FAIL2BAN}/jail.local"
+printf 'newhost\n' > "${RB_HOSTNAME}"
+printf '127.0.0.1\tlocalhost\n127.0.1.1\tnewhost\n' > "${RB_HOSTS}"
+: > "${RB_ZONEINFO}/UTC"
+printf 'Asia/Shanghai\n' > "${RB_TZ}"
+ln -sfn "${RB_ZONEINFO}/UTC" "${RB_LOCALTIME}"
+write_stub sysctl 'exit 0'
+write_stub systemctl 'exit 0'
+write_stub swapoff 'exit 0'
+write_stub hostnamectl 'exit 0'
+write_stub hostname 'echo newhost; exit 0'
+write_stub dpkg-query 'printf "install ok installed\n"; exit 0'
+write_stub apt-get 'exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${RB_BACKUP}" \
+VPS_BBR_DROPIN="${RB_BBR}" \
+VPS_SYSCTL_CONF="${RB_SYSCTL}" \
+    bash "${ROLLBACK}" --target bbr --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "rollback --target bbr --yes failed"
+[ ! -f "${RB_BBR}" ] || fail "BBR drop-in still present after rollback"
+if grep -Eq 'tcp_congestion_control|default_qdisc' "${RB_SYSCTL}"; then
+    fail "BBR lines still present in sysctl.conf after rollback"
+fi
+grep -Fq 'net.core.somaxconn = 1024' "${RB_SYSCTL}" || fail "rollback bbr removed unrelated sysctl lines"
+ls -1 "${RB_BACKUP}"/environment_rollback_*/99-vps-bbr.conf >/dev/null 2>&1 \
+    || fail "rollback bbr backup missing"
+expect_call '^sysctl --system$'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${RB_BACKUP}" \
+VPS_SWAP_FILE="${RB_SWAP}" \
+VPS_FSTAB_FILE="${RB_FSTAB}" \
+VPS_PROC_SWAPS="${RB_PROC_SWAPS}" \
+VPS_SWAPPINESS_DROPIN="${RB_SWAPPINESS}" \
+    bash "${ROLLBACK}" --target swap --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "rollback --target swap --yes failed"
+[ ! -e "${RB_SWAP}" ] || fail "swapfile still present after rollback"
+[ ! -e "${RB_SWAPPINESS}" ] || fail "swappiness drop-in still present after rollback"
+if awk -v f="${RB_SWAP}" '$1 == f {found=1} END {exit !found}' "${RB_FSTAB}"; then
+    fail "fstab still contains project swapfile after rollback"
+fi
+grep -Fq '/dev/vdb1 none swap' "${RB_FSTAB}" || fail "rollback swap removed unrelated fstab swap"
+expect_call "^swapoff -- ${RB_SWAP}$"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${RB_BACKUP}" \
+VPS_FAIL2BAN_DIR="${RB_FAIL2BAN}" \
+    bash "${ROLLBACK}" --target fail2ban --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "rollback --target fail2ban --yes failed"
+[ ! -d "${RB_FAIL2BAN}" ] || fail "fail2ban dir still present after rollback"
+expect_call '^systemctl stop fail2ban$'
+expect_call '^apt-get purge -y fail2ban$'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${RB_BACKUP}" \
+VPS_HOSTNAME_FILE="${RB_HOSTNAME}" \
+VPS_HOSTS_FILE="${RB_HOSTS}" \
+    bash "${ROLLBACK}" --target hostname --hostname oldhost --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "rollback --target hostname --yes failed"
+[ "$(tr -d '[:space:]' <"${RB_HOSTNAME}")" = "oldhost" ] || fail "hostname file not rolled back"
+grep -Eq 'newhost' "${RB_HOSTS}" && fail "hosts file still contains newhost"
+grep -Eq '^127\.0\.1\.1[[:space:]]+oldhost' "${RB_HOSTS}" || fail "hosts file missing oldhost"
+expect_call '^hostnamectl set-hostname oldhost$'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${RB_BACKUP}" \
+VPS_TIMEZONE_FILE="${RB_TZ}" \
+VPS_LOCALTIME_FILE="${RB_LOCALTIME}" \
+VPS_ZONEINFO_DIR="${RB_ZONEINFO}" \
+    bash "${ROLLBACK}" --target timezone --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "rollback --target timezone --yes failed"
+[ "$(tr -d '[:space:]' <"${RB_TZ}")" = "UTC" ] || fail "timezone file not set to UTC"
+[ -e "${RB_LOCALTIME}" ] || fail "localtime missing after timezone rollback"
+
+# --- clear_configuration_files nginx + security ---
+CLEAR_CFG="${REPO_ROOT}/scripts/uninstall_scripts/clear_configuration_files.sh"
+CLR_ROOT="${TMP_ROOT}/clear"
+CLR_ETC="${CLR_ROOT}/etc"
+CLR_BACKUP="${CLR_ROOT}/backups"
+mkdir -p "${CLR_ETC}/nginx/conf.d" "${CLR_ETC}/ssh" "${CLR_BACKUP}"
+printf 'server { listen 80; }\n' > "${CLR_ETC}/nginx/conf.d/junk.conf"
+printf 'user nginx;\n' > "${CLR_ETC}/nginx/nginx.conf"
+printf 'user nginx;\nworker_processes auto;\n' > "${CLR_ETC}/nginx/nginx.conf.bak"
+printf 'PermitRootLogin yes\n' > "${CLR_ETC}/ssh/sshd_config"
+printf 'PermitRootLogin no\n' > "${CLR_ETC}/ssh/sshd_config.bak"
+write_stub sshd 'exit 0'
+write_stub systemctl 'exit 0'
+write_stub find 'exit 0'
+
+# find stub above would break clear_directory_contents; restore real find via CLEAN_BIN if present.
+if [ -x "${CLEAN_BIN:-}/find" ]; then
+    ln -sfn "${CLEAN_BIN}/find" "${STUB_DIR}/find" 2>/dev/null || true
+else
+    write_stub find '
+# Prefer real find when available for directory clears.
+if [ -x /usr/bin/find ]; then exec /usr/bin/find "$@"; fi
+if [ -x /bin/find ]; then exec /bin/find "$@"; fi
+exit 0
+'
+fi
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLR_BACKUP}" \
+VPS_ETC_ROOT="${CLR_ETC}" \
+    bash "${CLEAR_CFG}" --target nginx --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clear --target nginx --yes failed"
+[ ! -e "${CLR_ETC}/nginx/conf.d/junk.conf" ] || fail "nginx conf.d junk still present"
+grep -Fq 'worker_processes auto' "${CLR_ETC}/nginx/nginx.conf" \
+    || fail "nginx.conf was not restored from .bak"
+ls -1d "${CLR_BACKUP}"/config_clean_*/nginx >/dev/null 2>&1 \
+    || fail "clear nginx backup missing"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLR_BACKUP}" \
+VPS_ETC_ROOT="${CLR_ETC}" \
+VPS_SSHD_DIR="${CLR_ETC}/ssh" \
+    bash "${CLEAR_CFG}" --target security --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clear --target security --yes failed"
+grep -Fq 'PermitRootLogin no' "${CLR_ETC}/ssh/sshd_config" \
+    || fail "sshd_config was not restored from .bak"
+expect_call '^sshd -t$'
+
+# --- clean_service_residues wordpress + docker ---
+CLEAN_SVC="${REPO_ROOT}/scripts/uninstall_scripts/clean_service_residues.sh"
+CLN_ROOT="${TMP_ROOT}/clean_svc"
+CLN_ETC="${CLN_ROOT}/etc"
+CLN_VARLIB="${CLN_ROOT}/var/lib"
+CLN_BACKUP="${CLN_ROOT}/backups"
+CLN_WP="${CLN_ROOT}/wordpress"
+mkdir -p "${CLN_ETC}/docker" "${CLN_VARLIB}/docker" "${CLN_BACKUP}" "${CLN_WP}"
+printf 'DB_NAME\n' > "${CLN_WP}/wp-config.php"
+printf '{}\n' > "${CLN_ETC}/docker/daemon.json"
+: > "${CLN_VARLIB}/docker/data"
+write_stub dpkg-query 'exit 1'
+write_stub systemctl 'exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+    bash "${CLEAN_SVC}" --target wordpress --wp-dir "${CLN_WP}" --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean wordpress --yes failed"
+[ ! -e "${CLN_WP}" ] || fail "wordpress dir still present"
+ls -1d "${CLN_BACKUP}"/service_clean_*/wordpress >/dev/null 2>&1 \
+    || fail "wordpress backup missing"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_VAR_LIB_ROOT="${CLN_VARLIB}" \
+    bash "${CLEAN_SVC}" --target docker --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean docker --yes failed"
+[ ! -d "${CLN_ETC}/docker" ] || fail "docker config still present"
+[ -e "${CLN_VARLIB}/docker/data" ] || fail "docker data removed without --purge-data"
+
+mkdir -p "${CLN_ETC}/docker" "${CLN_VARLIB}/docker"
+printf '{}\n' > "${CLN_ETC}/docker/daemon.json"
+: > "${CLN_VARLIB}/docker/data"
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_VAR_LIB_ROOT="${CLN_VARLIB}" \
+    bash "${CLEAN_SVC}" --target docker --purge-data --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean docker --purge-data --yes failed"
+[ ! -e "${CLN_VARLIB}/docker" ] || fail "docker data still present after --purge-data"
+
+# --- full_uninstall managed install ---
+FULL_UNINSTALL="${REPO_ROOT}/scripts/uninstall_scripts/full_uninstall.sh"
+FU_ROOT="${TMP_ROOT}/full_uninstall"
+FU_PREFIX="${FU_ROOT}/usr/local"
+FU_LOG="${FU_ROOT}/logs"
+FU_BACKUP="${FU_ROOT}/backups"
+mkdir -p "${FU_PREFIX}/bin" "${FU_PREFIX}/lib/vps-scripts" "${FU_LOG}" "${FU_BACKUP}"
+printf '#!/bin/bash\nexec bash "%s/lib/vps-scripts/vps.sh" "$@"\n' "${FU_PREFIX}" > "${FU_PREFIX}/bin/vps"
+printf '#!/bin/bash\n# https://github.com/everett7623/vps_scripts\necho ok\n' > "${FU_PREFIX}/lib/vps-scripts/vps.sh"
+printf 'log line\n' > "${FU_LOG}/vps.log"
+write_stub id 'if [ "${1:-}" = "-u" ]; then echo 0; exit 0; fi; echo 0; exit 0'
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_INSTALL_PREFIX="${FU_PREFIX}" \
+VPS_LOG_DIR="${FU_LOG}" \
+VPS_BACKUP_ROOT="${FU_BACKUP}" \
+    bash "${FULL_UNINSTALL}" --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "full_uninstall --yes failed"
+[ ! -e "${FU_PREFIX}/bin/vps" ] || fail "managed vps command still present"
+[ ! -d "${FU_PREFIX}/lib/vps-scripts" ] || fail "managed install dir still present"
+[ ! -d "${FU_LOG}" ] || fail "log dir still present"
+ls -1 "${FU_BACKUP}"/full_uninstall_*/manifest.txt >/dev/null 2>&1 \
+    || fail "full_uninstall backup manifest missing"
+ls -1 "${FU_BACKUP}"/full_uninstall_*/vps-command >/dev/null 2>&1 \
+    || fail "full_uninstall command backup missing"
+
 echo "Mocked pkg/systemd real-path checks are valid."

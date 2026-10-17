@@ -44,7 +44,7 @@
 - [x] Refresh launcher/shared UI alignment, hierarchy, and narrow-terminal layout
 - [x] Add CJK display-width handling and responsive UI regression coverage
 - [x] Normalize logging conventions across system_tools modules
-- [x] Optimize module loading speed and slow-network behavior
+- [x] Optimize module loading speed and slow-network behavio
 - [x] Standardize script headers and encoding (LF, no BOM, `#!/bin/bash`)
 - [x] Remove inactive legacy `update_scripts/` and retain a regression boundary
 - [x] Add Hysteria2 to Proxy Tools menu
@@ -64,7 +64,7 @@
 - [x] Fix Issue #2 network-test menu failures (`unbound $1`, single-node `set -e` abort, log-dir fallback)
 - [x] Add `init_script_dirs` / `run_soft` helpers and `validate_network_test_resilience.sh`
 - [x] Harden `performance_test/` with the same log-dir and soft-fail patterns
-- [x] Add `--status`/`--dry-run` flags for swap/fail2ban and CLI modes for bbr
+- [x] Add `--status`/`--dry-run` flags for swap/fail2ban and CLI modes for bb
 - [x] Batch-scan remaining categories for `set -u` / AND-list mkdir / probe-abort defects
 - [x] Add `resolve_log_dir`, system_tools log fallback, uninstall dry-run, LDNMP `--status`, mocked runtime smoke tests
 
@@ -92,7 +92,7 @@
 - [x] Automatically create the managed `vps` command on the first interactive root launch
 - [x] Preserve explicit `8 → 1` and `--install` command installation paths
 - [x] Protect unrelated `/usr/local/bin/vps` commands from automatic overwrite
-- [x] Cover forced, disabled, non-interactive, and collision behavior
+- [x] Cover forced, disabled, non-interactive, and collision behavio
 - [x] Synchronize patch-release metadata and user documentation at `1.1.1`
 
 ## 1.1.2 release
@@ -108,7 +108,7 @@
 - [x] Move uninstall backups to `/var/backups/vps_scripts` and make batch mode run in-process
 - [x] Limit swap rollback to `/swapfile`; keep data directories unless `--purge-data`
 - [x] Repair the Nezha installer for `nezhahq/agent` v1+ with SHA-256 verification and add `--status`/`--dry-run`/`--uninstall`
-- [x] Add `--status`/`--dry-run` to the Docker installer wrapper
+- [x] Add `--status`/`--dry-run` to the Docker installer wrappe
 - [x] Add executed dry-run behavior coverage (`tests/validate_dry_run_behavior.sh`)
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, and TASKS at `1.1.3`
 
@@ -200,10 +200,17 @@
 - [x] Jenkins WAR SHA-256 via official `get.jenkins.io` sidecar; `validate_jenkins_installer_safety.sh`
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.15`
 
+## 1.1.16 release
+
+- [x] Mocked real-path tests for uninstall rollback / clear / clean / full_uninstall
+- [x] Wire shared `VPS_*` path overrides into rollback; add `VPS_ETC_ROOT` family for clear/clean
+- [x] Fix swap fstab rollback to filter by `VPS_SWAP_FILE` (awk)
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.16`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Nezha/FRP mocks + Jenkins checksum done in 1.1.15; next: uninstall rollback mocks
-- [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); uninstall mocks done in 1.1.16; next: catalog URL re-check
+- [ ] Mocked behavioral tests for remaining niche paths (BT cleanup vendor uninstall; kernel rollback stays interactive)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
 ## Documentation

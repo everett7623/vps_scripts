@@ -40,11 +40,24 @@ fi
 
 grep -Fq 'sshd -t' "${CLEAR_CONFIG}"
 
-grep -Fq 'current_hostname=$(hostname)' "${ROLLBACK_ENV}"
 grep -Fq 'is_valid_hostname' "${ROLLBACK_ENV}"
 grep -Fq 'swapoff -- "${SWAP_FILE}"' "${ROLLBACK_ENV}"
-if grep -Eq 'swapoff -a|/swap/d' "${ROLLBACK_ENV}"; then
-    fail "Rollback must only touch /swapfile, not every swap device."
+grep -Fq 'VPS_BBR_DROPIN' "${ROLLBACK_ENV}"
+grep -Fq 'VPS_SWAP_FILE' "${ROLLBACK_ENV}"
+grep -Fq 'VPS_FSTAB_FILE' "${ROLLBACK_ENV}"
+grep -Fq 'VPS_HOSTNAME_FILE' "${ROLLBACK_ENV}"
+grep -Fq 'VPS_FAIL2BAN_DIR' "${ROLLBACK_ENV}"
+grep -Fq 'VPS_ETC_ROOT' "${CLEAR_CONFIG}"
+grep -Fq 'VPS_SSHD_DIR' "${CLEAR_CONFIG}"
+grep -Fq 'VPS_ETC_ROOT' "${CLEAN_SERVICE}"
+grep -Fq 'VPS_VAR_LIB_ROOT' "${CLEAN_SERVICE}"
+# fstab edits must filter by SWAP_FILE (awk), not a hardcoded /swapfile regex.
+grep -Fq 'awk -v f="${SWAP_FILE}"' "${ROLLBACK_ENV}"
+if grep -Eq '\^/swapfile' "${ROLLBACK_ENV}"; then
+    fail "Rollback still hardcodes /swapfile in fstab edits."
+fi
+if grep -Eq 'swapoff -a' "${ROLLBACK_ENV}"; then
+    fail "Rollback must only touch the project swapfile, not every swap device."
 fi
 
 echo "Legacy cleanup safety checks are valid."

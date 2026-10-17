@@ -16,6 +16,13 @@ NC='\033[0m'
 
 BACKUP_ROOT="${VPS_BACKUP_ROOT:-/var/backups/vps_scripts}"
 BACKUP_DIR="${BACKUP_ROOT}/service_clean_$(date +%Y%m%d_%H%M%S)"
+# Path overrides for mocked real-path tests (defaults match production).
+ETC_ROOT="${VPS_ETC_ROOT:-/etc}"
+VAR_LIB_ROOT="${VPS_VAR_LIB_ROOT:-/var/lib}"
+VAR_LOG_MYSQL="${VPS_VAR_LOG_MYSQL:-/var/log/mysql}"
+SYSTEMD_DIR="${VPS_SYSTEMD_DIR:-/etc/systemd/system}"
+PANEL_1PANEL_DIR="${VPS_1PANEL_DIR:-/opt/1panel}"
+USR_SHARE_NGINX="${VPS_USR_SHARE_NGINX:-/usr/share/nginx}"
 DRY_RUN=false
 AUTO_YES=false
 PURGE_DATA=false
@@ -119,11 +126,16 @@ backup_path() {
 }
 
 is_protected_path() {
-    case "${1%/}" in
+    local path="${1%/}"
+    case "${path}" in
         ""|/|/bin|/boot|/dev|/etc|/home|/lib|/lib64|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var|/var/lib|/var/log|/var/www|/www|/www/server)
             return 0
             ;;
     esac
+    # Protect override roots themselves (children remain removable).
+    [ "${path}" = "${ETC_ROOT%/}" ] && return 0
+    [ "${path}" = "${VAR_LIB_ROOT%/}" ] && return 0
+    [ "${path}" = "${SYSTEMD_DIR%/}" ] && return 0
     return 1
 }
 
@@ -190,10 +202,10 @@ clean_bt() {
 clean_1panel() {
     print_info "清理1Panel面板..."
     stop_services 1panel
-    backup_path /opt/1panel 1panel
-    remove_path /etc/systemd/system/1panel.service
+    backup_path "${PANEL_1PANEL_DIR}" 1panel
+    remove_path "${SYSTEMD_DIR}/1panel.service"
     command -v systemctl >/dev/null 2>&1 && run_optional systemctl daemon-reload
-    remove_path /opt/1panel
+    remove_path "${PANEL_1PANEL_DIR}"
     print_ok "1Panel面板清理完成"
 }
 
@@ -219,21 +231,21 @@ clean_wordpress() {
 clean_docker() {
     print_info "清理Docker..."
     stop_services docker containerd
-    backup_path /etc/docker docker_config
+    backup_path "${ETC_ROOT}/docker" docker_config
     remove_packages docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-buildx-plugin \
         docker docker-client docker-common docker-engine
-    remove_path /etc/docker
-    purge_data_dir /var/lib/docker docker_data
+    remove_path "${ETC_ROOT}/docker"
+    purge_data_dir "${VAR_LIB_ROOT}/docker" docker_data
     print_ok "Docker清理完成"
 }
 
 clean_nginx() {
     print_info "清理Nginx..."
     stop_services nginx
-    backup_path /etc/nginx nginx
+    backup_path "${ETC_ROOT}/nginx" nginx
     remove_packages nginx nginx-common nginx-core
-    remove_path /etc/nginx
-    remove_path /usr/share/nginx
+    remove_path "${ETC_ROOT}/nginx"
+    remove_path "${USR_SHARE_NGINX}"
     print_warn "[保留] 站点目录 /var/www（请手动确认后删除）"
     print_ok "Nginx清理完成"
 }
@@ -241,11 +253,11 @@ clean_nginx() {
 clean_apache() {
     print_info "清理Apache..."
     stop_services httpd apache2
-    backup_path /etc/httpd apache
-    backup_path /etc/apache2 apache2
+    backup_path "${ETC_ROOT}/httpd" apache
+    backup_path "${ETC_ROOT}/apache2" apache2
     remove_packages httpd apache2
-    remove_path /etc/httpd
-    remove_path /etc/apache2
+    remove_path "${ETC_ROOT}/httpd"
+    remove_path "${ETC_ROOT}/apache2"
     print_warn "[保留] 站点目录 /var/www（请手动确认后删除）"
     print_ok "Apache清理完成"
 }
@@ -253,13 +265,13 @@ clean_apache() {
 clean_mysql() {
     print_info "清理MySQL/MariaDB..."
     stop_services mysql mysqld mariadb
-    backup_path /etc/mysql mysql_config
-    backup_path /etc/my.cnf my.cnf
+    backup_path "${ETC_ROOT}/mysql" mysql_config
+    backup_path "${ETC_ROOT}/my.cnf" my.cnf
     remove_packages mysql-server mysql-client mysql-common mysql mysql-devel \
         mariadb-server mariadb-client mariadb
-    remove_path /etc/mysql
-    purge_data_dir /var/lib/mysql mysql_data
-    remove_path /var/log/mysql
+    remove_path "${ETC_ROOT}/mysql"
+    purge_data_dir "${VAR_LIB_ROOT}/mysql" mysql_data
+    remove_path "${VAR_LOG_MYSQL}"
     print_ok "MySQL/MariaDB清理完成"
 }
 
@@ -273,10 +285,10 @@ clean_php() {
         done < <(systemctl list-unit-files 'php*-fpm.service' --no-legend 2>/dev/null | awk '{print $1}')
     fi
     stop_services "${php_services[@]}"
-    backup_path /etc/php php_config
+    backup_path "${ETC_ROOT}/php" php_config
     remove_packages php php-fpm php-mysql php-mysqlnd php-gd php-mbstring php-xml
-    remove_path /etc/php
-    remove_path /var/lib/php
+    remove_path "${ETC_ROOT}/php"
+    remove_path "${VAR_LIB_ROOT}/php"
     print_ok "PHP-FPM清理完成"
 }
 

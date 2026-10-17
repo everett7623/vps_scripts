@@ -4,6 +4,15 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.16 - 2026-10-17
+
+### Added
+- Mocked real-path coverage for uninstall helpers: rollback (bbr/swap/fail2ban/hostname/timezone), clear (nginx/security), clean (wordpress/docker), and `full_uninstall` managed install removal.
+- Path overrides `VPS_ETC_ROOT`, `VPS_SSHD_DIR`, `VPS_FAIL2BAN_DIR`, `VPS_VAR_LIB_ROOT`, `VPS_SYSTEMD_DIR`, `VPS_1PANEL_DIR` (plus existing mutator overrides reused by rollback).
+
+### Fixed
+- Swap environment rollback no longer hardcodes `/swapfile` in fstab edits; it filters by `VPS_SWAP_FILE` via awk.
+
 ## 1.1.15 - 2026-10-17
 
 ### Added
