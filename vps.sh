@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.16"
+PROJECT_VERSION="1.1.17"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -817,7 +817,7 @@ service_install_menu() {
             1) run_repo_script "scripts/service_install/docker.sh" ;;
             2) run_repo_script "scripts/service_install/ldnmp.sh" ;;
             3) run_repo_script "scripts/service_install/nginx.sh" ;;
-            4) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o /usr/bin/caddy && chmod +x /usr/bin/caddy && /usr/bin/caddy version" "Caddy web server" ;;
+            4) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/caddy.XXXXXX) || exit 1; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded Caddy is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/bin/caddy; rm -f -- \"\${tmp}\"; /usr/bin/caddy version" "Caddy web server" ;;
             5) run_repo_script "scripts/service_install/mysql.sh" ;;
             6) run_repo_script "scripts/service_install/postgresql.sh" ;;
             7) run_repo_script "scripts/service_install/redis.sh" ;;
@@ -878,7 +878,7 @@ community_menu() {
 
         case "${choice}" in
             1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
-            2) run_remote_script_url "https://bench.sh" "Bench.sh quick benchmark" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/teddysun/across/master/bench.sh" "Bench.sh quick benchmark" ;;
             3) run_remote_script_url "https://Check.Place" "XY IP quality check" "-I" ;;
             4) run_remote_script_url "https://Check.Place" "XY network quality check" "-N" ;;
             5) run_remote_script_url "https://Check.Place" "XY hardware check" "-H" ;;
@@ -889,7 +889,7 @@ community_menu() {
             10) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
             11) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
             12) run_remote_script_url "https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh" "SSH tool" ;;
-            13) run_remote_script_url "https://kejilion.sh" "KejiLion toolbox" ;;
+            13) run_remote_script_url "https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh" "KejiLion toolbox" ;;
             14) run_remote_script_url "https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh" "AutoTrace" ;;
             15) run_remote_script_url "https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh" "Oversell check" ;;
             16) run_remote_script_url "https://sh.nodeseek.com" "NodeScriptKit" ;;
@@ -976,7 +976,7 @@ other_tools_menu() {
             6) run_remote_script_url "https://get.beszel.dev/hub" "Beszel hub" ;;
             7) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2 && echo 'Uptime Kuma: http://<服务器IP>:3001'" "Uptime Kuma monitor" ;;
             8) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
-            9) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
+            9) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/cloudflared.XXXXXX) || exit 1; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded cloudflared is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/local/bin/cloudflared; rm -f -- \"\${tmp}\"; /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
             10) run_repo_script "scripts/other_tools/frp.sh" ;;
             11) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
             12) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;

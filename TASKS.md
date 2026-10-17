@@ -207,9 +207,16 @@
 - [x] Fix swap fstab rollback to filter by `VPS_SWAP_FILE` (awk)
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.16`
 
+## 1.1.17 release
+
+- [x] Catalog URL liveness re-check; pin `bench.sh` / `kejilion.sh` to raw GitHub
+- [x] Refuse Oracle JDK 8/11 OTN soft-404; keep checksummed 17/21
+- [x] Guard CRI-O against OpenSUSE kubic 1.29+ 404; ELF-check Caddy/cloudflared
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.17`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); uninstall mocks done in 1.1.16; next: catalog URL re-check
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); catalog pins done in 1.1.17; next: apt-key migration / BT niche paths
 - [ ] Mocked behavioral tests for remaining niche paths (BT cleanup vendor uninstall; kernel rollback stays interactive)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

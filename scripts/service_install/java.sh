@@ -268,15 +268,11 @@ install_openjdk() {
 install_oracle_jdk() {
     log "${CYAN}安装 Oracle JDK ${JAVA_VERSION}...${NC}"
 
-    # Oracle JDK 下载地址（需要根据实际情况更新）
+    # Oracle JDK 8/11 OTN URLs now soft-404 to a login HTML page (HTTP 200).
+    # Only keep anonymously downloadable builds with public SHA-256 sidecars.
     case $JAVA_VERSION in
-        8)
-            JDK_URL="https://download.oracle.com/otn/java/jdk/8u391-b13/b291ca3e0c8548b5a51d5a5f50063037/jdk-8u391-linux-${ARCH_TYPE}.tar.gz"
-            JDK_FOLDER="jdk1.8.0_391"
-            ;;
-        11)
-            JDK_URL="https://download.oracle.com/otn/java/jdk/11.0.21+9/e40fb879b87d4a3e95da6ed7c4301e32/jdk-11.0.21_linux-${ARCH_TYPE}_bin.tar.gz"
-            JDK_FOLDER="jdk-11.0.21"
+        8|11)
+            error_exit "Oracle JDK ${JAVA_VERSION} 已无法匿名下载（OTN 需登录）。请改用 --type openjdk --version ${JAVA_VERSION}"
             ;;
         17)
             # Oracle retired /java/17/latest/; use the current archive build.
@@ -288,7 +284,7 @@ install_oracle_jdk() {
             JDK_FOLDER="jdk-21"
             ;;
         *)
-            error_exit "不支持的Oracle JDK版本 ${JAVA_VERSION}"
+            error_exit "不支持的Oracle JDK版本 ${JAVA_VERSION}（支持 17/21；8/11 请用 openjdk）"
             ;;
     esac
 
@@ -298,9 +294,9 @@ install_oracle_jdk() {
     archive_file="${work_dir}/oracle-jdk.tar.gz"
 
     log "${YELLOW}正在下载 Oracle JDK...${NC}"
-    if ! download_to_file "$JDK_URL" "$archive_file" --header "Cookie: oraclelicense=accept-securebackup-cookie"; then
+    if ! download_to_file "$JDK_URL" "$archive_file"; then
         rm -rf -- "$work_dir"
-        log "${YELLOW}提示: Oracle JDK 需要接受许可协议，建议使用 OpenJDK${NC}"
+        log "${YELLOW}提示: Oracle JDK 下载失败时，可改用 --type openjdk${NC}"
         error_exit "Oracle JDK 下载失败"
     fi
 
@@ -309,18 +305,10 @@ install_oracle_jdk() {
         error_exit "Oracle JDK 下载文件为空"
     fi
 
-    # Oracle publishes .sha256 for /java/<ver>/latest/ and /java/17/archive/; OTN 8/11 do not.
-    case "$JAVA_VERSION" in
-        17|21)
-            if ! verify_archive_checksum sha256 "${JDK_URL}.sha256" "$archive_file"; then
-                rm -rf -- "$work_dir"
-                error_exit "Oracle JDK 校验失败"
-            fi
-            ;;
-        *)
-            log "${YELLOW}警告: Oracle JDK ${JAVA_VERSION} 无公开 SHA-256，仅依赖 HTTPS 证书校验${NC}"
-            ;;
-    esac
+    if ! verify_archive_checksum sha256 "${JDK_URL}.sha256" "$archive_file"; then
+        rm -rf -- "$work_dir"
+        error_exit "Oracle JDK 校验失败"
+    fi
 
     # 解压到 /opt
     if ! tar -xzf "$archive_file" -C /opt/; then

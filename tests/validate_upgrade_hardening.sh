@@ -145,12 +145,18 @@ grep -Fq 'ruby/www.ruby-lang.org/master/_data/releases.yml' \
 grep -Fq 'Ruby 源码归档 SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/ruby.sh"
 
 # Oracle JDK 17 / GraalVM community download URLs stay on live endpoints.
+# Oracle 8/11 OTN soft-404s are refused in favor of openjdk.
 JAVA_SCRIPT="${REPO_ROOT}/scripts/service_install/java.sh"
 grep -Fq 'java/17/archive/jdk-17.0.12_linux-' "${JAVA_SCRIPT}"
 grep -Fq 'graalvm_jdk_tag="17.0.9"' "${JAVA_SCRIPT}"
 grep -Fq 'graalvm_jdk_tag="21.0.2"' "${JAVA_SCRIPT}"
+grep -Fq 'Oracle JDK ${JAVA_VERSION} 已无法匿名下载' "${JAVA_SCRIPT}"
 if grep -Fq 'java/17/latest/jdk-17_linux-' "${JAVA_SCRIPT}"; then
     echo "Java installer still uses retired Oracle JDK 17 latest URL." >&2
+    exit 1
+fi
+if grep -Eq 'download\.oracle\.com/otn/java/jdk/' "${JAVA_SCRIPT}"; then
+    echo "Java installer still uses Oracle OTN JDK 8/11 URLs." >&2
     exit 1
 fi
 
@@ -167,5 +173,27 @@ if grep -Fq 'https://seedloc.com' "${LAUNCHER}"; then
     exit 1
 fi
 grep -Fq 'github.com/everett7623/vps_scripts/blob/main/README.md' "${LAUNCHER}"
+
+# Catalog short URLs pinned to raw GitHub to avoid UA-dependent HTML landers.
+grep -Fq 'raw.githubusercontent.com/teddysun/across/master/bench.sh' "${LAUNCHER}"
+grep -Fq 'raw.githubusercontent.com/kejilion/sh/main/kejilion.sh' "${LAUNCHER}"
+if grep -Eq 'run_remote_script_url "https://bench\.sh"' "${LAUNCHER}"; then
+    echo "Launcher still uses the UA-sensitive https://bench.sh short URL." >&2
+    exit 1
+fi
+if grep -Eq 'run_remote_script_url "https://kejilion\.sh"' "${LAUNCHER}"; then
+    echo "Launcher still uses the UA-sensitive https://kejilion.sh short URL." >&2
+    exit 1
+fi
+
+# Caddy / cloudflared download to temp and require ELF magic before install.
+grep -Fq 'Downloaded Caddy is not an ELF binary' "${LAUNCHER}"
+grep -Fq 'Downloaded cloudflared is not an ELF binary' "${LAUNCHER}"
+grep -Fq '7f454c46' "${LAUNCHER}"
+
+# CRI-O OpenSUSE kubic streams stop at 1.28.
+K8S_SCRIPT="${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'crio_minor' "${K8S_SCRIPT}"
+grep -Fq 'kubic 路径 404' "${K8S_SCRIPT}"
 
 echo "Upgrade hardening checks are valid."
