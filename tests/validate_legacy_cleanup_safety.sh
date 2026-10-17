@@ -51,6 +51,15 @@ grep -Fq 'VPS_ETC_ROOT' "${CLEAR_CONFIG}"
 grep -Fq 'VPS_SSHD_DIR' "${CLEAR_CONFIG}"
 grep -Fq 'VPS_ETC_ROOT' "${CLEAN_SERVICE}"
 grep -Fq 'VPS_VAR_LIB_ROOT' "${CLEAN_SERVICE}"
+grep -Fq 'VPS_BT_ROOT' "${CLEAN_SERVICE}"
+grep -Fq 'run_bt_vendor_uninstall' "${CLEAN_SERVICE}"
+# BT cleanup must only run local vendor helpers under the panel dir.
+if grep -Eq 'download\.bt\.cn/install/bt-uninstall|io\.bt\.sy/install/bt-uninstall' "${CLEAN_SERVICE}"; then
+    fail "BT cleanup must not download remote vendor uninstall scripts."
+fi
+if grep -Eq 'bash /www/server/panel/install\.sh' "${CLEAN_SERVICE}"; then
+    fail "BT cleanup still hardcodes /www/server/panel without VPS_BT_* overrides."
+fi
 # fstab edits must filter by SWAP_FILE (awk), not a hardcoded /swapfile regex.
 grep -Fq 'awk -v f="${SWAP_FILE}"' "${ROLLBACK_ENV}"
 if grep -Eq '\^/swapfile' "${ROLLBACK_ENV}"; then

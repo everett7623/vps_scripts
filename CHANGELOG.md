@@ -4,6 +4,16 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.20 - 2026-10-17
+
+### Changed
+- BT Panel cleanup uses `VPS_BT_ROOT` / `VPS_BT_PANEL_DIR` / `VPS_BT_WWWROOT_DEFAULT` path overrides and only runs local vendor uninstall helpers under the panel directory (never downloads remote `bt-uninstall` scripts).
+- BT cleanup also removes `init.d/bt` and `bt.service` under the overridden etc/systemd roots.
+
+### Added
+- Mocked real-path coverage for `clean_service_residues --target bt` (vendor uninstall invocation + residue removal) and `--target 1panel`.
+- Catalog URL liveness re-check: all probed third-party `run_remote_script_url` targets remain reachable and pass `bash -n`.
+
 ## 1.1.19 - 2026-10-17
 
 ### Changed

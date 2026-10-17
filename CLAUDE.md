@@ -201,7 +201,7 @@ Project-level defaults: package lists for basic/dev/monitor/security groups, ser
 
 ### Version metadata (`version.json`)
 
-Canonical source for project version (`1.1.19`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
+Canonical source for project version (`1.1.20`), supported OS/arch, launcher URLs, update-check URL, and documentation index. The launcher reads this at runtime for update notifications. Config key `maintenance_state` is `active-modernization` — the project is under active development.
 
 ### Legacy changelog viewer (`update_log.sh`)
 
@@ -239,6 +239,7 @@ Root-level compat script that reads `version.json` and prints `CHANGELOG.md` exc
 | `VPS_SYSCTL_CONF` / `VPS_FAIL2BAN_DIR` | `rollback_system_environment.sh` | Redirect sysctl.conf and Fail2ban tree for mocked rollback tests |
 | `VPS_ETC_ROOT` / `VPS_SSHD_DIR` | `clear_configuration_files.sh` | Redirect `/etc` tree and sshd dir for mocked clear tests |
 | `VPS_ETC_ROOT` / `VPS_VAR_LIB_ROOT` / `VPS_SYSTEMD_DIR` / `VPS_1PANEL_DIR` / `VPS_USR_SHARE_NGINX` | `clean_service_residues.sh` | Redirect service config/data/unit paths for mocked clean tests |
+| `VPS_BT_ROOT` / `VPS_BT_PANEL_DIR` / `VPS_BT_WWWROOT_DEFAULT` | `clean_service_residues.sh` | Redirect BT Panel `/www` tree for mocked BT cleanup tests |
 
 ### `vps.sh` menu structure
 

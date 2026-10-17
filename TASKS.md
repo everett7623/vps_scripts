@@ -225,10 +225,16 @@
 - [x] Nginx / MariaDB / PostgreSQL apt: `signed-by` keyrings; remove remaining `apt-key add`
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.19`
 
+## 1.1.20 release
+
+- [x] BT cleanup: `VPS_BT_*` path overrides; local-only vendor uninstall; mocked bt + 1panel coverage
+- [x] Catalog URL liveness re-check (all probed third-party script URLs live)
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.20`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); first-party apt-key migration complete in 1.1.19; next: catalog re-check / BT niche paths
-- [ ] Mocked behavioral tests for remaining niche paths (BT cleanup vendor uninstall; kernel rollback stays interactive)
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); BT cleanup mocks done in 1.1.20; next: catalog re-check each release
+- [ ] Kernel rollback stays interactive-only (no mocked non-interactive path planned)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
 ## Documentation

@@ -708,6 +708,65 @@ VPS_VAR_LIB_ROOT="${CLN_VARLIB}" \
     || fail "clean docker --purge-data --yes failed"
 [ ! -e "${CLN_VARLIB}/docker" ] || fail "docker data still present after --purge-data"
 
+# --- clean_service_residues bt (local vendor uninstall + VPS_BT_*) ---
+CLN_BT_ROOT="${CLN_ROOT}/bt_www"
+CLN_BT_PANEL="${CLN_BT_ROOT}/server/panel"
+CLN_BT_MARKER="${CLN_BT_ROOT}/vendor_uninstall.args"
+mkdir -p "${CLN_BT_PANEL}" "${CLN_BT_ROOT}/server/nginx" "${CLN_BT_ROOT}/server/mysql" \
+    "${CLN_BT_ROOT}/wwwroot/default" "${CLN_ETC}/init.d" "${CLN_ETC}/systemd/system"
+printf 'panel\n' > "${CLN_BT_PANEL}/data.pl"
+printf 'nginx\n' > "${CLN_BT_ROOT}/server/nginx/nginx.conf"
+printf 'mysql\n' > "${CLN_BT_ROOT}/server/mysql/my.cnf"
+printf 'site\n' > "${CLN_BT_ROOT}/wwwroot/default/index.html"
+printf '#!/bin/bash\necho bt\n' > "${CLN_ETC}/init.d/bt"
+printf '[Unit]\nDescription=bt\n' > "${CLN_ETC}/systemd/system/bt.service"
+cat > "${CLN_BT_PANEL}/install.sh" <<EOF
+#!/bin/bash
+printf '%s\n' "\$*" > "${CLN_BT_MARKER}"
+exit 0
+EOF
+chmod +x "${CLN_BT_PANEL}/install.sh"
+
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_ETC_ROOT="${CLN_ETC}" \
+VPS_SYSTEMD_DIR="${CLN_ETC}/systemd/system" \
+VPS_BT_ROOT="${CLN_BT_ROOT}" \
+    bash "${CLEAN_SVC}" --target bt --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean bt --yes failed"
+[ -f "${CLN_BT_MARKER}" ] || fail "BT vendor uninstall helper was not invoked"
+grep -Fq 'uninstall' "${CLN_BT_MARKER}" || fail "BT vendor uninstall missing uninstall arg"
+[ ! -e "${CLN_BT_PANEL}" ] || fail "BT panel dir still present"
+[ ! -e "${CLN_BT_ROOT}/server/nginx" ] || fail "BT nginx dir still present"
+[ ! -e "${CLN_BT_ROOT}/server/mysql" ] || fail "BT mysql dir still present"
+[ ! -e "${CLN_BT_ROOT}/wwwroot/default" ] || fail "BT default wwwroot still present"
+[ ! -e "${CLN_ETC}/init.d/bt" ] || fail "BT init.d script still present"
+[ ! -e "${CLN_ETC}/systemd/system/bt.service" ] || fail "BT systemd unit still present"
+ls -1d "${CLN_BACKUP}"/service_clean_*/bt_panel >/dev/null 2>&1 \
+    || fail "BT panel backup missing"
+# Protected BT roots must survive (only children removed).
+[ -d "${CLN_BT_ROOT}" ] || fail "BT root was removed"
+[ -d "${CLN_BT_ROOT}/server" ] || fail "BT server root was removed"
+
+# --- clean_service_residues 1panel ---
+CLN_1PANEL="${CLN_ROOT}/opt_1panel"
+mkdir -p "${CLN_1PANEL}" "${CLN_ETC}/systemd/system"
+printf '1panel\n' > "${CLN_1PANEL}/1panel.db"
+printf '[Unit]\nDescription=1panel\n' > "${CLN_ETC}/systemd/system/1panel.service"
+: > "${CALL_LOG}"
+PATH="${STUB_DIR}:${PATH}" \
+VPS_BACKUP_ROOT="${CLN_BACKUP}" \
+VPS_SYSTEMD_DIR="${CLN_ETC}/systemd/system" \
+VPS_1PANEL_DIR="${CLN_1PANEL}" \
+    bash "${CLEAN_SVC}" --target 1panel --yes </dev/null >"${OUTPUT}" 2>&1 \
+    || fail "clean 1panel --yes failed"
+[ ! -e "${CLN_1PANEL}" ] || fail "1panel dir still present"
+[ ! -e "${CLN_ETC}/systemd/system/1panel.service" ] || fail "1panel unit still present"
+ls -1d "${CLN_BACKUP}"/service_clean_*/1panel >/dev/null 2>&1 \
+    || fail "1panel backup missing"
+expect_call '^systemctl daemon-reload$'
+
 # --- full_uninstall managed install ---
 FULL_UNINSTALL="${REPO_ROOT}/scripts/uninstall_scripts/full_uninstall.sh"
 FU_ROOT="${TMP_ROOT}/full_uninstall"
