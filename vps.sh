@@ -9,11 +9,12 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.13"
+PROJECT_VERSION="1.1.14"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
-BLOG_URL="https://seedloc.com"
+# seedloc.com is offline; point at project docs instead of a dead blog.
+BLOG_URL="https://github.com/everett7623/vps_scripts/blob/main/README.md"
 LAUNCHER_STYLE_VERSION="1.1.0"
 LOCAL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')"
 DOWNLOAD_CONNECT_TIMEOUT="${VPS_DOWNLOAD_CONNECT_TIMEOUT:-6}"
@@ -168,7 +169,7 @@ print_recommended_links() {
     print_labeled_value "${indent}" "GitHub 地址:" "${PROJECT_URL}"
     print_labeled_value "${indent}" "论坛推荐:" "${COMMUNITY_URL}"
     print_labeled_value "${indent}" "VPS 推荐:" "${VPS_RECOMMEND_URL}"
-    print_labeled_value "${indent}" "博客推荐:" "${BLOG_URL}"
+    print_labeled_value "${indent}" "项目文档:" "${BLOG_URL}"
 }
 
 print_header() {

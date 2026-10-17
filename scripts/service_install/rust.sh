@@ -258,37 +258,87 @@ EOF
     fi
 }
 
-# 安装rustup
+# Map uname -m to the rustup-init target triple used by static.rust-lang.org.
+rustup_init_target() {
+    case "${1:-}" in
+        x86_64) echo "x86_64-unknown-linux-gnu" ;;
+        aarch64) echo "aarch64-unknown-linux-gnu" ;;
+        armv7l) echo "armv7-unknown-linux-gnueabihf" ;;
+        *) return 1 ;;
+    esac
+}
+
+# 安装rustup（官方 rustup-init 二进制 + SHA-256，避免 curl|sh）
 install_rustup() {
     log "${CYAN}安装rustup...${NC}"
-    
-    # 设置安装选项
-    local rustup_init_args="--default-toolchain $RUST_CHANNEL --profile $INSTALL_PROFILE"
-    
+
+    local rustup_init_args=( -y --default-toolchain "${RUST_CHANNEL}" --profile "${INSTALL_PROFILE}" )
+    local rust_target=""
+    local dist_base="https://static.rust-lang.org/rustup/dist"
+    local work_dir=""
+    local rustup_bin=""
+    local hashes_file=""
+    local expected=""
+    local actual=""
+
     if [[ "$MODIFY_PATH" = false ]]; then
-        rustup_init_args="$rustup_init_args --no-modify-path"
+        rustup_init_args+=( --no-modify-path )
     fi
-    
-    # 下载并运行rustup安装脚本
+
     if [[ "$USE_CHINA_MIRROR" = true ]]; then
         export RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
         export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
+        dist_base="https://mirrors.ustc.edu.cn/rust-static/rustup/dist"
     fi
-    
-    local rustup_script
-    rustup_script=$(mktemp "/tmp/rustup-init.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
-    if ! curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o "$rustup_script"; then
-        log "${RED}错误: 下载rustup安装脚本失败${NC}"
-        rm -f -- "$rustup_script"
+
+    rust_target=$(rustup_init_target "${ARCH:-$(uname -m)}") || {
+        log "${RED}错误: 不支持的 rustup-init 架构${NC}"
+        exit 1
+    }
+
+    work_dir=$(mktemp -d "/tmp/rustup-install.XXXXXX") || {
+        log "${RED}创建临时目录失败${NC}"
+        exit 1
+    }
+    rustup_bin="${work_dir}/rustup-init"
+    hashes_file="${work_dir}/rustup-init.sha256"
+
+    log "${YELLOW}正在下载官方 rustup-init (${rust_target})...${NC}"
+    if ! curl --proto '=https' --tlsv1.2 -fsSL \
+        -o "${rustup_bin}" "${dist_base}/${rust_target}/rustup-init"; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: 下载 rustup-init 失败${NC}"
         exit 1
     fi
-    # shellcheck disable=SC2086
-    sh "$rustup_script" -y $rustup_init_args
-    rm -f -- "$rustup_script"
-    
+    if ! curl --proto '=https' --tlsv1.2 -fsSL \
+        -o "${hashes_file}" "${dist_base}/${rust_target}/rustup-init.sha256"; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: 下载 rustup-init SHA-256 失败${NC}"
+        exit 1
+    fi
+
+    expected=$(awk '{print $1; exit}' "${hashes_file}")
+    if [[ ! ${expected} =~ ^[0-9a-fA-F]{64}$ ]]; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: rustup-init SHA-256 格式无效${NC}"
+        exit 1
+    fi
+    actual=$(sha256sum "${rustup_bin}" | awk '{print $1}')
+    if [[ "${actual}" != "${expected}" ]]; then
+        rm -rf -- "${work_dir}"
+        log "${RED}错误: rustup-init SHA-256 校验失败${NC}"
+        exit 1
+    fi
+    log "${GREEN}rustup-init SHA-256 校验通过${NC}"
+
+    chmod +x -- "${rustup_bin}"
+    "${rustup_bin}" "${rustup_init_args[@]}"
+    rm -rf -- "${work_dir}"
+
     # 加载环境变量
+    # shellcheck source=/dev/null
     source "$CARGO_HOME/env"
-    
+
     log "${GREEN}rustup安装完成${NC}"
 }
 

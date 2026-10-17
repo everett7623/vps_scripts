@@ -2,7 +2,7 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.13",
+    "version": "1.1.14",
     "release_date": "2026-10-17",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Mocked update_system real paths; fix Oracle JDK 17 archive URL and GraalVM jdk-17.0.9/21.0.2 tags; VPS_UPDATE_* / reboot-required overrides."
+    "message": "Rust rustup-init SHA-256 install; replace offline seedloc blog with project docs; catalog URL liveness re-check."
   },
   "compatibility": {
     "min_bash_version": "4.0",

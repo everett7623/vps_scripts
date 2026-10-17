@@ -187,9 +187,16 @@
 - [x] Fix Oracle JDK 17 archive URL and GraalVM `jdk-17.0.9` / `jdk-21.0.2` tags
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.13`
 
+## 1.1.14 release
+
+- [x] Rust `rustup-init` binary + SHA-256 (drop `sh.rustup.rs`)
+- [x] Replace offline `seedloc.com` blog with project docs; UI label `项目文档`
+- [x] Third-party catalog URL liveness re-check
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.14`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); update_system mocks + Oracle/GraalVM URL fixes done in 1.1.13; next: catalog liveness / Rust checksums
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Rust checksum + seedloc/docs + catalog liveness done in 1.1.14; next: remaining mutator mocks
 - [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

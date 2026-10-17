@@ -4,6 +4,18 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.14 - 2026-10-17
+
+### Added
+- Rust installer downloads architecture-specific `rustup-init` from `static.rust-lang.org` (or the USTC mirror) and verifies SHA-256 before execution; `tests/validate_rust_installer_safety.sh`.
+
+### Changed
+- Launcher "博客推荐" link replaced with "项目文档" pointing at the repository README after `seedloc.com` went offline.
+- Third-party catalog URL liveness re-check: Coolify, Dokploy, 3x-ui, S-UI, Hysteria2, Xray, Beszel, Tailscale, WARP, community diagnostics, and proxy entries remain reachable; cloudflared/caddy template URLs OK when expanded.
+
+### Fixed
+- Removed the dead `https://seedloc.com` launcher link.
+
 ## 1.1.13 - 2026-10-17
 
 ### Added
