@@ -15,11 +15,13 @@ WHITE='\033[0;37m'
 NC='\033[0m'
 
 readonly RELEASE_BASE_URL="https://github.com/nezhahq/agent/releases/latest/download"
-readonly INSTALL_DIR="/opt/nezha/agent"
-readonly AGENT_BIN="${INSTALL_DIR}/nezha-agent"
-readonly CONFIG_FILE="${INSTALL_DIR}/config.yml"
-readonly SERVICE_NAME="nezha-agent"
-readonly SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+# Path overrides support mocked real-path tests (defaults match production).
+INSTALL_DIR="${VPS_NEZHA_INSTALL_DIR:-/opt/nezha/agent}"
+AGENT_BIN="${INSTALL_DIR}/nezha-agent"
+CONFIG_FILE="${INSTALL_DIR}/config.yml"
+SERVICE_NAME="nezha-agent"
+SYSTEMD_DIR="${VPS_NEZHA_SYSTEMD_DIR:-/etc/systemd/system}"
+SERVICE_FILE="${SYSTEMD_DIR}/${SERVICE_NAME}.service"
 
 ACTION="install"
 DRY_RUN=false
@@ -206,6 +208,7 @@ write_config() {
 }
 
 write_service() {
+    mkdir -p -- "${SYSTEMD_DIR}"
     cat > "${SERVICE_FILE}" <<EOF
 [Unit]
 Description=Nezha Agent
@@ -291,7 +294,7 @@ do_install() {
 }
 
 do_uninstall() {
-    local backup_dir
+    local backup_di
     backup_dir="${VPS_BACKUP_ROOT:-/var/backups/vps_scripts}/nezha_$(date +%Y%m%d_%H%M%S)"
 
     print_info "卸载哪吒监控 Agent"

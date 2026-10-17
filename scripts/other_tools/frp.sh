@@ -14,8 +14,10 @@ WHITE='\033[0;37m'
 NC='\033[0m'
 
 readonly RELEASE_REPO_URL="https://github.com/fatedier/frp"
-readonly BIN_DIR="/usr/local/bin"
-readonly CONFIG_DIR="/etc/frp"
+# Path overrides support mocked real-path tests (defaults match production).
+BIN_DIR="${VPS_FRP_BIN_DIR:-/usr/local/bin}"
+CONFIG_DIR="${VPS_FRP_CONFIG_DIR:-/etc/frp}"
+SYSTEMD_DIR="${VPS_FRP_SYSTEMD_DIR:-/etc/systemd/system}"
 
 ACTION=""
 ROLE=""
@@ -160,7 +162,7 @@ download_and_verify() {
     [ "${actual,,}" = "${expected,,}" ] || error_exit "SHA-256 校验失败（期望 ${expected}，实际 ${actual}）"
     print_ok "SHA-256 校验通过"
 
-    tar -xzf "${WORK_DIR}/${asset}" -C "${WORK_DIR}" --no-same-owner
+    tar -xzf "${WORK_DIR}/${asset}" -C "${WORK_DIR}" --no-same-owne
     EXTRACTED_DIR="${WORK_DIR}/frp_${version_no}_linux_${arch}"
     [ -d "${EXTRACTED_DIR}" ] || error_exit "解压后未找到 ${EXTRACTED_DIR}"
 }
@@ -204,7 +206,8 @@ EOF
 
 write_service() {
     local bin="$1"
-    cat > "/etc/systemd/system/${bin}.service" <<EOF
+    mkdir -p -- "${SYSTEMD_DIR}"
+    cat > "${SYSTEMD_DIR}/${bin}.service" <<EOF
 [Unit]
 Description=frp ${bin}
 After=network-online.target
@@ -272,7 +275,7 @@ do_install() {
         else
             echo "[DRY-RUN] 写入 ${CONFIG_DIR}/${bin}.toml（权限 600，token 认证，端口 ${server_port}）"
         fi
-        echo "[DRY-RUN] 写入 /etc/systemd/system/${bin}.service 并 enable --now ${bin}"
+        echo "[DRY-RUN] 写入 ${SYSTEMD_DIR}/${bin}.service 并 enable --now ${bin}"
         return 0
     fi
 
@@ -317,7 +320,7 @@ do_install() {
 }
 
 do_uninstall() {
-    local bin backup_dir
+    local bin backup_di
     prompt_role
     bin=$(binary_name "${ROLE}") || error_exit "角色必须为 client 或 server"
     backup_dir="${VPS_BACKUP_ROOT:-/var/backups/vps_scripts}/frp_$(date +%Y%m%d_%H%M%S)"
@@ -326,7 +329,7 @@ do_uninstall() {
         print_warn "DRY-RUN：以下仅为预览，不会修改系统。"
         echo "[DRY-RUN] 停止并禁用 ${bin}"
         echo "[DRY-RUN] 备份 ${CONFIG_DIR}/${bin}.toml 到 ${backup_dir}"
-        echo "[DRY-RUN] 删除 ${BIN_DIR}/${bin}、/etc/systemd/system/${bin}.service、${CONFIG_DIR}/${bin}.toml"
+        echo "[DRY-RUN] 删除 ${BIN_DIR}/${bin}、${SYSTEMD_DIR}/${bin}.service、${CONFIG_DIR}/${bin}.toml"
         return 0
     fi
     [ "$(id -u)" = "0" ] || error_exit "此脚本需要root权限运行（预览可使用 --dry-run）"
@@ -341,7 +344,7 @@ do_uninstall() {
         rm -f -- "${CONFIG_DIR}/${bin}.toml"
         echo -e "${WHITE}配置备份: ${YELLOW}${backup_dir}/${bin}.toml${NC}"
     fi
-    rm -f -- "${BIN_DIR}/${bin}" "/etc/systemd/system/${bin}.service"
+    rm -f -- "${BIN_DIR}/${bin}" "${SYSTEMD_DIR}/${bin}.service"
     rmdir -- "${CONFIG_DIR}" 2>/dev/null || true
     if command -v systemctl >/dev/null 2>&1; then
         systemctl daemon-reload || true

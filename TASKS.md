@@ -194,9 +194,15 @@
 - [x] Third-party catalog URL liveness re-check
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.14`
 
+## 1.1.15 release
+
+- [x] Mocked real-path tests for Nezha / FRP (`VPS_NEZHA_*` / `VPS_FRP_*`)
+- [x] Jenkins WAR SHA-256 via official `get.jenkins.io` sidecar; `validate_jenkins_installer_safety.sh`
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.15`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Rust checksum + seedloc/docs + catalog liveness done in 1.1.14; next: remaining mutator mocks
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); Nezha/FRP mocks + Jenkins checksum done in 1.1.15; next: uninstall rollback mocks
 - [ ] Mocked behavioral tests for remaining real (non-preview) package-manager, systemd, and download paths
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
