@@ -24,6 +24,10 @@ if grep -Eq 'wget[^\n]*-O[[:space:]]*-[[:space:]]*\|[[:space:]]*apt-key' "${SCRI
     echo "PostgreSQL installer pipes wget to apt-key." >&2
     exit 1
 fi
+if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
+    echo "PostgreSQL installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
 
 # No direct remote yum/dnf RPM installs
 if grep -Eq '(yum|dnf)[[:space:]]+install[[:space:]]+-y[[:space:]]+https?://' "${SCRIPT}"; then
@@ -35,10 +39,11 @@ fi
 grep -Fq 'key_file=$(download_to_temp' "${SCRIPT}"
 grep -Fq 'rpm_file=$(download_to_temp' "${SCRIPT}"
 
-# Apt repository uses HTTPS and prefers signed-by keyrings
+# Apt repository uses HTTPS and requires signed-by keyrings
 grep -Fq 'https://apt.postgresql.org/pub/repos/apt' "${SCRIPT}"
 grep -Fq 'signed-by=' "${SCRIPT}"
 grep -Fq 'postgresql-archive-keyring.gpg' "${SCRIPT}"
+grep -Fq '需要 gpg 以配置 PostgreSQL apt 密钥环' "${SCRIPT}"
 if grep -Eq 'deb http://apt\.postgresql\.org/' "${SCRIPT}"; then
     echo "PostgreSQL installer still uses plain-HTTP apt repository." >&2
     exit 1

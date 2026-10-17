@@ -220,9 +220,14 @@
 - [x] Kubernetes apt: migrate to `pkgs.k8s.io` / Aliyun `kubernetes-new`; Docker CE + CRI-O use `signed-by`
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.18`
 
+## 1.1.19 release
+
+- [x] Nginx / MariaDB / PostgreSQL apt: `signed-by` keyrings; remove remaining `apt-key add`
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.19`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); apt-key migration done for jenkins/k8s in 1.1.18; next: nginx/mysql apt-key leftovers / BT niche paths
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); first-party apt-key migration complete in 1.1.19; next: catalog re-check / BT niche paths
 - [ ] Mocked behavioral tests for remaining niche paths (BT cleanup vendor uninstall; kernel rollback stays interactive)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

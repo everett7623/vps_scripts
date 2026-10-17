@@ -14,6 +14,9 @@ SCRIPT="${REPO_ROOT}/scripts/service_install/nginx.sh"
 bash -n "${SCRIPT}"
 grep -Fq 'download_to_file()' "${SCRIPT}"
 grep -Fq 'key_file=$(mktemp "/tmp/nginx-key.XXXXXX")' "${SCRIPT}"
+grep -Fq 'nginx-signing.gpg' "${SCRIPT}"
+grep -Fq 'signed-by=%s' "${SCRIPT}"
+grep -Fq 'VPS_APT_NGINX_LIST' "${SCRIPT}"
 grep -Fq 'work_dir=$(mktemp -d "/tmp/nginx-build.XXXXXX")' "${SCRIPT}"
 grep -Fq 'archive_file="${work_dir}/nginx-${NGINX_VERSION}.tar.gz"' "${SCRIPT}"
 grep -Fq 'make -j"$(nproc)"' "${SCRIPT}"
@@ -21,6 +24,10 @@ grep -Fq 'rm -rf -- "$work_dir"' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh|apt-key)' "${SCRIPT}"; then
     echo "Nginx installer still pipes remote content into a command." >&2
+    exit 1
+fi
+if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
+    echo "Nginx installer still uses deprecated apt-key add." >&2
     exit 1
 fi
 
