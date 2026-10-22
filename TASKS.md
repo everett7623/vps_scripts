@@ -237,9 +237,15 @@
 - [x] Mocked cleanup coverage for nginx/apache/mysql/php
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.21`
 
+## 1.1.22 release
+
+- [x] Add Beszel Agent; demote CyberPanel next to AMH with a niche label
+- [x] `bash -n` before 1Panel / aaPanel / AMH / BT / CyberPanel vendor scripts
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.22`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); cleanup mocks complete through 1.1.21; next: catalog freshness / URL re-check
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); catalog freshness pass in 1.1.22; next: URL re-check each release
 - [ ] Kernel rollback stays interactive-only (no mocked non-interactive path planned)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

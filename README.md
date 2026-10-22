@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.21-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.22-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -99,7 +99,7 @@ bash update_system.sh --dry-run
 - **代理服务** - 3x-ui、S-UI、X-Panel 面板；sing-box、v2ray-agent、Hysteria2 一键脚本；Xray / Hysteria2 官方核心安装
 
 ### 其他工具
-- **监控** - 哪吒探针（v1 Agent，SHA-256 校验）、Komari、Beszel、Uptime Kuma
+- **监控** - 哪吒探针（v1 Agent，SHA-256 校验）、Komari、Beszel Hub/Agent、Uptime Kuma
 - **组网与穿透** - Tailscale、Cloudflare Tunnel、FRP（官方 frpc/frps，SHA-256 校验，默认 token 认证）
 - **系统增强** - BBR、Fail2ban、Swap、WARP、acme.sh、tmux、oh-my-zsh
 - **现代 CLI 工具包** - 从发行版仓库安装 btop、ripgrep、fd、bat、fzf、jq、ncdu、restic
@@ -353,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.22`：其他工具新增 Beszel Agent；CyberPanel 下移并标注为小众面板；1Panel / aaPanel / AMH / 宝塔 / CyberPanel 在执行官方脚本前做 `bash -n`
 - 发布 `1.1.21`：Python 源码按 python.org API 校验摘要；pyenv/NVM/Go 远程安装脚本执行前 `bash -n`；nginx/apache/mysql/php 清理 mocked 覆盖
 - 发布 `1.1.20`：宝塔清理支持 `VPS_BT_*` 路径覆盖与仅本地 vendor uninstall；补充 1Panel mocked 覆盖；第三方目录 URL 复查全部可达
 - 发布 `1.1.19`：Nginx / MariaDB / PostgreSQL apt 全部改用 `signed-by` keyring，清除第一方安装器残留 `apt-key add`

@@ -393,6 +393,11 @@ EOF
     local install_script
     install_script=$(mktemp "/tmp/cyberpanel_install.XXXXXX") || { log_error "创建临时文件失败"; exit 1; }
     if curl -fsSL "$CYBERPANEL_URL" -o "$install_script" || wget -q -O "$install_script" "$CYBERPANEL_URL"; then
+        if ! bash -n "$install_script"; then
+            log_error "Cyberpanel安装脚本语法校验失败"
+            rm -f -- "$install_script"
+            exit 1
+        fi
         if ! sh "$install_script"; then
             log_error "Cyberpanel官方安装脚本执行失败"
             rm -f -- "$install_script"

@@ -55,6 +55,7 @@ Proxy tools menu:
 Other tools menu:
 - Komari Monitor (github.com/komari-monitor/komari)
 - Beszel hub (get.beszel.dev, github.com/henrygd/beszel)
+- Beszel agent (raw.githubusercontent.com/henrygd/beszel install-agent.sh)
 - Uptime Kuma (hub.docker.com louislam/uptime-kuma:2)
 - Tailscale (tailscale.com/install.sh)
 - Cloudflare Tunnel / cloudflared (github.com/cloudflare/cloudflared)

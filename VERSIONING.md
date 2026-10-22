@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.21`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.22`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.21` is a backward-compatible patch release that verifies Python source tarballs via the python.org downloads API, adds `bash -n` gates on Python/Node/Go remote installers, and extends mocked cleanup coverage to nginx/apache/mysql/php. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.22` is a backward-compatible patch release that adds a Beszel Agent catalog entry, demotes CyberPanel beside AMH, and requires `bash -n` before panel vendor installers run. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
