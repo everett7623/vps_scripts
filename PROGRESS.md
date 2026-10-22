@@ -2,16 +2,16 @@
 
 ## Current Phase
 
-Version 1.1.21 verifies Python source digests via the python.org downloads API, adds `bash -n` before pyenv/NVM/Go remote installers, and mocks nginx/apache/mysql/php cleanup paths. The LDNMP installer stays a single combined installer.
+Version 1.1.22 adds Beszel Agent to the other-tools menu, moves CyberPanel to the end with a niche label, and gates panel vendor installers with `bash -n`. The LDNMP installer stays a single combined installer.
 
-Next work: periodic catalog URL re-check each release; catalog freshness (add popular tools / demote stale); kernel rollback stays interactive-only.
+Next work: periodic catalog URL re-check each release; kernel rollback stays interactive-only.
 
 ## Catalog Review Status
 
 | Menu | Status | Release |
 |---|---|---|
-| Service install | Reviewed: Coolify, Dokploy, Dockge, Nginx Proxy Manager added; AMH moved last | 1.1.5 |
-| Other tools | Reviewed: Beszel, first-party FRP added; Uptime Kuma 2; FileBrowser labelled archived | 1.1.5 |
+| Other tools | Reviewed: Beszel hub + agent; Uptime Kuma 2; FileBrowser labelled archived | 1.1.5 / 1.1.22 |
+| Service install | Reviewed: Coolify, Dokploy, Dockge, Nginx Proxy Manager added; AMH and CyberPanel labelled niche and listed last | 1.1.5 / 1.1.22 |
 | Community | Reviewed: NextTrace URL fixed; JCNF, BlueSkyXN, i-abc Speedtest labelled and moved last; URL liveness re-check in 1.1.14 (seedloc blog retired) | 1.1.5 / 1.1.14 |
 | Proxy tools | Reviewed: S-UI, v2ray-agent, official Hysteria2/Xray added; x-ui-yg and X-Panel URLs updated | 1.1.6 |
 | Network test | First-party; `--skip-install` on auto-installing scripts | 1.1.7 |
@@ -54,6 +54,7 @@ Next work: periodic catalog URL re-check each release; catalog freshness (add po
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrappe
+- Beszel Agent catalog entry; CyberPanel demoted; panel installer bash -n gates (1.1.22)
 - Python source digest via python.org API; bash -n on pyenv/NVM/Go remote installers; nginx/apache/mysql/php clean mocks (1.1.21)
 - BT cleanup `VPS_BT_*` overrides, local-only vendor uninstall, bt/1panel mocked coverage; catalog URL re-check (1.1.20)
 - Nginx/MariaDB/PostgreSQL apt signed-by; last first-party apt-key add removed (1.1.19)

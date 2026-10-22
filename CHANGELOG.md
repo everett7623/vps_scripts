@@ -4,6 +4,15 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.22 - 2026-10-22
+
+### Added
+- Other tools menu includes Beszel Agent via the upstream `install-agent.sh` (raw GitHub), next to the existing Beszel Hub entry.
+
+### Changed
+- CyberPanel is labelled as a niche panel and listed after AMH.
+- 1Panel, aaPanel, AMH, BT Panel, and CyberPanel installers run `bash -n` before executing downloaded vendor scripts. 1Panel downloads use `curl -fsSL`.
+
 ## 1.1.21 - 2026-10-17
 
 ### Added

@@ -124,6 +124,12 @@ install_btpanel() {
         rm -f -- "$install_script"
         exit 1
     fi
+
+    if ! bash -n "$install_script"; then
+        log "${RED}错误: 安装脚本语法校验失败${NC}"
+        rm -f -- "$install_script"
+        exit 1
+    fi
     
     # 执行安装
     echo y | bash "$install_script" || true

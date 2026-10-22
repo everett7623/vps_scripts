@@ -199,6 +199,11 @@ download_amh() {
         log_error "AMH安装脚本下载失败"
         exit 1
     fi
+
+    if ! bash -n amh.sh; then
+        log_error "AMH安装脚本语法校验失败"
+        exit 1
+    fi
     
     chmod +x amh.sh
     log_info "AMH安装脚本下载完成"

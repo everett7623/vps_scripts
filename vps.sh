@@ -9,7 +9,7 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.21"
+PROJECT_VERSION="1.1.22"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
@@ -804,10 +804,10 @@ service_install_menu() {
         print_menu_item 21 "Portainer" "Docker 可视化面板"
         print_menu_item 22 "Dockge" "Compose 栈管理面板"
         print_menu_item 23 "Nginx Proxy Manager" "可视化反代与证书"
-        print_menu_item 24 "CyberPanel" "服务器控制面板"
-        print_menu_item 25 "Jenkins" "自动化服务"
-        print_menu_item 26 "Kubernetes" "集群环境"
-        print_menu_item 27 "AMH" "小众控制面板"
+        print_menu_item 24 "Jenkins" "自动化服务"
+        print_menu_item 25 "Kubernetes" "集群环境"
+        print_menu_item 26 "AMH" "小众控制面板"
+        print_menu_item 27 "CyberPanel" "小众控制面板"
         print_menu_item 0  "返回"
         echo ""
         read_menu_choice "请选择 [0-27]: " || return 0
@@ -837,10 +837,10 @@ service_install_menu() {
             21) run_remote_command "${DOCKER_REQUIRED_CHECK} docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest && echo 'Portainer: https://<服务器IP>:9443'" "Portainer CE" ;;
             22) run_remote_command "${DOCKER_REQUIRED_CHECK} mkdir -p /opt/stacks /opt/dockge && curl -fsSL https://raw.githubusercontent.com/louislam/dockge/master/compose.yaml -o /opt/dockge/compose.yaml && docker compose -f /opt/dockge/compose.yaml up -d && echo 'Dockge: http://<服务器IP>:5001'" "Dockge compose manager" ;;
             23) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --name nginx-proxy-manager --restart=unless-stopped -p 80:80 -p 81:81 -p 443:443 -v npm_data:/data -v npm_letsencrypt:/etc/letsencrypt jc21/nginx-proxy-manager:latest && echo 'Nginx Proxy Manager: http://<服务器IP>:81（需占用 80/443 端口）'" "Nginx Proxy Manager" ;;
-            24) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
-            25) run_repo_script "scripts/service_install/jenkins.sh" ;;
-            26) run_repo_script "scripts/service_install/kubernetes.sh" ;;
-            27) run_repo_script "scripts/service_install/amh.sh" ;;
+            24) run_repo_script "scripts/service_install/jenkins.sh" ;;
+            25) run_repo_script "scripts/service_install/kubernetes.sh" ;;
+            26) run_repo_script "scripts/service_install/amh.sh" ;;
+            27) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -949,22 +949,23 @@ other_tools_menu() {
         print_menu_item 3 "Swap" "虚拟内存管理"
         print_menu_item 4 "哪吒探针" "服务器监控"
         print_menu_item 5 "Komari 探针" "轻量级监控"
-        print_menu_item 6 "Beszel" "轻量监控面板"
-        print_menu_item 7 "Uptime Kuma" "自托管可用性监控"
-        print_menu_item 8 "Tailscale" "WireGuard 组网"
-        print_menu_item 9 "Cloudflare Tunnel" "零IP暴露隧道"
-        print_menu_item 10 "FRP 内网穿透" "官方 frpc/frps"
-        print_menu_item 11 "WARP 一键脚本" "Cloudflare IPv6"
-        print_menu_item 12 "acme.sh 证书" "免费 SSL 证书"
-        print_menu_item 13 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
-        print_menu_item 14 "tmux 终端复用" "防断连必备"
-        print_menu_item 15 "oh-my-zsh" "Shell 增强"
-        print_menu_item 16 "DD 系统重装" "一键重装系统"
-        print_menu_item 17 "哪吒清理工具" "第三方清理脚本"
-        print_menu_item 18 "FileBrowser" "Web 文件管理（上游已归档）"
+        print_menu_item 6 "Beszel Hub" "轻量监控面板"
+        print_menu_item 7 "Beszel Agent" "轻量监控探针"
+        print_menu_item 8 "Uptime Kuma" "自托管可用性监控"
+        print_menu_item 9 "Tailscale" "WireGuard 组网"
+        print_menu_item 10 "Cloudflare Tunnel" "零IP暴露隧道"
+        print_menu_item 11 "FRP 内网穿透" "官方 frpc/frps"
+        print_menu_item 12 "WARP 一键脚本" "Cloudflare IPv6"
+        print_menu_item 13 "acme.sh 证书" "免费 SSL 证书"
+        print_menu_item 14 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
+        print_menu_item 15 "tmux 终端复用" "防断连必备"
+        print_menu_item 16 "oh-my-zsh" "Shell 增强"
+        print_menu_item 17 "DD 系统重装" "一键重装系统"
+        print_menu_item 18 "哪吒清理工具" "第三方清理脚本"
+        print_menu_item 19 "FileBrowser" "Web 文件管理（上游已归档）"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-18]: " || return 0
+        read_menu_choice "请选择 [0-19]: " || return 0
         choice="${MENU_CHOICE}"
 
         case "${choice}" in
@@ -974,18 +975,19 @@ other_tools_menu() {
             4) run_repo_script "scripts/other_tools/nezha.sh" ;;
             5) run_remote_script_url "https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh" "Komari monitor" ;;
             6) run_remote_script_url "https://get.beszel.dev/hub" "Beszel hub" ;;
-            7) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2 && echo 'Uptime Kuma: http://<服务器IP>:3001'" "Uptime Kuma monitor" ;;
-            8) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
-            9) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/cloudflared.XXXXXX) || exit 1; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded cloudflared is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/local/bin/cloudflared; rm -f -- \"\${tmp}\"; /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
-            10) run_repo_script "scripts/other_tools/frp.sh" ;;
-            11) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
-            12) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
-            13) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
-            14) run_remote_command "DEBIAN_FRONTEND=noninteractive apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
-            15) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
-            16) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
-            17) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
-            18) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager (upstream archived)" ;;
+            7) run_remote_script_url "https://raw.githubusercontent.com/henrygd/beszel/main/supplemental/scripts/install-agent.sh" "Beszel agent" ;;
+            8) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2 && echo 'Uptime Kuma: http://<服务器IP>:3001'" "Uptime Kuma monitor" ;;
+            9) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
+            10) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/cloudflared.XXXXXX) || exit 1; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded cloudflared is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/local/bin/cloudflared; rm -f -- \"\${tmp}\"; /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
+            11) run_repo_script "scripts/other_tools/frp.sh" ;;
+            12) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
+            13) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
+            14) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
+            15) run_remote_command "DEBIAN_FRONTEND=noninteractive apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
+            16) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
+            17) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
+            18) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
+            19) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager (upstream archived)" ;;
             0) return ;;
             *) invalid_choice ;;
         esac

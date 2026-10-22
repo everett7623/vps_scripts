@@ -122,6 +122,14 @@ if grep -Eq 'curl[[:space:]]+-[A-Za-z0-9]*k' "${REPO_ROOT}/scripts/service_insta
     echo "aaPanel installer still disables TLS verification." >&2
     exit 1
 fi
+for panel_script in 1panel.sh aapanel.sh amh.sh btpanel.sh cyberpanel.sh; do
+    if ! grep -Eq 'bash -n ' "${REPO_ROOT}/scripts/service_install/${panel_script}"; then
+        echo "Panel installer missing bash -n before remote script execution: ${panel_script}" >&2
+        exit 1
+    fi
+done
+grep -Fq 'henrygd/beszel/main/supplemental/scripts/install-agent.sh' "${LAUNCHER}"
+grep -Fq 'print_menu_item 27 "CyberPanel" "小众控制面板"' "${LAUNCHER}"
 grep -Fq 'https://get.jenkins.io/war-stable/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'checksum_url="${official_war_url}.sha256"' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'Jenkins WAR SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/jenkins.sh"

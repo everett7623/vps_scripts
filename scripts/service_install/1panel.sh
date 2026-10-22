@@ -158,7 +158,7 @@ download_official_script() {
     fi
     
     # 下载脚本
-    if ! curl -sSL "$DOWNLOAD_URL" -o quick_start.sh; then
+    if ! curl -fsSL "$DOWNLOAD_URL" -o quick_start.sh; then
         log "${RED}错误: 下载安装脚本失败${NC}"
         # 尝试备用方法
         if ! wget -q "$DOWNLOAD_URL" -O quick_start.sh; then
@@ -169,6 +169,11 @@ download_official_script() {
     # 检查脚本
     if [[ ! -f quick_start.sh ]]; then
         log "${RED}错误: 安装脚本不存在${NC}"
+        exit 1
+    fi
+
+    if ! bash -n quick_start.sh; then
+        log "${RED}错误: 安装脚本语法校验失败${NC}"
         exit 1
     fi
     
