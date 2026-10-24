@@ -33,7 +33,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.20 | #34 | BT cleanup VPS_BT_* + local vendor uninstall; catalog re-check |
 | 1.1.21 | #36 | Python digest; bash -n remote installers; nginx/apache/mysql/php clean mocks |
 | 1.1.22 | #38 | Beszel agent; CyberPanel demoted; panel installer bash -n |
-| 1.1.23 | (pending) | RVM/Helm/wasm-pack bash -n; LDNMP Compose ELF; Beszel hub pin |
+| 1.1.23 | #40 | RVM/Helm/wasm-pack bash -n; LDNMP Compose ELF; Beszel hub pin |
 
 ## Decisions
 
