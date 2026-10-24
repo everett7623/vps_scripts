@@ -249,9 +249,15 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.24 release
+
+- [x] Nginx source: verify `.tar.gz.asc` with `nginx_signing.key` before extract
+- [x] WP-CLI: SHA-256 sidecar check; stop using `curl -O` into the working directory
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.24`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); next: URL re-check / nginx source & WP-CLI checksums
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); next: URL re-check each release
 - [ ] Kernel rollback stays interactive-only (no mocked non-interactive path planned)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 

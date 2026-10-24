@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Version 1.1.23 gates RVM/Helm/wasm-pack remote installers with `bash -n`, requires ELF magic for LDNMP Docker Compose binaries, and pins Beszel hub in upgrade-hardening. The LDNMP installer stays a single combined installer.
+Version 1.1.24 verifies Nginx source tarballs with the official PGP signature and checks WP-CLI against its published SHA-256 sidecar. The LDNMP installer stays a single combined installer.
 
-Next work: periodic catalog URL re-check each release; nginx source / WP-CLI checksums; kernel rollback stays interactive-only.
+Next work: periodic catalog URL re-check each release; kernel rollback stays interactive-only.
 
 ## Catalog Review Status
 
@@ -54,6 +54,7 @@ Next work: periodic catalog URL re-check each release; nginx source / WP-CLI che
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrappe
+- Nginx source PGP verify; WP-CLI SHA-256 sidecar (1.1.24)
 - RVM/Helm/wasm-pack bash -n; LDNMP Compose ELF check; Beszel hub pin (1.1.23)
 - Beszel Agent catalog entry; CyberPanel demoted; panel installer bash -n gates (1.1.22)
 - Python source digest via python.org API; bash -n on pyenv/NVM/Go remote installers; nginx/apache/mysql/php clean mocks (1.1.21)

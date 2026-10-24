@@ -4,6 +4,12 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.24 - 2026-10-24
+
+### Changed
+- Nginx source builds verify the official `.tar.gz.asc` signature with `nginx_signing.key` in an isolated `GNUPGHOME` before extract.
+- WP-CLI installs download to a temp directory and require the published `wp-cli.phar.sha256` sidecar before install.
+
 ## 1.1.23 - 2026-10-24
 
 ### Changed

@@ -222,6 +222,29 @@ install_nginx_source() {
         rm -rf -- "$work_dir"
         error_exit "Nginx源码下载失败"
     }
+    download_to_file "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz.asc" "${work_dir}/nginx-${NGINX_VERSION}.tar.gz.asc" || {
+        rm -rf -- "$work_dir"
+        error_exit "Nginx源码签名下载失败"
+    }
+    download_to_file "https://nginx.org/keys/nginx_signing.key" "${work_dir}/nginx_signing.key" || {
+        rm -rf -- "$work_dir"
+        error_exit "Nginx签名公钥下载失败"
+    }
+    if ! command -v gpg >/dev/null 2>&1; then
+        rm -rf -- "$work_dir"
+        error_exit "缺少 gpg，无法校验 Nginx 源码签名"
+    fi
+    gpg_home=$(mktemp -d "/tmp/nginx-gpg.XXXXXX") || {
+        rm -rf -- "$work_dir"
+        error_exit "无法创建 Nginx 签名校验目录"
+    }
+    chmod 700 "$gpg_home"
+    if ! GNUPGHOME="$gpg_home" gpg --batch --quiet --import "${work_dir}/nginx_signing.key" ||
+       ! GNUPGHOME="$gpg_home" gpg --batch --quiet --verify "${work_dir}/nginx-${NGINX_VERSION}.tar.gz.asc" "$archive_file"; then
+        rm -rf -- "$gpg_home" "$work_dir"
+        error_exit "Nginx 源码 PGP 签名校验失败"
+    fi
+    rm -rf -- "$gpg_home"
 
     if ! tar -xzf "$archive_file" -C "$work_dir"; then
         rm -rf -- "$work_dir"

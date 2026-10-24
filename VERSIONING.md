@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.23`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.24`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.23` is a backward-compatible patch release that gates RVM/Helm/wasm-pack remote installers with `bash -n`, requires ELF magic for LDNMP Docker Compose binaries, and pins the Beszel hub URL in upgrade-hardening. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.24` is a backward-compatible patch release that verifies Nginx source tarballs with the official PGP signature and checks WP-CLI against its published SHA-256 sidecar. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
