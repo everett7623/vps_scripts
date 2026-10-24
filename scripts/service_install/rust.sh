@@ -423,11 +423,17 @@ install_web_tools() {
     log "${YELLOW}安装wasm-pack...${NC}"
     local wasm_pack_script
     wasm_pack_script=$(mktemp "/tmp/wasm-pack-install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; return 1; }
-    if curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh -o "$wasm_pack_script"; then
-        sh "$wasm_pack_script"
-    else
+    if ! curl -fsSL https://rustwasm.github.io/wasm-pack/installer/init.sh -o "$wasm_pack_script"; then
         log "${RED}wasm-pack 下载失败${NC}"
+        rm -f -- "$wasm_pack_script"
+        return 1
     fi
+    if ! bash -n "$wasm_pack_script"; then
+        log "${RED}wasm-pack 安装脚本语法校验失败${NC}"
+        rm -f -- "$wasm_pack_script"
+        return 1
+    fi
+    bash "$wasm_pack_script"
     rm -f -- "$wasm_pack_script"
     
     # 安装trunk (WASM web应用打包工具)

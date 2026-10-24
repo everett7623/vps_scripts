@@ -23,6 +23,8 @@ grep -Fq 'kubernetes-apt-keyring.gpg' "${SCRIPT}"
 grep -Fq 'docker-archive-keyring.gpg' "${SCRIPT}"
 grep -Fq 'libcontainers-cri-o-keyring.gpg' "${SCRIPT}"
 grep -Fq 'signed-by=%s' "${SCRIPT}"
+grep -Fq 'bash -n "$helm_installer"' "${SCRIPT}"
+grep -Fq 'bash "$helm_installer"' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2

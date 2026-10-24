@@ -17,6 +17,8 @@ grep -Fq 'MySQL 与 MariaDB 不能同时选择。' "${SCRIPT}"
 grep -Fq 'write_root_password()' "${SCRIPT}"
 grep -Fq '数据库 root 密码文件: /root/.mysql_root_password' "${SCRIPT}"
 grep -Fq 'mkdir -p "${WEB_ROOT}/default"' "${SCRIPT}"
+grep -Fq '7f454c46' "${SCRIPT}"
+grep -Fq 'Docker Compose 下载内容不是 ELF 二进制' "${SCRIPT}"
 
 if grep -Fq '数据库root密码:' "${SCRIPT}"; then
     echo "LDNMP installer still prints the database root password." >&2

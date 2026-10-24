@@ -18,9 +18,16 @@ grep -Fq 'ruby/www.ruby-lang.org/master/_data/releases.yml' "${SCRIPT}"
 grep -Fq 'Ruby 源码归档 SHA-256 校验失败' "${SCRIPT}"
 grep -Fq 'sha256sum "${archive_path}"' "${SCRIPT}"
 grep -Fq 'mktemp -d "/tmp/ruby-build.XXXXXX"' "${SCRIPT}"
+grep -Fq 'bash -n "$rvm_script"' "${SCRIPT}"
+grep -Fq 'curl -fsSL https://get.rvm.io' "${SCRIPT}"
+grep -Fq 'bash "$rvm_script" stable --ruby="${ruby_for_rvm}" --auto-dotfiles' "${SCRIPT}"
 
 if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)' "${SCRIPT}"; then
     echo "Ruby installer pipes remote content to a shell." >&2
+    exit 1
+fi
+if grep -Eq 'bash "\$rvm_script" \$rvm_args' "${SCRIPT}"; then
+    echo "Ruby RVM installer still uses unquoted rvm_args word-splitting." >&2
     exit 1
 fi
 
