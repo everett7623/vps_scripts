@@ -19,6 +19,8 @@ grep -Fq 'rustup-init.sha256' "${SCRIPT}"
 grep -Fq 'rustup-init SHA-256 校验失败' "${SCRIPT}"
 grep -Fq 'mktemp -d "/tmp/rustup-install.XXXXXX"' "${SCRIPT}"
 grep -Fq 'rustup_init_args=( -y --default-toolchain' "${SCRIPT}"
+grep -Fq 'bash -n "$wasm_pack_script"' "${SCRIPT}"
+grep -Fq 'curl -fsSL https://rustwasm.github.io/wasm-pack/installer/init.sh' "${SCRIPT}"
 
 # Must not fall back to curl|sh style sh.rustup.rs pipeline.
 if grep -Eq 'curl[^\n]*sh\.rustup\.rs[^\n]*\|[[:space:]]*sh' "${SCRIPT}"; then

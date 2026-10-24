@@ -927,13 +927,18 @@ install_helm() {
         rm -f -- "$helm_installer"
         return 1
     fi
+    if ! bash -n "$helm_installer"; then
+        log "${RED}错误: Helm安装脚本语法校验失败${NC}"
+        rm -f -- "$helm_installer"
+        return 1
+    fi
     chmod 700 "$helm_installer"
 
     # 安装Helm
     if [[ "$USE_CHINA_MIRROR" = true ]]; then
         export HELM_INSTALL_DIR=/usr/local/bin
     fi
-    if ! "$helm_installer"; then
+    if ! bash "$helm_installer"; then
         log "${RED}错误: Helm安装脚本执行失败${NC}"
         rm -f -- "$helm_installer"
         return 1

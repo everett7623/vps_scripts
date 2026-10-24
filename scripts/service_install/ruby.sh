@@ -303,14 +303,19 @@ install_rvm() {
     
     # 下载并安装RVM (使用 temp file 而非 pipe)
     local rvm_script
+    local ruby_for_rvm="${RUBY_VERSION:-$DEFAULT_RUBY_VERSION}"
     rvm_script=$(mktemp "/tmp/rvm-install.XXXXXX") || { log "${RED}创建临时文件失败${NC}"; exit 1; }
-    local rvm_args="stable --ruby=${RUBY_VERSION:-$DEFAULT_RUBY_VERSION} --auto-dotfiles"
-    if ! curl -sSL https://get.rvm.io -o "$rvm_script"; then
+    if ! curl -fsSL https://get.rvm.io -o "$rvm_script"; then
         log "${RED}错误: 下载RVM安装脚本失败${NC}"
         rm -f -- "$rvm_script"
         exit 1
     fi
-    bash "$rvm_script" $rvm_args
+    if ! bash -n "$rvm_script"; then
+        log "${RED}错误: RVM安装脚本语法校验失败${NC}"
+        rm -f -- "$rvm_script"
+        exit 1
+    fi
+    bash "$rvm_script" stable --ruby="${ruby_for_rvm}" --auto-dotfiles
     rm -f -- "$rvm_script"
     
     # 加载RVM

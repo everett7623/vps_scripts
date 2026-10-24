@@ -4,6 +4,13 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.23 - 2026-10-24
+
+### Changed
+- RVM, Helm `get-helm-3`, and wasm-pack installers run `bash -n` before executing downloaded scripts; RVM uses an explicit argv list instead of unquoted `$rvm_args`.
+- LDNMP Docker Compose binary installs require ELF magic (`7f454c46`) before `install`.
+- Upgrade-hardening pins Beszel hub (`get.beszel.dev/hub`) alongside the agent URL.
+
 ## 1.1.22 - 2026-10-22
 
 ### Added

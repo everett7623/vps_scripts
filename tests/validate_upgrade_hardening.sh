@@ -129,7 +129,12 @@ for panel_script in 1panel.sh aapanel.sh amh.sh btpanel.sh cyberpanel.sh; do
     fi
 done
 grep -Fq 'henrygd/beszel/main/supplemental/scripts/install-agent.sh' "${LAUNCHER}"
+grep -Fq 'get.beszel.dev/hub' "${LAUNCHER}"
 grep -Fq 'print_menu_item 27 "CyberPanel" "小众控制面板"' "${LAUNCHER}"
+grep -Fq 'bash -n "$rvm_script"' "${REPO_ROOT}/scripts/service_install/ruby.sh"
+grep -Fq 'bash -n "$helm_installer"' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'bash -n "$wasm_pack_script"' "${REPO_ROOT}/scripts/service_install/rust.sh"
+grep -Fq '7f454c46' "${REPO_ROOT}/scripts/service_install/ldnmp.sh"
 grep -Fq 'https://get.jenkins.io/war-stable/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'checksum_url="${official_war_url}.sha256"' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'Jenkins WAR SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/jenkins.sh"

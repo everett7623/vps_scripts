@@ -325,6 +325,14 @@ install_docker() {
         log_warning "Docker Compose 下载失败"
         return 0
     fi
+    case "$(od -An -N4 -tx1 "${compose_temp}" | tr -d ' \n')" in
+        7f454c46) ;;
+        *)
+            rm -f -- "${compose_temp}"
+            log_warning "Docker Compose 下载内容不是 ELF 二进制，已跳过安装"
+            return 0
+            ;;
+    esac
     install -m 0755 "${compose_temp}" /usr/local/bin/docker-compose
     rm -f -- "${compose_temp}"
     

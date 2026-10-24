@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.22",
-    "release_date": "2026-10-22",
+    "version": "1.1.23",
+    "release_date": "2026-10-24",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Beszel agent catalog entry; CyberPanel demoted; bash -n on panel installers."
+    "message": "RVM/Helm/wasm-pack bash -n; LDNMP Compose ELF check; Beszel hub pin."
   },
   "compatibility": {
     "min_bash_version": "4.0",

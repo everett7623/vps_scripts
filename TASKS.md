@@ -243,9 +243,15 @@
 - [x] `bash -n` before 1Panel / aaPanel / AMH / BT / CyberPanel vendor scripts
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.22`
 
+## 1.1.23 release
+
+- [x] RVM / Helm / wasm-pack: `bash -n` before remote installer execution; RVM fixed argv
+- [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
+
 ## Ongoing
 
-- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); catalog freshness pass in 1.1.22; next: URL re-check each release
+- [ ] Per-category review: add popular maintained tools/projects, deprioritize outdated entries (see AGENTS.md "Catalog Freshness"); next: URL re-check / nginx source & WP-CLI checksums
 - [ ] Kernel rollback stays interactive-only (no mocked non-interactive path planned)
 - Not planned: splitting the LDNMP installer into focused installers (kept as one combined installer)
 
