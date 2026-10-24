@@ -25,6 +25,10 @@ grep -Fq 'libcontainers-cri-o-keyring.gpg' "${SCRIPT}"
 grep -Fq 'signed-by=%s' "${SCRIPT}"
 grep -Fq 'bash -n "$helm_installer"' "${SCRIPT}"
 grep -Fq 'bash "$helm_installer"' "${SCRIPT}"
+grep -Fq 'download_k8s_manifest' "${SCRIPT}"
+grep -Fq '/tmp/k8s-manifest.XXXXXX' "${SCRIPT}"
+grep -Fq '清单不是 Kubernetes YAML' "${SCRIPT}"
+grep -Fq 'Metrics Server 清单不是 Kubernetes YAML' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2
@@ -36,6 +40,14 @@ if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
 fi
 if grep -Fq 'kubernetes-xenial' "${SCRIPT}"; then
     echo "Kubernetes installer still uses retired kubernetes-xenial apt repo." >&2
+    exit 1
+fi
+if grep -Fq 'curl -O https://docs.projectcalico.org/manifests/calico.yaml' "${SCRIPT}"; then
+    echo "Kubernetes installer still downloads Calico into the working directory." >&2
+    exit 1
+fi
+if grep -Eq 'kubectl apply -f https://' "${SCRIPT}"; then
+    echo "Kubernetes installer still applies a remote manifest URL." >&2
     exit 1
 fi
 

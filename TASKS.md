@@ -249,6 +249,12 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.25 release
+
+- [x] Kubernetes manifests: temp file plus `kind` check before `kubectl apply`; Calico no longer uses `curl -O`
+- [x] Catalog short-URL liveness re-check; no URL changes
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.25`
+
 ## 1.1.24 release
 
 - [x] Nginx source: verify `.tar.gz.asc` with `nginx_signing.key` before extract

@@ -4,6 +4,13 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.25 - 2026-10-24
+
+### Changed
+- Kubernetes Calico, Flannel, Weave, Dashboard, and Ingress manifests download to a temp file and must contain a `kind` field before `kubectl apply`. Calico no longer uses `curl -O` in the working directory.
+- Metrics Server rejects a downloaded components file that is not Kubernetes YAML.
+- Catalog short URLs (Coolify, Dokploy, Check.Place, abc.sd, NodeQuality, media unlock, NodeSeek, Hysteria2, Beszel hub, acme.sh, Tailscale) still return shell installers; no URL changes.
+
 ## 1.1.24 - 2026-10-24
 
 ### Changed
