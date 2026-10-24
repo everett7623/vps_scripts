@@ -34,6 +34,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.21 | #36 | Python digest; bash -n remote installers; nginx/apache/mysql/php clean mocks |
 | 1.1.22 | #38 | Beszel agent; CyberPanel demoted; panel installer bash -n |
 | 1.1.23 | #40 | RVM/Helm/wasm-pack bash -n; LDNMP Compose ELF; Beszel hub pin |
+| 1.1.24 | (pending) | Nginx source PGP; WP-CLI SHA-256 |
 
 ## Decisions
 
@@ -49,4 +50,4 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 
 ## Recommended Next Step
 
-Keep catalog URL liveness on each release; nginx source / WP-CLI checksums next; kernel rollback stays interactive-only.
+Keep catalog URL liveness on each release; kernel rollback stays interactive-only.

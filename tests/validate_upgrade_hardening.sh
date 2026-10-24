@@ -160,6 +160,13 @@ if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/postg
     exit 1
 fi
 grep -Fq 'nginx-signing.gpg' "${REPO_ROOT}/scripts/service_install/nginx.sh"
+grep -Fq 'Nginx 源码 PGP 签名校验失败' "${REPO_ROOT}/scripts/service_install/nginx.sh"
+grep -Fq 'wp-cli.phar.sha256' "${REPO_ROOT}/scripts/service_install/wordpress.sh"
+grep -Fq 'WP-CLI SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/wordpress.sh"
+if grep -Fq 'curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar' "${REPO_ROOT}/scripts/service_install/wordpress.sh"; then
+    echo "WordPress installer still downloads WP-CLI without a checksum sidecar." >&2
+    exit 1
+fi
 grep -Fq 'signed-by=%s' "${REPO_ROOT}/scripts/service_install/nginx.sh"
 if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/nginx.sh"; then
     echo "Nginx installer still uses deprecated apt-key add." >&2

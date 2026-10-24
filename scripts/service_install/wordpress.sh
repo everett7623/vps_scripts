@@ -486,13 +486,42 @@ get_mysql_root_password() {
 
 # 安装WP-CLI
 install_wp_cli() {
-    if ! command -v wp &>/dev/null; then
-        log_info "安装WP-CLI..."
-        curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-        chmod +x wp-cli.phar
-        mv wp-cli.phar /usr/local/bin/wp
-        log_success "WP-CLI安装完成"
+    local work_dir=""
+    local phar_file=""
+    local sum_file=""
+    local expected=""
+    local actual=""
+
+    if command -v wp &>/dev/null; then
+        return 0
     fi
+    log_info "安装WP-CLI..."
+    work_dir=$(mktemp -d "/tmp/wp-cli.XXXXXX") || {
+        log_error "无法创建 WP-CLI 临时目录"
+        return 1
+    }
+    phar_file="${work_dir}/wp-cli.phar"
+    sum_file="${work_dir}/wp-cli.phar.sha256"
+    if ! curl -fsSL "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar" -o "$phar_file"; then
+        rm -rf -- "$work_dir"
+        log_error "WP-CLI 下载失败"
+        return 1
+    fi
+    if ! curl -fsSL "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar.sha256" -o "$sum_file"; then
+        rm -rf -- "$work_dir"
+        log_error "WP-CLI SHA-256 下载失败"
+        return 1
+    fi
+    expected=$(tr -d '[:space:]' < "$sum_file")
+    actual=$(sha256sum "$phar_file" | awk '{print $1}')
+    if [[ ! "$expected" =~ ^[0-9a-fA-F]{64}$ || "$actual" != "$expected" ]]; then
+        rm -rf -- "$work_dir"
+        log_error "WP-CLI SHA-256 校验失败"
+        return 1
+    fi
+    install -m 0755 "$phar_file" /usr/local/bin/wp
+    rm -rf -- "$work_dir"
+    log_success "WP-CLI安装完成"
 }
 
 # 创建数据库
