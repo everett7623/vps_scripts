@@ -762,34 +762,67 @@ join_worker() {
     fi
 }
 
+# 下载远程清单到临时文件，并确认正文含 Kubernetes kind。
+download_k8s_manifest() {
+    local url="$1"
+    local label="$2"
+    local dest_var="$3"
+    local dest=""
+    dest=$(mktemp "/tmp/k8s-manifest.XXXXXX") || {
+        log "${RED}错误: 创建 ${label} 临时清单失败${NC}"
+        return 1
+    }
+    if ! curl -fsSL "$url" -o "$dest"; then
+        rm -f -- "$dest"
+        log "${RED}错误: 下载 ${label} 清单失败${NC}"
+        return 1
+    fi
+    if ! grep -Eq '^[[:space:]]*kind:' "$dest"; then
+        rm -f -- "$dest"
+        log "${RED}错误: ${label} 清单不是 Kubernetes YAML${NC}"
+        return 1
+    fi
+    printf -v "$dest_var" '%s' "$dest"
+}
+
+apply_downloaded_manifest() {
+    local manifest="$1"
+    local label="$2"
+    if ! kubectl apply -f "$manifest"; then
+        rm -f -- "$manifest"
+        log "${RED}错误: 应用 ${label} 清单失败${NC}"
+        return 1
+    fi
+    rm -f -- "$manifest"
+}
+
 # 安装Pod网络插件
 install_pod_network() {
     log "${CYAN}安装Pod网络插件: ${POD_NETWORK}...${NC}"
-    
+    local manifest=""
+
     case $POD_NETWORK in
         calico)
+            download_k8s_manifest "https://docs.projectcalico.org/manifests/calico.yaml" "Calico" manifest
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                # 使用国内镜像
-                curl -O https://docs.projectcalico.org/manifests/calico.yaml
-                sed -i 's#docker.io/calico/#registry.cn-beijing.aliyuncs.com/calico/#g' calico.yaml
-                kubectl apply -f calico.yaml
-                rm -f calico.yaml
-            else
-                kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+                sed -i 's#docker.io/calico/#registry.cn-beijing.aliyuncs.com/calico/#g' "$manifest"
             fi
+            apply_downloaded_manifest "$manifest" "Calico"
             ;;
         flannel)
-            kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+            download_k8s_manifest "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml" "Flannel" manifest
+            apply_downloaded_manifest "$manifest" "Flannel"
             ;;
         weave)
-            kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+            download_k8s_manifest "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml" "Weave" manifest
+            apply_downloaded_manifest "$manifest" "Weave"
             ;;
         *)
             log "${RED}错误: 不支持的网络插件 ${POD_NETWORK}${NC}"
             exit 1
             ;;
     esac
-    
+
     log "${GREEN}Pod网络插件安装完成${NC}"
 }
 
@@ -801,8 +834,9 @@ install_dashboard() {
     
     log "${CYAN}安装Kubernetes Dashboard...${NC}"
     
-    # 部署Dashboard
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+    local dashboard_manifest=""
+    download_k8s_manifest "https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml" "Dashboard" dashboard_manifest
+    apply_downloaded_manifest "$dashboard_manifest" "Dashboard"
     
     # 创建管理员用户
     local dashboard_admin_file
@@ -866,8 +900,9 @@ install_ingress() {
     
     log "${CYAN}安装Nginx Ingress Controller...${NC}"
     
-    # 部署Nginx Ingress
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/baremetal/deploy.yaml
+    local ingress_manifest=""
+    download_k8s_manifest "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/baremetal/deploy.yaml" "Ingress" ingress_manifest
+    apply_downloaded_manifest "$ingress_manifest" "Ingress"
     
     # 修改Service类型为NodePort
     kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec":{"type":"NodePort","ports":[{"name":"http","port":80,"targetPort":80,"nodePort":30080},{"name":"https","port":443,"targetPort":443,"nodePort":30443}]}}'
@@ -889,6 +924,11 @@ install_metrics() {
     metrics_server_file=$(mktemp "/tmp/metrics-server.XXXXXX") || { log "${RED}错误: 创建Metrics Server配置文件失败${NC}"; return 1; }
     if ! wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml -O "$metrics_server_file"; then
         log "${RED}错误: 下载Metrics Server配置失败${NC}"
+        rm -f -- "$metrics_server_file"
+        return 1
+    fi
+    if ! grep -Eq '^[[:space:]]*kind:' "$metrics_server_file"; then
+        log "${RED}错误: Metrics Server 清单不是 Kubernetes YAML${NC}"
         rm -f -- "$metrics_server_file"
         return 1
     fi
