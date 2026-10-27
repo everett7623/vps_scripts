@@ -258,12 +258,25 @@ grep -Fq 'crio_minor' "${K8S_SCRIPT}"
 grep -Fq 'kubic 路径 404' "${K8S_SCRIPT}"
 grep -Fq 'download_k8s_manifest' "${K8S_SCRIPT}"
 grep -Fq '清单不是 Kubernetes YAML' "${K8S_SCRIPT}"
+grep -Fq 'metrics-server/releases/download/v0.7.2/components.yaml' "${K8S_SCRIPT}"
 if grep -Fq 'curl -O https://docs.projectcalico.org/manifests/calico.yaml' "${K8S_SCRIPT}"; then
     echo "Kubernetes installer still downloads Calico into the working directory." >&2
     exit 1
 fi
 if grep -Eq 'kubectl apply -f https://' "${K8S_SCRIPT}"; then
     echo "Kubernetes installer still applies a remote manifest URL." >&2
+    exit 1
+fi
+if grep -Fq 'metrics-server/releases/latest/download/components.yaml' "${K8S_SCRIPT}"; then
+    echo "Kubernetes installer still uses unpinned Metrics Server latest." >&2
+    exit 1
+fi
+JENKINS_SCRIPT="${REPO_ROOT}/scripts/service_install/jenkins.sh"
+grep -Fq 'mktemp -d "/tmp/jenkins-maven.XXXXXX"' "${JENKINS_SCRIPT}"
+grep -Fq 'verify_archive_checksum sha512 "${maven_url}.sha512"' "${JENKINS_SCRIPT}"
+grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256"' "${JENKINS_SCRIPT}"
+if grep -Eq 'wget[[:space:]]+https://archive\.apache\.org/dist/maven/' "${JENKINS_SCRIPT}"; then
+    echo "Jenkins installer still downloads Maven into the working directory." >&2
     exit 1
 fi
 

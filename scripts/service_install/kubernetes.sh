@@ -916,22 +916,12 @@ install_metrics() {
     if [[ "$INSTALL_METRICS" != true ]]; then
         return
     fi
-    
+
     log "${CYAN}安装Metrics Server...${NC}"
-    
-    # 下载并修改配置
-    local metrics_server_file
-    metrics_server_file=$(mktemp "/tmp/metrics-server.XXXXXX") || { log "${RED}错误: 创建Metrics Server配置文件失败${NC}"; return 1; }
-    if ! wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml -O "$metrics_server_file"; then
-        log "${RED}错误: 下载Metrics Server配置失败${NC}"
-        rm -f -- "$metrics_server_file"
-        return 1
-    fi
-    if ! grep -Eq '^[[:space:]]*kind:' "$metrics_server_file"; then
-        log "${RED}错误: Metrics Server 清单不是 Kubernetes YAML${NC}"
-        rm -f -- "$metrics_server_file"
-        return 1
-    fi
+
+    local metrics_server_file=""
+    # Pin a release tag; /releases/latest/ can move without notice.
+    download_k8s_manifest "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml" "Metrics Server" metrics_server_file
 
     # 添加启动参数以支持自签名证书
     sed -i '/args:/a\\        - --kubelet-insecure-tls' "$metrics_server_file"
@@ -942,12 +932,12 @@ install_metrics() {
     fi
 
     if ! kubectl apply -f "$metrics_server_file"; then
-        log "${RED}错误: 安装Metrics Server失败${NC}"
         rm -f -- "$metrics_server_file"
+        log "${RED}错误: 安装 Metrics Server 失败${NC}"
         return 1
     fi
     rm -f -- "$metrics_server_file"
-    
+
     log "${GREEN}Metrics Server安装完成${NC}"
 }
 

@@ -4,6 +4,13 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.26 - 2026-10-27
+
+### Changed
+- Metrics Server installs through `download_k8s_manifest` with a pinned `v0.7.2` release instead of `wget` against `/releases/latest/`.
+- Jenkins Maven and Gradle downloads use temp directories and verify Apache `.sha512` / Gradle `.sha256` before extract.
+- Fixed `show_title` calling `clea` instead of `clear` in the Jenkins installer.
+
 ## 1.1.25 - 2026-10-24
 
 ### Changed
