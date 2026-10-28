@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.26`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.27`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.26` is a backward-compatible patch release that pins Metrics Server via the shared manifest helper and verifies Jenkins Maven/Gradle archives against official digests. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.27` is a backward-compatible patch release that validates CRI-O yum repo files before install and requires ELF magic for the Speedtest CLI tarball path. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
