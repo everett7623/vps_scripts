@@ -249,6 +249,12 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.26 release
+
+- [x] Metrics Server: pin v0.7.2 and use `download_k8s_manifest`
+- [x] Jenkins Maven/Gradle: mktemp + official sha512/sha256 before extract
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.26`
+
 ## 1.1.25 release
 
 - [x] Kubernetes manifests: temp file plus `kind` check before `kubectl apply`; Calico no longer uses `curl -O`

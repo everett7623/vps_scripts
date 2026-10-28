@@ -22,6 +22,10 @@ grep -Fq 'jenkins.io-2023.key' "${SCRIPT}"
 grep -Fq 'signed-by=%s' "${SCRIPT}"
 grep -Fq 'jenkins-keyring.gpg' "${SCRIPT}"
 grep -Fq 'VPS_APT_JENKINS_LIST' "${SCRIPT}"
+grep -Fq 'mktemp -d "/tmp/jenkins-maven.XXXXXX"' "${SCRIPT}"
+grep -Fq 'mktemp -d "/tmp/jenkins-gradle.XXXXXX"' "${SCRIPT}"
+grep -Fq 'verify_archive_checksum sha512 "${maven_url}.sha512"' "${SCRIPT}"
+grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256"' "${SCRIPT}"
 
 # Must not stream or install the WAR before checksum verification.
 if grep -Eq 'wget -O "\$JENKINS_WAR"' "${SCRIPT}"; then
@@ -34,6 +38,14 @@ if grep -Eq 'http://mirrors\.jenkins\.io/' "${SCRIPT}"; then
 fi
 if grep -Eq 'apt-key[[:space:]]+add' "${SCRIPT}"; then
     echo "Jenkins installer still uses deprecated apt-key add." >&2
+    exit 1
+fi
+if grep -Eq 'wget[[:space:]]+https://archive\.apache\.org/dist/maven/' "${SCRIPT}"; then
+    echo "Jenkins installer still downloads Maven into the working directory." >&2
+    exit 1
+fi
+if grep -Eq 'wget[[:space:]]+https://services\.gradle\.org/distributions/' "${SCRIPT}"; then
+    echo "Jenkins installer still downloads Gradle into the working directory." >&2
     exit 1
 fi
 

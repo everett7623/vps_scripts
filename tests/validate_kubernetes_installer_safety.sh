@@ -28,7 +28,8 @@ grep -Fq 'bash "$helm_installer"' "${SCRIPT}"
 grep -Fq 'download_k8s_manifest' "${SCRIPT}"
 grep -Fq '/tmp/k8s-manifest.XXXXXX' "${SCRIPT}"
 grep -Fq '清单不是 Kubernetes YAML' "${SCRIPT}"
-grep -Fq 'Metrics Server 清单不是 Kubernetes YAML' "${SCRIPT}"
+grep -Fq 'metrics-server/releases/download/v0.7.2/components.yaml' "${SCRIPT}"
+grep -Fq 'download_k8s_manifest "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml" "Metrics Server"' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2
@@ -48,6 +49,14 @@ if grep -Fq 'curl -O https://docs.projectcalico.org/manifests/calico.yaml' "${SC
 fi
 if grep -Eq 'kubectl apply -f https://' "${SCRIPT}"; then
     echo "Kubernetes installer still applies a remote manifest URL." >&2
+    exit 1
+fi
+if grep -Fq 'metrics-server/releases/latest/download/components.yaml' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses unpinned Metrics Server latest." >&2
+    exit 1
+fi
+if grep -Eq 'wget[[:space:]].*metrics-server' "${SCRIPT}"; then
+    echo "Kubernetes installer still downloads Metrics Server with wget." >&2
     exit 1
 fi
 

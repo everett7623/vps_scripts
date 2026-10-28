@@ -125,7 +125,7 @@ log() {
 
 # 显示标题
 show_title() {
-    clea
+    clear
     echo -e "${PURPLE}======================================${NC}"
     echo -e "${CYAN}   Jenkins CI/CD平台安装脚本 v${SCRIPT_VERSION}${NC}"
     echo -e "${PURPLE}======================================${NC}"
@@ -655,29 +655,122 @@ run_nodejs_setup() {
     return "${exit_code}"
 }
 
+download_to_file() {
+    local url="$1"
+    local output="$2"
+    shift 2
+
+    if ! wget "$@" -O "$output" "$url"; then
+        rm -f -- "$output"
+        return 1
+    fi
+}
+
+# 校验官方发布的归档摘要（支持 "hash" 或 "hash  filename" 两种格式）
+# 用法: verify_archive_checksum <sha256|sha512> <checksum_url> <archive_file>
+verify_archive_checksum() {
+    local algo="$1"
+    local checksum_url="$2"
+    local archive_file="$3"
+    local checksum_file="${archive_file}.${algo}"
+    local expected=""
+    local actual=""
+    local hex_len=""
+
+    case "$algo" in
+        sha256) hex_len=64 ;;
+        sha512) hex_len=128 ;;
+        *) log "${RED}错误: 不支持的摘要算法 ${algo}${NC}"; return 1 ;;
+    esac
+
+    if ! command -v "${algo}sum" >/dev/null 2>&1; then
+        log "${RED}错误: 缺少 ${algo}sum，无法校验归档${NC}"
+        return 1
+    fi
+
+    if ! download_to_file "$checksum_url" "$checksum_file" -q; then
+        log "${RED}错误: 下载校验文件失败: ${checksum_url}${NC}"
+        return 1
+    fi
+
+    expected=$(awk 'NF { print $1; exit }' "$checksum_file" | tr 'A-F' 'a-f') || true
+    if [[ ! ${expected} =~ ^[0-9a-f]+$ ]] || [[ ${#expected} -ne ${hex_len} ]]; then
+        log "${RED}错误: 校验文件格式无效: ${checksum_url}${NC}"
+        return 1
+    fi
+
+    actual=$("${algo}sum" "$archive_file" | awk '{ print $1 }')
+    if [[ "$actual" != "$expected" ]]; then
+        log "${RED}错误: ${archive_file##*/} ${algo} 校验失败${NC}"
+        return 1
+    fi
+
+    log "${GREEN}${archive_file##*/} ${algo} 校验通过${NC}"
+}
+
 # 安装构建工具
 install_build_tools() {
     if [[ "$INSTALL_TOOLS" != true ]]; then
         return
     fi
-    
+
     log "${CYAN}安装构建工具...${NC}"
-    
+
     # 安装Maven
     log "${YELLOW}安装Maven...${NC}"
-    MAVEN_VERSION="3.9.5"
-    wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
-    tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt/
-    ln -sf /opt/apache-maven-${MAVEN_VERSION} /opt/maven
-    rm -f -- "apache-maven-${MAVEN_VERSION}-bin.tar.gz"
-    
+    local MAVEN_VERSION="3.9.5"
+    local maven_work=""
+    local maven_archive=""
+    local maven_url="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+    maven_work=$(mktemp -d "/tmp/jenkins-maven.XXXXXX") || {
+        log "${RED}错误: 创建 Maven 临时目录失败${NC}"
+        return 1
+    }
+    maven_archive="${maven_work}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+    if ! download_to_file "$maven_url" "$maven_archive" -q || [[ ! -s "$maven_archive" ]]; then
+        rm -rf -- "$maven_work"
+        log "${RED}错误: Maven 下载失败${NC}"
+        return 1
+    fi
+    if ! verify_archive_checksum sha512 "${maven_url}.sha512" "$maven_archive"; then
+        rm -rf -- "$maven_work"
+        return 1
+    fi
+    if ! tar -xzf "$maven_archive" -C /opt/; then
+        rm -rf -- "$maven_work"
+        log "${RED}错误: Maven 解压失败${NC}"
+        return 1
+    fi
+    ln -sfn "/opt/apache-maven-${MAVEN_VERSION}" /opt/maven
+    rm -rf -- "$maven_work"
+
     # 安装Gradle
     log "${YELLOW}安装Gradle...${NC}"
-    GRADLE_VERSION="8.5"
-    wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-    unzip -q gradle-${GRADLE_VERSION}-bin.zip -d /opt/
-    ln -sf /opt/gradle-${GRADLE_VERSION} /opt/gradle
-    rm -f -- "gradle-${GRADLE_VERSION}-bin.zip"
+    local GRADLE_VERSION="8.5"
+    local gradle_work=""
+    local gradle_archive=""
+    local gradle_url="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+    gradle_work=$(mktemp -d "/tmp/jenkins-gradle.XXXXXX") || {
+        log "${RED}错误: 创建 Gradle 临时目录失败${NC}"
+        return 1
+    }
+    gradle_archive="${gradle_work}/gradle-${GRADLE_VERSION}-bin.zip"
+    if ! download_to_file "$gradle_url" "$gradle_archive" -q || [[ ! -s "$gradle_archive" ]]; then
+        rm -rf -- "$gradle_work"
+        log "${RED}错误: Gradle 下载失败${NC}"
+        return 1
+    fi
+    if ! verify_archive_checksum sha256 "${gradle_url}.sha256" "$gradle_archive"; then
+        rm -rf -- "$gradle_work"
+        return 1
+    fi
+    if ! unzip -q "$gradle_archive" -d /opt/; then
+        rm -rf -- "$gradle_work"
+        log "${RED}错误: Gradle 解压失败${NC}"
+        return 1
+    fi
+    ln -sfn "/opt/gradle-${GRADLE_VERSION}" /opt/gradle
+    rm -rf -- "$gradle_work"
     
     # 安装Node.js
     log "${YELLOW}安装Node.js...${NC}"
