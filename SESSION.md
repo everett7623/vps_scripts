@@ -36,7 +36,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.23 | #40 | RVM/Helm/wasm-pack bash -n; LDNMP Compose ELF; Beszel hub pin |
 | 1.1.24 | #42 | Nginx source PGP; WP-CLI SHA-256 |
 | 1.1.25 | #44 | K8s manifests local fetch + kind check; catalog re-check |
-| 1.1.26 | (pending) | Metrics Server pin; Jenkins Maven/Gradle checksums |
+| 1.1.26 | #46 | Metrics Server pin; Jenkins Maven/Gradle checksums |
 
 ## Decisions
 
