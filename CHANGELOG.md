@@ -4,6 +4,12 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.27 - 2026-10-28
+
+### Changed
+- CRI-O RHEL/CentOS yum `.repo` files download to a temp path, must contain a section header, then `install -m 0644` into `/etc/yum.repos.d/`.
+- Bandwidth Speedtest CLI tarball installs require ELF magic (`7f454c46`) before writing `/usr/local/bin/speedtest`.
+
 ## 1.1.26 - 2026-10-27
 
 ### Changed

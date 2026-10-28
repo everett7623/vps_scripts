@@ -473,6 +473,34 @@ install_containerd() {
     systemctl restart containerd
 }
 
+# 下载 yum .repo 到临时文件，确认含 section 后再安装到目标路径。
+install_yum_repo_file() {
+    local url="$1"
+    local dest="$2"
+    local label="$3"
+    local tmp=""
+    tmp=$(mktemp "/tmp/k8s-yum-repo.XXXXXX") || {
+        log "${RED}错误: 创建 ${label} yum 仓库临时文件失败${NC}"
+        return 1
+    }
+    if ! curl -fsSL "$url" -o "$tmp"; then
+        rm -f -- "$tmp"
+        log "${RED}错误: 下载 ${label} yum 仓库失败${NC}"
+        return 1
+    fi
+    if ! grep -Eq '^[[:space:]]*\[' "$tmp"; then
+        rm -f -- "$tmp"
+        log "${RED}错误: ${label} 不是有效的 yum 仓库文件${NC}"
+        return 1
+    fi
+    if ! install -m 0644 "$tmp" "$dest"; then
+        rm -f -- "$tmp"
+        log "${RED}错误: 安装 ${label} yum 仓库失败${NC}"
+        return 1
+    fi
+    rm -f -- "$tmp"
+}
+
 # 安装CRI-O
 install_crio() {
     log "${CYAN}安装CRI-O...${NC}"
@@ -535,14 +563,20 @@ install_crio() {
             apt-get install -y cri-o cri-o-runc
             ;;
         centos|rhel|rocky|almalinux)
-            # 添加CRI-O仓库
-            curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_${VER_MAJOR}/devel:kubic:libcontainers:stable.repo
-            curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:$CRIO_VERSION.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:$CRIO_VERSION/CentOS_${VER_MAJOR}/devel:kubic:libcontainers:stable:cri-o:$CRIO_VERSION.repo
-            
+            # 添加CRI-O仓库（先下到临时文件并确认是 yum repo，再安装）
+            install_yum_repo_file \
+                "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_${VER_MAJOR}/devel:kubic:libcontainers:stable.repo" \
+                "/etc/yum.repos.d/devel:kubic:libcontainers:stable.repo" \
+                "CRI-O stable"
+            install_yum_repo_file \
+                "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${CRIO_VERSION}/CentOS_${VER_MAJOR}/devel:kubic:libcontainers:stable:cri-o:${CRIO_VERSION}.repo" \
+                "/etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${CRIO_VERSION}.repo" \
+                "CRI-O ${CRIO_VERSION}"
+
             yum install -y cri-o
             ;;
     esac
-    
+
     # 启动CRI-O
     systemctl daemon-reload
     systemctl enable crio
