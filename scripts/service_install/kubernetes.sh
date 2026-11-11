@@ -406,17 +406,23 @@ install_docker() {
             ;;
         centos|rhel|rocky|almalinux)
             yum install -y yum-utils
-            
+
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+                install_yum_repo_file \
+                    "https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo" \
+                    "/etc/yum.repos.d/docker-ce.repo" \
+                    "Docker CE"
             else
-                yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                install_yum_repo_file \
+                    "https://download.docker.com/linux/centos/docker-ce.repo" \
+                    "/etc/yum.repos.d/docker-ce.repo" \
+                    "Docker CE"
             fi
-            
+
             yum install -y docker-ce docker-ce-cli containerd.io
             ;;
     esac
-    
+
     # 配置Docker
     mkdir -p /etc/docker
     cat > /etc/docker/daemon.json << EOF
@@ -427,7 +433,7 @@ install_docker() {
         "max-size": "100m"
     },
     "storage-driver": "overlay2",
-    "registry-mirrors": [$(if [[ "$USE_CHINA_MIRROR" = true ]]; then echo '"https://registry.docker-cn.com"'; fi)]
+    "registry-mirrors": [$(if [[ "$USE_CHINA_MIRROR" = true ]]; then echo '"https://docker.m.daocloud.io"'; fi)]
 }
 EOF
     

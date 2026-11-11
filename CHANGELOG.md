@@ -4,6 +4,14 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.30 - 2026-11-12
+
+### Changed
+- Kubernetes and `install_deps` install Docker CE yum repos via `install_yum_repo_file` instead of `yum-config-manager --add-repo`; China Docker registry mirror switches to `docker.m.daocloud.io`.
+- `install_deps` Docker apt keys download to a temp file before `gpg --dearmor`.
+- LDNMP downloads MySQL/Remi release RPMs to temp before `rpm -Uvh`, and installs Nginx/Sury apt keys without `curl | gpg`.
+- WP Panel no longer suppresses `bash -n` diagnostics.
+
 ## 1.1.29 - 2026-11-12
 
 ### Changed

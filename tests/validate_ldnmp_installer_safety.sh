@@ -19,6 +19,10 @@ grep -Fq '数据库 root 密码文件: /root/.mysql_root_password' "${SCRIPT}"
 grep -Fq 'mkdir -p "${WEB_ROOT}/default"' "${SCRIPT}"
 grep -Fq '7f454c46' "${SCRIPT}"
 grep -Fq 'Docker Compose 下载内容不是 ELF 二进制' "${SCRIPT}"
+grep -Fq 'download_rpm_to_temp' "${SCRIPT}"
+grep -Fq 'install_apt_keyring_from_url' "${SCRIPT}"
+grep -Fq '/tmp/ldnmp-rpm.XXXXXX' "${SCRIPT}"
+grep -Fq '/tmp/ldnmp-apt-key.XXXXXX' "${SCRIPT}"
 
 if grep -Fq '数据库root密码:' "${SCRIPT}"; then
     echo "LDNMP installer still prints the database root password." >&2
@@ -27,6 +31,14 @@ fi
 
 if grep -Eq 'mkdir -p[[:space:]]+\$\{?WEB_ROOT\}?/|cat >[[:space:]]+\$\{?WEB_ROOT\}?/' "${SCRIPT}"; then
     echo "LDNMP installer has unquoted web-root filesystem writes." >&2
+    exit 1
+fi
+if grep -Eq 'yum[[:space:]]+install[[:space:]]+-y[[:space:]]+https?://' "${SCRIPT}"; then
+    echo "LDNMP installer still installs remote RPMs via yum URL." >&2
+    exit 1
+fi
+if grep -Eq 'curl[^\n]*\|[[:space:]]*gpg' "${SCRIPT}"; then
+    echo "LDNMP installer still pipes curl into gpg." >&2
     exit 1
 fi
 

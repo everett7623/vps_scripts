@@ -225,6 +225,34 @@ list_contains_any() {
     return 1
 }
 
+# 下载 yum .repo 到临时文件，确认含 section 后再安装到目标路径。
+install_yum_repo_file() {
+    local url="$1"
+    local dest="$2"
+    local label="$3"
+    local tmp=""
+    tmp=$(mktemp "/tmp/deps-yum-repo.XXXXXX") || {
+        print_warn "创建 ${label} yum 仓库临时文件失败。"
+        return 1
+    }
+    if ! curl -fsSL "$url" -o "$tmp"; then
+        rm -f -- "$tmp"
+        print_warn "下载 ${label} yum 仓库失败。"
+        return 1
+    fi
+    if ! grep -Eq '^[[:space:]]*\[' "$tmp"; then
+        rm -f -- "$tmp"
+        print_warn "${label} 不是有效的 yum 仓库文件。"
+        return 1
+    fi
+    if ! install -m 0644 "$tmp" "$dest"; then
+        rm -f -- "$tmp"
+        print_warn "安装 ${label} yum 仓库失败。"
+        return 1
+    fi
+    rm -f -- "$tmp"
+}
+
 configure_extra_repos() {
     local package_list="${1:-}"
     local need_docker=false
@@ -253,14 +281,21 @@ configure_extra_repos() {
                     local keyrings_dir="${VPS_APT_KEYRINGS_DIR:-/usr/share/keyrings}"
                     local docker_list="${VPS_APT_DOCKER_LIST:-/etc/apt/sources.list.d/docker.list}"
                     local keyring_file="${keyrings_dir}/docker-archive-keyring.gpg"
+                    local key_tmp=""
                     mkdir -p "${keyrings_dir}" "$(dirname -- "${docker_list}")"
-                    if curl -fsSL "https://download.docker.com/linux/${OS_TYPE}/gpg" \
-                        | gpg --dearmor -o "${keyring_file}" 2>/dev/null; then
+                    key_tmp=$(mktemp "/tmp/docker-apt-key.XXXXXX") || {
+                        print_warn "Docker 软件源密钥临时文件创建失败。"
+                        key_tmp=""
+                    }
+                    if [ -n "${key_tmp}" ] &&
+                       curl -fsSL "https://download.docker.com/linux/${OS_TYPE}/gpg" -o "${key_tmp}" &&
+                       gpg --dearmor -o "${keyring_file}" < "${key_tmp}"; then
                         echo "deb [arch=$(dpkg --print-architecture) signed-by=${keyring_file}] https://download.docker.com/linux/${OS_TYPE} $(lsb_release -cs) stable" \
                             > "${docker_list}"
                     else
                         print_warn "Docker 软件源密钥配置失败。"
                     fi
+                    rm -f -- "${key_tmp}"
                 fi
             fi
 
@@ -272,12 +307,14 @@ configure_extra_repos() {
             if ! rpm -q epel-release >/dev/null 2>&1; then
                 install_one_package epel-release || print_warn "安装 epel-release 失败。"
             fi
-            if [ "${need_docker}" = true ] && ! command -v docker >/dev/null 2>&1 && command -v yum-config-manager >/dev/null 2>&1; then
+            if [ "${need_docker}" = true ] && ! command -v docker >/dev/null 2>&1; then
                 if [ "${DRY_RUN}" = true ]; then
-                    printf '[DRY-RUN] yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo\n'
+                    printf '[DRY-RUN] install Docker CE yum repo https://download.docker.com/linux/centos/docker-ce.repo\n'
                 else
-                    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo >> "$LOG_FILE" 2>&1 || \
-                        print_warn "添加 Docker CE 软件源失败。"
+                    install_yum_repo_file \
+                        "https://download.docker.com/linux/centos/docker-ce.repo" \
+                        "/etc/yum.repos.d/docker-ce.repo" \
+                        "Docker CE" || print_warn "添加 Docker CE 软件源失败。"
                 fi
             fi
             ;;

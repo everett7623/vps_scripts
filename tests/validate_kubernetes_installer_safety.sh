@@ -38,6 +38,9 @@ grep -Fq 'download_k8s_manifest "https://github.com/kubernetes-sigs/metrics-serv
 grep -Fq 'install_yum_repo_file' "${SCRIPT}"
 grep -Fq '/tmp/k8s-yum-repo.XXXXXX' "${SCRIPT}"
 grep -Fq '不是有效的 yum 仓库文件' "${SCRIPT}"
+grep -Fq 'download.docker.com/linux/centos/docker-ce.repo' "${SCRIPT}"
+grep -Fq 'mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo' "${SCRIPT}"
+grep -Fq 'docker.m.daocloud.io' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2
@@ -81,6 +84,14 @@ if grep -Fq 'packages.cloud.google.com/yum' "${SCRIPT}"; then
 fi
 if grep -Fq 'kubernetes-el7-x86_64' "${SCRIPT}"; then
     echo "Kubernetes installer still uses the retired kubernetes-el7 yum path." >&2
+    exit 1
+fi
+if grep -Fq 'yum-config-manager --add-repo' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses yum-config-manager --add-repo." >&2
+    exit 1
+fi
+if grep -Fq 'registry.docker-cn.com' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses the retired registry.docker-cn.com mirror." >&2
     exit 1
 fi
 
