@@ -27,6 +27,8 @@ DEFAULT_PORT="8888"
 INSTALL_PATH="/home/amh"
 DOMAIN=""
 ACTION="install"
+TEMP_DIR=""
+INSTALL_SCRIPT=""
 
 # 日志函数
 log_info() {
@@ -183,50 +185,63 @@ install_dependencies() {
 # 下载AMH安装脚本
 download_amh() {
     log_info "下载AMH安装程序..."
-    
+
     # 创建临时目录
     TEMP_DIR=$(mktemp -d "/tmp/amh_install.XXXXXX") || { log_error "创建临时目录失败"; exit 1; }
-    cd "$TEMP_DIR"
-    
+    INSTALL_SCRIPT=$(mktemp "${TEMP_DIR}/amh_install.XXXXXX") || {
+        log_error "创建安装脚本临时文件失败"
+        exit 1
+    }
+
     # 下载安装脚本（HTTPS）
     if [[ "$DEFAULT_VERSION" == "latest" ]]; then
-        wget -O amh.sh https://dl.amh.sh/amh.sh
+        if ! wget -q -O "$INSTALL_SCRIPT" https://dl.amh.sh/amh.sh; then
+            log_error "AMH安装脚本下载失败"
+            exit 1
+        fi
     else
-        wget -O amh.sh "https://dl.amh.sh/amh-${DEFAULT_VERSION}.sh"
+        if ! wget -q -O "$INSTALL_SCRIPT" "https://dl.amh.sh/amh-${DEFAULT_VERSION}.sh"; then
+            log_error "AMH安装脚本下载失败"
+            exit 1
+        fi
     fi
-    
-    if [[ ! -f amh.sh ]]; then
+
+    if [[ ! -s "$INSTALL_SCRIPT" ]]; then
         log_error "AMH安装脚本下载失败"
         exit 1
     fi
 
-    if ! bash -n amh.sh; then
+    if ! bash -n "$INSTALL_SCRIPT"; then
         log_error "AMH安装脚本语法校验失败"
         exit 1
     fi
-    
-    chmod +x amh.sh
+
+    chmod +x "$INSTALL_SCRIPT"
     log_info "AMH安装脚本下载完成"
 }
 
 # 安装AMH
 install_amh() {
     log_info "开始安装AMH面板..."
-    
+
     # 创建安装目录
-    mkdir -p $INSTALL_PATH
-    
+    mkdir -p "$INSTALL_PATH"
+
     # 执行安装
-    cd $TEMP_DIR
-    if [[ "$DEFAULT_VERSION" == "latest" ]]; then
-        ./amh.sh
-    else
-        ./amh.sh $DEFAULT_VERSION
-    fi
-    
-    if [[ $? -ne 0 ]]; then
-        log_error "AMH安装失败"
+    if [[ -z "${INSTALL_SCRIPT:-}" || ! -s "$INSTALL_SCRIPT" ]]; then
+        log_error "AMH安装脚本不存在"
         exit 1
+    fi
+    if [[ "$DEFAULT_VERSION" == "latest" ]]; then
+        if ! bash "$INSTALL_SCRIPT"; then
+            log_error "AMH安装失败"
+            exit 1
+        fi
+    else
+        if ! bash "$INSTALL_SCRIPT" "$DEFAULT_VERSION"; then
+            log_error "AMH安装失败"
+            exit 1
+        fi
     fi
     
     # 配置端口

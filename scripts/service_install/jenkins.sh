@@ -264,6 +264,34 @@ create_jenkins_user() {
 }
 
 # 系统包方式安装
+# 下载 yum .repo 到临时文件，确认含 section 后再安装到目标路径。
+install_yum_repo_file() {
+    local url="$1"
+    local dest="$2"
+    local label="$3"
+    local tmp=""
+    tmp=$(mktemp "/tmp/jenkins-yum-repo.XXXXXX") || {
+        log "${RED}错误: 创建 ${label} yum 仓库临时文件失败${NC}"
+        return 1
+    }
+    if ! curl -fsSL "$url" -o "$tmp"; then
+        rm -f -- "$tmp"
+        log "${RED}错误: 下载 ${label} yum 仓库失败${NC}"
+        return 1
+    fi
+    if ! grep -Eq '^[[:space:]]*\[' "$tmp"; then
+        rm -f -- "$tmp"
+        log "${RED}错误: ${label} 不是有效的 yum 仓库文件${NC}"
+        return 1
+    fi
+    if ! install -m 0644 "$tmp" "$dest"; then
+        rm -f -- "$tmp"
+        log "${RED}错误: 安装 ${label} yum 仓库失败${NC}"
+        return 1
+    fi
+    rm -f -- "$tmp"
+}
+
 install_package() {
     log "${CYAN}使用系统包安装Jenkins...${NC}"
 
@@ -313,15 +341,15 @@ install_package() {
             fi
             ;;
         centos|rhel|fedora|rocky|almalinux)
-            # 添加Jenkins仓库
+            # TUNA no longer mirrors redhat-stable (404); always use official yum repo.
+            local jenkins_repo_url="https://pkg.jenkins.io/redhat-stable/jenkins.repo"
+            local jenkins_key_url="https://pkg.jenkins.io/redhat-stable/jenkins.io.key"
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                wget -O /etc/yum.repos.d/jenkins.repo https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.repo || { log "${RED}下载仓库文件失败${NC}"; exit 1; }
-                rpm --import https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.io.key || true
-            else
-                wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo || { log "${RED}下载仓库文件失败${NC}"; exit 1; }
-                rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key || true
+                log "${YELLOW}Jenkins RHEL 仓库暂无可用国内镜像，改用官方源${NC}"
             fi
-            
+            install_yum_repo_file "$jenkins_repo_url" "/etc/yum.repos.d/jenkins.repo" "Jenkins" || exit 1
+            rpm --import "$jenkins_key_url" || true
+
             yum install -y jenkins
             ;;
     esac

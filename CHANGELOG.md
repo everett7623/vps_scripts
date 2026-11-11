@@ -4,6 +4,12 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.28 - 2026-11-11
+
+### Changed
+- Jenkins RHEL installs download the yum `.repo` to a temp file, require a section header, then `install -m 0644`; the retired TUNA `redhat-stable` mirror (404) falls back to `pkg.jenkins.io`.
+- 1Panel and AMH download official installers via `mktemp` paths instead of fixed `quick_start.sh` / `amh.sh` basenames.
+
 ## 1.1.27 - 2026-10-28
 
 ### Changed

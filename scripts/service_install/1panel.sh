@@ -43,6 +43,7 @@ LOG_FILE="/tmp/1panel_install_$(date +%Y%m%d_%H%M%S).log"
 # 官方脚本URL
 OFFICIAL_SCRIPT="https://resource.1panel.pro/quick_start.sh"
 OFFICIAL_SCRIPT_CN="https://resource.fit2cloud.com/1panel/package/quick_start.sh"
+INSTALL_SCRIPT=""
 
 # 记录日志
 log() {
@@ -157,49 +158,49 @@ download_official_script() {
         DOWNLOAD_URL="$OFFICIAL_SCRIPT"
     fi
     
+    INSTALL_SCRIPT=$(mktemp "${TEMP_DIR}/1panel_install.XXXXXX") || {
+        log "${RED}错误: 创建安装脚本临时文件失败${NC}"
+        exit 1
+    }
+
     # 下载脚本
-    if ! curl -fsSL "$DOWNLOAD_URL" -o quick_start.sh; then
+    if ! curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_SCRIPT"; then
         log "${RED}错误: 下载安装脚本失败${NC}"
         # 尝试备用方法
-        if ! wget -q "$DOWNLOAD_URL" -O quick_start.sh; then
+        if ! wget -q "$DOWNLOAD_URL" -O "$INSTALL_SCRIPT"; then
             exit 1
         fi
     fi
-    
+
     # 检查脚本
-    if [[ ! -f quick_start.sh ]]; then
+    if [[ ! -s "$INSTALL_SCRIPT" ]]; then
         log "${RED}错误: 安装脚本不存在${NC}"
         exit 1
     fi
 
-    if ! bash -n quick_start.sh; then
+    if ! bash -n "$INSTALL_SCRIPT"; then
         log "${RED}错误: 安装脚本语法校验失败${NC}"
         exit 1
     fi
-    
-    chmod +x quick_start.sh
+
+    chmod +x "$INSTALL_SCRIPT"
     log "${GREEN}官方脚本下载成功${NC}"
 }
 
 # 执行安装
 execute_installation() {
     log "${CYAN}开始执行1Panel安装...${NC}"
-    
-    # 执行官方安装脚本
-    if [[ "$USE_CN_MIRROR" == true ]]; then
-        # 中国版本自动处理
-        bash quick_start.sh
-    else
-        # 国际版本
-        bash quick_start.sh
+
+    if [[ -z "${INSTALL_SCRIPT:-}" || ! -s "$INSTALL_SCRIPT" ]]; then
+        log "${RED}错误: 安装脚本不存在${NC}"
+        exit 1
     fi
-    
-    # 检查安装结果
-    if [[ $? -ne 0 ]]; then
+
+    if ! bash "$INSTALL_SCRIPT"; then
         log "${RED}错误: 1Panel安装失败${NC}"
         exit 1
     fi
-    
+
     log "${GREEN}1Panel安装完成${NC}"
 }
 
