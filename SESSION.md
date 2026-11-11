@@ -39,7 +39,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.26 | #46 | Metrics Server pin; Jenkins Maven/Gradle checksums |
 | 1.1.27 | #49 | CRI-O yum repo validate; Speedtest ELF check |
 | 1.1.28 | #51 | Jenkins yum validate; drop TUNA RHEL; panel mktemp |
-| 1.1.29 | (pending) | K8s RHEL yum → pkgs.k8s.io; enable GPG |
+| 1.1.29 | #53 | K8s RHEL yum → pkgs.k8s.io; enable GPG |
 
 ## Decisions
 
