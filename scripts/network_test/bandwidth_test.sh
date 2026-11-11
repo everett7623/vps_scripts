@@ -177,8 +177,14 @@ install_tools() {
             if [ -f "$TEMP_DIR/speedtest.tgz" ]; then
                 tar -xzf "$TEMP_DIR/speedtest.tgz" -C "$TEMP_DIR" || true
                 if [ -f "$TEMP_DIR/speedtest" ]; then
-                    mv "$TEMP_DIR/speedtest" /usr/local/bin/ || true
-                    chmod +x /usr/local/bin/speedtest || true
+                    case "$(od -An -N4 -tx1 "$TEMP_DIR/speedtest" | tr -d ' \n')" in
+                        7f454c46)
+                            install -m 0755 "$TEMP_DIR/speedtest" /usr/local/bin/speedtest || true
+                            ;;
+                        *)
+                            print_warn "Speedtest CLI 下载内容不是 ELF 二进制，已跳过安装"
+                            ;;
+                    esac
                 fi
             fi
         fi

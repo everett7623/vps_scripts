@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.26 pins Metrics Server via the shared manifest helper and verifies Jenkins Maven/Gradle archives against official digests. The LDNMP installer stays a single combined installer.
+Version 1.1.27 validates CRI-O yum repo files before install and requires ELF magic for the Speedtest CLI tarball path. The LDNMP installer stays a single combined installer.
 
 Next work: periodic catalog URL re-check each release; kernel rollback stays interactive-only.
 
@@ -54,6 +54,7 @@ Next work: periodic catalog URL re-check each release; kernel rollback stays int
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrappe
+- CRI-O yum repo temp validate; Speedtest CLI ELF check (1.1.27)
 - Metrics Server pinned v0.7.2 via shared helper; Jenkins Maven/Gradle checksums (1.1.26)
 - Kubernetes manifests fetched locally and checked for `kind` before apply; catalog short URLs re-checked (1.1.25)
 - Nginx source PGP verify; WP-CLI SHA-256 sidecar (1.1.24)

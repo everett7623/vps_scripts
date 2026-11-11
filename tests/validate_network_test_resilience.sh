@@ -57,6 +57,12 @@ grep -Fq 'run_speedtest_single "$id" "$name" || true' "${BANDWIDTH}" || fail "ba
 awk '/^run_speedtest_single\(\)/,/^}/ { if ($0 ~ /return 1/) bad=1 } END { exit bad ? 1 : 0 }' "${BANDWIDTH}" \
     || fail "bandwidth_test.sh run_speedtest_single still returns 1"
 grep -Fq -- '--skip-install' "${BANDWIDTH}" || fail "bandwidth_test.sh missing --skip-install"
+grep -Fq '7f454c46' "${BANDWIDTH}" || fail "bandwidth_test.sh missing Speedtest ELF magic check"
+grep -Fq 'Speedtest CLI 下载内容不是 ELF 二进制' "${BANDWIDTH}" \
+    || fail "bandwidth_test.sh missing Speedtest non-ELF warning"
+if grep -Eq 'mv "\$TEMP_DIR/speedtest" /usr/local/bin/' "${BANDWIDTH}"; then
+    fail "bandwidth_test.sh still installs Speedtest CLI without an ELF magic check"
+fi
 grep -Fq -- '--skip-install' "${BACKHAUL}" || fail "backhaul_route_test.sh missing --skip-install"
 grep -Fq -- '--skip-install' "${NETWORK_DIR}/network_quality_test.sh" \
     || fail "network_quality_test.sh missing --skip-install"

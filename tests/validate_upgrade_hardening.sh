@@ -259,6 +259,10 @@ grep -Fq 'kubic 路径 404' "${K8S_SCRIPT}"
 grep -Fq 'download_k8s_manifest' "${K8S_SCRIPT}"
 grep -Fq '清单不是 Kubernetes YAML' "${K8S_SCRIPT}"
 grep -Fq 'metrics-server/releases/download/v0.7.2/components.yaml' "${K8S_SCRIPT}"
+grep -Fq 'install_yum_repo_file' "${K8S_SCRIPT}"
+grep -Fq '不是有效的 yum 仓库文件' "${K8S_SCRIPT}"
+grep -Fq '7f454c46' "${BANDWIDTH_SCRIPT}"
+grep -Fq 'Speedtest CLI 下载内容不是 ELF 二进制' "${BANDWIDTH_SCRIPT}"
 if grep -Fq 'curl -O https://docs.projectcalico.org/manifests/calico.yaml' "${K8S_SCRIPT}"; then
     echo "Kubernetes installer still downloads Calico into the working directory." >&2
     exit 1
@@ -277,6 +281,14 @@ grep -Fq 'verify_archive_checksum sha512 "${maven_url}.sha512"' "${JENKINS_SCRIP
 grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256"' "${JENKINS_SCRIPT}"
 if grep -Eq 'wget[[:space:]]+https://archive\.apache\.org/dist/maven/' "${JENKINS_SCRIPT}"; then
     echo "Jenkins installer still downloads Maven into the working directory." >&2
+    exit 1
+fi
+if grep -Eq 'curl -L -o /etc/yum\.repos\.d/' "${K8S_SCRIPT}"; then
+    echo "Kubernetes installer still writes yum repos directly with curl -L -o." >&2
+    exit 1
+fi
+if grep -Eq 'mv "\$TEMP_DIR/speedtest" /usr/local/bin/' "${BANDWIDTH_SCRIPT}"; then
+    echo "Bandwidth test still installs Speedtest CLI without an ELF magic check." >&2
     exit 1
 fi
 

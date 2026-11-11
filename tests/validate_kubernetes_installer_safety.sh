@@ -30,6 +30,9 @@ grep -Fq '/tmp/k8s-manifest.XXXXXX' "${SCRIPT}"
 grep -Fq '清单不是 Kubernetes YAML' "${SCRIPT}"
 grep -Fq 'metrics-server/releases/download/v0.7.2/components.yaml' "${SCRIPT}"
 grep -Fq 'download_k8s_manifest "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml" "Metrics Server"' "${SCRIPT}"
+grep -Fq 'install_yum_repo_file' "${SCRIPT}"
+grep -Fq '/tmp/k8s-yum-repo.XXXXXX' "${SCRIPT}"
+grep -Fq '不是有效的 yum 仓库文件' "${SCRIPT}"
 
 if grep -Eq '(^|[[:space:]])eval[[:space:]]' "${SCRIPT}"; then
     echo "Kubernetes installer still uses eval." >&2
@@ -57,6 +60,10 @@ if grep -Fq 'metrics-server/releases/latest/download/components.yaml' "${SCRIPT}
 fi
 if grep -Eq 'wget[[:space:]].*metrics-server' "${SCRIPT}"; then
     echo "Kubernetes installer still downloads Metrics Server with wget." >&2
+    exit 1
+fi
+if grep -Eq 'curl -L -o /etc/yum\.repos\.d/' "${SCRIPT}"; then
+    echo "Kubernetes installer still writes yum repos directly with curl -L -o." >&2
     exit 1
 fi
 

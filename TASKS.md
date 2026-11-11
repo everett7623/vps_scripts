@@ -249,6 +249,12 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.27 release
+
+- [x] CRI-O RHEL: temp download + section check before yum.repos.d install
+- [x] Bandwidth Speedtest CLI: ELF magic before `/usr/local/bin` install
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.27`
+
 ## 1.1.26 release
 
 - [x] Metrics Server: pin v0.7.2 and use `download_k8s_manifest`
