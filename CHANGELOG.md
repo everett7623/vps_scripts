@@ -4,6 +4,11 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.29 - 2026-11-12
+
+### Changed
+- Kubernetes RHEL/CentOS installs use `pkgs.k8s.io` (or Aliyun `kubernetes-new`) RPM streams with `gpgcheck=1` / `repo_gpgcheck=1`, replacing the retired Google/`kubernetes-el7` paths and the China-mirror `gpgcheck=0` fallback.
+
 ## 1.1.28 - 2026-11-11
 
 ### Changed

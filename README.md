@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.28-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.29-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -353,6 +353,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.29`：Kubernetes RHEL yum 迁移到 `pkgs.k8s.io` / Aliyun `kubernetes-new`，启用 GPG 校验
 - 发布 `1.1.28`：Jenkins yum 仓库临时校验；停用已 404 的 TUNA RHEL 镜像；1Panel/AMH 安装脚本改用 `mktemp`
 - 发布 `1.1.27`：CRI-O yum 仓库先校验再安装；Speedtest CLI 二进制安装前做 ELF 校验
 - 发布 `1.1.26`：Metrics Server 固定 `v0.7.2` 并走共享清单下载；Jenkins Maven/Gradle 按官方摘要校验后再解压

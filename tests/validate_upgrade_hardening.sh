@@ -192,6 +192,9 @@ grep -Fq 'https://download.opensuse.org/repositories/devel:/kubic:/libcontainers
     "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'https://mirror.azure.cn/kubernetes/charts/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'pkgs.k8s.io/core:/stable:/v' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'pkgs.k8s.io/core:/stable:/v${k8s_stream}/rpm/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'kubernetes-new/core/stable/v${k8s_stream}/rpm/' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
+grep -Fq 'repodata/repomd.xml.key' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'kubernetes-apt-keyring.gpg' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
     echo "Kubernetes installer still uses deprecated apt-key add." >&2
@@ -199,6 +202,18 @@ if grep -Eq 'apt-key[[:space:]]+add' "${REPO_ROOT}/scripts/service_install/kuber
 fi
 if grep -Fq 'kubernetes-xenial' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
     echo "Kubernetes installer still uses retired kubernetes-xenial apt repo." >&2
+    exit 1
+fi
+if grep -Fq 'gpgcheck=0' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
+    echo "Kubernetes installer still disables yum GPG checks." >&2
+    exit 1
+fi
+if grep -Fq 'packages.cloud.google.com/yum' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
+    echo "Kubernetes installer still uses the retired Google yum repo." >&2
+    exit 1
+fi
+if grep -Fq 'kubernetes-el7-x86_64' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"; then
+    echo "Kubernetes installer still uses the retired kubernetes-el7 yum path." >&2
     exit 1
 fi
 

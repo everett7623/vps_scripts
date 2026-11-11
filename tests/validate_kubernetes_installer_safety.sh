@@ -19,6 +19,11 @@ grep -Fq 'crio_minor' "${SCRIPT}"
 grep -Fq 'kubic 路径 404' "${SCRIPT}"
 grep -Fq 'pkgs.k8s.io/core:/stable:/v' "${SCRIPT}"
 grep -Fq 'kubernetes-new/core/stable/v' "${SCRIPT}"
+grep -Fq 'pkgs.k8s.io/core:/stable:/v${k8s_stream}/rpm/' "${SCRIPT}"
+grep -Fq 'kubernetes-new/core/stable/v${k8s_stream}/rpm/' "${SCRIPT}"
+grep -Fq 'repodata/repomd.xml.key' "${SCRIPT}"
+grep -Fq 'gpgcheck=1' "${SCRIPT}"
+grep -Fq 'repo_gpgcheck=1' "${SCRIPT}"
 grep -Fq 'kubernetes-apt-keyring.gpg' "${SCRIPT}"
 grep -Fq 'docker-archive-keyring.gpg' "${SCRIPT}"
 grep -Fq 'libcontainers-cri-o-keyring.gpg' "${SCRIPT}"
@@ -64,6 +69,18 @@ if grep -Eq 'wget[[:space:]].*metrics-server' "${SCRIPT}"; then
 fi
 if grep -Eq 'curl -L -o /etc/yum\.repos\.d/' "${SCRIPT}"; then
     echo "Kubernetes installer still writes yum repos directly with curl -L -o." >&2
+    exit 1
+fi
+if grep -Fq 'gpgcheck=0' "${SCRIPT}"; then
+    echo "Kubernetes installer still disables yum GPG checks." >&2
+    exit 1
+fi
+if grep -Fq 'packages.cloud.google.com/yum' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses the retired Google yum repo." >&2
+    exit 1
+fi
+if grep -Fq 'kubernetes-el7-x86_64' "${SCRIPT}"; then
+    echo "Kubernetes installer still uses the retired kubernetes-el7 yum path." >&2
     exit 1
 fi
 

@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Version 1.1.28 validates Jenkins yum repo files before install, drops the dead TUNA RHEL mirror, and uses mktemp for 1Panel/AMH installer scripts. The LDNMP installer stays a single combined installer.
+Version 1.1.29 migrates Kubernetes RHEL yum repos to pkgs.k8s.io / Aliyun kubernetes-new with GPG enabled. The LDNMP installer stays a single combined installer.
 
 Next work: periodic catalog URL re-check each release; kernel rollback stays interactive-only.
 
@@ -54,6 +54,7 @@ Next work: periodic catalog URL re-check each release; kernel rollback stays int
 - Moved the Nezha agent to the current `nezhahq/agent` v1+ release with upstream `checksums.txt` SHA-256 verification and a `600` config file
 - Added `--dry-run`/`--target`/`--yes` to the three legacy uninstall helpers with `/var/backups/vps_scripts` backups, in-process batch mode, `/swapfile`-only swap rollback, and `sshd -t`-guarded SSH restore
 - Added `--status`/`--dry-run` to the Docker installer wrappe
+- Kubernetes RHEL yum → pkgs.k8s.io / kubernetes-new with GPG (1.1.29)
 - Jenkins yum repo validate; drop dead TUNA RHEL mirror; 1Panel/AMH mktemp (1.1.28)
 - CRI-O yum repo temp validate; Speedtest CLI ELF check (1.1.27)
 - Metrics Server pinned v0.7.2 via shared helper; Jenkins Maven/Gradle checksums (1.1.26)
