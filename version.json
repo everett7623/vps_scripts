@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.27",
-    "release_date": "2026-10-28",
+    "version": "1.1.28",
+    "release_date": "2026-11-11",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "CRI-O yum repos validated before install; Speedtest CLI ELF check."
+    "message": "Jenkins yum repo validate; drop dead TUNA RHEL mirror; panel mktemp."
   },
   "compatibility": {
     "min_bash_version": "4.0",

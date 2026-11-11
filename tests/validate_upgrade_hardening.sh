@@ -128,6 +128,16 @@ for panel_script in 1panel.sh aapanel.sh amh.sh btpanel.sh cyberpanel.sh; do
         exit 1
     fi
 done
+grep -Fq 'mktemp "${TEMP_DIR}/1panel_install.XXXXXX"' "${REPO_ROOT}/scripts/service_install/1panel.sh"
+grep -Fq 'mktemp "${TEMP_DIR}/amh_install.XXXXXX"' "${REPO_ROOT}/scripts/service_install/amh.sh"
+if grep -Eq 'curl -fsSL "\$DOWNLOAD_URL" -o quick_start\.sh' "${REPO_ROOT}/scripts/service_install/1panel.sh"; then
+    echo "1Panel installer still downloads to a fixed quick_start.sh basename." >&2
+    exit 1
+fi
+if grep -Eq 'wget -O amh\.sh ' "${REPO_ROOT}/scripts/service_install/amh.sh"; then
+    echo "AMH installer still downloads to a fixed amh.sh basename." >&2
+    exit 1
+fi
 grep -Fq 'henrygd/beszel/main/supplemental/scripts/install-agent.sh' "${LAUNCHER}"
 grep -Fq 'get.beszel.dev/hub' "${LAUNCHER}"
 grep -Fq 'print_menu_item 27 "CyberPanel" "小众控制面板"' "${LAUNCHER}"
@@ -281,6 +291,16 @@ grep -Fq 'verify_archive_checksum sha512 "${maven_url}.sha512"' "${JENKINS_SCRIP
 grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256"' "${JENKINS_SCRIPT}"
 if grep -Eq 'wget[[:space:]]+https://archive\.apache\.org/dist/maven/' "${JENKINS_SCRIPT}"; then
     echo "Jenkins installer still downloads Maven into the working directory." >&2
+    exit 1
+fi
+grep -Fq 'install_yum_repo_file' "${JENKINS_SCRIPT}"
+grep -Fq 'pkg.jenkins.io/redhat-stable/jenkins.repo' "${JENKINS_SCRIPT}"
+if grep -Eq 'wget[[:space:]]+-O[[:space:]]+/etc/yum\.repos\.d/' "${JENKINS_SCRIPT}"; then
+    echo "Jenkins installer still writes yum repos directly with wget -O." >&2
+    exit 1
+fi
+if grep -Fq 'mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.repo' "${JENKINS_SCRIPT}"; then
+    echo "Jenkins installer still uses the retired TUNA redhat-stable mirror." >&2
     exit 1
 fi
 if grep -Eq 'curl -L -o /etc/yum\.repos\.d/' "${K8S_SCRIPT}"; then

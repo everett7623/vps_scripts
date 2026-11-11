@@ -249,6 +249,12 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.28 release
+
+- [x] Jenkins RHEL: temp yum repo validate; drop TUNA redhat-stable 404
+- [x] 1Panel / AMH: `mktemp` for remote installer script paths
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.28`
+
 ## 1.1.27 release
 
 - [x] CRI-O RHEL: temp download + section check before yum.repos.d install

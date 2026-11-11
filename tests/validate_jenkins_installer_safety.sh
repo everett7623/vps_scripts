@@ -26,6 +26,11 @@ grep -Fq 'mktemp -d "/tmp/jenkins-maven.XXXXXX"' "${SCRIPT}"
 grep -Fq 'mktemp -d "/tmp/jenkins-gradle.XXXXXX"' "${SCRIPT}"
 grep -Fq 'verify_archive_checksum sha512 "${maven_url}.sha512"' "${SCRIPT}"
 grep -Fq 'verify_archive_checksum sha256 "${gradle_url}.sha256"' "${SCRIPT}"
+grep -Fq 'install_yum_repo_file' "${SCRIPT}"
+grep -Fq '/tmp/jenkins-yum-repo.XXXXXX' "${SCRIPT}"
+grep -Fq '不是有效的 yum 仓库文件' "${SCRIPT}"
+grep -Fq 'pkg.jenkins.io/redhat-stable/jenkins.repo' "${SCRIPT}"
+grep -Fq 'Jenkins RHEL 仓库暂无可用国内镜像，改用官方源' "${SCRIPT}"
 
 # Must not stream or install the WAR before checksum verification.
 if grep -Eq 'wget -O "\$JENKINS_WAR"' "${SCRIPT}"; then
@@ -46,6 +51,14 @@ if grep -Eq 'wget[[:space:]]+https://archive\.apache\.org/dist/maven/' "${SCRIPT
 fi
 if grep -Eq 'wget[[:space:]]+https://services\.gradle\.org/distributions/' "${SCRIPT}"; then
     echo "Jenkins installer still downloads Gradle into the working directory." >&2
+    exit 1
+fi
+if grep -Eq 'wget[[:space:]]+-O[[:space:]]+/etc/yum\.repos\.d/' "${SCRIPT}"; then
+    echo "Jenkins installer still writes yum repos directly with wget -O." >&2
+    exit 1
+fi
+if grep -Fq 'mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.repo' "${SCRIPT}"; then
+    echo "Jenkins installer still uses the retired TUNA redhat-stable mirror." >&2
     exit 1
 fi
 
