@@ -249,6 +249,13 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.30 release
+
+- [x] Docker CE: `install_yum_repo_file` in kubernetes + install_deps; apt key temp path
+- [x] LDNMP: `download_rpm_to_temp` + apt keyring helper; ban yum URL / curl|gpg
+- [x] Replace retired docker-cn mirror; wppanel bash -n parity
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.30`
+
 ## 1.1.29 release
 
 - [x] Kubernetes RHEL: migrate yum to pkgs.k8s.io / Aliyun kubernetes-new; enable GPG

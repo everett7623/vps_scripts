@@ -33,7 +33,7 @@ fi
 grep -Fq 'run_remote_bash_installer()' "${LDNMP_SCRIPT}"
 grep -Fq 'signed-by=/usr/share/keyrings/nginx-signing.gpg' "${LDNMP_SCRIPT}"
 grep -Fq 'signed-by=/usr/share/keyrings/sury-php.gpg' "${LDNMP_SCRIPT}"
-if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)|apt-key' "${LDNMP_SCRIPT}"; then
+if grep -Eq 'curl[^\n]*\|[[:space:]]*(bash|sh)|apt-key[[:space:]]+add' "${LDNMP_SCRIPT}"; then
     echo "LDNMP installer retains an unsafe remote shell pipeline or apt-key." >&2
     exit 1
 fi
@@ -122,12 +122,16 @@ if grep -Eq 'curl[[:space:]]+-[A-Za-z0-9]*k' "${REPO_ROOT}/scripts/service_insta
     echo "aaPanel installer still disables TLS verification." >&2
     exit 1
 fi
-for panel_script in 1panel.sh aapanel.sh amh.sh btpanel.sh cyberpanel.sh; do
+for panel_script in 1panel.sh aapanel.sh amh.sh btpanel.sh cyberpanel.sh wppanel.sh; do
     if ! grep -Eq 'bash -n ' "${REPO_ROOT}/scripts/service_install/${panel_script}"; then
         echo "Panel installer missing bash -n before remote script execution: ${panel_script}" >&2
         exit 1
     fi
 done
+if grep -Fq 'bash -n "$install_script" 2>/dev/null' "${REPO_ROOT}/scripts/service_install/wppanel.sh"; then
+    echo "WP Panel installer still suppresses bash -n diagnostics." >&2
+    exit 1
+fi
 grep -Fq 'mktemp "${TEMP_DIR}/1panel_install.XXXXXX"' "${REPO_ROOT}/scripts/service_install/1panel.sh"
 grep -Fq 'mktemp "${TEMP_DIR}/amh_install.XXXXXX"' "${REPO_ROOT}/scripts/service_install/amh.sh"
 if grep -Eq 'curl -fsSL "\$DOWNLOAD_URL" -o quick_start\.sh' "${REPO_ROOT}/scripts/service_install/1panel.sh"; then
@@ -145,6 +149,16 @@ grep -Fq 'bash -n "$rvm_script"' "${REPO_ROOT}/scripts/service_install/ruby.sh"
 grep -Fq 'bash -n "$helm_installer"' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'bash -n "$wasm_pack_script"' "${REPO_ROOT}/scripts/service_install/rust.sh"
 grep -Fq '7f454c46' "${REPO_ROOT}/scripts/service_install/ldnmp.sh"
+grep -Fq 'download_rpm_to_temp' "${REPO_ROOT}/scripts/service_install/ldnmp.sh"
+grep -Fq 'install_apt_keyring_from_url' "${REPO_ROOT}/scripts/service_install/ldnmp.sh"
+if grep -Eq 'yum[[:space:]]+install[[:space:]]+-y[[:space:]]+https?://' "${REPO_ROOT}/scripts/service_install/ldnmp.sh"; then
+    echo "LDNMP installer still installs remote RPMs via yum URL." >&2
+    exit 1
+fi
+if grep -Eq 'curl[^\n]*\|[[:space:]]*gpg' "${REPO_ROOT}/scripts/service_install/ldnmp.sh"; then
+    echo "LDNMP installer still pipes curl into gpg." >&2
+    exit 1
+fi
 grep -Fq 'https://get.jenkins.io/war-stable/' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'checksum_url="${official_war_url}.sha256"' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
 grep -Fq 'Jenkins WAR SHA-256 校验失败' "${REPO_ROOT}/scripts/service_install/jenkins.sh"
@@ -286,8 +300,14 @@ grep -Fq '清单不是 Kubernetes YAML' "${K8S_SCRIPT}"
 grep -Fq 'metrics-server/releases/download/v0.7.2/components.yaml' "${K8S_SCRIPT}"
 grep -Fq 'install_yum_repo_file' "${K8S_SCRIPT}"
 grep -Fq '不是有效的 yum 仓库文件' "${K8S_SCRIPT}"
+grep -Fq 'download.docker.com/linux/centos/docker-ce.repo' "${K8S_SCRIPT}"
+grep -Fq 'docker.m.daocloud.io' "${K8S_SCRIPT}"
 grep -Fq '7f454c46' "${BANDWIDTH_SCRIPT}"
 grep -Fq 'Speedtest CLI 下载内容不是 ELF 二进制' "${BANDWIDTH_SCRIPT}"
+INSTALL_DEPS_SCRIPT="${REPO_ROOT}/scripts/system_tools/install_deps.sh"
+grep -Fq 'install_yum_repo_file' "${INSTALL_DEPS_SCRIPT}"
+grep -Fq '/tmp/deps-yum-repo.XXXXXX' "${INSTALL_DEPS_SCRIPT}"
+grep -Fq '/tmp/docker-apt-key.XXXXXX' "${INSTALL_DEPS_SCRIPT}"
 if grep -Fq 'curl -O https://docs.projectcalico.org/manifests/calico.yaml' "${K8S_SCRIPT}"; then
     echo "Kubernetes installer still downloads Calico into the working directory." >&2
     exit 1
@@ -320,6 +340,18 @@ if grep -Fq 'mirrors.tuna.tsinghua.edu.cn/jenkins/redhat-stable/jenkins.repo' "$
 fi
 if grep -Eq 'curl -L -o /etc/yum\.repos\.d/' "${K8S_SCRIPT}"; then
     echo "Kubernetes installer still writes yum repos directly with curl -L -o." >&2
+    exit 1
+fi
+if grep -Fq 'yum-config-manager --add-repo' "${K8S_SCRIPT}" "${INSTALL_DEPS_SCRIPT}"; then
+    echo "Installer still uses yum-config-manager --add-repo." >&2
+    exit 1
+fi
+if grep -Fq 'registry.docker-cn.com' "${K8S_SCRIPT}"; then
+    echo "Kubernetes installer still uses the retired registry.docker-cn.com mirror." >&2
+    exit 1
+fi
+if grep -Eq 'curl[^\n]*\|[[:space:]]*gpg' "${INSTALL_DEPS_SCRIPT}"; then
+    echo "install_deps still pipes curl into gpg." >&2
     exit 1
 fi
 if grep -Eq 'mv "\$TEMP_DIR/speedtest" /usr/local/bin/' "${BANDWIDTH_SCRIPT}"; then

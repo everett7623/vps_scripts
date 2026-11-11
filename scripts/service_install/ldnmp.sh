@@ -99,6 +99,40 @@ write_root_password() {
     chmod 600 /root/.mysql_root_password
 }
 
+download_rpm_to_temp() {
+    local url="$1"
+    local temp_file=""
+    temp_file=$(mktemp "/tmp/ldnmp-rpm.XXXXXX") || return 1
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "$url" -o "$temp_file"; then
+        rm -f -- "$temp_file"
+        return 1
+    fi
+    printf '%s\n' "$temp_file"
+}
+
+install_apt_keyring_from_url() {
+    local url="$1"
+    local keyring_file="$2"
+    local label="$3"
+    local key_tmp=""
+    key_tmp=$(mktemp "/tmp/ldnmp-apt-key.XXXXXX") || {
+        log_error "创建 ${label} 临时密钥文件失败"
+        return 1
+    }
+    mkdir -p "$(dirname -- "${keyring_file}")"
+    if ! curl -fsSL "$url" -o "$key_tmp"; then
+        rm -f -- "$key_tmp"
+        log_error "${label} 密钥下载失败"
+        return 1
+    fi
+    if ! gpg --dearmor -o "${keyring_file}" < "$key_tmp"; then
+        rm -f -- "$key_tmp"
+        log_error "${label} 密钥转换失败"
+        return 1
+    fi
+    rm -f -- "$key_tmp"
+}
+
 run_remote_bash_installer() {
     local url="$1"
     local label="$2"
@@ -146,8 +180,10 @@ install_nginx() {
     log_info "安装Nginx..."
     case $OS in
         ubuntu|debian)
-            curl -fsSL https://nginx.org/keys/nginx_signing.key | \
-                gpg --dearmor -o /usr/share/keyrings/nginx-signing.gpg
+            install_apt_keyring_from_url \
+                "https://nginx.org/keys/nginx_signing.key" \
+                "/usr/share/keyrings/nginx-signing.gpg" \
+                "Nginx" || return 1
             echo "deb [signed-by=/usr/share/keyrings/nginx-signing.gpg] https://nginx.org/packages/$OS/ $(lsb_release -cs) nginx" \
                 > /etc/apt/sources.list.d/nginx.list
             apt-get update -qq && apt-get install -y nginx
@@ -207,11 +243,21 @@ install_mysql_server() {
             DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
             ;;
         centos|rhel|almalinux|rocky)
-            yum install -y https://dev.mysql.com/get/mysql80-community-release-el${VER%%.*}-9.noarch.rpm
+            local mysql_rpm=""
+            mysql_rpm=$(download_rpm_to_temp "https://dev.mysql.com/get/mysql80-community-release-el${VER%%.*}-9.noarch.rpm") || {
+                log_error "MySQL RPM 仓库包下载失败"
+                return 1
+            }
+            if ! rpm -Uvh "$mysql_rpm"; then
+                rm -f -- "$mysql_rpm"
+                log_error "MySQL RPM 仓库包安装失败"
+                return 1
+            fi
+            rm -f -- "$mysql_rpm"
             yum install -y mysql-community-server
             ;;
     esac
-    
+
     write_root_password "${DB_ROOT_PASSWORD}"
     systemctl enable mysqld 2>/dev/null || systemctl enable mysql
     systemctl start mysqld 2>/dev/null || systemctl start mysql
@@ -266,8 +312,10 @@ install_php() {
             if [[ "$OS" == "ubuntu" ]]; then
                 add-apt-repository -y ppa:ondrej/php
             else
-                curl -fsSL https://packages.sury.org/php/apt.gpg | \
-                    gpg --dearmor -o /usr/share/keyrings/sury-php.gpg
+                install_apt_keyring_from_url \
+                    "https://packages.sury.org/php/apt.gpg" \
+                    "/usr/share/keyrings/sury-php.gpg" \
+                    "Sury PHP" || return 1
                 echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
                     > /etc/apt/sources.list.d/php.list
             fi
@@ -276,7 +324,17 @@ install_php() {
             systemctl enable php${PHP_VERSION}-fpm && systemctl start php${PHP_VERSION}-fpm
             ;;
         centos|rhel|fedora|almalinux|rocky)
-            yum install -y https://rpms.remirepo.net/enterprise/remi-release-${VER%%.*}.rpm
+            local remi_rpm=""
+            remi_rpm=$(download_rpm_to_temp "https://rpms.remirepo.net/enterprise/remi-release-${VER%%.*}.rpm") || {
+                log_error "Remi RPM 仓库包下载失败"
+                return 1
+            }
+            if ! rpm -Uvh "$remi_rpm"; then
+                rm -f -- "$remi_rpm"
+                log_error "Remi RPM 仓库包安装失败"
+                return 1
+            fi
+            rm -f -- "$remi_rpm"
             yum module reset php -y && yum module enable php:remi-${PHP_VERSION} -y
             yum install -y php php-{fpm,cli,common,mysqlnd,curl,gd,mbstring,xml,zip,bcmath,intl,opcache}
             systemctl enable php-fpm && systemctl start php-fpm

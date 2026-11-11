@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.29`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.30`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.29` is a backward-compatible patch release that migrates Kubernetes RHEL yum repos to pkgs.k8s.io / Aliyun kubernetes-new with GPG enabled. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.30` is a backward-compatible patch release that validates Docker CE yum repos before install, hardens LDNMP RPM/key downloads, and replaces the retired docker-cn registry mirror. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

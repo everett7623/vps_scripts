@@ -139,7 +139,7 @@ install_wppanel() {
     fi
 
     # 语法校验
-    if ! bash -n "$install_script" 2>/dev/null; then
+    if ! bash -n "$install_script"; then
         print_error "安装脚本语法检查未通过，已拒绝执行"
         rm -f -- "$install_script"
         exit 1
