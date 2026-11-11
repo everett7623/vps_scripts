@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.28`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.29`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.28` is a backward-compatible patch release that validates Jenkins yum repo files before install, drops the dead TUNA RHEL mirror, and uses mktemp for 1Panel/AMH installer scripts. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.29` is a backward-compatible patch release that migrates Kubernetes RHEL yum repos to pkgs.k8s.io / Aliyun kubernetes-new with GPG enabled. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 

@@ -249,6 +249,12 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.29 release
+
+- [x] Kubernetes RHEL: migrate yum to pkgs.k8s.io / Aliyun kubernetes-new; enable GPG
+- [x] Ban retired Google el7 paths and `gpgcheck=0` in safety/hardening tests
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.29`
+
 ## 1.1.28 release
 
 - [x] Jenkins RHEL: temp yum repo validate; drop TUNA redhat-stable 404

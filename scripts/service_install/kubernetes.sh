@@ -647,42 +647,58 @@ install_kubernetes() {
             apt-mark hold kubelet kubeadm kubectl
             ;;
         centos|rhel|rocky|almalinux)
-            # 添加Kubernetes仓库
+            # pkgs.k8s.io / Aliyun kubernetes-new RPM streams replace legacy Google el7 repos.
+            local k8s_stream=""
+            local rpm_baseurl=""
+            local rpm_gpgkey=""
+            local repo_tmp=""
+            k8s_stream=$(echo "${K8S_VERSION}" | cut -d. -f1,2)
             if [[ "$USE_CHINA_MIRROR" = true ]]; then
-                cat > /etc/yum.repos.d/kubernetes.repo << EOF
-[kubernetes]
-name=Kubernetes
-baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
-enabled=1
-gpgcheck=0
-repo_gpgcheck=0
-EOF
+                rpm_baseurl="https://mirrors.aliyun.com/kubernetes-new/core/stable/v${k8s_stream}/rpm/"
             else
-                cat > /etc/yum.repos.d/kubernetes.repo << EOF
+                rpm_baseurl="https://pkgs.k8s.io/core:/stable:/v${k8s_stream}/rpm/"
+            fi
+            rpm_gpgkey="${rpm_baseurl}repodata/repomd.xml.key"
+
+            repo_tmp=$(mktemp "/tmp/k8s-yum-repo.XXXXXX") || {
+                log "${RED}错误: 创建 Kubernetes yum 仓库临时文件失败${NC}"
+                exit 1
+            }
+            cat > "$repo_tmp" << EOF
 [kubernetes]
 name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+baseurl=${rpm_baseurl}
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+gpgkey=${rpm_gpgkey}
 EOF
+            if ! grep -Eq '^[[:space:]]*\[' "$repo_tmp"; then
+                rm -f -- "$repo_tmp"
+                log "${RED}错误: Kubernetes 不是有效的 yum 仓库文件${NC}"
+                exit 1
             fi
-            
-            yum install -y kubelet-${K8S_VERSION} kubeadm-${K8S_VERSION} kubectl-${K8S_VERSION}
+            if ! install -m 0644 "$repo_tmp" /etc/yum.repos.d/kubernetes.repo; then
+                rm -f -- "$repo_tmp"
+                log "${RED}错误: 安装 Kubernetes yum 仓库失败${NC}"
+                exit 1
+            fi
+            rm -f -- "$repo_tmp"
+
+            yum install -y "kubelet-${K8S_VERSION}" "kubeadm-${K8S_VERSION}" "kubectl-${K8S_VERSION}"
             ;;
     esac
-    
+
     # 配置kubelet
     if [[ "$CONTAINER_RUNTIME" == "docker" ]]; then
         cat > /etc/sysconfig/kubelet << EOF
 KUBELET_EXTRA_ARGS=--cgroup-driver=systemd
 EOF
     fi
-    
+
     # 启用kubelet
     systemctl enable kubelet
-    
+
     log "${GREEN}Kubernetes组件安装完成${NC}"
 }
 
