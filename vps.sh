@@ -9,13 +9,13 @@ set -u
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/everett7623/vps_scripts/main"
 PROJECT_URL="https://github.com/everett7623/vps_scripts"
-PROJECT_VERSION="1.1.30"
+PROJECT_VERSION="1.1.31"
 PROJECT_AUTHOR="everettlabs"
 COMMUNITY_URL="https://nodeloc.com"
 VPS_RECOMMEND_URL="https://vpsknow.com"
 # seedloc.com is offline; point at project docs instead of a dead blog.
 BLOG_URL="https://github.com/everett7623/vps_scripts/blob/main/README.md"
-LAUNCHER_STYLE_VERSION="1.1.0"
+LAUNCHER_STYLE_VERSION="1.1.1"
 LOCAL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')"
 DOWNLOAD_CONNECT_TIMEOUT="${VPS_DOWNLOAD_CONNECT_TIMEOUT:-6}"
 DOWNLOAD_MAX_TIME="${VPS_DOWNLOAD_MAX_TIME:-60}"
@@ -30,13 +30,13 @@ REPO_DOWNLOAD_BASES=(
 )
 
 RESET='\033[0m'
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[0;37m'
+RED='\033[1;91m'
+GREEN='\033[1;92m'
+YELLOW='\033[1;93m'
+BLUE='\033[1;94m'
+PURPLE='\033[1;95m'
+CYAN='\033[1;96m'
+WHITE='\033[1;97m'
 BOLD='\033[1m'
 DIM='\033[2m'
 GRADIENT_COLORS=(
@@ -254,6 +254,12 @@ read_menu_choice() {
     fi
 
     return 0
+}
+
+print_menu_section() {
+    local label="${1}"
+    echo ""
+    printf '%b── %s%b\n' "${DIM}" "${label}" "${RESET}"
 }
 
 print_menu_item() {
@@ -776,71 +782,298 @@ performance_test_menu() {
     done
 }
 
+service_install_containers_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · 容器与编排"
+        print_menu_item 1 "Docker" "容器运行环境"
+        print_menu_item 2 "Kubernetes" "集群环境"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-2]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/service_install/docker.sh" ;;
+            2) run_repo_script "scripts/service_install/kubernetes.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+service_install_web_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · Web 与站点"
+        print_menu_item 1 "LDNMP" "轻量网站环境"
+        print_menu_item 2 "Nginx" "Web 服务器"
+        print_menu_item 3 "Caddy" "自动 HTTPS 服务器"
+        print_menu_item 4 "WordPress" "CMS 部署"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-4]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/service_install/ldnmp.sh" ;;
+            2) run_repo_script "scripts/service_install/nginx.sh" ;;
+            3) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/caddy.XXXXXX) || exit 1; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded Caddy is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/bin/caddy; rm -f -- \"\${tmp}\"; /usr/bin/caddy version" "Caddy web server" ;;
+            4) run_repo_script "scripts/service_install/wordpress.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+service_install_database_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · 数据库与缓存"
+        print_menu_item 1 "MySQL" "数据库服务器"
+        print_menu_item 2 "PostgreSQL" "数据库服务器"
+        print_menu_item 3 "Redis" "缓存与队列"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-3]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/service_install/mysql.sh" ;;
+            2) run_repo_script "scripts/service_install/postgresql.sh" ;;
+            3) run_repo_script "scripts/service_install/redis.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+service_install_runtime_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · 语言运行时"
+        print_menu_item 1 "Node.js" "JavaScript 运行环境"
+        print_menu_item 2 "Python" "Python 运行环境"
+        print_menu_item 3 "Go" "Go 运行环境"
+        print_menu_item 4 "Java" "JDK 与开发工具"
+        print_menu_item 5 "Rust" "Cargo 工具链"
+        print_menu_item 6 "Ruby" "Ruby 运行环境"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-6]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/service_install/nodejs.sh" ;;
+            2) run_repo_script "scripts/service_install/python.sh" ;;
+            3) run_repo_script "scripts/service_install/go.sh" ;;
+            4) run_repo_script "scripts/service_install/java.sh" ;;
+            5) run_repo_script "scripts/service_install/rust.sh" ;;
+            6) run_repo_script "scripts/service_install/ruby.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+service_install_panel_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · 控制面板"
+        print_menu_item 1 "1Panel" "服务器控制面板"
+        print_menu_item 2 "宝塔面板" "服务器控制面板"
+        print_menu_item 3 "aaPanel" "服务器控制面板"
+        print_menu_item 4 "WP Panel" "WordPress 面板"
+        print_menu_item 5 "AMH" "小众控制面板"
+        print_menu_item 6 "CyberPanel" "小众控制面板"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-6]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/service_install/1panel.sh" ;;
+            2) run_repo_script "scripts/service_install/btpanel.sh" ;;
+            3) run_repo_script "scripts/service_install/aapanel.sh" ;;
+            4) run_repo_script "scripts/service_install/wppanel.sh" ;;
+            5) run_repo_script "scripts/service_install/amh.sh" ;;
+            6) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+service_install_paas_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · 自托管平台"
+        print_menu_item 1 "Coolify" "自托管 PaaS 部署平台"
+        print_menu_item 2 "Dokploy" "自托管 PaaS 部署平台"
+        print_menu_item 3 "Portainer" "Docker 可视化面板"
+        print_menu_item 4 "Dockge" "Compose 栈管理面板"
+        print_menu_item 5 "Nginx Proxy Manager" "可视化反代与证书"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-5]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://cdn.coollabs.io/coolify/install.sh" "Coolify self-hosted PaaS" ;;
+            2) run_remote_script_url "https://dokploy.com/install.sh" "Dokploy self-hosted PaaS" ;;
+            3) run_remote_command "${DOCKER_REQUIRED_CHECK} docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest && echo 'Portainer: https://<服务器IP>:9443'" "Portainer CE" ;;
+            4) run_remote_command "${DOCKER_REQUIRED_CHECK} mkdir -p /opt/stacks /opt/dockge && curl -fsSL https://raw.githubusercontent.com/louislam/dockge/master/compose.yaml -o /opt/dockge/compose.yaml && docker compose -f /opt/dockge/compose.yaml up -d && echo 'Dockge: http://<服务器IP>:5001'" "Dockge compose manager" ;;
+            5) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --name nginx-proxy-manager --restart=unless-stopped -p 80:80 -p 81:81 -p 443:443 -v npm_data:/data -v npm_letsencrypt:/etc/letsencrypt jc21/nginx-proxy-manager:latest && echo 'Nginx Proxy Manager: http://<服务器IP>:81（需占用 80/443 端口）'" "Nginx Proxy Manager" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+service_install_cicd_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "服务安装 · CI/CD"
+        print_menu_item 1 "Jenkins" "自动化服务"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-1]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/service_install/jenkins.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
 service_install_menu() {
     while true; do
         print_header
         print_status_line
         print_panel_title "服务安装"
-        print_menu_item 1  "Docker" "容器运行环境"
-        print_menu_item 2  "LDNMP" "轻量网站环境"
-        print_menu_item 3  "Nginx" "Web 服务器"
-        print_menu_item 4  "Caddy" "自动 HTTPS 服务器"
-        print_menu_item 5  "MySQL" "数据库服务器"
-        print_menu_item 6  "PostgreSQL" "数据库服务器"
-        print_menu_item 7  "Redis" "缓存与队列"
-        print_menu_item 8  "Node.js" "JavaScript 运行环境"
-        print_menu_item 9  "Python" "Python 运行环境"
-        print_menu_item 10 "Go" "Go 运行环境"
-        print_menu_item 11 "Java" "JDK 与开发工具"
-        print_menu_item 12 "Rust" "Cargo 工具链"
-        print_menu_item 13 "Ruby" "Ruby 运行环境"
-        print_menu_item 14 "WordPress" "CMS 部署"
-        print_menu_item 15 "1Panel" "服务器控制面板"
-        print_menu_item 16 "宝塔面板" "服务器控制面板"
-        print_menu_item 17 "aaPanel" "服务器控制面板"
-        print_menu_item 18 "WP Panel" "WordPress 面板"
-        print_menu_item 19 "Coolify" "自托管 PaaS 部署平台"
-        print_menu_item 20 "Dokploy" "自托管 PaaS 部署平台"
-        print_menu_item 21 "Portainer" "Docker 可视化面板"
-        print_menu_item 22 "Dockge" "Compose 栈管理面板"
-        print_menu_item 23 "Nginx Proxy Manager" "可视化反代与证书"
-        print_menu_item 24 "Jenkins" "自动化服务"
-        print_menu_item 25 "Kubernetes" "集群环境"
-        print_menu_item 26 "AMH" "小众控制面板"
-        print_menu_item 27 "CyberPanel" "小众控制面板"
-        print_menu_item 0  "返回"
+        print_menu_item 1 "容器与编排" "Docker、Kubernetes"
+        print_menu_item 2 "Web 与站点" "LDNMP、Nginx、Caddy、WordPress"
+        print_menu_item 3 "数据库与缓存" "MySQL、PostgreSQL、Redis"
+        print_menu_item 4 "语言运行时" "Node、Python、Go、Java、Rust、Ruby"
+        print_menu_item 5 "控制面板" "1Panel、宝塔、aaPanel 等"
+        print_menu_item 6 "自托管平台" "Coolify、Portainer、Dockge 等"
+        print_menu_item 7 "CI/CD" "Jenkins"
+        print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-27]: " || return 0
+        read_menu_choice "请选择 [0-7]: " || return 0
         choice="${MENU_CHOICE}"
-
         case "${choice}" in
-            1) run_repo_script "scripts/service_install/docker.sh" ;;
-            2) run_repo_script "scripts/service_install/ldnmp.sh" ;;
-            3) run_repo_script "scripts/service_install/nginx.sh" ;;
-            4) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/caddy.XXXXXX) || exit 1; curl -fsSL \"https://caddyserver.com/api/download?os=linux&arch=\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded Caddy is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/bin/caddy; rm -f -- \"\${tmp}\"; /usr/bin/caddy version" "Caddy web server" ;;
-            5) run_repo_script "scripts/service_install/mysql.sh" ;;
-            6) run_repo_script "scripts/service_install/postgresql.sh" ;;
-            7) run_repo_script "scripts/service_install/redis.sh" ;;
-            8) run_repo_script "scripts/service_install/nodejs.sh" ;;
-            9) run_repo_script "scripts/service_install/python.sh" ;;
-            10) run_repo_script "scripts/service_install/go.sh" ;;
-            11) run_repo_script "scripts/service_install/java.sh" ;;
-            12) run_repo_script "scripts/service_install/rust.sh" ;;
-            13) run_repo_script "scripts/service_install/ruby.sh" ;;
-            14) run_repo_script "scripts/service_install/wordpress.sh" ;;
-            15) run_repo_script "scripts/service_install/1panel.sh" ;;
-            16) run_repo_script "scripts/service_install/btpanel.sh" ;;
-            17) run_repo_script "scripts/service_install/aapanel.sh" ;;
-            18) run_repo_script "scripts/service_install/wppanel.sh" ;;
-            19) run_remote_script_url "https://cdn.coollabs.io/coolify/install.sh" "Coolify self-hosted PaaS" ;;
-            20) run_remote_script_url "https://dokploy.com/install.sh" "Dokploy self-hosted PaaS" ;;
-            21) run_remote_command "${DOCKER_REQUIRED_CHECK} docker volume create portainer_data && docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest && echo 'Portainer: https://<服务器IP>:9443'" "Portainer CE" ;;
-            22) run_remote_command "${DOCKER_REQUIRED_CHECK} mkdir -p /opt/stacks /opt/dockge && curl -fsSL https://raw.githubusercontent.com/louislam/dockge/master/compose.yaml -o /opt/dockge/compose.yaml && docker compose -f /opt/dockge/compose.yaml up -d && echo 'Dockge: http://<服务器IP>:5001'" "Dockge compose manager" ;;
-            23) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --name nginx-proxy-manager --restart=unless-stopped -p 80:80 -p 81:81 -p 443:443 -v npm_data:/data -v npm_letsencrypt:/etc/letsencrypt jc21/nginx-proxy-manager:latest && echo 'Nginx Proxy Manager: http://<服务器IP>:81（需占用 80/443 端口）'" "Nginx Proxy Manager" ;;
-            24) run_repo_script "scripts/service_install/jenkins.sh" ;;
-            25) run_repo_script "scripts/service_install/kubernetes.sh" ;;
-            26) run_repo_script "scripts/service_install/amh.sh" ;;
-            27) run_repo_script "scripts/service_install/cyberpanel.sh" ;;
+            1) service_install_containers_menu ;;
+            2) service_install_web_menu ;;
+            3) service_install_database_menu ;;
+            4) service_install_runtime_menu ;;
+            5) service_install_panel_menu ;;
+            6) service_install_paas_menu ;;
+            7) service_install_cicd_menu ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+community_bench_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "社区脚本 · 性能基准"
+        print_menu_item 1 "YABS 性能测试" "综合基准脚本"
+        print_menu_item 2 "Bench.sh 快速测试" "经典快速基准"
+        print_menu_item 3 "XY 硬件质量体检" "CPU/IO 性能评估"
+        print_menu_item 4 "spiritLHLS ecs" "综合性能测试"
+        print_menu_item 5 "超售检测" "内存压力测试"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-5]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/teddysun/across/master/bench.sh" "Bench.sh quick benchmark" ;;
+            3) run_remote_script_url "https://Check.Place" "XY hardware check" "-H" ;;
+            4) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
+            5) run_remote_script_url "https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh" "Oversell check" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+community_network_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "社区脚本 · 网络与 IP"
+        print_menu_item 1 "XY-IP 质量检测" "IP 风险与黑名单"
+        print_menu_item 2 "XY 网络质量检测" "路由与延迟"
+        print_menu_item 3 "NextTrace 回程路由" "可视化路由追踪"
+        print_menu_item 4 "NodeLoc 综合测试" "多项目测试脚本"
+        print_menu_item 5 "Nodequality" "节点质量评分"
+        print_menu_item 6 "流媒体解锁测试" "流媒体服务检测"
+        print_menu_item 7 "响应时间测试" "curl 请求耗时"
+        print_menu_item 8 "AutoTrace" "路由追踪工具"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-8]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://Check.Place" "XY IP quality check" "-I" ;;
+            2) run_remote_script_url "https://Check.Place" "XY network quality check" "-N" ;;
+            3) run_remote_script_url "https://raw.githubusercontent.com/nxtrace/NTrace-core/main/nt_install.sh" "NextTrace installer" ;;
+            4) run_remote_script_url "https://abc.sd" "NodeLoc benchmark" ;;
+            5) run_remote_script_url "https://run.NodeQuality.com" "Nodequality test" ;;
+            6) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
+            7) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
+            8) run_remote_script_url "https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh" "AutoTrace" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+community_toolbox_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "社区脚本 · 社区工具箱"
+        print_menu_item 1 "SSH 工具" "远程访问辅助"
+        print_menu_item 2 "科技 Lion 工具箱" "社区综合工具箱"
+        print_menu_item 3 "NodeScriptKit" "NodeSeek 测试工具"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-3]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh" "SSH tool" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh" "KejiLion toolbox" ;;
+            3) run_remote_script_url "https://sh.nodeseek.com" "NodeScriptKit" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+community_legacy_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "社区脚本 · 旧版与归档"
+        print_menu_item 1 "JCNF 工具箱" "旧版（2023 后未更新）"
+        print_menu_item 2 "BlueSkyXN 工具箱" "旧版（2023 后未更新）"
+        print_menu_item 3 "多线路测速" "旧版（上游已归档）"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-3]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh" "JCNF toolbox (legacy)" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh" "BlueSkyXN toolbox (legacy)" ;;
+            3) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest (upstream archived)" ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -852,50 +1085,19 @@ community_menu() {
         print_header
         print_status_line
         print_panel_title "社区脚本"
-        print_menu_item 1  "YABS 性能测试" "综合基准脚本"
-        print_menu_item 2  "Bench.sh 快速测试" "经典快速基准"
-        print_menu_item 3  "XY-IP 质量检测" "IP 风险与黑名单"
-        print_menu_item 4  "XY 网络质量检测" "路由与延迟"
-        print_menu_item 5  "XY 硬件质量体检" "CPU/IO 性能评估"
-        print_menu_item 6  "NextTrace 回程路由" "可视化路由追踪"
-        print_menu_item 7  "NodeLoc 综合测试" "多项目测试脚本"
-        print_menu_item 8  "Nodequality" "节点质量评分"
-        print_menu_item 9  "spiritLHLS ecs" "综合性能测试"
-        print_menu_item 10 "流媒体解锁测试" "流媒体服务检测"
-        print_menu_item 11 "响应时间测试" "curl 请求耗时"
-        print_menu_item 12 "SSH 工具" "远程访问辅助"
-        print_menu_item 13 "科技 Lion 工具箱" "社区综合工具箱"
-        print_menu_item 14 "AutoTrace" "路由追踪工具"
-        print_menu_item 15 "超售检测" "内存压力测试"
-        print_menu_item 16 "NodeScriptKit" "NodeSeek 测试工具"
-        print_menu_item 17 "JCNF 工具箱" "旧版（2023 后未更新）"
-        print_menu_item 18 "BlueSkyXN 工具箱" "旧版（2023 后未更新）"
-        print_menu_item 19 "多线路测速" "旧版（上游已归档）"
-        print_menu_item 0  "返回"
+        print_menu_item 1 "性能基准" "YABS、Bench、ecs 等"
+        print_menu_item 2 "网络与 IP" "质量、路由与流媒体"
+        print_menu_item 3 "社区工具箱" "SSH、综合工具箱"
+        print_menu_item 4 "旧版与归档" "降权保留的旧入口"
+        print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-19]: " || return 0
+        read_menu_choice "请选择 [0-4]: " || return 0
         choice="${MENU_CHOICE}"
-
         case "${choice}" in
-            1) run_remote_script_url "https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh" "YABS benchmark" ;;
-            2) run_remote_script_url "https://raw.githubusercontent.com/teddysun/across/master/bench.sh" "Bench.sh quick benchmark" ;;
-            3) run_remote_script_url "https://Check.Place" "XY IP quality check" "-I" ;;
-            4) run_remote_script_url "https://Check.Place" "XY network quality check" "-N" ;;
-            5) run_remote_script_url "https://Check.Place" "XY hardware check" "-H" ;;
-            6) run_remote_script_url "https://raw.githubusercontent.com/nxtrace/NTrace-core/main/nt_install.sh" "NextTrace installer" ;;
-            7) run_remote_script_url "https://abc.sd" "NodeLoc benchmark" ;;
-            8) run_remote_script_url "https://run.NodeQuality.com" "Nodequality test" ;;
-            9) run_remote_script_url "https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh" "spiritLHLS ecs" ;;
-            10) run_remote_script_url "https://media.ispvps.com" "Media unlock test" ;;
-            11) run_remote_script_url "https://nodebench.mereith.com/scripts/curltime.sh" "Response time test" ;;
-            12) run_remote_script_url "https://raw.githubusercontent.com/eooce/ssh_tool/main/ssh_tool.sh" "SSH tool" ;;
-            13) run_remote_script_url "https://raw.githubusercontent.com/kejilion/sh/main/kejilion.sh" "KejiLion toolbox" ;;
-            14) run_remote_script_url "https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh" "AutoTrace" ;;
-            15) run_remote_script_url "https://raw.githubusercontent.com/uselibrary/memoryCheck/main/memoryCheck.sh" "Oversell check" ;;
-            16) run_remote_script_url "https://sh.nodeseek.com" "NodeScriptKit" ;;
-            17) run_remote_script_url "https://raw.githubusercontent.com/Netflixxp/jcnf-box/main/jcnfbox.sh" "JCNF toolbox (legacy)" ;;
-            18) run_remote_script_url "https://raw.githubusercontent.com/BlueSkyXN/SKY-BOX/main/box.sh" "BlueSkyXN toolbox (legacy)" ;;
-            19) run_remote_script_url "https://raw.githubusercontent.com/i-abc/Speedtest/main/speedtest.sh" "Multi-line speedtest (upstream archived)" ;;
+            1) community_bench_menu ;;
+            2) community_network_menu ;;
+            3) community_toolbox_menu ;;
+            4) community_legacy_menu ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -907,14 +1109,17 @@ proxy_tools_menu() {
         print_header
         print_status_line
         print_panel_title "代理工具"
+        print_menu_section "面板"
         print_menu_item 1 "3x-ui" "Xray 多协议面板（官方）"
         print_menu_item 2 "S-UI" "sing-box 多协议面板"
         print_menu_item 3 "X-Panel" "3x-ui 中文增强版"
+        print_menu_section "一键脚本"
         print_menu_item 4 "勇哥 x-ui" "x-ui 一键脚本"
         print_menu_item 5 "勇哥 sing-box" "sing-box 一键脚本"
         print_menu_item 6 "fscarmen sing-box" "sing-box 一键脚本"
         print_menu_item 7 "mack-a 八合一" "v2ray-agent 多协议脚本"
         print_menu_item 8 "Hysteria2" "hy2 一键脚本"
+        print_menu_section "官方核心"
         print_menu_item 9 "Hysteria2 官方" "仅安装核心，需自行配置"
         print_menu_item 10 "Xray 官方" "仅安装核心，需自行配置"
         print_menu_item 0 "返回"
@@ -939,55 +1144,126 @@ proxy_tools_menu() {
     done
 }
 
+other_tools_system_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "其他工具 · 系统增强"
+        print_menu_item 1 "BBR" "网络加速"
+        print_menu_item 2 "Fail2ban" "基础安全防护"
+        print_menu_item 3 "Swap" "虚拟内存管理"
+        print_menu_item 4 "WARP 一键脚本" "Cloudflare IPv6"
+        print_menu_item 5 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
+        print_menu_item 6 "tmux 终端复用" "防断连必备"
+        print_menu_item 7 "oh-my-zsh" "Shell 增强"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-7]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/other_tools/bbr.sh" ;;
+            2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
+            3) run_repo_script "scripts/other_tools/swap.sh" ;;
+            4) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
+            5) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
+            6) run_remote_command "DEBIAN_FRONTEND=noninteractive apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
+            7) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+other_tools_monitor_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "其他工具 · 监控"
+        print_menu_item 1 "哪吒探针" "服务器监控"
+        print_menu_item 2 "Komari 探针" "轻量级监控"
+        print_menu_item 3 "Beszel Hub" "轻量监控面板"
+        print_menu_item 4 "Beszel Agent" "轻量监控探针"
+        print_menu_item 5 "Uptime Kuma" "自托管可用性监控"
+        print_menu_item 6 "哪吒清理工具" "第三方清理脚本"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-6]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_repo_script "scripts/other_tools/nezha.sh" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh" "Komari monitor" ;;
+            3) run_remote_script_url "https://get.beszel.dev/hub" "Beszel hub" ;;
+            4) run_remote_script_url "https://raw.githubusercontent.com/henrygd/beszel/main/supplemental/scripts/install-agent.sh" "Beszel agent" ;;
+            5) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2 && echo 'Uptime Kuma: http://<服务器IP>:3001'" "Uptime Kuma monitor" ;;
+            6) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+other_tools_network_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "其他工具 · 组网与穿透"
+        print_menu_item 1 "Tailscale" "WireGuard 组网"
+        print_menu_item 2 "Cloudflare Tunnel" "零IP暴露隧道"
+        print_menu_item 3 "FRP 内网穿透" "官方 frpc/frps"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-3]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
+            2) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/cloudflared.XXXXXX) || exit 1; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded cloudflared is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/local/bin/cloudflared; rm -f -- \"\${tmp}\"; /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
+            3) run_repo_script "scripts/other_tools/frp.sh" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
+other_tools_misc_menu() {
+    while true; do
+        print_header
+        print_status_line
+        print_panel_title "其他工具 · 证书文件与其它"
+        print_menu_item 1 "acme.sh 证书" "免费 SSL 证书"
+        print_menu_item 2 "FileBrowser" "Web 文件管理（上游已归档）"
+        print_menu_item 3 "DD 系统重装" "一键重装系统（高风险）"
+        print_menu_item 0 "返回"
+        echo ""
+        read_menu_choice "请选择 [0-3]: " || return 0
+        choice="${MENU_CHOICE}"
+        case "${choice}" in
+            1) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
+            2) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager (upstream archived)" ;;
+            3) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
+            0) return ;;
+            *) invalid_choice ;;
+        esac
+    done
+}
+
 other_tools_menu() {
     while true; do
         print_header
         print_status_line
         print_panel_title "其他工具"
-        print_menu_item 1 "BBR" "网络加速"
-        print_menu_item 2 "Fail2ban" "基础安全防护"
-        print_menu_item 3 "Swap" "虚拟内存管理"
-        print_menu_item 4 "哪吒探针" "服务器监控"
-        print_menu_item 5 "Komari 探针" "轻量级监控"
-        print_menu_item 6 "Beszel Hub" "轻量监控面板"
-        print_menu_item 7 "Beszel Agent" "轻量监控探针"
-        print_menu_item 8 "Uptime Kuma" "自托管可用性监控"
-        print_menu_item 9 "Tailscale" "WireGuard 组网"
-        print_menu_item 10 "Cloudflare Tunnel" "零IP暴露隧道"
-        print_menu_item 11 "FRP 内网穿透" "官方 frpc/frps"
-        print_menu_item 12 "WARP 一键脚本" "Cloudflare IPv6"
-        print_menu_item 13 "acme.sh 证书" "免费 SSL 证书"
-        print_menu_item 14 "现代 CLI 工具包" "btop、rg、fd、fzf、restic"
-        print_menu_item 15 "tmux 终端复用" "防断连必备"
-        print_menu_item 16 "oh-my-zsh" "Shell 增强"
-        print_menu_item 17 "DD 系统重装" "一键重装系统"
-        print_menu_item 18 "哪吒清理工具" "第三方清理脚本"
-        print_menu_item 19 "FileBrowser" "Web 文件管理（上游已归档）"
+        print_menu_item 1 "系统增强" "BBR、Fail2ban、Swap、CLI"
+        print_menu_item 2 "监控" "哪吒、Beszel、Uptime Kuma"
+        print_menu_item 3 "组网与穿透" "Tailscale、Tunnel、FRP"
+        print_menu_item 4 "证书文件与其它" "acme、FileBrowser、DD"
         print_menu_item 0 "返回"
         echo ""
-        read_menu_choice "请选择 [0-19]: " || return 0
+        read_menu_choice "请选择 [0-4]: " || return 0
         choice="${MENU_CHOICE}"
-
         case "${choice}" in
-            1) run_repo_script "scripts/other_tools/bbr.sh" ;;
-            2) run_repo_script "scripts/other_tools/fail2ban.sh" ;;
-            3) run_repo_script "scripts/other_tools/swap.sh" ;;
-            4) run_repo_script "scripts/other_tools/nezha.sh" ;;
-            5) run_remote_script_url "https://raw.githubusercontent.com/komari-monitor/komari/main/install-komari.sh" "Komari monitor" ;;
-            6) run_remote_script_url "https://get.beszel.dev/hub" "Beszel hub" ;;
-            7) run_remote_script_url "https://raw.githubusercontent.com/henrygd/beszel/main/supplemental/scripts/install-agent.sh" "Beszel agent" ;;
-            8) run_remote_command "${DOCKER_REQUIRED_CHECK} docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:2 && echo 'Uptime Kuma: http://<服务器IP>:3001'" "Uptime Kuma monitor" ;;
-            9) run_remote_script_url "https://tailscale.com/install.sh" "Tailscale mesh VPN" ;;
-            10) run_remote_command "arch=\$(uname -m); case \"\${arch}\" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; armv7l) arch=arm ;; *) echo \"Unsupported architecture: \${arch}\" >&2; exit 1 ;; esac; tmp=\$(mktemp /tmp/cloudflared.XXXXXX) || exit 1; curl -fsSL \"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${arch}\" -o \"\${tmp}\" || { rm -f -- \"\${tmp}\"; exit 1; }; case \"\$(od -An -N4 -tx1 \"\${tmp}\" | tr -d ' \\n')\" in 7f454c46) ;; *) echo \"Downloaded cloudflared is not an ELF binary\" >&2; rm -f -- \"\${tmp}\"; exit 1 ;; esac; install -m 0755 \"\${tmp}\" /usr/local/bin/cloudflared; rm -f -- \"\${tmp}\"; /usr/local/bin/cloudflared --version" "Cloudflare Tunnel (cloudflared)" ;;
-            11) run_repo_script "scripts/other_tools/frp.sh" ;;
-            12) run_remote_script_url "https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh" "Cloudflare WARP" ;;
-            13) run_remote_script_url "https://get.acme.sh" "acme.sh SSL certificate tool" ;;
-            14) run_repo_script "scripts/other_tools/modern_cli.sh" ;;
-            15) run_remote_command "DEBIAN_FRONTEND=noninteractive apt-get install -y tmux || yum install -y tmux || apk add tmux" "tmux terminal multiplexer" ;;
-            16) run_remote_script_url "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "oh-my-zsh" "--unattended" ;;
-            17) run_remote_script_url "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh" "DD system reinstall" ;;
-            18) run_remote_script_url "https://raw.githubusercontent.com/everett7623/Nezha-cleaner/main/nezha-agent-cleaner.sh" "Nezha cleaner" ;;
-            19) run_remote_script_url "https://raw.githubusercontent.com/filebrowser/get/master/get.sh" "FileBrowser file manager (upstream archived)" ;;
+            1) other_tools_system_menu ;;
+            2) other_tools_monitor_menu ;;
+            3) other_tools_network_menu ;;
+            4) other_tools_misc_menu ;;
             0) return ;;
             *) invalid_choice ;;
         esac
@@ -1063,10 +1339,10 @@ main_menu() {
         print_menu_item 1 "系统工具" "信息、优化与更新"
         print_menu_item 2 "网络测试" "质量、路由与流媒体"
         print_menu_item 3 "性能测试" "CPU、磁盘与内存"
-        print_menu_item 4 "服务安装" "语言与应用环境"
-        print_menu_item 5 "社区脚本" "常用第三方工具"
-        print_menu_item 6 "代理工具" "sing-box 与 x-ui 系列"
-        print_menu_item 7 "其他工具" "BBR、Fail2ban、Swap"
+        print_menu_item 4 "服务安装" "按类型进入子柜"
+        print_menu_item 5 "社区脚本" "按类型进入子柜"
+        print_menu_item 6 "代理工具" "面板、一键脚本与核心"
+        print_menu_item 7 "其他工具" "按类型进入子柜"
         print_menu_item 8 "快捷命令管理" "安装持久化 vps 命令"
         print_menu_item 9 "更新说明" "启动器更新方式"
         print_menu_item 10 "清理与卸载" "残留清理"

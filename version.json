@@ -2,8 +2,8 @@
   "project": {
     "name": "VPS Scripts",
     "description": "Modular VPS operations and deployment toolkit",
-    "version": "1.1.30",
-    "release_date": "2026-11-12",
+    "version": "1.1.31",
+    "release_date": "2026-11-19",
     "author": "everettlabs",
     "repository": "https://github.com/everett7623/vps_scripts",
     "maintenance_state": "active-modernization"
@@ -13,7 +13,7 @@
     "legacy_compat": "vps_scripts.sh",
     "legacy_support_status": "legacy-only",
     "legacy_policy": "compatibility handoff only; no new features",
-    "style_version": "1.1.0",
+    "style_version": "1.1.1",
     "primary_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "legacy_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps_scripts.sh"
   },
@@ -22,7 +22,7 @@
     "script_url": "https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh",
     "changelog_url": "https://github.com/everett7623/vps_scripts/blob/main/CHANGELOG.md",
     "critical_update": false,
-    "message": "Docker CE yum validate; LDNMP RPM/key temp paths; DaoCloud mirror."
+    "message": "neon-shell polish; hub/submenu menus; shared menu helpers."
   },
   "compatibility": {
     "min_bash_version": "4.0",

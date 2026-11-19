@@ -16,17 +16,25 @@ if [ -f "${LIB_FILE}" ]; then
     # shellcheck source=/dev/null
     source "${LIB_FILE}"
 else
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[0;33m'
-    CYAN='\033[0;36m'
-    PURPLE='\033[0;35m'
+    RED='\033[1;91m'
+    GREEN='\033[1;92m'
+    YELLOW='\033[1;93m'
+    CYAN='\033[1;96m'
+    PURPLE='\033[1;95m'
+    WHITE='\033[1;97m'
     NC='\033[0m'
+    BOLD='\033[1m'
+    DIM='\033[2m'
+    MENU_CHOICE=""
     print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
     print_success() { echo -e "${GREEN}[完成] $1${NC}"; }
     print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
     print_error() { echo -e "${RED}[错误] $1${NC}"; }
-    print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
+    print_header() { echo ""; printf '%b%s%b\n' "${YELLOW}" "$(printf '%*s' 80 '' | tr ' ' '=')" "${NC}"; printf "%b  [ %s ]%b\n" "${BOLD}${WHITE}" "$1" "${NC}"; printf '%b%s%b\n' "${YELLOW}" "$(printf '%*s' 80 '' | tr ' ' '=')" "${NC}"; echo ""; }
+    print_menu_item() { printf "%b%2s%b. %b%s%b\n" "${YELLOW}" "$1" "${NC}" "${BOLD}" "$2" "${NC}"; [ -n "${3:-}" ] && printf "%b     └─ %s%b\n" "${DIM}" "$3" "${NC}"; }
+    read_menu_choice() { MENU_CHOICE=""; if ! read -r -p "$1" MENU_CHOICE; then echo ""; print_warn "输入已结束，返回上级菜单。"; return 1; fi; return 0; }
+    invalid_choice() { print_error "无效选项，请重新输入。"; sleep 1; }
+    pause_for_menu() { echo ""; printf '%b[按任意键返回]%b\n' "${CYAN}" "${NC}"; read -n 1 -s -r || true; }
     check_root() {
         if [ "$(id -u)" -ne 0 ]; then
             print_error "安装操作需要 root 权限。"
@@ -222,11 +230,12 @@ interactive_menu() {
     while true; do
         print_tool_status
         echo ""
-        echo "1. 刷新状态"
-        echo "2. 安装缺失工具"
-        echo "0. 退出"
+        print_menu_item 1 "刷新状态" "重新检测已安装工具"
+        print_menu_item 2 "安装缺失工具" "从发行版仓库安装"
+        print_menu_item 0 "退出"
         echo ""
-        read -r -p "请选择 [0-2]: " choice
+        read_menu_choice "请选择 [0-2]: " || return 0
+        choice="${MENU_CHOICE}"
 
         case "${choice}" in
             1)
@@ -242,11 +251,10 @@ interactive_menu() {
                 return 0
                 ;;
             *)
-                print_warn "无效选项。"
+                invalid_choice
                 ;;
         esac
-        echo ""
-        read -r -p "按回车键继续..." _
+        pause_for_menu
     done
 }
 

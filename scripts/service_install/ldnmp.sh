@@ -697,20 +697,36 @@ main() {
 
     # 如果没有指定任何选项，显示交互式菜单
     if ! $INSTALL_NGINX && ! $INSTALL_MYSQL && ! $INSTALL_MARIADB && ! $INSTALL_PHP && ! $INSTALL_DOCKER; then
-        echo -e "${PURPLE}======================================${NC}"
-        echo -e "${PURPLE}LDNMP环境一键安装脚本${NC}"
-        echo -e "${PURPLE}作者: everettlabs${NC}"
-        echo -e "${PURPLE}版本: 2025-06-20${NC}"
-        echo -e "${PURPLE}======================================${NC}"
+        if declare -F print_header >/dev/null 2>&1; then
+            print_header "LDNMP 环境一键安装" "模块化执行 | 安全校验 | ${UI_THEME:-neon-shell}"
+        else
+            echo -e "${YELLOW}======================================${NC}"
+            echo -e "${BOLD}${WHITE}  [ LDNMP 环境一键安装 ]${NC}"
+            echo -e "${YELLOW}======================================${NC}"
+        fi
         echo
-        echo "请选择要安装的组件:"
-        echo "1) 完整安装 (Nginx + MariaDB + PHP + Docker)"
-        echo "2) LNMP (Nginx + MariaDB + PHP)"
-        echo "3) 自定义安装"
-        echo "0) 退出"
-        echo
-        read -p "请输入选项 [0-3]: " choice
-        
+        if declare -F print_menu_item >/dev/null 2>&1; then
+            print_menu_item 1 "完整安装" "Nginx + MariaDB + PHP + Docker"
+            print_menu_item 2 "LNMP" "Nginx + MariaDB + PHP"
+            print_menu_item 3 "自定义安装" "逐项确认组件"
+            print_menu_item 0 "退出"
+            echo
+            if declare -F read_menu_choice >/dev/null 2>&1; then
+                read_menu_choice "请选择 [0-3]: " || choice="0"
+                choice="${MENU_CHOICE}"
+            else
+                read -r -p "请选择 [0-3]: " choice
+            fi
+        else
+            echo "请选择要安装的组件:"
+            echo "1) 完整安装 (Nginx + MariaDB + PHP + Docker)"
+            echo "2) LNMP (Nginx + MariaDB + PHP)"
+            echo "3) 自定义安装"
+            echo "0) 退出"
+            echo
+            read -r -p "请输入选项 [0-3]: " choice
+        fi
+
         case $choice in
             1)
                 INSTALL_NGINX=true

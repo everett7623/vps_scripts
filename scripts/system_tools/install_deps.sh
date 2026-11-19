@@ -23,15 +23,20 @@ if [ -f "$LIB_FILE" ]; then
     source "$LIB_FILE"
     [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 else
-    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; PURPLE='\033[0;35m'; NC='\033[0m'
+    RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'; CYAN='\033[1;96m'; PURPLE='\033[1;95m'; WHITE='\033[1;97m'; NC='\033[0m'; BOLD='\033[1m'; DIM='\033[2m'
+    MENU_CHOICE=""
     print_info() { echo -e "${CYAN}[信息] $1${NC}"; }
     print_success() { echo -e "${GREEN}[完成] $1${NC}"; }
     print_warn() { echo -e "${YELLOW}[警告] $1${NC}"; }
     print_error() { echo -e "${RED}[错误] $1${NC}"; }
-    print_header() { echo -e "\n${PURPLE}=== $1 ===${NC}\n"; }
+    print_header() { echo ""; printf '%b%s%b\n' "${YELLOW}" "$(printf '%*s' 80 '' | tr ' ' '=')" "${NC}"; printf "%b  [ %s ]%b\n" "${BOLD}${WHITE}" "$1" "${NC}"; printf '%b%s%b\n' "${YELLOW}" "$(printf '%*s' 80 '' | tr ' ' '=')" "${NC}"; echo ""; }
     print_key_value() { printf "%b%-14s%b %s\n" "${CYAN}" "${1}:" "${NC}" "${2:-}"; }
     print_step() { printf "%b[%s/%s]%b %s\n" "${PURPLE}" "${1}" "${2}" "${NC}" "${3}"; }
     print_runtime_context() { print_key_value "脚本" "$1"; print_key_value "模式" "${2:-交互模式}"; [ -n "${3:-}" ] && print_key_value "日志" "$3"; echo ""; }
+    print_menu_item() { printf "%b%2s%b. %b%s%b\n" "${YELLOW}" "$1" "${NC}" "${BOLD}" "$2" "${NC}"; [ -n "${3:-}" ] && printf "%b     └─ %s%b\n" "${DIM}" "$3" "${NC}"; }
+    read_menu_choice() { MENU_CHOICE=""; if ! read -r -p "$1" MENU_CHOICE; then echo ""; print_warn "输入已结束，返回上级菜单。"; return 1; fi; return 0; }
+    invalid_choice() { print_error "无效选项，请重新输入。"; sleep 1; }
+    pause_for_menu() { echo ""; printf '%b[按任意键返回]%b\n' "${CYAN}" "${NC}"; read -n 1 -s -r || true; }
     check_root() { [[ $EUID -ne 0 ]] && { echo -e "${RED}此脚本需要 root 权限。${NC}"; exit 1; }; }
     get_os_release() { [ -f /etc/os-release ] && . /etc/os-release && echo "$ID" || echo "unknown"; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p -- "$1"; }
@@ -468,14 +473,15 @@ interactive_menu() {
         print_runtime_context "install_deps.sh" "软件包安装" "${LOG_FILE}"
         print_key_value "当前系统" "$OS_TYPE ($PKG_MANAGER)"
         echo ""
-        echo "1. 安装基础工具"
-        echo "2. 安装开发工具"
-        echo "3. 安装监控与安全工具"
-        echo "4. 安装全部工具"
-        echo "5. 自定义选择"
-        echo "0. 退出"
+        print_menu_item 1 "安装基础工具" "日常运维常用包"
+        print_menu_item 2 "安装开发工具" "编译与开发依赖"
+        print_menu_item 3 "安装监控与安全工具" "监控与基础防护"
+        print_menu_item 4 "安装全部工具" "基础+开发+监控安全"
+        print_menu_item 5 "自定义选择" "按包勾选"
+        print_menu_item 0 "退出"
         echo ""
-        read -r -p "请选择 [0-5]: " choice
+        read_menu_choice "请选择 [0-5]: " || exit 0
+        choice="${MENU_CHOICE}"
 
         status=0
         case "$choice" in
@@ -485,7 +491,7 @@ interactive_menu() {
             4) run_install_flow "$BASIC_PACKAGES $DEV_PACKAGES $MONITOR_PACKAGES $SECURITY_PACKAGES" || status=$? ;;
             5) custom_menu; continue ;;
             0) exit 0 ;;
-            *) print_error "无效选项"; sleep 1; continue ;;
+            *) invalid_choice; continue ;;
         esac
 
         echo ""
@@ -497,7 +503,7 @@ interactive_menu() {
         if [ "${AUTO_CONFIRM}" = true ]; then
             continue
         fi
-        read -n 1 -s -r -p "按任意键返回..." || true
+        pause_for_menu
     done
 }
 

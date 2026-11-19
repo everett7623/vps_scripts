@@ -249,6 +249,14 @@
 - [x] LDNMP Docker Compose ELF magic guard; Beszel hub URL pin in upgrade-hardening
 - [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.23`
 
+## 1.1.31 release
+
+- [x] neon-shell polish: shared menu helpers + bright ANSI alignment
+- [x] Grouped hub/submenu IA for service install, community, other tools; proxy section labels
+- [x] Align interactive module menus; Chinese health/security help; catalog URL spot-check
+- [x] Capture PRODUCT.md / DESIGN.md; bump launcher style to `1.1.1`
+- [x] Synchronize version, date, changelog, README, VERSIONING, CLAUDE, PROGRESS, SESSION, and TASKS at `1.1.31`
+
 ## 1.1.30 release
 
 - [x] Docker CE: `install_yum_repo_file` in kubernetes + install_deps; apt key temp path

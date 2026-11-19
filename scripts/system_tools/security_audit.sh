@@ -34,11 +34,11 @@ fi
 
 show_help() {
     cat <<'EOF'
-Usage: bash security_audit.sh [options]
+用法：bash security_audit.sh [选项]
 
-Options:
-  --no-ports   Skip listening port inventory
-  --help, -h   Show this help
+选项：
+  --no-ports   跳过监听端口清单
+  --help, -h   显示帮助
 EOF
 }
 
@@ -53,7 +53,7 @@ parse_args() {
                 exit 0
                 ;;
             *)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;
@@ -263,7 +263,7 @@ print_summary() {
 
 main() {
     parse_args "$@"
-    print_header "VPS Security Audit"
+    print_header "VPS 安全基线巡检"
     audit_ssh
     audit_firewall
     audit_fail2ban

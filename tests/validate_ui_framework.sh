@@ -24,7 +24,11 @@ require_text "print_key_value()"
 require_text "print_step()"
 require_text "print_status()"
 require_text "print_runtime_context()"
+require_text "print_menu_item()"
+require_text "print_menu_section()"
+require_text "read_menu_choice()"
 require_text "UI_THEME"
+require_text "DIM="
 
 bash -n "${COMMON_FILE}"
 

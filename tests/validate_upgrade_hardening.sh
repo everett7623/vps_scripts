@@ -144,7 +144,9 @@ if grep -Eq 'wget -O amh\.sh ' "${REPO_ROOT}/scripts/service_install/amh.sh"; th
 fi
 grep -Fq 'henrygd/beszel/main/supplemental/scripts/install-agent.sh' "${LAUNCHER}"
 grep -Fq 'get.beszel.dev/hub' "${LAUNCHER}"
-grep -Fq 'print_menu_item 27 "CyberPanel" "小众控制面板"' "${LAUNCHER}"
+grep -Fq 'print_menu_item 6 "CyberPanel" "小众控制面板"' "${LAUNCHER}"
+grep -Fq 'scripts/service_install/cyberpanel.sh' "${LAUNCHER}"
+grep -Fq 'service_install_panel_menu' "${LAUNCHER}"
 grep -Fq 'bash -n "$rvm_script"' "${REPO_ROOT}/scripts/service_install/ruby.sh"
 grep -Fq 'bash -n "$helm_installer"' "${REPO_ROOT}/scripts/service_install/kubernetes.sh"
 grep -Fq 'bash -n "$wasm_pack_script"' "${REPO_ROOT}/scripts/service_install/rust.sh"

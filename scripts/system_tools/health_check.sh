@@ -34,11 +34,11 @@ fi
 
 show_help() {
     cat <<'EOF'
-Usage: bash health_check.sh [options]
+用法：bash health_check.sh [选项]
 
-Options:
-  --no-network   Skip external network probes
-  --help, -h     Show this help
+选项：
+  --no-network   跳过外部网络探测
+  --help, -h     显示帮助
 EOF
 }
 
@@ -53,7 +53,7 @@ parse_args() {
                 exit 0
                 ;;
             *)
-                print_error "Unknown option: $1"
+                print_error "未知选项：$1"
                 show_help
                 exit 1
                 ;;
@@ -253,7 +253,7 @@ print_summary() {
 
 main() {
     parse_args "$@"
-    print_header "VPS Health Check"
+    print_header "VPS 系统健康巡检"
     check_load
     check_memory
     check_disk

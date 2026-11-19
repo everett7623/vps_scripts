@@ -2,9 +2,9 @@
 
 ## Current State
 
-The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.30`.
+The repository currently exposes version metadata through `version.json`, with the active project version listed as `1.1.31`.
 
-The public tag history starts at `v1.0.0`. Version `1.1.30` is a backward-compatible patch release that validates Docker CE yum repos before install, hardens LDNMP RPM/key downloads, and replaces the retired docker-cn registry mirror. Release tags and GitHub Releases are published as explicit release operations.
+The public tag history starts at `v1.0.0`. Version `1.1.31` is a backward-compatible patch release that polishes the `neon-shell` terminal UI, adds shared menu helpers, and reorganizes long launcher menus into hub + submenu cabinets. Release tags and GitHub Releases are published as explicit release operations.
 
 ## Recommended Policy
 
