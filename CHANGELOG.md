@@ -4,6 +4,16 @@ All notable changes to this repository are documented here.
 
 ## Unreleased
 
+## 1.1.31 - 2026-11-19
+
+### Changed
+- Launcher and shared library unify on bright `neon-shell` ANSI roles; `lib/common_functions.sh` exports shared menu helpers (`print_menu_item`, `print_menu_section`, `read_menu_choice`, `invalid_choice`, `pause_for_menu`, `print_panel_title`).
+- Service install, community scripts, and other tools use grouped hub + submenu navigation; proxy tools keep flat numbers with panel / script / core section labels.
+- Interactive menus in system tools, swap/BBR/FRP/modern CLI, LDNMP, and uninstall helpers align to the shared menu helpers where practical.
+- Health check and security audit help/headers use Chinese copy consistent with the rest of the toolkit.
+- Catalog URL spot-check (Coolify, Dokploy, 3x-ui, S-UI, Beszel, Komari, Tailscale, Hysteria2, YABS, Check.Place, acme.sh, Bench.sh, X-Panel, Xray) — no URL changes required.
+- Launcher style version bumped to `1.1.1`; product/design context captured in `PRODUCT.md` and `DESIGN.md`.
+
 ## 1.1.30 - 2026-11-12
 
 ### Changed

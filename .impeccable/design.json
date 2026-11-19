@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-19T14:38:00.000Z",
+  "title": "Design System: VPS Scripts",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Cabinet Cyan",
+        "canonical": "#00CDCD",
+        "ansi": "0;36",
+        "tonalRamp": ["#003333", "#006666", "#009999", "#00CDCD", "#33D7D7", "#66E0E0", "#99EBEB", "#CCF5F5"]
+      },
+      "accent-rule": {
+        "role": "secondary",
+        "displayName": "Frame Amber",
+        "canonical": "#CDCD00",
+        "ansi": "0;33",
+        "tonalRamp": ["#333300", "#666600", "#999900", "#CDCD00", "#D7D733", "#E0E066", "#EBEB99", "#F5F5CC"]
+      },
+      "success": {
+        "role": "primary",
+        "displayName": "Safe Green",
+        "canonical": "#00CD00",
+        "ansi": "0;32",
+        "tonalRamp": ["#003300", "#006600", "#009900", "#00CD00", "#33D733", "#66E066", "#99EB99", "#CCF5CC"]
+      },
+      "warning": {
+        "role": "secondary",
+        "displayName": "Alert Amber",
+        "canonical": "#CDCD00",
+        "ansi": "0;33",
+        "tonalRamp": ["#333300", "#666600", "#999900", "#CDCD00", "#D7D733", "#E0E066", "#EBEB99", "#F5F5CC"]
+      },
+      "danger": {
+        "role": "primary",
+        "displayName": "Fault Red",
+        "canonical": "#CD0000",
+        "ansi": "0;31",
+        "tonalRamp": ["#330000", "#660000", "#990000", "#CD0000", "#D73333", "#E06666", "#EB9999", "#F5CCCC"]
+      },
+      "step": {
+        "role": "secondary",
+        "displayName": "Step Violet",
+        "canonical": "#CD00CD",
+        "ansi": "0;35",
+        "tonalRamp": ["#330033", "#660066", "#990099", "#CD00CD", "#D733D7", "#E066E0", "#EB99EB", "#F5CCF5"]
+      },
+      "title": {
+        "role": "neutral",
+        "displayName": "Title White",
+        "canonical": "#E5E5E5",
+        "ansi": "0;37",
+        "tonalRamp": ["#1A1A1A", "#333333", "#4D4D4D", "#808080", "#B3B3B3", "#D0D0D0", "#E5E5E5", "#FAFAFA"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Dim Rail",
+        "canonical": "#808080",
+        "ansi": "2",
+        "tonalRamp": ["#1A1A1A", "#2A2A2A", "#404040", "#808080", "#A0A0A0", "#C0C0C0", "#D8D8D8", "#F0F0F0"]
+      },
+      "gradient-start": {
+        "role": "tertiary",
+        "displayName": "Signal Lime",
+        "canonical": "#00FF00",
+        "tonalRamp": ["#003300", "#006600", "#00AA00", "#00FF00", "#33FF33", "#66FF66", "#99FF99", "#CCFFCC"]
+      },
+      "gradient-mid": {
+        "role": "tertiary",
+        "displayName": "Signal Chartreuse",
+        "canonical": "#80FF00",
+        "tonalRamp": ["#1A3300", "#336600", "#66AA00", "#80FF00", "#99FF33", "#B3FF66", "#CCFF99", "#E6FFCC"]
+      },
+      "gradient-end": {
+        "role": "tertiary",
+        "displayName": "Signal Amber",
+        "canonical": "#FFFF00",
+        "tonalRamp": ["#333300", "#666600", "#AAAA00", "#FFFF00", "#FFFF33", "#FFFF66", "#FFFF99", "#FFFFCC"]
+      },
+      "bright-primary": {
+        "role": "primary",
+        "displayName": "Bright Cabinet Cyan",
+        "canonical": "#00D7D7",
+        "ansi": "1;96",
+        "tonalRamp": ["#003333", "#006666", "#009999", "#00D7D7", "#33DFDF", "#66E7E7", "#99EFEF", "#CCF7F7"]
+      },
+      "bright-success": {
+        "role": "primary",
+        "displayName": "Bright Safe Green",
+        "canonical": "#00D700",
+        "ansi": "1;92",
+        "tonalRamp": ["#003300", "#006600", "#009900", "#00D700", "#33DF33", "#66E766", "#99EF99", "#CCF7CC"]
+      },
+      "bright-warning": {
+        "role": "secondary",
+        "displayName": "Bright Frame Amber",
+        "canonical": "#D7D700",
+        "ansi": "1;93",
+        "tonalRamp": ["#333300", "#666600", "#999900", "#D7D700", "#DFDF33", "#E7E766", "#EFEF99", "#F7F7CC"]
+      },
+      "bright-danger": {
+        "role": "primary",
+        "displayName": "Bright Fault Red",
+        "canonical": "#D70000",
+        "ansi": "1;91",
+        "tonalRamp": ["#330000", "#660000", "#990000", "#D70000", "#DF3333", "#E76666", "#EF9999", "#F7CCCC"]
+      },
+      "bright-step": {
+        "role": "secondary",
+        "displayName": "Bright Step Violet",
+        "canonical": "#D700D7",
+        "ansi": "1;95",
+        "tonalRamp": ["#330033", "#660066", "#990099", "#D700D7", "#DF33DF", "#E766E7", "#EF99EF", "#F7CCF7"]
+      },
+      "bright-title": {
+        "role": "neutral",
+        "displayName": "Bright Title",
+        "canonical": "#FFFFFF",
+        "ansi": "1;97",
+        "tonalRamp": ["#1A1A1A", "#333333", "#666666", "#999999", "#CCCCCC", "#E0E0E0", "#F5F5F5", "#FFFFFF"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Centered launcher product title."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel headings in [ Name ] form."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Menu labels, values, and running copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Keys, dim details, and secondary rails."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "spinner-tick",
+        "value": "100ms step",
+        "purpose": "wait_with_animation rotating spinner frames in lib/common_functions.sh."
+      },
+      {
+        "name": "progress-redraw",
+        "value": "carriage-return in place",
+        "purpose": "show_progress updates the same line until 100%."
+      }
+    ],
+    "breakpoints": [
+      { "name": "ui-min", "value": "24ch" },
+      { "name": "narrow", "value": "64ch" },
+      { "name": "ui-default", "value": "80ch" },
+      { "name": "wide-art", "value": "82ch" },
+      { "name": "ui-max", "value": "88ch" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Menu Item",
+      "kind": "nav",
+      "refersTo": "menu-item",
+      "description": "Dashboard-crisp numbered menu row with dim detail.",
+      "html": "<div class=\"ds-menu-item\"><span class=\"ds-menu-key\">1</span><span class=\"ds-menu-dot\">.</span> <span class=\"ds-menu-label\">查看系统信息</span><span class=\"ds-menu-detail\">│ 硬件、内核与网络</span></div>",
+      "css": ".ds-menu-item { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.4; color: #E5E5E5; background: #0b0f0f; padding: 4px 8px; } .ds-menu-key { color: #CDCD00; font-weight: 400; } .ds-menu-dot { color: #E5E5E5; } .ds-menu-label { color: #E5E5E5; font-weight: 700; } .ds-menu-detail { color: #808080; margin-left: 8px; } .ds-menu-item:hover { background: #121818; }"
+    },
+    {
+      "name": "Menu Item Key",
+      "kind": "nav",
+      "refersTo": "menu-item-key",
+      "description": "Yellow numeric affordance for menu selection.",
+      "html": "<span class=\"ds-menu-key-solo\">0</span>",
+      "css": ".ds-menu-key-solo { font-family: ui-monospace, Menlo, Consolas, monospace; color: #CDCD00; font-weight: 400; } .ds-menu-key-solo:focus-visible { outline: 1px solid #00CDCD; outline-offset: 2px; }"
+    },
+    {
+      "name": "Panel Title",
+      "kind": "custom",
+      "refersTo": "panel-title",
+      "description": "Active drawer label with purple rule.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-panel-title\">  [ 系统工具 ]</div><div class=\"ds-panel-rule\"></div></div>",
+      "css": ".ds-panel { font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0f0f; padding: 8px; } .ds-panel-title { color: #E5E5E5; font-weight: 700; line-height: 1.3; } .ds-panel-rule { margin-top: 4px; height: 2px; background: #CD00CD; } .ds-panel:focus-within .ds-panel-rule { background: #00CDCD; }"
+    },
+    {
+      "name": "Header Rule",
+      "kind": "custom",
+      "refersTo": "header-rule",
+      "description": "Yellow full-width frame rule for the launcher header.",
+      "html": "<div class=\"ds-header-rule\" role=\"presentation\"></div>",
+      "css": ".ds-header-rule { height: 2px; width: 100%; max-width: 88ch; background: #CDCD00; } .ds-header-rule:hover { filter: brightness(1.1); }"
+    },
+    {
+      "name": "Log Info",
+      "kind": "custom",
+      "refersTo": "log-info",
+      "description": "Cyan informational status line.",
+      "html": "<div class=\"ds-log ds-log-info\">[信息] 正在检测下载工具</div>",
+      "css": ".ds-log { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.4; padding: 2px 0; background: transparent; } .ds-log-info { color: #00CDCD; } .ds-log-info:hover { filter: brightness(1.08); }"
+    },
+    {
+      "name": "Log Success",
+      "kind": "custom",
+      "refersTo": "log-success",
+      "description": "Green completion status line.",
+      "html": "<div class=\"ds-log ds-log-success\">[完成] 模块执行结束</div>",
+      "css": ".ds-log { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.4; padding: 2px 0; } .ds-log-success { color: #00CD00; } .ds-log-success:hover { filter: brightness(1.08); }"
+    },
+    {
+      "name": "Log Warn",
+      "kind": "custom",
+      "refersTo": "log-warn",
+      "description": "Amber warning status line.",
+      "html": "<div class=\"ds-log ds-log-warn\">[警告] 将执行第三方远程脚本</div>",
+      "css": ".ds-log { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.4; padding: 2px 0; } .ds-log-warn { color: #CDCD00; } .ds-log-warn:hover { filter: brightness(1.08); }"
+    },
+    {
+      "name": "Log Error",
+      "kind": "custom",
+      "refersTo": "log-error",
+      "description": "Red fault status line.",
+      "html": "<div class=\"ds-log ds-log-error\">[错误] 此脚本需要 root 权限。</div>",
+      "css": ".ds-log { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.4; padding: 2px 0; } .ds-log-error { color: #CD0000; } .ds-log-error:hover { filter: brightness(1.08); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "霓虹机柜",
+    "overview": "VPS Scripts presents itself as a neon operations cabinet inside SSH: calm, high-contrast, and readable under real terminal constraints. Color is semantic signal — cyan for navigation and info, yellow for structure and attention, green for safe completion, red for failure, purple for stepped progress — never decoration for its own sake. Density stays medium: enough structure for a dashboard scan, not a wall of chrome.\n\nThe shipped surface is the neon-shell ANSI terminal UI in vps.sh and lib/common_functions.sh. There is no browser chrome, card elevation, or icon system. Hierarchy comes from rules, bold titles, numbered keys, and dim secondary copy. Wide terminals may show a lime-to-yellow ASCII wordmark; narrow ones drop art and stack menu details without losing scan order.",
+    "keyCharacteristics": [
+      "Terminal-first monospace layout capped at 88 columns",
+      "Semantic status colors over ornamental palette sprawl",
+      "Dashboard-crisp menus: key, bold label, dim detail",
+      "Flat depth: rules and contrast instead of shadows",
+      "Chinese UI copy with display-width-aware alignment"
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Each line carries at most one semantic accent role (info, success, warn, error, step, or frame). Do not rainbow a single message.",
+        "section": "colors"
+      },
+      {
+        "name": "The Gradient Cage Rule",
+        "body": "The lime→yellow gradient exists only for the wide ASCII wordmark. Everywhere else uses flat ANSI roles.",
+        "section": "colors"
+      },
+      {
+        "name": "The Display-Width Rule",
+        "body": "Measure Chinese and wide glyphs with text_display_width (or equivalent); never pad by raw string length alone.",
+        "section": "typography"
+      },
+      {
+        "name": "The Clamp Rule",
+        "body": "Never draw UI wider than 88 columns; never assume fewer than 24.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Cabinet Rule",
+        "body": "Structure with horizontal rules and color roles; never fake Material elevation in the shell UI.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Cell Geometry Rule",
+        "body": "If a control cannot be expressed with monospace characters and ANSI color, it does not belong in neon-shell.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do keep Chinese menu copy and display-width-aware alignment.",
+      "Do use semantic colors for status and cyan/yellow for navigation/structure only.",
+      "Do collapse layout at 64 and 82 the way the launcher already does.",
+      "Do prefer dim secondary text over extra accent colors for hints.",
+      "Do treat neon-shell as the theme id when documenting or extending UI helpers.",
+      "Do prefer hub + submenu cabinets once a flat menu exceeds roughly a dozen actionable items."
+    ],
+    "donts": [
+      "Don't invent CSS cards, shadows, or rounded pills for the terminal product surface.",
+      "Don't apply the header gradient to menus, logs, or body copy.",
+      "Don't pack emoji walls or multi-hue single lines that break the One Signal Rule.",
+      "Don't hard-code padding with ${#string} when CJK width matters.",
+      "Don't present the legacy launcher as the visual source of truth for new chrome — extend the modular vps.sh + shared helper patterns."
+    ]
+  }
+}

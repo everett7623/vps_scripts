@@ -264,13 +264,28 @@ interactive_configure() {
         echo -e "${GREEN}当前系统没有SWAP，将创建新的SWAP${NC}"
     fi
 
-    echo -e "${WHITE}请选择SWAP大小:${NC}"
-    echo "1. 1GB"
-    echo "2. 2GB"
-    echo "3. 4GB"
-    echo "4. 8GB"
-    echo "5. 自定义大小"
-    read -r -p "请选择 (1-5): " size_choice
+    echo -e "${WHITE}请选择 SWAP 大小:${NC}"
+    if declare -F print_menu_item >/dev/null 2>&1; then
+        print_menu_item 1 "1GB"
+        print_menu_item 2 "2GB"
+        print_menu_item 3 "4GB"
+        print_menu_item 4 "8GB"
+        print_menu_item 5 "自定义大小"
+        echo ""
+        if declare -F read_menu_choice >/dev/null 2>&1; then
+            read_menu_choice "请选择 [1-5]: " || return 1
+            size_choice="${MENU_CHOICE}"
+        else
+            read -r -p "请选择 [1-5]: " size_choice || return 1
+        fi
+    else
+        echo "1. 1GB"
+        echo "2. 2GB"
+        echo "3. 4GB"
+        echo "4. 8GB"
+        echo "5. 自定义大小"
+        read -r -p "请选择 (1-5): " size_choice || return 1
+    fi
 
     case "${size_choice}" in
         1) swap_size="1G" ;;

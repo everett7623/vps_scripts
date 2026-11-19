@@ -30,14 +30,19 @@ if [ -f "${LIB_FILE}" ]; then
     [ -f "${CONFIG_FILE}" ] && source "${CONFIG_FILE}"
     [ -n "${LOG_DIR:-}" ] && LOG_FILE="${LOG_DIR}/hostname_change.log"
 else
-    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
+    RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'; BLUE='\033[1;94m'; PURPLE='\033[1;95m'; CYAN='\033[1;96m'; WHITE='\033[1;97m'; NC='\033[0m'; BOLD='\033[1m'; DIM='\033[2m'
+    MENU_CHOICE=""
     print_msg() { echo -e "${1}${2}${NC}"; }
     print_info() { print_msg "${CYAN}" "[信息] $1"; }
     print_success() { print_msg "${GREEN}" "[完成] $1"; }
     print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
     print_error() { print_msg "${RED}" "[错误] $1"; }
-    print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
-    print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 28 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
+    print_separator() { printf '%b%s%b\n' "${YELLOW}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:-=}")" "${NC}"; }
+    print_header() { echo ""; print_separator "=" 80; printf "%b  [ %s ]%b\n" "${BOLD}${WHITE}" "$1" "${NC}"; print_separator "=" 80; echo ""; }
+    print_menu_item() { printf "%b%2s%b. %b%s%b\n" "${YELLOW}" "$1" "${NC}" "${BOLD}" "$2" "${NC}"; [ -n "${3:-}" ] && printf "%b     └─ %s%b\n" "${DIM}" "$3" "${NC}"; }
+    read_menu_choice() { MENU_CHOICE=""; if ! read -r -p "$1" MENU_CHOICE; then echo ""; print_warn "输入已结束，返回上级菜单。"; return 1; fi; return 0; }
+    invalid_choice() { print_error "无效选项，请重新输入。"; sleep 1; }
+    pause_for_menu() { echo ""; printf '%b[按任意键返回]%b\n' "${CYAN}" "${NC}"; read -n 1 -s -r || true; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
     check_root() {
@@ -529,42 +534,42 @@ interactive_menu() {
         printf "%b当前主机名:%b %s\n" "${CYAN}" "${NC}" "$(current_hostname)"
         printf "%b主要 IP:%b    %s\n" "${CYAN}" "${NC}" "$(hostname -I 2>/dev/null | awk '{print $1}')"
         print_separator
-        echo "1) 修改主机名"
-        echo "2) 回滚最近一次修改"
-        echo "3) 查看备份历史"
-        echo "4) 查看当前主机名"
-        echo "0) 退出"
+        print_menu_item 1 "修改主机名" "校验、备份并应用"
+        print_menu_item 2 "回滚最近一次修改" "恢复上次备份"
+        print_menu_item 3 "查看备份历史" "列出备份文件"
+        print_menu_item 4 "查看当前主机名" "只读状态"
+        print_menu_item 0 "退出"
         echo ""
-        read -r -p "请选择 [0-4]: " selection || { echo ""; exit 0; }
+        read_menu_choice "请选择 [0-4]: " || exit 0
+        selection="${MENU_CHOICE}"
 
         case "${selection}" in
             1)
                 read_input "请输入新的主机名" "" new_name
                 [ -n "${new_name}" ] && change_hostname_flow "${new_name}"
                 echo ""
-                read -r -n 1 -s -p "按任意键继续..."
+                pause_for_menu
                 ;;
             2)
                 rollback_latest
                 echo ""
-                read -r -n 1 -s -p "按任意键继续..."
+                pause_for_menu
                 ;;
             3)
                 show_history
                 echo ""
-                read -r -n 1 -s -p "按任意键继续..."
+                pause_for_menu
                 ;;
             4)
                 show_current_hostname
                 echo ""
-                read -r -n 1 -s -p "按任意键继续..."
+                pause_for_menu
                 ;;
             0)
                 exit 0
                 ;;
             *)
-                print_error "无效选项。"
-                sleep 1
+                invalid_choice
                 ;;
         esac
     done

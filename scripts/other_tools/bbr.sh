@@ -212,39 +212,60 @@ main() {
     show_bbr_status
     echo ""
 
-    echo "请选择要执行的操作:"
-    echo "1. 安装/启用BBR"
-    echo "2. 卸载/禁用BBR"
-    echo "3. 显示BBR状态"
-    echo "4. 退出"
-    echo ""
-
     local option=""
     local confirm=""
-    read -r -p "请输入选项 (1-4): " option
+    if declare -F print_menu_item >/dev/null 2>&1; then
+        print_menu_item 1 "安装/启用 BBR" "写入 sysctl 并启用"
+        print_menu_item 2 "卸载/禁用 BBR" "恢复备份配置"
+        print_menu_item 3 "显示 BBR 状态" "只读查看"
+        print_menu_item 4 "退出"
+        echo ""
+        if declare -F read_menu_choice >/dev/null 2>&1; then
+            read_menu_choice "请选择 [1-4]: " || option="4"
+            option="${MENU_CHOICE}"
+        else
+            read -r -p "请选择 [1-4]: " option
+        fi
+    else
+        echo "请选择要执行的操作:"
+        echo "1. 安装/启用BBR"
+        echo "2. 卸载/禁用BBR"
+        echo "3. 显示BBR状态"
+        echo "4. 退出"
+        echo ""
+        read -r -p "请输入选项 (1-4): " option
+    fi
 
     case $option in
         1)
             echo ""
             echo -e "${YELLOW}注意: 安装BBR可能需要重启系统才能完全生效。${NC}"
-            read -r -p "是否继续? (y/n): " confirm
-            if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-                install_bbr
-                echo -e "${GREEN}BBR安装完成!${NC}"
-                echo -e "${YELLOW}建议重启系统以确保所有设置生效。${NC}"
+            if declare -F ask_yes_no >/dev/null 2>&1; then
+                ask_yes_no "是否继续?" "n" || { echo -e "${YELLOW}操作已取消。${NC}"; return 0; }
             else
-                echo -e "${YELLOW}操作已取消。${NC}"
+                read -r -p "是否继续? (y/n): " confirm
+                if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+                    echo -e "${YELLOW}操作已取消。${NC}"
+                    return 0
+                fi
             fi
+            install_bbr
+            echo -e "${GREEN}BBR安装完成!${NC}"
+            echo -e "${YELLOW}建议重启系统以确保所有设置生效。${NC}"
             ;;
         2)
             echo ""
-            read -r -p "确定要卸载BBR吗? (y/n): " confirm
-            if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-                uninstall_bbr
-                echo -e "${GREEN}BBR卸载完成!${NC}"
+            if declare -F ask_yes_no >/dev/null 2>&1; then
+                ask_yes_no "确定要卸载BBR吗?" "n" || { echo -e "${YELLOW}操作已取消。${NC}"; return 0; }
             else
-                echo -e "${YELLOW}操作已取消。${NC}"
+                read -r -p "确定要卸载BBR吗? (y/n): " confirm
+                if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+                    echo -e "${YELLOW}操作已取消。${NC}"
+                    return 0
+                fi
             fi
+            uninstall_bbr
+            echo -e "${GREEN}BBR卸载完成!${NC}"
             ;;
         3)
             echo ""

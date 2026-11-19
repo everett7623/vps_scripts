@@ -320,7 +320,12 @@ main() {
     else
         show_list
         echo ""
-        read -r -p "请选择要清理的配置文件编号 (1-8): " choice || choice=""
+        if declare -F read_menu_choice >/dev/null 2>&1; then
+            read_menu_choice "请选择要清理的配置文件编号 [1-8]: " || choice=""
+            choice="${MENU_CHOICE}"
+        else
+            read -r -p "请选择要清理的配置文件编号 (1-8): " choice || choice=""
+        fi
         target=$(resolve_target "${choice}") || error_exit "无效的选择"
     fi
 

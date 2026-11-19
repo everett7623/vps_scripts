@@ -12,7 +12,9 @@ export PURPLE='\033[1;95m'
 export CYAN='\033[1;96m'
 export WHITE='\033[1;97m'
 export NC='\033[0m'
+export RESET='\033[0m'
 export BOLD='\033[1m'
+export DIM='\033[2m'
 
 export LOG_LEVEL_DEBUG=0
 export LOG_LEVEL_INFO=1
@@ -22,6 +24,8 @@ export CURRENT_LOG_LEVEL=${CURRENT_LOG_LEVEL:-$LOG_LEVEL_INFO}
 export UI_WIDTH=${UI_WIDTH:-80}
 export UI_MAX_WIDTH=${UI_MAX_WIDTH:-88}
 export UI_THEME=${UI_THEME:-neon-shell}
+export MENU_LABEL_WIDTH=${MENU_LABEL_WIDTH:-20}
+export MENU_CHOICE=""
 
 print_msg() {
     local color="${1}"
@@ -140,17 +144,78 @@ print_header() {
     [ -n "${width}" ] || width=$(detect_ui_width)
     UI_WIDTH="${width}"
     echo ""
-    print_separator "=" "$width" "$CYAN"
+    print_separator "=" "$width" "$YELLOW"
     print_centered_line "${title}" "${BOLD}${WHITE}" "${width}"
     print_centered_line "${subtitle}" "${CYAN}" "${width}"
-    print_separator "=" "$width" "$CYAN"
+    print_separator "=" "$width" "$YELLOW"
     echo ""
 }
 
 print_title() {
     echo ""
     echo -e "${BOLD}${WHITE}  [ $1 ]${NC}"
-    print_separator "-" "$UI_WIDTH" "$BLUE"
+    print_separator "-" "$UI_WIDTH" "$PURPLE"
+}
+
+print_panel_title() {
+    printf '%b  [ %s ]%b\n' "${BOLD}${WHITE}" "$1" "${NC}"
+    print_separator "=" "$UI_WIDTH" "$PURPLE"
+}
+
+print_menu_section() {
+    local label="${1}"
+    echo ""
+    printf '%b── %s%b\n' "${DIM}" "${label}" "${NC}"
+}
+
+pause_for_menu() {
+    echo ""
+    echo -e "${CYAN}[按任意键返回]${NC}"
+    read -n 1 -s -r || true
+}
+
+invalid_choice() {
+    echo -e "${RED}无效选项，请重新输入。${NC}"
+    sleep 1
+}
+
+read_menu_choice() {
+    local prompt="${1}"
+
+    MENU_CHOICE=""
+    if ! read -r -p "${prompt}" MENU_CHOICE; then
+        echo ""
+        echo -e "${YELLOW}[提示] 输入已结束，返回上级菜单。${NC}"
+        sleep 1
+        return 1
+    fi
+
+    return 0
+}
+
+print_menu_item() {
+    local key="${1}"
+    local label="${2}"
+    local detail="${3:-}"
+    local label_width=0
+    local padding=0
+
+    printf "%b%2s%b. %b%s%b" "${YELLOW}" "${key}" "${NC}" "${BOLD}" "${label}" "${NC}"
+    [ -z "${detail}" ] && {
+        printf "\n"
+        return
+    }
+
+    if [ "${UI_WIDTH}" -lt 64 ]; then
+        printf "\n%b     └─ %s%b\n" "${DIM}" "${detail}" "${NC}"
+        return
+    fi
+
+    label_width=$(text_display_width "${label}")
+    padding=$((MENU_LABEL_WIDTH > label_width ? MENU_LABEL_WIDTH - label_width : 1))
+    print_spaces "${padding}"
+    printf "%b│ %s%b" "${DIM}" "${detail}" "${NC}"
+    printf "\n"
 }
 
 print_key_value() {
@@ -714,7 +779,8 @@ trap 'graceful_exit 1 "Script interrupted."' INT TERM
 
 export -f print_msg print_info print_success print_warn print_error
 export -f detect_ui_width text_display_width print_spaces print_centered_line print_aligned_value
-export -f print_separator print_header print_title
+export -f print_separator print_header print_title print_panel_title print_menu_section
+export -f pause_for_menu invalid_choice read_menu_choice print_menu_item
 export -f print_key_value print_step print_status print_runtime_context
 export -f show_progress wait_with_animation
 export -f check_root command_exists ensure_command

@@ -41,6 +41,7 @@ Issue #2 fix, then a phased upgrade (framework, dry-run coverage, catalog refres
 | 1.1.28 | #51 | Jenkins yum validate; drop TUNA RHEL; panel mktemp |
 | 1.1.29 | #53 | K8s RHEL yum → pkgs.k8s.io; enable GPG |
 | 1.1.30 | #55 | Docker CE yum validate; LDNMP RPM/key; DaoCloud |
+| 1.1.31 | — | neon-shell polish; hub/submenu menus; shared helpers |
 
 ## Decisions
 

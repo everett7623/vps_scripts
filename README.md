@@ -9,7 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.1.30-blue.svg)](https://github.com/everett7623/vps_scripts)
+[![Version](https://img.shields.io/badge/version-1.1.31-blue.svg)](https://github.com/everett7623/vps_scripts)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Debian%20%7C%20RHEL%20%7C%20Alpine-orange.svg)](https://github.com/everett7623/vps_scripts)
 [![Architecture](https://img.shields.io/badge/arch-x86__64%20%7C%20arm64-lightgrey.svg)](https://github.com/everett7623/vps_scripts)
@@ -247,7 +247,8 @@ curl -fsSL https://raw.githubusercontent.com/everett7623/vps_scripts/main/vps.sh
 - Web 服务栈部署
 - 多语言开发环境安装
 - 自托管 PaaS（Coolify、Dokploy）与容器管理面板（Portainer、Dockge、Nginx Proxy Manager）
-- 依赖 Docker 的条目会先检查 Docker 是否已安装，未安装时提示先执行“服务安装 → 1”
+- 依赖 Docker 的条目会先检查 Docker 是否已安装，未安装时提示先执行“服务安装 → 容器与编排 → Docker”
+- 服务安装、社区脚本、其他工具已改为分组子菜单（先选类型再选手动项）；代理工具仍为单页编号，并用分隔标题区分面板 / 一键脚本 / 官方核心
 
 #### 菜单排序
 - 常用条目在前；较少使用或上游停止维护的条目移到末尾并标注“旧版 / 上游已归档”
@@ -353,6 +354,7 @@ REPO_ROOT_OVERRIDE="$PWD" bash tests/validate_release_metadata.sh
 ## 更新日志
 
 ### 最近这一轮重点变化
+- 发布 `1.1.31`：neon-shell 亮色统一与共享菜单原语；服务安装/社区/其他工具改为分组子菜单；健康巡检与安全基线中文帮助
 - 发布 `1.1.30`：Docker CE yum 临时校验；LDNMP 远程 RPM/密钥改走临时文件；中国镜像改 DaoCloud；wppanel `bash -n` 对齐
 - 发布 `1.1.29`：Kubernetes RHEL yum 迁移到 `pkgs.k8s.io` / Aliyun `kubernetes-new`，启用 GPG 校验
 - 发布 `1.1.28`：Jenkins yum 仓库临时校验；停用已 404 的 TUNA RHEL 镜像；1Panel/AMH 安装脚本改用 `mktemp`

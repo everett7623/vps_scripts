@@ -36,15 +36,20 @@ if [ -f "${LIB_FILE}" ]; then
     [ -f "${CONFIG_FILE}" ] && source "${CONFIG_FILE}"
     [ -n "${LOG_DIR:-}" ] && LOG_FILE="${LOG_DIR}/optimize_system.log"
 else
-    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'; BOLD='\033[1m'
+    RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'; BLUE='\033[1;94m'; PURPLE='\033[1;95m'; CYAN='\033[1;96m'; WHITE='\033[1;97m'; NC='\033[0m'; BOLD='\033[1m'; DIM='\033[2m'
+    MENU_CHOICE=""
     print_msg() { echo -e "${1}${2}${NC}"; }
     print_info() { print_msg "${CYAN}" "[信息] $1"; }
     print_success() { print_msg "${GREEN}" "[完成] $1"; }
     print_warn() { print_msg "${YELLOW}" "[警告] $1"; }
     print_error() { print_msg "${RED}" "[错误] $1"; }
-    print_separator() { printf '%b%s%b\n' "${BLUE}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:--}")" "${NC}"; }
-    print_header() { echo ""; print_separator "=" 80; printf "%b%*s %s %b\n" "${BOLD}${WHITE}" 28 "" "$1" "${NC}"; print_separator "=" 80; echo ""; }
-    print_title() { echo ""; printf "%b>> %s%b\n" "${BOLD}${YELLOW}" "$1" "${NC}"; print_separator "-" 80; }
+    print_separator() { printf '%b%s%b\n' "${YELLOW}" "$(printf '%*s' "${2:-80}" '' | tr ' ' "${1:-=}")" "${NC}"; }
+    print_header() { echo ""; print_separator "=" 80; printf "%b  [ %s ]%b\n" "${BOLD}${WHITE}" "$1" "${NC}"; print_separator "=" 80; echo ""; }
+    print_title() { echo ""; printf "%b  [ %s ]%b\n" "${BOLD}${WHITE}" "$1" "${NC}"; printf '%b%s%b\n' "${PURPLE}" "$(printf '%*s' 80 '' | tr ' ' '-')" "${NC}"; }
+    print_menu_item() { printf "%b%2s%b. %b%s%b\n" "${YELLOW}" "$1" "${NC}" "${BOLD}" "$2" "${NC}"; [ -n "${3:-}" ] && printf "%b     └─ %s%b\n" "${DIM}" "$3" "${NC}"; }
+    read_menu_choice() { MENU_CHOICE=""; if ! read -r -p "$1" MENU_CHOICE; then echo ""; print_warn "输入已结束，返回上级菜单。"; return 1; fi; return 0; }
+    invalid_choice() { print_error "无效选项，请重新输入。"; sleep 1; }
+    pause_for_menu() { echo ""; printf '%b[按任意键返回]%b\n' "${CYAN}" "${NC}"; read -n 1 -s -r || true; }
     command_exists() { command -v "$1" >/dev/null 2>&1; }
     safe_mkdir() { [ -d "$1" ] || mkdir -p "$1"; }
     check_root() {
@@ -478,15 +483,16 @@ interactive_menu() {
     while true; do
         clear 2>/dev/null || true
         print_header "VPS 安全优化"
-        echo "1) 执行全部保守优化"
-        echo "2) 仅优化内核参数"
-        echo "3) 仅优化系统限制"
-        echo "4) 仅优化内存保护"
-        echo "5) 仅清理低价值服务"
-        echo "6) 仅应用 SSH 安全基线"
-        echo "0) 退出"
+        print_menu_item 1 "执行全部保守优化" "内核、限制、内存、服务与 SSH"
+        print_menu_item 2 "仅优化内核参数" "sysctl 基线"
+        print_menu_item 3 "仅优化系统限制" "limits 调整"
+        print_menu_item 4 "仅优化内存保护" "内存相关保护项"
+        print_menu_item 5 "仅清理低价值服务" "可选服务收敛"
+        print_menu_item 6 "仅应用 SSH 安全基线" "sshd 基线"
+        print_menu_item 0 "退出"
         echo ""
-        read -r -p "请选择 [0-6]: " selection || { echo ""; exit 0; }
+        read_menu_choice "请选择 [0-6]: " || exit 0
+        selection="${MENU_CHOICE}"
 
         case "${selection}" in
             1) RUN_ALL=true; break ;;
@@ -496,7 +502,7 @@ interactive_menu() {
             5) RUN_SERVICES=true; break ;;
             6) RUN_SECURITY=true; break ;;
             0) exit 0 ;;
-            *) print_error "无效选项。"; sleep 1 ;;
+            *) invalid_choice ;;
         esac
     done
 

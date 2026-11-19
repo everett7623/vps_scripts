@@ -241,9 +241,21 @@ prompt_role() {
     if [ "${AUTO_YES}" = true ] || [ ! -t 0 ]; then
         error_exit "非交互模式下请指定 client 或 server"
     fi
-    echo "1. frpc 客户端（把本机服务映射出去）"
-    echo "2. frps 服务端（在有公网 IP 的机器上运行）"
-    read -r -p "请选择 [1-2]: " choice || choice=""
+    if declare -F print_menu_item >/dev/null 2>&1; then
+        print_menu_item 1 "frpc 客户端" "把本机服务映射出去"
+        print_menu_item 2 "frps 服务端" "在有公网 IP 的机器上运行"
+        echo ""
+        if declare -F read_menu_choice >/dev/null 2>&1; then
+            read_menu_choice "请选择 [1-2]: " || choice=""
+            choice="${MENU_CHOICE}"
+        else
+            read -r -p "请选择 [1-2]: " choice || choice=""
+        fi
+    else
+        echo "1. frpc 客户端（把本机服务映射出去）"
+        echo "2. frps 服务端（在有公网 IP 的机器上运行）"
+        read -r -p "请选择 [1-2]: " choice || choice=""
+    fi
     case "${choice}" in
         1) ROLE="client" ;;
         2) ROLE="server" ;;
@@ -394,10 +406,23 @@ interactive_action() {
     [ -t 0 ] || { show_status; return 0; }
     show_status
     echo ""
-    echo "1. 安装 / 更新"
-    echo "2. 卸载"
-    echo "0. 返回"
-    read -r -p "请选择 [0-2]: " choice || choice="0"
+    if declare -F print_menu_item >/dev/null 2>&1; then
+        print_menu_item 1 "安装 / 更新" "下载并配置 frp"
+        print_menu_item 2 "卸载" "移除本机 frp 组件"
+        print_menu_item 0 "返回"
+        echo ""
+        if declare -F read_menu_choice >/dev/null 2>&1; then
+            read_menu_choice "请选择 [0-2]: " || choice="0"
+            choice="${MENU_CHOICE:-0}"
+        else
+            read -r -p "请选择 [0-2]: " choice || choice="0"
+        fi
+    else
+        echo "1. 安装 / 更新"
+        echo "2. 卸载"
+        echo "0. 返回"
+        read -r -p "请选择 [0-2]: " choice || choice="0"
+    fi
     case "${choice}" in
         1) ACTION="install" ;;
         2) ACTION="uninstall" ;;
